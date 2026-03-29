@@ -1,0 +1,9 @@
+/* Full-bleed layout — site background fills entire viewport */
+#root {
+  min-height: 100vh;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background-color: #FAF7F2;
+}

@@ -1,0 +1,210 @@
+import { useMemo } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { User, Mail, Phone, Shield, Calendar, Hash, ShoppingBag, ArrowLeft } from 'lucide-react'
+import AdminNav from '../../components/admin/AdminNav'
+import { adminApi, ordersApi } from '../../services/api'
+
+type UserRecord = {
+  id: string
+  email: string | null
+  phone_number: string | null
+  full_name: string
+  role: string
+  role_display?: string
+  is_active: boolean
+  is_verified?: boolean
+  date_joined: string
+  date_of_birth?: string | null
+  nationality?: string | null
+  civil_id?: string | null
+}
+
+type OrderRecord = {
+  id: string
+  invoice_number: string
+  sale_date: string
+  status: string
+  status_display?: string
+  total_amount: string
+  branch_name?: string
+  payment_method_display?: string
+}
+
+function asOrderList(data: unknown): OrderRecord[] {
+  if (Array.isArray(data)) return data as OrderRecord[]
+  const p = data as { results?: OrderRecord[] } | undefined
+  return p?.results ?? []
+}
+
+function formatDate(d: string) {
+  try {
+    return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return '—'
+  }
+}
+
+export default function AdminCustomerDetailPage() {
+  const { userId } = useParams<{ userId: string }>()
+
+  const { data: detailUser, isLoading: detailLoading } = useQuery({
+    queryKey: ['adminCustomerDetail', userId],
+    queryFn: () => adminApi.getUser(userId!),
+    enabled: !!userId,
+  })
+
+  const { data: ordersData } = useQuery({
+    queryKey: ['adminCustomerOrders', userId],
+    queryFn: () => ordersApi.getOrders({ customer: userId!, page_size: '100' }),
+    enabled: !!userId,
+  })
+
+  const customerOrders = useMemo(() => asOrderList(ordersData), [ordersData])
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <AdminNav />
+          <p className="text-gold-100/60">Invalid customer.</p>
+          <Link to="/admin/customers" className="text-gold-400 hover:text-gold-300 mt-2 inline-flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> Back to customers
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <AdminNav />
+        <Link
+          to="/admin/customers"
+          className="inline-flex items-center gap-2 gold-gradient-text-on-light hover:text-gold-300 text-sm mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to customers
+        </Link>
+
+        {detailLoading ? (
+          <div className="gold-card p-8 text-center text-gold-100/60">Loading...</div>
+        ) : detailUser ? (
+          <div className="space-y-8">
+            <h1 className="text-3xl font-bold gold-gradient-text-on-light">Customer details</h1>
+
+            <div className="gold-card p-6">
+              <h2 className="text-lg font-semibold text-gold-100 mb-4">Profile</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-gold-100/60 w-24">Name</span>
+                  <span className="text-gold-100">{(detailUser as UserRecord).full_name || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-gold-100/60 w-24">Email</span>
+                  <span className="text-gold-100 truncate">{(detailUser as UserRecord).email || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-gold-100/60 w-24">Phone</span>
+                  <span className="text-gold-100">{(detailUser as UserRecord).phone_number || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-gold-100/60 w-24">Role</span>
+                  <span className="text-gold-100">{(detailUser as UserRecord).role_display || (detailUser as UserRecord).role}</span>
+                </div>
+                <div className="flex items-center gap-2 sm:col-span-2">
+                  <Hash className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-gold-100/60 w-24">ID</span>
+                  <span className="text-gold-100/80 font-mono text-xs truncate">{(detailUser as UserRecord).id}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold-100/60 w-24">Active</span>
+                  <span className={(detailUser as UserRecord).is_active ? 'text-green-400' : 'text-red-400'}>
+                    {(detailUser as UserRecord).is_active ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold-100/60 w-24">Verified</span>
+                  <span className="text-gold-100">{(detailUser as UserRecord).is_verified ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-gold-100/60 w-24">Joined</span>
+                  <span className="text-gold-100">{formatDate((detailUser as UserRecord).date_joined)}</span>
+                </div>
+                {(detailUser as UserRecord).date_of_birth && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gold-100/60 w-24">Date of birth</span>
+                    <span className="text-gold-100">{(detailUser as UserRecord).date_of_birth}</span>
+                  </div>
+                )}
+                {(detailUser as UserRecord).nationality && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gold-100/60 w-24">Nationality</span>
+                    <span className="text-gold-100">{(detailUser as UserRecord).nationality}</span>
+                  </div>
+                )}
+                {(detailUser as UserRecord).civil_id && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gold-100/60 w-24">Civil ID</span>
+                    <span className="text-gold-100">{(detailUser as UserRecord).civil_id}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="gold-card p-6">
+              <h2 className="text-lg font-semibold text-gold-100 flex items-center gap-2 mb-4">
+                <ShoppingBag className="w-5 h-5 text-gold-400" />
+                Order history ({customerOrders.length})
+              </h2>
+              {customerOrders.length === 0 ? (
+                <p className="text-gold-100/60">No orders yet.</p>
+              ) : (
+                <div className="border border-gold-500/20 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-charcoal-800/80 border-b border-gold-500/20">
+                        <th className="text-left py-3 px-4 text-gold-100/60 font-medium">Invoice</th>
+                        <th className="text-left py-3 px-4 text-gold-100/60 font-medium">Date</th>
+                        <th className="text-left py-3 px-4 text-gold-100/60 font-medium">Status</th>
+                        <th className="text-right py-3 px-4 text-gold-100/60 font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customerOrders.map((order) => (
+                        <tr key={order.id} className="border-b border-gold-500/10 last:border-0">
+                          <td className="py-3 px-4 font-mono text-gold-100/90">{order.invoice_number}</td>
+                          <td className="py-3 px-4 text-gold-100/80">{formatDate(order.sale_date)}</td>
+                          <td className="py-3 px-4">
+                            <span className="inline-block px-2 py-1 rounded text-xs bg-gold-500/10 text-gold-400">
+                              {order.status_display || order.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right text-gold-400 tabular-nums">
+                            {Number(order.total_amount).toLocaleString()} KWD
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="gold-card p-8">
+            <p className="text-gold-100/60">Could not load customer.</p>
+            <Link to="/admin/customers" className="text-gold-400 hover:text-gold-300 mt-2 inline-flex items-center gap-1">
+              <ArrowLeft className="w-4 h-4" /> Back to customers
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
