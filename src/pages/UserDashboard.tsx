@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -18,7 +18,18 @@ import {
   Crown,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { accountsApi, ordersApi, walletApi, tradingApi, invoicesApi, clubsApi, apiService, goldTradingApi } from '../services/api'
+import { RegionFlagImg } from '../components/RegionFlagImg'
+import {
+  accountsApi,
+  ordersApi,
+  walletApi,
+  tradingApi,
+  invoicesApi,
+  clubsApi,
+  apiService,
+  goldTradingApi,
+  type BankChangeRequestRow,
+} from '../services/api'
 
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState('profile')
@@ -68,10 +79,20 @@ export default function UserDashboard() {
           <div className="lg:col-span-1 mt-4">
             <div className="gold-card sticky top-24">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gold-500/20">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
-                  <span className="text-xl font-bold text-charcoal-950">
-                    {user?.full_name?.charAt(0) || 'U'}
-                  </span>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold-300 via-gold-400 to-amber-600 shadow-[0_10px_24px_-12px_rgba(212,175,55,0.85)] ring-1 ring-gold-200/45 flex items-center justify-center">
+                  {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+                    <span className="inline-flex items-center justify-center rounded-md bg-charcoal-950/80 px-1.5 py-1 ring-1 ring-white/20">
+                      <RegionFlagImg
+                        code={user.nationality}
+                        size="md"
+                        className="w-8 h-5 rounded-[3px] ring-1 ring-gold-200/30 shadow-sm"
+                      />
+                    </span>
+                  ) : (
+                    <span className="text-xl font-bold text-charcoal-950">
+                      {user?.full_name?.charAt(0) || 'U'}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <h3 className="font-semibold text-gold-100">{user?.full_name}</h3>
@@ -1160,29 +1181,59 @@ function BankAccountTab() {
     queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
   })
 
-  const profile = asSingleProfile(data)
+  const { data: requestRows = [], isLoading: loadingRequests } = useQuery({
+    queryKey: ['myBankChangeRequests'],
+    queryFn: () => accountsApi.getMyBankChangeRequests(),
+  })
 
-  const [bankName, setBankName] = useState(profile?.bank_name ?? '')
-  const [iban, setIban] = useState(profile?.iban ?? '')
+  const profile = asSingleProfile(data)
+  const pendingRequest = requestRows.find((r: BankChangeRequestRow) => r.status === 'pending')
+
+  const sortedRequests = useMemo(
+    () =>
+      [...requestRows].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    [requestRows]
+  )
+  const latestRequest = sortedRequests[0]
+  const showRejectionNotice =
+    !pendingRequest && latestRequest?.status === 'rejected'
+
+  const [bankName, setBankName] = useState('')
+  const [iban, setIban] = useState('')
   const [ibanProofFile, setIbanProofFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (pendingRequest) {
+      setBankName(pendingRequest.bank_name)
+      setIban(pendingRequest.iban)
+      return
+    }
     setBankName(profile?.bank_name ?? '')
     setIban(profile?.iban ?? '')
-  }, [profile?.bank_name, profile?.iban])
+  }, [profile?.bank_name, profile?.iban, pendingRequest?.id, pendingRequest?.bank_name, pendingRequest?.iban])
 
   const mutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      if (!profile?.id) throw new Error('Profile not found')
-      return accountsApi.updateProfile(profile.id, formData)
-    },
+    mutationFn: (formData: FormData) => accountsApi.createBankChangeRequest(formData),
     onSuccess: () => {
-      toast.success(t('userDashboard.bankAccount.toasts.bankDetailsSaved'))
-      queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+      toast.success(t('userDashboard.bankAccount.toasts.requestSubmitted'))
+      queryClient.invalidateQueries({ queryKey: ['myBankChangeRequests'] })
     },
-    onError: () => {
-      toast.error(t('userDashboard.bankAccount.toasts.failedToSaveBankAccountDetails'))
+    onError: (err: unknown) => {
+      const dataErr = (err as { response?: { data?: Record<string, unknown> } })?.response?.data
+      const nonField = dataErr?.non_field_errors
+      if (Array.isArray(nonField) && nonField[0]) {
+        toast.error(String(nonField[0]))
+        return
+      }
+      const ibanErr = dataErr?.iban
+      if (Array.isArray(ibanErr) && ibanErr[0]) {
+        toast.error(String(ibanErr[0]))
+        return
+      }
+      toast.error(t('userDashboard.bankAccount.toasts.failedToSubmitRequest'))
     },
   })
 
@@ -1192,107 +1243,160 @@ function BankAccountTab() {
       toast.error(t('userDashboard.bankAccount.toasts.customerProfileNotFound'))
       return
     }
+    if (pendingRequest) return
     const formData = new FormData()
-    formData.append('bank_name', bankName)
-    formData.append('iban', iban)
-    if (ibanProofFile) {
-      formData.append('iban_proof', ibanProofFile)
-    }
+    formData.append('bank_name', bankName.trim())
+    formData.append('iban', iban.replace(/\s/g, ''))
+    if (ibanProofFile) formData.append('iban_proof', ibanProofFile)
     setSaving(true)
-    mutation.mutate(formData, {
-      onSettled: () => setSaving(false),
-    })
+    mutation.mutate(formData, { onSettled: () => setSaving(false) })
   }
+
+  const busy = isLoading || loadingRequests
 
   return (
     <div className="space-y-4 mt-4">
       <h2 className="text-xl font-bold gold-gradient-text-on-light mb-2">{t('userDashboard.bankAccount.title')}</h2>
-      <p className="text-sm gold-gradient-text-on-light mb-4">
-        {t('userDashboard.bankAccount.hint')}
+      <p className="text-sm gold-gradient-text-on-light mb-4 whitespace-pre-line">
+        {t('userDashboard.bankAccount.hintApproval')}
       </p>
-      <div className="gold-card">
-        {isLoading && !profile ? (
+      <div className="gold-card space-y-6">
+        {busy && !profile ? (
           <p className="text-gold-100/60 text-center py-8">{t('userDashboard.bankAccount.loading')}</p>
         ) : !profile ? (
           <p className="text-gold-100/60 text-center py-8">
             {t('userDashboard.bankAccount.customerProfileNotFoundLong')}
           </p>
         ) : (
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">
-                  {t('userDashboard.bankAccount.bankNameLabel')}
-                </label>
-                <input
-                  type="text"
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
-                  placeholder={t('userDashboard.bankAccount.bankNamePlaceholder')}
-                />
+          <>
+            <div className="rounded-lg border border-gold-500/25 bg-charcoal-900/40 p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-gold-200">
+                {t('userDashboard.bankAccount.currentSavedTitle')}
+              </h3>
+              <p className="text-xs text-gold-100/50">{t('userDashboard.bankAccount.currentSavedHint')}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gold-100/50">{t('userDashboard.bankAccount.bankNameLabel')}: </span>
+                  <span className="text-gold-100">{profile.bank_name?.trim() || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-gold-100/50">{t('userDashboard.bankAccount.ibanLabel')}: </span>
+                  <span className="text-gold-100 font-mono text-xs break-all">{profile.iban?.trim() || '—'}</span>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">
-                  {t('userDashboard.bankAccount.ibanLabel')}
-                </label>
-                <input
-                  type="text"
-                  value={iban}
-                  onChange={(e) => setIban(e.target.value)}
-                  className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
-                  placeholder={t('userDashboard.bankAccount.ibanPlaceholder')}
-                />
-              </div>
+              {profile.iban_proof ? (
+                <a
+                  href={profile.iban_proof}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border border-gold-500/60 text-gold-100 hover:bg-gold-500/10 mt-2"
+                >
+                  {t('userDashboard.bankAccount.downloadProof')}
+                </a>
+              ) : null}
             </div>
 
-            <div className="border border-dashed border-gold-500/40 p-4 rounded-lg text-center hover:border-gold-400 transition">
-              <label className="cursor-pointer block">
-                <span className="block mb-2 text-gold-300 text-2xl">📄</span>
-                <span className="text-sm text-gold-100/80">
-                  {t('userDashboard.bankAccount.uploadIbanProof')}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={(e) => setIbanProofFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
-              {(ibanProofFile || profile.iban_proof) && (
-                <div className="mt-2 flex flex-col items-center gap-1">
-                  <p className="text-xs text-emerald-400">
-                    {(ibanProofFile && ibanProofFile.name) || t('userDashboard.bankAccount.existingIbanProofUploaded')}
-                  </p>
-                  {!ibanProofFile && profile.iban_proof && (
-                    <a
-                      href={profile.iban_proof}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border border-gold-500/60 text-gold-100 hover:bg-gold-500/10"
-                    >
-                      <span>⬇</span>
-                      <span>
-                        {t('userDashboard.bankAccount.downloadProof')}
-                      </span>
-                    </a>
+            {pendingRequest ? (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-950/30 p-4">
+                <p className="text-sm font-medium text-amber-100">{t('userDashboard.bankAccount.pendingTitle')}</p>
+                <p className="text-xs text-amber-100/70 mt-1">{t('userDashboard.bankAccount.pendingBody')}</p>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gold-100/90">
+                  <div>
+                    <span className="text-gold-100/50">{t('userDashboard.bankAccount.bankNameLabel')}: </span>
+                    {pendingRequest.bank_name}
+                  </div>
+                  <div>
+                    <span className="text-gold-100/50">{t('userDashboard.bankAccount.ibanLabel')}: </span>
+                    <span className="font-mono text-xs">{pendingRequest.iban}</span>
+                  </div>
+                </div>
+                {pendingRequest.iban_proof_url ? (
+                  <a
+                    href={pendingRequest.iban_proof_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block mt-2 text-xs text-emerald-400 hover:underline"
+                  >
+                    {t('userDashboard.bankAccount.viewSubmittedProof')}
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showRejectionNotice && latestRequest ? (
+              <div className="rounded-lg border border-red-500/35 bg-red-950/25 p-4">
+                <p className="text-sm font-medium text-red-200">{t('userDashboard.bankAccount.rejectedTitle')}</p>
+                {latestRequest.rejection_reason ? (
+                  <p className="text-xs text-red-100/80 mt-1">{latestRequest.rejection_reason}</p>
+                ) : null}
+                <p className="text-xs text-gold-100/60 mt-2">{t('userDashboard.bankAccount.rejectedResubmitHint')}</p>
+              </div>
+            ) : null}
+
+            {!pendingRequest ? (
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <p className="text-sm text-gold-100/70">{t('userDashboard.bankAccount.proposedSectionTitle')}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gold-100 mb-2">
+                      {t('userDashboard.bankAccount.bankNameLabel')}
+                    </label>
+                    <input
+                      type="text"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                      placeholder={t('userDashboard.bankAccount.bankNamePlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gold-100 mb-2">
+                      {t('userDashboard.bankAccount.ibanLabel')}
+                    </label>
+                    <input
+                      type="text"
+                      value={iban}
+                      onChange={(e) => setIban(e.target.value)}
+                      className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                      placeholder={t('userDashboard.bankAccount.ibanPlaceholder')}
+                    />
+                  </div>
+                </div>
+
+                <div className="border border-dashed border-gold-500/40 p-4 rounded-lg text-center hover:border-gold-400 transition">
+                  <label className="cursor-pointer block">
+                    <span className="block mb-2 text-gold-300 text-2xl">📄</span>
+                    <span className="text-sm text-gold-100/80">
+                      {t('userDashboard.bankAccount.uploadIbanProof')}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) => setIbanProofFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  {ibanProofFile ? (
+                    <p className="mt-2 text-xs text-emerald-400">{ibanProofFile.name}</p>
+                  ) : (
+                    <p className="mt-2 text-xs text-gold-100/40">{t('userDashboard.bankAccount.proofOptionalHint')}</p>
                   )}
                 </div>
-              )}
-            </div>
 
-            <button
-              type="submit"
-              className="gold-button"
-              disabled={saving || mutation.isPending}
-            >
-              {saving || mutation.isPending ? t('userDashboard.bankAccount.saving') : t('userDashboard.bankAccount.saveButton')}
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  className="gold-button"
+                  disabled={saving || mutation.isPending}
+                >
+                  {saving || mutation.isPending
+                    ? t('userDashboard.bankAccount.submitting')
+                    : t('userDashboard.bankAccount.submitRequestButton')}
+                </button>
+              </form>
+            ) : null}
+          </>
         )}
       </div>
-
-      {/* Legacy sell confirmation modal removed; selling is handled directly in LockedGoldTab now. */}
     </div>
   )
 }
@@ -1570,6 +1674,8 @@ function TransactionsTab() {
 type PriceAlertRow = {
   id: string
   alert_type?: string
+  spot_metal?: string
+  spot_metal_display?: string
   gold_carats?: number | string | null
   price_side?: string
   price_side_display?: string
@@ -1636,6 +1742,15 @@ function NotificationsTab() {
         <div className="space-y-3">
           {triggered.map((a) => {
             const goldCaratNum = a.gold_carats != null ? Number(a.gold_carats) : NaN
+            const metal = (a.spot_metal || 'gold').toLowerCase()
+            const metalLine =
+              metal === 'silver'
+                ? 'Silver'
+                : metal === 'platinum'
+                  ? 'Platinum'
+                  : Number.isFinite(goldCaratNum)
+                    ? `${goldCaratNum}K gold`
+                    : a.spot_metal_display || 'Gold'
             const sideLabel = a.price_side_display ?? a.price_side ?? '—'
             const target = a.target_price != null ? Number(a.target_price) : NaN
             const d = a.triggered_at ? new Date(a.triggered_at) : null
@@ -1658,7 +1773,7 @@ function NotificationsTab() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm text-gold-100/70">
-                      {Number.isFinite(goldCaratNum) ? `${goldCaratNum}K` : '—'} • {sideLabel}
+                      {metalLine} • {sideLabel}
                     </div>
                     <div className="text-gold-100 font-semibold mt-1">Triggered</div>
                     {thresholdText && (

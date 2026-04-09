@@ -28,9 +28,19 @@ export default function GoldPriceTicker() {
 
   const res = goldPrices as DaralsabaekPublicRatesResponse | undefined
   const carats = res?.carats ?? []
+  const silver = res?.silver
+  const platinum = res?.platinum
 
   const fmt = (n: number | null | undefined) =>
     typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
+
+  const preciousItems: { key: string; buyTotal: number | null | undefined; sellTotal: number | null | undefined }[] = []
+  if (silver?.buyTotal != null || silver?.sellTotal != null) {
+    preciousItems.push({ key: 'Ag', buyTotal: silver?.buyTotal, sellTotal: silver?.sellTotal })
+  }
+  if (platinum?.buyTotal != null || platinum?.sellTotal != null) {
+    preciousItems.push({ key: 'Pt', buyTotal: platinum?.buyTotal, sellTotal: platinum?.sellTotal })
+  }
 
   return (
     <div className="bg-siteBg border-y border-amber-900/10">
@@ -38,7 +48,7 @@ export default function GoldPriceTicker() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-sm font-medium text-gold-400">Live Gold Prices</span>
+            <span className="text-sm font-medium text-gold-400">Live metal prices</span>
           </div>
           
           <div className="flex items-center gap-6 md:gap-12 overflow-x-auto">
@@ -64,6 +74,27 @@ export default function GoldPriceTicker() {
                   </span>
                   <span className="text-xs text-slate-500">KWD/g</span>
                 </div>
+                  <PriceChangeIndicator spread={spread} />
+                </div>
+              )
+            })}
+            {preciousItems.map((c) => {
+              const buyTotal = c.buyTotal
+              const sellTotal = c.sellTotal
+              const spread =
+                typeof buyTotal === 'number' &&
+                Number.isFinite(buyTotal) &&
+                typeof sellTotal === 'number' &&
+                Number.isFinite(sellTotal)
+                  ? sellTotal - buyTotal
+                  : 0
+              return (
+                <div key={c.key} className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-sm text-slate-700">{c.key}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-gold-500">{fmt(buyTotal)}</span>
+                    <span className="text-xs text-slate-500">KWD/g</span>
+                  </div>
                   <PriceChangeIndicator spread={spread} />
                 </div>
               )

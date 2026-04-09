@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { User, Mail, Phone, Shield, Calendar, Hash, ShoppingBag, ArrowLeft } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
 import { adminApi, ordersApi } from '../../services/api'
+import { formatNationalityForDisplay } from '@/lib/registrationRegions'
 
 type UserRecord = {
   id: string
@@ -18,6 +20,21 @@ type UserRecord = {
   date_of_birth?: string | null
   nationality?: string | null
   civil_id?: string | null
+  terms_accepted_at?: string | null
+  privacy_policy_accepted_at?: string | null
+  terms_policy_version?: string | null
+  privacy_policy_version?: string | null
+}
+
+type CustomerProfileRecord = {
+  id?: string
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  governorate?: string | null
+  postal_code?: string | null
+  country?: string | null
+  user?: { id?: string | null }
 }
 
 type OrderRecord = {
@@ -47,10 +64,18 @@ function formatDate(d: string) {
 
 export default function AdminCustomerDetailPage() {
   const { userId } = useParams<{ userId: string }>()
+  const { i18n } = useTranslation()
+  const nationalityLocale = i18n.language?.startsWith('ar') ? 'ar' : 'en'
 
   const { data: detailUser, isLoading: detailLoading } = useQuery({
     queryKey: ['adminCustomerDetail', userId],
     queryFn: () => adminApi.getUser(userId!),
+    enabled: !!userId,
+  })
+
+  const { data: customerProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['adminCustomerProfileDetail', userId],
+    queryFn: () => adminApi.getCustomerProfileByUserId(userId!),
     enabled: !!userId,
   })
 
@@ -145,7 +170,12 @@ export default function AdminCustomerDetailPage() {
                 {(detailUser as UserRecord).nationality && (
                   <div className="flex items-center gap-2">
                     <span className="text-gold-100/60 w-24">Nationality</span>
-                    <span className="text-gold-100">{(detailUser as UserRecord).nationality}</span>
+                    <span className="text-gold-100">
+                      {formatNationalityForDisplay(
+                        (detailUser as UserRecord).nationality,
+                        nationalityLocale
+                      )}
+                    </span>
                   </div>
                 )}
                 {(detailUser as UserRecord).civil_id && (
@@ -154,6 +184,58 @@ export default function AdminCustomerDetailPage() {
                     <span className="text-gold-100">{(detailUser as UserRecord).civil_id}</span>
                   </div>
                 )}
+                <div className="flex items-center gap-2 sm:col-span-2">
+                  <span className="text-gold-100/60 w-24">Terms accepted</span>
+                  <span className="text-gold-100">
+                    {(detailUser as UserRecord).terms_accepted_at
+                      ? new Date((detailUser as UserRecord).terms_accepted_at as string).toLocaleString()
+                      : '—'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold-100/60 w-24">Terms version</span>
+                  <span className="text-gold-100">{(detailUser as UserRecord).terms_policy_version || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2 sm:col-span-2">
+                  <span className="text-gold-100/60 w-24">Privacy accepted</span>
+                  <span className="text-gold-100">
+                    {(detailUser as UserRecord).privacy_policy_accepted_at
+                      ? new Date((detailUser as UserRecord).privacy_policy_accepted_at as string).toLocaleString()
+                      : '—'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold-100/60 w-24">Privacy version</span>
+                  <span className="text-gold-100">{(detailUser as UserRecord).privacy_policy_version || '—'}</span>
+                </div>
+
+                {!profileLoading && customerProfile ? (
+                  <>
+                    <div className="flex items-center gap-2 sm:col-span-2">
+                      <span className="text-gold-100/60 w-24">Address</span>
+                      <span className="text-gold-100">
+                        {[customerProfile.address_line1, customerProfile.address_line2].filter(Boolean).join(', ') ||
+                          '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gold-100/60 w-24">City</span>
+                      <span className="text-gold-100">{customerProfile.city || '—'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gold-100/60 w-24">Governorate</span>
+                      <span className="text-gold-100">{customerProfile.governorate || '—'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gold-100/60 w-24">Postal code</span>
+                      <span className="text-gold-100">{customerProfile.postal_code || '—'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gold-100/60 w-24">Country</span>
+                      <span className="text-gold-100">{customerProfile.country || '—'}</span>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
 

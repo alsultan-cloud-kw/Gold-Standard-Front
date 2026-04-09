@@ -18,6 +18,10 @@ export interface User {
   date_of_birth?: string
   nationality?: string
   civil_id?: string
+  terms_accepted_at?: string | null
+  privacy_policy_accepted_at?: string | null
+  terms_policy_version?: string | null
+  privacy_policy_version?: string | null
 }
 
 export interface CustomerProfile {

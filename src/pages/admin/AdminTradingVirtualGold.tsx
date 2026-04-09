@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import AdminNav from '../../components/admin/AdminNav'
 import { goldTradingApi } from '../../services/api'
+import { toast } from 'sonner'
 
 type AdminSummary = {
   totals: {
@@ -36,9 +37,29 @@ type AdminSummary = {
 }
 
 export default function AdminTradingVirtualGold() {
+  const qc = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'trading', 'virtual-gold', 'summary'],
     queryFn: () => goldTradingApi.getAdminSummary() as Promise<AdminSummary>,
+  })
+  const { data: configData } = useQuery({
+    queryKey: ['admin', 'trading', 'config'],
+    queryFn: () => goldTradingApi.getTradingConfig() as Promise<{
+      buy_rate_adjust_add_kwd: number
+      sell_rate_adjust_add_kwd: number
+      updated_at: string
+    }>,
+  })
+  const [buyAdjust, setBuyAdjust] = useState('')
+  const [sellAdjust, setSellAdjust] = useState('')
+  const saveConfig = useMutation({
+    mutationFn: (payload: { buy_rate_adjust_add_kwd: number; sell_rate_adjust_add_kwd: number }) =>
+      goldTradingApi.updateTradingConfig(payload),
+    onSuccess: () => {
+      toast.success('Trading config updated')
+      qc.invalidateQueries({ queryKey: ['admin', 'trading', 'config'] })
+    },
+    onError: () => toast.error('Failed to update trading config'),
   })
 
   const summary = data
@@ -60,6 +81,59 @@ export default function AdminTradingVirtualGold() {
           <div>
             <h1 className="text-2xl font-bold gold-gradient-text-on-light">Virtual Gold Trading</h1>
             <p className="text-stone-600 mt-1">Positions + unrealized exposure + recent trades</p>
+          </div>
+        </div>
+
+        <div className="gold-card mb-6">
+          <h2 className="text-lg font-semibold text-gold-100 mb-3">AI Trading config</h2>
+          <p className="text-sm text-gold-100/70 mb-4">
+            Update buy/sell KWD additions (per gram) used by quotes and executed trades.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gold-100/70 block mb-1">Buy add (KWD/g)</label>
+              <input
+                type="number"
+                step="0.001"
+                value={buyAdjust}
+                placeholder={String(configData?.buy_rate_adjust_add_kwd ?? 0)}
+                onChange={(e) => setBuyAdjust(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gold-100/70 block mb-1">Sell add (KWD/g)</label>
+              <input
+                type="number"
+                step="0.001"
+                value={sellAdjust}
+                placeholder={String(configData?.sell_rate_adjust_add_kwd ?? 0)}
+                onChange={(e) => setSellAdjust(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const buy = buyAdjust.trim() === '' ? Number(configData?.buy_rate_adjust_add_kwd ?? 0) : Number(buyAdjust)
+                const sell = sellAdjust.trim() === '' ? Number(configData?.sell_rate_adjust_add_kwd ?? 0) : Number(sellAdjust)
+                if (!Number.isFinite(buy) || !Number.isFinite(sell)) {
+                  toast.error('Enter valid numeric percentages')
+                  return
+                }
+                saveConfig.mutate({ buy_rate_adjust_add_kwd: buy, sell_rate_adjust_add_kwd: sell })
+              }}
+              disabled={saveConfig.isPending}
+              className="px-4 py-2 rounded-lg bg-gold-500 text-black font-semibold hover:bg-gold-400 disabled:opacity-50"
+            >
+              {saveConfig.isPending ? 'Saving...' : 'Save config'}
+            </button>
+            <p className="text-xs text-gold-100/60">
+              Current: buy +{Number(configData?.buy_rate_adjust_add_kwd ?? 0).toFixed(3)} KWD/g / sell +
+              {Number(configData?.sell_rate_adjust_add_kwd ?? 0).toFixed(3)} KWD/g
+            </p>
           </div>
         </div>
 

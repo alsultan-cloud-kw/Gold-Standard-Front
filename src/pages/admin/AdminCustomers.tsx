@@ -90,6 +90,8 @@ export default function AdminCustomers() {
           </div>
         </div>
 
+        {/* Bank change requests moved to a dedicated tab: /admin/bank-requests */}
+
         <div className="flex gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
@@ -223,6 +225,7 @@ export default function AdminCustomers() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   )

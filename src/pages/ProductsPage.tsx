@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Grid3X3, List, SlidersHorizontal, ShoppingCart } from 'lucide-react'
-import { productsApi } from '../services/api'
+import { adminApi, productsApi, type DaralsabaekPublicRatesResponse } from '../services/api'
 import type { Product, Category } from '../types'
 import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { productImageSrc } from '../utils/productImage'
 import { productUnitPrice } from '../utils/productPrice'
 import { useCart } from '../contexts/CartContext'
+import type { ProductFetchTrendMap } from '../hooks/useProductPriceTrendSincePreviousFetch'
 
 export default function ProductsPage() {
   const { t, i18n } = useTranslation()
@@ -48,7 +49,7 @@ export default function ProductsPage() {
   }
 
   const productsResp = products as PaginatedResponse<Product> | undefined
-  const productList = productsResp?.results || []
+  const productList = useMemo(() => productsResp?.results ?? [], [productsResp])
 
   const categoriesResp = categories as PaginatedResponse<Category> | undefined
   const categoryList = categoriesResp?.results || []
@@ -77,6 +78,55 @@ export default function ProductsPage() {
     if (Number.isFinite(maxPrice) && unitPrice > maxPrice) return false
     return true
   })
+
+  type TrendDir = 'up' | 'down' | null
+  const prevBuyByCaratRef = useRef<Record<string, number | null>>({})
+  const [caratTrendMap, setCaratTrendMap] = useState<Record<string, TrendDir>>({})
+
+  const { data: ratesData } = useQuery({
+    queryKey: ['daralsabaekPublicRates'],
+    queryFn: adminApi.getDaralsabaekPublicRates,
+    refetchInterval: 20_000,
+    retry: 1,
+  })
+
+  useEffect(() => {
+    const rates = ratesData as DaralsabaekPublicRatesResponse | undefined
+    if (!rates?.succeeded) return
+
+    const currentByCarat: Record<string, number | null> = {}
+    for (const c of rates.carats ?? []) {
+      const m = String(c.key || '').match(/(\d{1,2})\s*K/i)
+      const cv = m ? Number(m[1]) : NaN
+      currentByCarat[String(cv)] =
+        Number.isFinite(cv) && typeof c.buyTotal === 'number' ? c.buyTotal : null
+    }
+
+    setCaratTrendMap((prev) => {
+      const next = { ...prev }
+      for (const [carat, cur] of Object.entries(currentByCarat)) {
+        const prevVal = prevBuyByCaratRef.current[carat]
+        if (prevVal != null && cur != null) {
+          if (cur > prevVal) next[carat] = 'up'
+          else if (cur < prevVal) next[carat] = 'down'
+          // if equal: keep last known direction (sticky)
+        }
+      }
+      return next
+    })
+
+    prevBuyByCaratRef.current = currentByCarat
+  }, [ratesData])
+
+  const fetchTrends = useMemo<ProductFetchTrendMap>(() => {
+    const out: ProductFetchTrendMap = {}
+    for (const p of productList) {
+      const carat = p.carat?.carat_value
+      const dir = carat != null ? caratTrendMap[String(carat)] ?? null : null
+      out[p.id] = { trend: dir, percent: null }
+    }
+    return out
+  }, [productList, caratTrendMap])
 
   const categoryLabel = (c: { name_en: string; name_ar?: string }) =>
     isAr && c.name_ar ? c.name_ar : c.name_en
@@ -291,7 +341,13 @@ export default function ProductsPage() {
                 : 'space-y-4'
               }>
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} viewMode={viewMode} isAr={isAr} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    viewMode={viewMode}
+                    isAr={isAr}
+                    fetchTrends={fetchTrends}
+                  />
                 ))}
               </div>
             )}
@@ -311,10 +367,12 @@ function ProductCard({
   product,
   viewMode,
   isAr,
+  fetchTrends,
 }: {
   product: Product
   viewMode: 'grid' | 'list'
   isAr: boolean
+  fetchTrends: ProductFetchTrendMap
 }) {
   const { t } = useTranslation()
   const { addToCart } = useCart()
@@ -328,6 +386,9 @@ function ProductCard({
       ? product.carat.display_name_ar
       : product.carat?.display_name_en
   const priceLocale = isAr ? 'ar-KW' : undefined
+  const ft = fetchTrends[product.id]
+  const trendOverride = ft?.trend ?? null
+  const percentOverride = ft?.percent ?? null
 
   const addButtonClass =
     'flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm shrink-0'
@@ -351,8 +412,14 @@ function ProductCard({
               {descSource ? `${descSource.substring(0, 100)}...` : ''}
             </p>
             <div className="flex items-center gap-4 flex-wrap">
-              <span className="price-tag inline-flex items-center gap-1.5">
-                <ProductPriceTrendArrow product={product} variant="dark" />
+              <span className="price-tag inline-flex items-center gap-2">
+                <ProductPriceTrendArrow
+                  product={product}
+                  variant="dark"
+                  showPercent
+                  trendOverride={trendOverride}
+                  percentOverride={percentOverride}
+                />
                 {unitPrice.toLocaleString(priceLocale)} KWD
               </span>
               <span className="text-sm text-gold-100/40">{caratLabel}</span>
@@ -394,8 +461,14 @@ function ProductCard({
           {productName}
         </h3>
         <p className="text-xs text-gold-100/50 mb-2">{product.weight_grams}g</p>
-        <div className="price-tag text-sm inline-flex items-center gap-1.5 flex-wrap">
-          <ProductPriceTrendArrow product={product} variant="dark" />
+        <div className="price-tag text-sm inline-flex items-center gap-2 flex-wrap">
+          <ProductPriceTrendArrow
+            product={product}
+            variant="dark"
+            showPercent
+            trendOverride={trendOverride}
+            percentOverride={percentOverride}
+          />
           <span>{unitPrice.toLocaleString(priceLocale)} KWD</span>
         </div>
       </Link>

@@ -5,14 +5,16 @@ import type { Product } from '../../types'
 import ProductPriceTrendArrow from '../ProductPriceTrendArrow'
 import { productImageSrc } from '../../utils/productImage'
 import { productUnitPrice, formatKwd } from '../../utils/productPrice'
+import type { ProductFetchTrendMap } from '../../hooks/useProductPriceTrendSincePreviousFetch'
 
 interface FeaturedProductsProps {
   title: string
   products: Product[]
   viewAllLink?: string
+  fetchTrends?: ProductFetchTrendMap
 }
 
-export default function FeaturedProducts({ title, products, viewAllLink }: FeaturedProductsProps) {
+export default function FeaturedProducts({ title, products, viewAllLink, fetchTrends }: FeaturedProductsProps) {
   const { addToCart } = useCart()
 
   if (!products || products.length === 0) {
@@ -44,6 +46,7 @@ export default function FeaturedProducts({ title, products, viewAllLink }: Featu
               key={product.id} 
               product={product} 
               onAddToCart={() => addToCart(product)}
+              fetchTrends={fetchTrends}
             />
           ))}
         </div>
@@ -64,8 +67,19 @@ export default function FeaturedProducts({ title, products, viewAllLink }: Featu
   )
 }
 
-function ProductCard({ product, onAddToCart }: { product: Product; onAddToCart: () => void }) {
+function ProductCard({
+  product,
+  onAddToCart,
+  fetchTrends,
+}: {
+  product: Product
+  onAddToCart: () => void
+  fetchTrends?: ProductFetchTrendMap
+}) {
   const imageSrc = productImageSrc(product)
+  const ft = fetchTrends?.[product.id]
+  const trendOverride = ft?.trend ?? null
+  const percentOverride = ft?.percent ?? null
   return (
     <div className="gold-card group">
       <Link to={`/products/${product.slug}`}>
@@ -118,8 +132,14 @@ function ProductCard({ product, onAddToCart }: { product: Product; onAddToCart: 
       </p>
       
       <div className="flex items-center justify-between gap-2">
-        <div className="price-tag inline-flex items-center gap-1.5 flex-wrap">
-          <ProductPriceTrendArrow product={product} variant="light" />
+        <div className="price-tag inline-flex items-center gap-2 flex-wrap">
+          <ProductPriceTrendArrow
+            product={product}
+            variant="dark"
+            showPercent
+            trendOverride={trendOverride}
+            percentOverride={percentOverride}
+          />
           <span>{productUnitPrice(product).toLocaleString()} KWD</span>
         </div>
         {product.live_buy_price_per_gram != null && (

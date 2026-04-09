@@ -30,9 +30,9 @@ export default function Footer() {
       { nameKey: 'footer.returnPolicy', href: '#' },
     ],
     legal: [
-      { nameKey: 'footer.privacyPolicy', href: '#' },
-      { nameKey: 'footer.termsOfService', href: '#' },
-      { nameKey: 'footer.cookiePolicy', href: '#' },
+      { nameKey: 'footer.privacyPolicy', href: '/privacy' },
+      { nameKey: 'footer.termsOfService', href: '/terms' },
+      { nameKey: 'footer.dataDeletion', href: '/data-deletion' },
     ],
   }
 

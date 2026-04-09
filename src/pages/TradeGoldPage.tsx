@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -95,13 +95,15 @@ export default function TradeGoldPage() {
   const trades = (Array.isArray(tradesData) ? tradesData : []) as Trade[]
 
   const quoteMutation = useMutation({
-    mutationFn: () => (side === 'buy' ? goldTradingApi.quoteBuy(payload) : goldTradingApi.quoteSell(payload)),
+    mutationFn: (vars: { side: TradeSide; payload: TradePayload }) =>
+      vars.side === 'buy' ? goldTradingApi.quoteBuy(vars.payload) : goldTradingApi.quoteSell(vars.payload),
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } }
       toast.error(e?.response?.data?.detail ?? t('tradeGold.quoteFailed'))
     },
   })
   const quote = (quoteMutation.data ?? null) as Quote | null
+  const latestQuoteKeyRef = useRef<string>('')
 
   const executeMutation = useMutation({
     mutationFn: (vars: { side: TradeSide; payload: TradePayload }) =>
@@ -128,6 +130,25 @@ export default function TradeGoldPage() {
 
   const canQuote =
     inputMode === 'grams' ? Number.isFinite(grams) && grams > 0 : Number.isFinite(kwdAmount) && kwdAmount > 0
+  const quoteKey = useMemo(() => {
+    const val = inputMode === 'grams' ? gramsInput.trim() : kwdInput.trim()
+    return `${side}|${caratValue}|${inputMode}|${val}`
+  }, [side, caratValue, inputMode, gramsInput, kwdInput])
+
+  useEffect(() => {
+    if (!canQuote) {
+      quoteMutation.reset()
+      latestQuoteKeyRef.current = ''
+      return
+    }
+    const timer = setTimeout(() => {
+      latestQuoteKeyRef.current = quoteKey
+      quoteMutation.mutate({ side, payload })
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [canQuote, quoteKey, side, payload])
+
+  const hasFreshQuote = canQuote && latestQuoteKeyRef.current === quoteKey && !quoteMutation.isPending && !!quote
 
   const openConfirmModal = () => {
     if (!quote) return
@@ -243,15 +264,7 @@ export default function TradeGoldPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                disabled={!canQuote || quoteMutation.isPending}
-                onClick={() => quoteMutation.mutate()}
-                className="px-4 py-2 rounded-lg border border-gold-500 text-gold-300 hover:bg-gold-500/10 disabled:opacity-50"
-              >
-                {quoteMutation.isPending ? t('tradeGold.quoting') : t('tradeGold.getQuote')}
-              </button>
-              <button
-                type="button"
-                disabled={!quote || executeMutation.isPending}
+                disabled={!hasFreshQuote || executeMutation.isPending}
                 onClick={openConfirmModal}
                 className="px-4 py-2 rounded-lg bg-gold-500 text-black font-semibold hover:bg-gold-400 disabled:opacity-50"
               >
@@ -263,9 +276,13 @@ export default function TradeGoldPage() {
               </button>
             </div>
 
-            {quote && (
+            {quoteMutation.isPending && canQuote && (
+              <div className="text-sm text-gold-100/70">{t('tradeGold.quoting')}</div>
+            )}
+
+            {quote && hasFreshQuote && (
               <div className="rounded-xl border border-gold-500/30 bg-charcoal-800/70 p-4 text-sm">
-                <div className="flex justify-between py-1"><span className="text-gold-100/70">{t('tradeGold.rate')}</span><span className="text-gold-100">{quote.price_per_gram.toFixed(3)} KWD/g</span></div>
+                <div className="flex justify-between py-1"><span className="text-gold-100/70">{t('tradeGold.adjustedRate')}</span><span className="text-gold-100">{quote.price_per_gram.toFixed(3)} KWD/g</span></div>
                 <div className="flex justify-between py-1"><span className="text-gold-100/70">{t('tradeGold.grams')}</span><span className="text-gold-100">{quote.grams.toFixed(3)} g</span></div>
                 {quote.base_kwd_amount != null && (
                   <div className="flex justify-between py-1"><span className="text-gold-100/70">{side === 'buy' ? t('tradeGold.baseBuy') : t('tradeGold.baseSell')}</span><span className="text-gold-100">{quote.base_kwd_amount.toFixed(3)} KWD</span></div>
@@ -395,7 +412,7 @@ export default function TradeGoldPage() {
 
             <div className="mt-4 space-y-2 rounded-xl border border-gold-500/20 bg-charcoal-800/70 p-4 text-sm">
               <div className="flex justify-between"><span className="text-gold-100/70">{t('tradeGold.carat')}</span><span className="text-gold-100">{confirmQuote.carat_display}</span></div>
-              <div className="flex justify-between"><span className="text-gold-100/70">{t('tradeGold.rate')}</span><span className="text-gold-100">{confirmQuote.price_per_gram.toFixed(3)} KWD/g</span></div>
+              <div className="flex justify-between"><span className="text-gold-100/70">{t('tradeGold.adjustedRate')}</span><span className="text-gold-100">{confirmQuote.price_per_gram.toFixed(3)} KWD/g</span></div>
               <div className="flex justify-between"><span className="text-gold-100/70">{t('tradeGold.grams')}</span><span className="text-gold-100">{confirmQuote.grams.toFixed(3)} g</span></div>
               {confirmQuote.base_kwd_amount != null && (
                 <div className="flex justify-between"><span className="text-gold-100/70">{confirmSide === 'buy' ? t('tradeGold.baseBuy') : t('tradeGold.baseSell')}</span><span className="text-gold-100">{confirmQuote.base_kwd_amount.toFixed(3)} KWD</span></div>

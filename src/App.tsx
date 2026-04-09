@@ -22,6 +22,9 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import DataDeletionPage from './pages/DataDeletionPage'
 
 // Admin Components
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -30,8 +33,10 @@ import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminInventory from './pages/admin/AdminInventory'
 import AdminPrices from './pages/admin/AdminPrices'
+import AdminScrappedData from './pages/admin/AdminScrappedData'
 import AdminCustomers from './pages/admin/AdminCustomers'
 import AdminCustomerDetailPage from './pages/admin/AdminCustomerDetailPage'
+import AdminBankChangeRequests from './pages/admin/AdminBankChangeRequests'
 import AdminReports from './pages/admin/AdminReports'
 import AdminAccounting from './pages/admin/AdminAccounting'
 import AdminAccounts from './pages/admin/AdminAccounts'
@@ -111,6 +116,9 @@ function App() {
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/branches" element={<BranchesPage />} />
                   <Route path="/prices" element={<PricesPage />} />
+                  <Route path="/terms" element={<TermsOfServicePage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/data-deletion" element={<DataDeletionPage />} />
                   <Route path="/sell-gold" element={<SellGoldPage />} />
                   <Route path="/trade-gold" element={<TradeGoldPage />} />
 
@@ -123,6 +131,8 @@ function App() {
                   <Route path="/admin/trading/virtual-gold" element={<AdminTradingVirtualGold />} />
                   <Route path="/admin/inventory" element={<AdminInventory />} />
                   <Route path="/admin/prices" element={<AdminPrices />} />
+                  <Route path="/admin/scrapped-data" element={<AdminScrappedData />} />
+                  <Route path="/admin/bank-requests" element={<AdminBankChangeRequests />} />
                   <Route path="/admin/customers" element={<AdminCustomers />} />
                   <Route path="/admin/customers/:userId" element={<AdminCustomerDetailPage />} />
                   <Route path="/admin/reports" element={<AdminReports />} />

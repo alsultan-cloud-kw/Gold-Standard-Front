@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Bell, ChevronDown, ChevronUp } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
@@ -7,22 +7,16 @@ import { adminApi, apiService, type DaralsabaekPublicRatesResponse } from '../..
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from 'sonner'
 import {
-  buildGoldPriceAlertPayloads,
+  buildSpotPriceAlertPayloads,
   type PriceReminderBuildErrorCode,
 } from '../../lib/priceReminderPayloads'
 
-const BUILD_ERROR_CODES = new Set<PriceReminderBuildErrorCode>([
-  'liveRatesUnavailable',
-  'selectCarat',
-  'selectBuyOrSell',
-  'invalidDelta',
-  'noValidRates',
-])
+const BUILD_ERROR_CODES = new Set<PriceReminderBuildErrorCode>(['liveRatesUnavailable', 'invalidDelta', 'noValidRates'])
 
 const LOGIN_REQUIRED = 'LOGIN_REQUIRED'
 
 /**
- * Sticky floating panel to set gold rate reminders on most storefront pages.
+ * Sticky floating panel to set spot rate reminders on most storefront pages.
  * Hidden on checkout (including order-success on /checkout) and admin routes.
  */
 export default function FloatingPriceReminder() {
@@ -44,30 +38,26 @@ export default function FloatingPriceReminder() {
   const res = data as DaralsabaekPublicRatesResponse | undefined
   const carats = res?.carats ?? []
 
-  const selectedCaratValues = carats
-    .map((c) => (typeof c.key === 'string' ? parseInt(c.key.replace('K', ''), 10) : NaN))
-    .filter((v) => Number.isFinite(v) && v > 0) as number[]
-
-  const [reminderSelectedCarats, setReminderSelectedCarats] = useState<number[]>([])
-  const [watchBuy, setWatchBuy] = useState(true)
-  const [watchSell, setWatchSell] = useState(true)
   const [deltaInput, setDeltaInput] = useState('1.000')
-  const [direction, setDirection] = useState<'increase' | 'decrease' | 'both'>('increase')
 
   const delta = parseFloat(deltaInput)
   const deltaValid = Number.isFinite(delta) && delta > 0
+
+  const watchSummary = useMemo(() => {
+    if (!res?.succeeded) return null
+    const goldKeys = carats.map((c) => c.key).filter(Boolean)
+    const hasSilver = !!(res.silver?.buyTotal != null || res.silver?.sellTotal != null)
+    const hasPlatinum = !!(res.platinum?.buyTotal != null || res.platinum?.sellTotal != null)
+    return { goldKeys, hasSilver, hasPlatinum }
+  }, [res, carats])
 
   const createAlertsMutation = useMutation({
     mutationFn: async () => {
       if (!isAuthenticated || !user) {
         throw new Error(LOGIN_REQUIRED)
       }
-      const built = buildGoldPriceAlertPayloads({
+      const built = buildSpotPriceAlertPayloads({
         res,
-        reminderSelectedCarats,
-        watchBuy,
-        watchSell,
-        direction,
         delta,
         deltaValid,
       })
@@ -76,7 +66,6 @@ export default function FloatingPriceReminder() {
     },
     onSuccess: () => {
       toast.success(t('priceReminder.toastSaved'))
-      setReminderSelectedCarats([])
       setOpen(false)
     },
     onError: (err: unknown) => {
@@ -100,13 +89,17 @@ export default function FloatingPriceReminder() {
   if (hidden) return null
 
   const ratesReady = !!res?.succeeded
-  const disabled = !isAuthenticated || !ratesReady || createAlertsMutation.isPending
+  const hasSpotRates =
+    ratesReady &&
+    (carats.length > 0 ||
+      res?.silver?.buyTotal != null ||
+      res?.silver?.sellTotal != null ||
+      res?.platinum?.buyTotal != null ||
+      res?.platinum?.sellTotal != null)
 
-  const directionLabels: Record<typeof direction, string> = {
-    increase: t('priceReminder.directionIncrease'),
-    decrease: t('priceReminder.directionDecrease'),
-    both: t('priceReminder.directionBoth'),
-  }
+  const inputDisabled = !hasSpotRates || createAlertsMutation.isPending
+  const saveDisabled =
+    !isAuthenticated || !hasSpotRates || !deltaValid || createAlertsMutation.isPending
 
   return (
     <div
@@ -146,7 +139,7 @@ export default function FloatingPriceReminder() {
             >
               {isLoading
                 ? t('priceReminder.subtitleLoading')
-                : ratesReady
+                : hasSpotRates
                   ? t('priceReminder.subtitleReady')
                   : t('priceReminder.subtitleUnavailable')}
             </span>
@@ -169,80 +162,29 @@ export default function FloatingPriceReminder() {
               </p>
             )}
 
-            <div className="pt-1">
-              <p className="text-xs uppercase tracking-wider text-gold-400/90 mb-2 font-medium">
-                {t('priceReminder.carat')}
+            <div className="rounded-lg border border-gold-500/20 bg-charcoal-900/50 px-3 py-3 space-y-2 text-sm text-gold-100/80">
+              <p className="text-xs uppercase tracking-wider text-gold-400/90 font-medium">
+                {t('priceReminder.watchSummaryTitle')}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {selectedCaratValues.map((cv) => {
-                  const checked = reminderSelectedCarats.includes(cv)
-                  return (
-                    <button
-                      key={cv}
-                      type="button"
-                      onClick={() =>
-                        setReminderSelectedCarats((prev) =>
-                          checked ? prev.filter((x) => x !== cv) : [...prev, cv]
-                        )
-                      }
-                      disabled={disabled}
-                      className={`px-3.5 py-2 rounded-lg border text-sm font-medium min-h-[2.5rem] ${
-                        checked
-                          ? 'border-amber-400/60 bg-amber-900/35 text-amber-100'
-                          : 'border-gold-500/35 bg-charcoal-900/60 text-gold-100'
-                      } disabled:opacity-45`}
-                    >
-                      {cv}K
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-5 text-sm text-gold-100/90">
-              <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gold-500/40"
-                  checked={watchBuy}
-                  onChange={(e) => setWatchBuy(e.target.checked)}
-                  disabled={disabled}
-                />
-                {t('priceReminder.buy')}
-              </label>
-              <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gold-500/40"
-                  checked={watchSell}
-                  onChange={(e) => setWatchSell(e.target.checked)}
-                  disabled={disabled}
-                />
-                {t('priceReminder.sell')}
-              </label>
-            </div>
-
-            <div>
-              <p className="text-xs uppercase tracking-wider text-gold-400/90 mb-2 font-medium">
-                {t('priceReminder.direction')}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(['increase', 'decrease', 'both'] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDirection(d)}
-                    disabled={disabled}
-                    className={`px-3.5 py-2 rounded-lg border text-sm font-medium min-h-[2.5rem] ${
-                      direction === d
-                        ? 'border-amber-400/60 bg-amber-900/35 text-amber-100'
-                        : 'border-gold-500/35 text-gold-100'
-                    } disabled:opacity-45`}
-                  >
-                    {directionLabels[d]}
-                  </button>
-                ))}
-              </div>
+              {watchSummary && watchSummary.goldKeys.length > 0 ? (
+                <p>
+                  <span className="text-gold-200/55">{t('priceReminder.watchGoldLabel')} </span>
+                  {watchSummary.goldKeys.join(', ')} — {t('priceReminder.watchBuySellBoth')}
+                </p>
+              ) : null}
+              {watchSummary?.hasSilver ? (
+                <p>
+                  <span className="text-gold-200/55">{t('priceReminder.watchSilverLabel')} </span>
+                  {t('priceReminder.watchBuySellBoth')}
+                </p>
+              ) : null}
+              {watchSummary?.hasPlatinum ? (
+                <p>
+                  <span className="text-gold-200/55">{t('priceReminder.watchPlatinumLabel')} </span>
+                  {t('priceReminder.watchBuySellBoth')}
+                </p>
+              ) : null}
+              <p className="text-xs text-gold-200/50 leading-relaxed pt-1">{t('priceReminder.watchHowItWorks')}</p>
             </div>
 
             <div>
@@ -256,7 +198,7 @@ export default function FloatingPriceReminder() {
                 min={0}
                 value={deltaInput}
                 onChange={(e) => setDeltaInput(e.target.value)}
-                disabled={disabled}
+                disabled={inputDisabled}
                 className="mt-2 w-full px-3 py-2.5 sm:py-3 rounded-lg bg-charcoal-900/70 border border-gold-500/30 text-gold-100 text-base tabular-nums"
               />
             </div>
@@ -264,7 +206,7 @@ export default function FloatingPriceReminder() {
             <button
               type="button"
               onClick={() => createAlertsMutation.mutate()}
-              disabled={disabled || !deltaValid}
+              disabled={saveDisabled}
               className="w-full py-3 sm:py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600 disabled:opacity-50 shadow-lg shadow-amber-900/30"
             >
               {createAlertsMutation.isPending

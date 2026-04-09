@@ -441,6 +441,15 @@ export const goldTradingApi = {
   getPositions: () => apiService.get<unknown[]>('/accounting/gold-trading/positions/'),
   getTrades: () => apiService.get<unknown[]>('/accounting/gold-trading/trades/'),
   getAdminSummary: () => apiService.get<unknown>('/accounting/gold-trading/admin-summary/'),
+  getTradingConfig: () =>
+    apiService.get<{ buy_rate_adjust_add_kwd: number; sell_rate_adjust_add_kwd: number; updated_at: string }>(
+      '/accounting/gold-trading/trading-config/'
+    ),
+  updateTradingConfig: (data: { buy_rate_adjust_add_kwd?: number; sell_rate_adjust_add_kwd?: number }) =>
+    apiService.patch<{ buy_rate_adjust_add_kwd: number; sell_rate_adjust_add_kwd: number; updated_at: string }>(
+      '/accounting/gold-trading/trading-config/',
+      data
+    ),
   quoteBuy: (data: { carat_value: number; grams?: number; kwd_amount?: number }) =>
     apiService.post<unknown>('/accounting/gold-trading/quote-buy/', data),
   quoteSell: (data: { carat_value: number; grams?: number; kwd_amount?: number }) =>
@@ -641,6 +650,30 @@ export const accountingApi = {
     apiService.get('/accounting/reports/balance_sheet/', { params: asOfDate ? { as_of_date: asOfDate } : {} }),
 }
 
+/** DRF page-number paginated list or raw array. */
+function unwrapResults<T>(data: { results?: T[] } | T[]): T[] {
+  if (Array.isArray(data)) return data
+  return data.results ?? []
+}
+
+export type BankChangeRequestRow = {
+  id: string
+  bank_name: string
+  iban: string
+  iban_proof?: string | null
+  iban_proof_url?: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  rejection_reason?: string
+  reviewed_at?: string | null
+  reviewed_by_name?: string | null
+  created_at: string
+  profile_id?: string
+  customer_name?: string
+  customer_email?: string | null
+  customer_phone?: string | null
+  customer_user_id?: string
+}
+
 // Accounts API (current user / customer profile)
 export const accountsApi = {
   /** For customers: returns their profile(s); for customers this will typically be a single entry. */
@@ -650,6 +683,19 @@ export const accountsApi = {
   /** Update customer profile by id. Supports FormData for file uploads. */
   updateProfile: (id: string, data: FormData | unknown) =>
     apiService.patch(`/accounts/profiles/${id}/`, data),
+
+  /** Customer's bank change requests (newest first; large page size so “latest” status is accurate). */
+  getMyBankChangeRequests: () =>
+    apiService
+      .get<{ results?: BankChangeRequestRow[] } | BankChangeRequestRow[]>(
+        '/accounts/bank-change-requests/',
+        { params: { page_size: 100 } }
+      )
+      .then(unwrapResults),
+
+  /** Submit bank detail change for admin approval (multipart). */
+  createBankChangeRequest: (formData: FormData) =>
+    apiService.post<BankChangeRequestRow>('/accounts/bank-change-requests/', formData),
 }
 
 // Price Alerts API (gold price reminders)
@@ -722,9 +768,36 @@ export const adminApi = {
   getCustomers: (params?: { page_size?: number }) =>
     apiService.get('/accounts/users/', { params: params?.page_size ? { page_size: params.page_size } : {} }),
 
+  /** Admin: pending (or filtered) bank account change requests. */
+  getBankChangeRequests: (params?: { status?: string; page_size?: number }) =>
+    apiService
+      .get<{ results?: BankChangeRequestRow[] }>('/accounts/bank-change-requests/', {
+        params: { page_size: 100, ...params },
+      })
+      .then(unwrapResults),
+
+  approveBankChangeRequest: (id: string) =>
+    apiService.post<BankChangeRequestRow>(`/accounts/bank-change-requests/${id}/approve/`),
+
+  rejectBankChangeRequest: (id: string, body: { reason?: string }) =>
+    apiService.post<BankChangeRequestRow>(`/accounts/bank-change-requests/${id}/reject/`, body),
+
   /** Admin: get a single user by id. Requires staff. */
   getUser: (userId: string) =>
     apiService.get(`/accounts/users/${userId}/`),
+
+  /**
+   * Admin: fetch a customer's profile (includes address fields).
+   * Implementation: list profiles (paged) and pick the one matching this userId.
+   * This keeps backend changes minimal while still showing the mobile-entered addresses.
+   */
+  getCustomerProfileByUserId: (userId: string) =>
+    apiService
+      .get<{ results?: any[] } | any[]>('/accounts/profiles/', {
+        params: { page_size: 500 },
+      })
+      .then(unwrapResults)
+      .then((rows) => rows.find((p) => p?.user?.id === userId) ?? null),
 
   /** Admin: update a user (e.g. is_active). Requires staff. */
   updateUser: (userId: string, data: { is_active?: boolean }) =>
@@ -744,6 +817,10 @@ export const adminApi = {
   getDaralsabaekPublicRates: () =>
     apiService.get<DaralsabaekPublicRatesResponse>('/scraping/daralsabaek/public-rates/'),
 
+  /** Public: saved metal price snapshots for chart (no auth). */
+  getMetalPriceHistory: (params: { metal: string; range: string }) =>
+    apiService.get<MetalPriceHistoryResponse>('/scraping/daralsabaek/price-history/', { params }),
+
   /** Admin: persist additional amounts so public page can show URL + add. Optional clubBuyAdd/clubSellAdd for members. */
   putDaralsabaekMarkup: (
     data: Record<string, { buyAdd: string; sellAdd: string; clubBuyAdd?: string; clubSellAdd?: string }>
@@ -760,6 +837,30 @@ export const adminApi = {
   getScrapedPricesLatest: () => {
     const token = localStorage.getItem('access_token')
     return apiService.get<ScrapedPriceRow[]>('/scraping/prices/latest/', {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+  },
+
+  getCustomWebsiteScrapes: (limit = 9) => {
+    const token = localStorage.getItem('access_token')
+    return apiService.get<WebsiteScrapeEntry[]>('/scraping/custom-websites/', {
+      params: { limit },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+  },
+
+  createCustomWebsiteScrapes: (urls: Array<string | { url: string; render_js?: boolean }>) => {
+    const token = localStorage.getItem('access_token')
+    return apiService.post<WebsiteScrapeEntry[]>(
+      '/scraping/custom-websites/',
+      { urls },
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined },
+    )
+  },
+
+  deleteCustomWebsiteScrape: (entryId: string) => {
+    const token = localStorage.getItem('access_token')
+    return apiService.delete<void>(`/scraping/custom-websites/${entryId}/`, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
   },
@@ -790,8 +891,8 @@ export type DaralsabaekMetalPricesResult = {
 export type DaralsabaekPublicCarat = {
   key: string
   /** URL base rate per gram (buy side) */
-  buy: number
-  sell: number
+  buy: number | null
+  sell: number | null
   buyAdd: number
   sellAdd: number
   /** Extra KWD/g for club members (on top of general total) */
@@ -803,12 +904,27 @@ export type DaralsabaekPublicCarat = {
   sellTotalClub?: number | null
 }
 
+export type DaralsabaekPublicMetalSpot = DaralsabaekPublicCarat
+
 export type DaralsabaekPublicRatesResponse = {
   succeeded: boolean
   message?: string
   goldOuncePrice?: number
   updateIntervalInSeconds?: number
   carats: DaralsabaekPublicCarat[]
+  /** Live silver KWD/g + markup (same shape as a carat row). */
+  silver?: DaralsabaekPublicMetalSpot | null
+  platinum?: DaralsabaekPublicMetalSpot | null
+  silverKiloPrice?: number | null
+}
+
+export type MetalPriceHistoryPoint = { t: string; v: number }
+
+export type MetalPriceHistoryResponse = {
+  metal: string
+  range: string
+  unit: string
+  points: MetalPriceHistoryPoint[]
 }
 
 export type DaralsabaekMetalPricesResponse = {
@@ -828,6 +944,37 @@ export type ScrapedPriceRow = {
   sell_price: string | null
   currency: string
   source_timestamp: string | null
+  scraped_at: string
+}
+
+export type WebsiteScrapeEntry = {
+  id: string
+  url: string
+  status: 'success' | 'failed'
+  page_title: string
+  meta_description: string
+  extracted_text: string
+  extracted_data: {
+    company?: { name?: string; website?: string }
+    headings?: string[]
+    table_rows?: { label: string; value: string }[]
+    gold_prices?: {
+      carat: string
+      buy_price?: number | null
+      sell_price?: number | null
+      buy_text?: string | null
+      sell_text?: string | null
+      currency?: string
+      snippet?: string
+      /** Single-line calculator (e.g. Alfa): show snippet, not buy/sell columns */
+      quote_only?: boolean
+    }[]
+    offers?: { text: string; percent?: number | null; amount?: number | null; currency?: string | null }[]
+    render_mode?: string
+    selenium_error?: string
+    crawl_sources?: { url: string; source: string; found_prices: number; selenium_error?: string }[]
+  }
+  error_message: string
   scraped_at: string
 }
 

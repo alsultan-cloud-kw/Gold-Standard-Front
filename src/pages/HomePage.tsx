@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -19,6 +19,10 @@ import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { productImageSrc } from '../utils/productImage'
 import { productUnitPrice } from '../utils/productPrice'
 import { useCart } from '../contexts/CartContext'
+import {
+  useProductPriceTrendSincePreviousFetch,
+  type ProductFetchTrendMap,
+} from '../hooks/useProductPriceTrendSincePreviousFetch'
 
 // Components
 import GoldPriceTicker from '../components/sections/GoldPriceTicker'
@@ -45,6 +49,19 @@ export default function HomePage() {
     queryKey: ['newArrivals'],
     queryFn: productsApi.getNewArrivals,
   })
+
+  const homeTrendProducts = useMemo(() => {
+    const m = new Map<string, Product>()
+    for (const p of (featuredProducts as Product[] | undefined) ?? []) {
+      m.set(p.id, p)
+    }
+    for (const p of (newArrivals as Product[] | undefined) ?? []) {
+      m.set(p.id, p)
+    }
+    return [...m.values()]
+  }, [featuredProducts, newArrivals])
+
+  const fetchTrends = useProductPriceTrendSincePreviousFetch(homeTrendProducts)
 
   const features = [
     { icon: Shield, titleKey: 'home.certifiedQuality', descKey: 'home.certifiedQualityDesc' },
@@ -198,6 +215,7 @@ export default function HomePage() {
         title={t('home.featuredCollection')} 
         products={featuredProducts as Product[] || []} 
         viewAllLink="/products"
+        fetchTrends={fetchTrends}
       />
 
       {/* New Arrivals */}
@@ -219,7 +237,13 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {(newArrivals as Product[] || []).slice(0, 5).map((product) => (
-              <ProductCard key={product.id} product={product} compact lang={i18n.language} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                compact
+                lang={i18n.language}
+                fetchTrends={fetchTrends}
+              />
             ))}
           </div>
         </div>
@@ -414,12 +438,26 @@ export default function HomePage() {
 }
 
 // Product Card Component (New Arrivals + any compact grid on home)
-function ProductCard({ product, compact = false, lang = 'en' }: { product: Product; compact?: boolean; lang?: string }) {
+function ProductCard({
+  product,
+  compact = false,
+  lang = 'en',
+  fetchTrends,
+}: {
+  product: Product
+  compact?: boolean
+  lang?: string
+  fetchTrends: ProductFetchTrendMap
+}) {
   const { t } = useTranslation()
   const { addToCart } = useCart()
   const imageSrc = productImageSrc(product)
   const productName = lang === 'ar' && product.name_ar ? product.name_ar : product.name_en
   const caratName = lang === 'ar' && product.carat?.display_name_ar ? product.carat.display_name_ar : product.carat?.display_name_en
+
+  const ft = fetchTrends[product.id]
+  const trendOverride = ft?.trend ?? null
+  const percentOverride = ft?.percent ?? null
 
   return (
     <div className="gold-card-light overflow-hidden group flex flex-col">
@@ -446,8 +484,14 @@ function ProductCard({ product, compact = false, lang = 'en' }: { product: Produ
           {productName}
         </h3>
         <p className="text-xs text-stone-500 mb-2 font-medium">{product.weight_grams}g</p>
-        <div className="price-tag-light text-sm inline-flex items-center gap-1.5 flex-wrap">
-          <ProductPriceTrendArrow product={product} variant="light" />
+        <div className="price-tag-light text-sm inline-flex items-center gap-2 flex-wrap">
+          <ProductPriceTrendArrow
+            product={product}
+            variant="light"
+            showPercent
+            trendOverride={trendOverride}
+            percentOverride={percentOverride}
+          />
           <span>{productUnitPrice(product).toLocaleString()} KWD</span>
         </div>
       </Link>

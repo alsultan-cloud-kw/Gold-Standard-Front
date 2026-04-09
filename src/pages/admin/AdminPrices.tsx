@@ -11,6 +11,10 @@ import { toast } from 'sonner'
 
 const CARAT_KEYS = ['24K', '22K', '21K', '18K'] as const
 type CaratKey = (typeof CARAT_KEYS)[number]
+const PRECIOUS_METAL_KEYS = ['Silver', 'Platinum'] as const
+type PreciousKey = (typeof PRECIOUS_METAL_KEYS)[number]
+type MarkupKey = CaratKey | PreciousKey
+const ALL_MARKUP_KEYS: MarkupKey[] = [...CARAT_KEYS, ...PRECIOUS_METAL_KEYS]
 
 const MARKUP_STORAGE_KEY = 'adminGoldAdditionalKwdPerGram'
 
@@ -40,7 +44,7 @@ function loadAdditional(): Record<string, MarkupRow> {
     if (!raw) return {}
     const p = JSON.parse(raw) as Record<string, Partial<MarkupRow>>
     const out: Record<string, MarkupRow> = {}
-    for (const k of CARAT_KEYS) {
+    for (const k of ALL_MARKUP_KEYS) {
       const v = p[k]
       out[k] = {
         buyAdd: v?.buyAdd ?? '0',
@@ -79,6 +83,15 @@ function getApiRates(
   }
 }
 
+function getApiRatesForMarkupKey(
+  r: NonNullable<DaralsabaekMetalPricesResponse['result']>,
+  key: MarkupKey
+): { buy: number; sell: number } {
+  if (key === 'Silver') return { buy: r.purchaseSilverPrice, sell: r.sellSilverPrice }
+  if (key === 'Platinum') return { buy: r.purchasePlatinumPrice, sell: r.sellPlatinumPrice }
+  return getApiRates(r, key)
+}
+
 function getRatesByCaratValue(
   r: NonNullable<DaralsabaekMetalPricesResponse['result']>,
   caratValue: number
@@ -96,7 +109,7 @@ export default function AdminPrices() {
   const queryClient = useQueryClient()
 
   const setAdd = useCallback(
-    (key: CaratKey, field: keyof MarkupRow, value: string) => {
+    (key: MarkupKey, field: keyof MarkupRow, value: string) => {
       setAdditional((prev) => {
         const row: MarkupRow = {
           buyAdd: prev[key]?.buyAdd ?? '0',
@@ -119,7 +132,7 @@ export default function AdminPrices() {
     if (syncRef.current) clearTimeout(syncRef.current)
     syncRef.current = setTimeout(() => {
       const payload: Record<string, MarkupRow> = {}
-      for (const k of CARAT_KEYS) {
+      for (const k of ALL_MARKUP_KEYS) {
         payload[k] = additional[k] ?? {
           buyAdd: '0',
           sellAdd: '0',
@@ -172,7 +185,7 @@ export default function AdminPrices() {
   const handleSave = async () => {
     // Sync additional amounts to backend so public /prices shows URL + add
     const payload: Record<string, MarkupRow> = {}
-    for (const k of CARAT_KEYS) {
+    for (const k of ALL_MARKUP_KEYS) {
       payload[k] = additional[k] ?? {
         buyAdd: '0',
         sellAdd: '0',
@@ -326,8 +339,8 @@ export default function AdminPrices() {
                         Buy / Sell KWD/g — live totals
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {CARAT_KEYS.map((key) => {
-                          const base = getApiRates(r, key)
+                        {ALL_MARKUP_KEYS.map((key) => {
+                          const base = getApiRatesForMarkupKey(r, key)
                           const buyAdd = additional[key]?.buyAdd ?? '0'
                           const sellAdd = additional[key]?.sellAdd ?? '0'
                           const clubBuyAdd = additional[key]?.clubBuyAdd ?? '0'
@@ -431,8 +444,8 @@ export default function AdminPrices() {
                         Type here — the cards above update immediately. Save writes URL + additional
                         to your gold prices.
                       </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {CARAT_KEYS.map((key) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                        {ALL_MARKUP_KEYS.map((key) => (
                           <div
                             key={key}
                             className="rounded-lg border border-gold-500/20 bg-charcoal-800/60 p-3"
@@ -476,8 +489,8 @@ export default function AdminPrices() {
                         for a better buy rate for members. Checkout and product APIs use this when
                         the customer has an active club membership.
                       </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {CARAT_KEYS.map((key) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                        {ALL_MARKUP_KEYS.map((key) => (
                           <div
                             key={`club-${key}`}
                             className="rounded-lg border border-amber-500/25 bg-charcoal-800/60 p-3"
@@ -514,24 +527,6 @@ export default function AdminPrices() {
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="text-sm font-semibold text-gold-400 mb-4">Silver &amp; platinum</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="gold-card">
-                          <h3 className="text-lg font-bold text-gold-100 mb-2">Silver</h3>
-                          <p className="text-gold-100 text-sm">
-                            Buy {fmt(r.purchaseSilverPrice)} · Sell {fmt(r.sellSilverPrice)} KWD/g
-                          </p>
-                        </div>
-                        <div className="gold-card">
-                          <h3 className="text-lg font-bold text-gold-100 mb-2">Platinum</h3>
-                          <p className="text-gold-100 text-sm">
-                            Buy {fmt(r.purchasePlatinumPrice)} · Sell{' '}
-                            {fmt(r.sellPlatinumPrice)} KWD/g
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   </>
                 )
               })()}

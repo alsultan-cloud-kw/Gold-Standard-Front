@@ -13,6 +13,8 @@ import {
   Receipt,
   Scale,
   Crown,
+  CreditCard,
+  Database,
 } from 'lucide-react'
 
 const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDashboard }[] = [
@@ -24,6 +26,8 @@ const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDas
   { path: '/admin/trading/virtual-gold', labelKey: 'admin.tradingVirtualGold', icon: Crown },
   { path: '/admin/inventory', labelKey: 'admin.inventory', icon: Warehouse },
   { path: '/admin/prices', labelKey: 'admin.prices', icon: Tag },
+  { path: '/admin/scrapped-data', labelKey: 'admin.scrappedData', icon: Database },
+  { path: '/admin/bank-requests', labelKey: 'admin.bankRequestsNav', icon: CreditCard },
   { path: '/admin/customers', labelKey: 'admin.customers', icon: Users },
   { path: '/admin/reports', labelKey: 'admin.reports', icon: BarChart3 },
   { path: '/admin/accounting', labelKey: 'admin.accounting', icon: Calculator },

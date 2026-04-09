@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { RegionFlagImg } from '@/components/RegionFlagImg'
 
 export default function Navbar() {
   const { t, i18n } = useTranslation()
@@ -145,9 +146,19 @@ export default function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 p-2 text-slate-700 hover:text-gold-600 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
-                      <span className="text-charcoal-950 font-bold text-sm">
-                        {user?.full_name?.charAt(0) || 'U'}
-                      </span>
+                      {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+                        <span className="inline-flex items-center justify-center rounded bg-charcoal-950/80 p-0.5 ring-1 ring-white/20">
+                          <RegionFlagImg
+                            code={user.nationality}
+                            size="md"
+                            className="w-5 h-3.5 rounded-[2px] ring-1 ring-gold-200/30"
+                          />
+                        </span>
+                      ) : (
+                        <span className="text-charcoal-950 font-bold text-sm">
+                          {user?.full_name?.charAt(0) || 'U'}
+                        </span>
+                      )}
                     </div>
                     <ChevronDown className="w-4 h-4 hidden sm:block" />
                   </button>
