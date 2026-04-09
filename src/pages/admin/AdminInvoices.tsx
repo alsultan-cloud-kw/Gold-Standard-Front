@@ -5,6 +5,16 @@ import AdminNav from '../../components/admin/AdminNav'
 import { invoicesApi } from '../../services/api'
 import { toast } from 'sonner'
 
+type InvoiceRow = {
+  id: string
+  invoice_number: string
+  invoice_type_display?: string
+  invoice_type?: string
+  status_display?: string
+  status?: string
+  created_at?: string
+}
+
 export default function AdminInvoices() {
   const queryClient = useQueryClient()
   const { data: invoicesData, isLoading } = useQuery({
@@ -45,8 +55,10 @@ export default function AdminInvoices() {
     onError: () => toast.error('Failed to send via WhatsApp'),
   })
 
-  const list = Array.isArray(invoicesData) ? invoicesData : (invoicesData as { results?: unknown[] })?.results ?? []
-  const pending = (pendingData as unknown[]) ?? []
+  const list: InvoiceRow[] = Array.isArray(invoicesData)
+    ? (invoicesData as InvoiceRow[])
+    : ((invoicesData as { results?: InvoiceRow[] })?.results ?? [])
+  const pending: InvoiceRow[] = Array.isArray(pendingData) ? (pendingData as InvoiceRow[]) : []
 
   return (
     <div className="min-h-screen py-8">
@@ -81,7 +93,7 @@ export default function AdminInvoices() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pending.map((inv: { id: string; invoice_number: string; invoice_type_display?: string; status_display?: string }) => (
+                  {pending.map((inv) => (
                     <tr key={inv.id} className="border-b border-gold-500/10">
                       <td className="py-3 px-4 font-mono text-gold-100">{inv.invoice_number}</td>
                       <td className="py-3 px-4 text-gold-100/80">{inv.invoice_type_display || inv.invoice_type}</td>
@@ -136,7 +148,7 @@ export default function AdminInvoices() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((inv: { id: string; invoice_number: string; invoice_type_display?: string; invoice_type?: string; status_display?: string; status?: string; created_at?: string }) => (
+                {list.map((inv) => (
                   <tr key={inv.id} className="border-b border-gold-500/10">
                     <td className="py-3 px-4 font-mono text-gold-100">{inv.invoice_number}</td>
                     <td className="py-3 px-4 text-gold-100/80">{inv.invoice_type_display || inv.invoice_type}</td>

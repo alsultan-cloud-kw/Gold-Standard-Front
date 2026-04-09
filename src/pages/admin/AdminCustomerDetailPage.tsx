@@ -26,17 +26,6 @@ type UserRecord = {
   privacy_policy_version?: string | null
 }
 
-type CustomerProfileRecord = {
-  id?: string
-  address_line1?: string | null
-  address_line2?: string | null
-  city?: string | null
-  governorate?: string | null
-  postal_code?: string | null
-  country?: string | null
-  user?: { id?: string | null }
-}
-
 type OrderRecord = {
   id: string
   invoice_number: string

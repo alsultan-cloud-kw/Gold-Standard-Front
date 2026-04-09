@@ -250,11 +250,11 @@ export default function HomePage() {
       </section>
 
       {/* Club Formation Marketing */}
-      <section className="py-20 bg-[#FAF7F2]">
+      <section className="py-20 bg-siteBg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center rounded-2xl border border-amber-900/20 bg-white/40 backdrop-blur-sm shadow-[0_0_40px_rgba(212,175,55,0.06)] overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center rounded-2xl border border-gold-800/25 bg-white/50 backdrop-blur-sm shadow-[0_0_40px_rgba(79,142,0,0.10)] overflow-hidden">
             <div className="p-8 md:p-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/15 border border-amber-400/40 mb-5">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold-500/15 border border-gold-500/40 mb-5">
                 <Shield className="w-4 h-4 gold-gradient-text-on-light" />
                 <span className="text-sm font-medium gold-gradient-text-on-light tracking-wide">{t('home.clubFormationPill')}</span>
               </div>
@@ -266,21 +266,21 @@ export default function HomePage() {
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-amber-800 mt-0.5" />
+                  <Shield className="w-5 h-5 text-gold-800 mt-0.5" />
                   <div>
                     <p className="font-semibold text-stone-900">{t('home.clubFormationBenefit1')}</p>
                     <p className="text-sm text-stone-600">{t('home.clubFormationBenefit1Desc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Award className="w-5 h-5 text-amber-800 mt-0.5" />
+                  <Award className="w-5 h-5 text-gold-800 mt-0.5" />
                   <div>
                     <p className="font-semibold text-stone-900">{t('home.clubFormationBenefit2')}</p>
                     <p className="text-sm text-stone-600">{t('home.clubFormationBenefit2Desc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="w-5 h-5 text-amber-800 mt-0.5" />
+                  <TrendingUp className="w-5 h-5 text-gold-800 mt-0.5" />
                   <div>
                     <p className="font-semibold text-stone-900">{t('home.clubFormationBenefit3')}</p>
                     <p className="text-sm text-stone-600">{t('home.clubFormationBenefit3Desc')}</p>
@@ -291,7 +291,7 @@ export default function HomePage() {
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
                   to="/dashboard?tab=club"
-                  className="gold-button inline-flex items-center justify-center gap-2 shadow-lg shadow-amber-900/20"
+                  className="gold-button inline-flex items-center justify-center gap-2 shadow-lg shadow-gold-900/25"
                 >
                   {t('home.clubFormationCta')}
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
@@ -300,9 +300,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative p-8 md:p-10 bg-gradient-to-br from-stone-950 via-amber-950 to-stone-950 text-stone-100 min-h-[280px]">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_30%,_rgba(251,191,36,0.16),_transparent_55%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_70%,_rgba(212,175,55,0.10),_transparent_55%)]" />
+            <div className="relative p-8 md:p-10 bg-gradient-to-br from-stone-950 via-[#1A3006] to-[#132705] text-stone-100 min-h-[280px]">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_30%,_rgba(133,227,7,0.20),_transparent_55%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_70%,_rgba(79,142,0,0.14),_transparent_55%)]" />
               <div className="relative">
                 <h3 className="text-xl font-semibold mb-3">{t('home.clubFormationCardTitle')}</h3>
                 <p className="text-sm text-stone-300 leading-relaxed mb-6">
@@ -315,16 +315,16 @@ export default function HomePage() {
                     { k: '22', label: 'home.clubFormationExampleCarat22' },
                     { k: '18', label: 'home.clubFormationExampleCarat18' },
                   ].map((x) => (
-                    <div key={x.k} className="rounded-xl border border-amber-500/20 bg-black/20 p-3">
+                    <div key={x.k} className="rounded-xl border border-gold-500/25 bg-black/20 p-3">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-semibold text-amber-200">{x.k}K</div>
+                        <div className="text-sm font-semibold text-gold-200">{x.k}K</div>
                         <div className="text-xs text-stone-300">{t(x.label)}</div>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-6 flex items-center gap-2 text-xs text-amber-200/80">
+                <div className="mt-6 flex items-center gap-2 text-xs text-gold-200/85">
                   <Truck className="w-4 h-4" />
                   {t('home.clubFormationDeliveryHint')}
                 </div>
@@ -382,11 +382,11 @@ export default function HomePage() {
       <Testimonials />
 
       {/* CTA Section — dark panel so light text reads clearly */}
-      <section className="py-20 bg-[#FAF7F2]">
+      <section className="py-20 bg-siteBg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-2xl overflow-hidden border border-amber-900/20 shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-amber-950 to-stone-950" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(251,191,36,0.08),_transparent_65%)]" />
+          <div className="relative rounded-2xl overflow-hidden border border-gold-900/30 shadow-xl shadow-gold-900/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-[#1B3208] to-[#122406]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(133,227,7,0.14),_transparent_65%)]" />
             <div className="relative px-8 py-16 md:px-16 md:py-20 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-stone-50 mb-4">
                 {t('home.readyToTrade')}
@@ -400,7 +400,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   to="/contact"
-                  className="px-6 py-3 rounded-lg font-medium text-stone-100 border border-amber-400/50 bg-white/5 hover:bg-amber-500/15 transition-all"
+                  className="px-6 py-3 rounded-lg font-medium text-stone-100 border border-gold-400/55 bg-white/5 hover:bg-gold-500/15 transition-all"
                 >
                   {t('home.contactSales')}
                 </Link>

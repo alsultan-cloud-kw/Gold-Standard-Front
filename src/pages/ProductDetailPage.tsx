@@ -3,10 +3,9 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ShoppingCart, Share2, Truck, Shield, ChevronRight } from 'lucide-react'
-import { productsApi, inventoryApi } from '../services/api'
+import { productsApi } from '../services/api'
 import { useCart } from '../contexts/CartContext'
 import { productUnitPrice, formatKwd } from '../utils/productPrice'
-import { toast } from 'sonner'
 
 export default function ProductDetailPage() {
   const { t, i18n } = useTranslation()
@@ -14,8 +13,6 @@ export default function ProductDetailPage() {
   const priceLocale = isAr ? 'ar-KW' : undefined
   const { slug } = useParams<{ slug: string }>()
   const [selectedImage, setSelectedImage] = useState(0)
-  const [customWeight, setCustomWeight] = useState<number | ''>('')
-  const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null)
   const [showBarcodeZoom, setShowBarcodeZoom] = useState(false)
   const { addToCart } = useCart()
 
@@ -24,22 +21,6 @@ export default function ProductDetailPage() {
     queryFn: () => productsApi.getProduct(slug!),
     enabled: !!slug,
   })
-
-  const { data: inventory } = useQuery({
-    queryKey: ['inventory', (product as any)?.id],
-    queryFn: () => inventoryApi.getInventory({ product: (product as any)?.id }),
-    enabled: !!(product as any)?.id,
-  })
-
-  const handleCalculatePrice = async () => {
-    if (!customWeight) return
-    try {
-      const result = await productsApi.calculatePrice(slug!, Number(customWeight))
-      setCalculatedPrice((result as any).total_price)
-    } catch (error) {
-      toast.error(t('productDetail.calculatePriceFailed'))
-    }
-  }
 
   const handleAddToCart = () => {
     if (product) {

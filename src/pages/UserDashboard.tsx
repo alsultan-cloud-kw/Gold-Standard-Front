@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { 
   User, 
   ShoppingBag, 
-  Heart, 
   Bell, 
   MapPin, 
   CreditCard,
@@ -1794,7 +1793,6 @@ function NotificationsTab() {
 }
 
 function TradeGoldTab() {
-  const { t } = useTranslation()
   const { data, isLoading } = useQuery({
     queryKey: ['goldPositions'],
     queryFn: () => goldTradingApi.getPositions() as Promise<unknown>,

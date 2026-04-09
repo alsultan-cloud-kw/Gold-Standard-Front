@@ -6,27 +6,27 @@
 
 @layer base {
   :root {
-    /* Site canvas — warm off-white (full-page background) */
-    --site-bg: #FAF7F2;
+    /* Site canvas — soft green-tinted off-white */
+    --site-bg: #F6FDEB;
     --background: 40 33% 96%;
     --foreground: 210 15% 20%;
     --card: 0 0% 100%;
     --card-foreground: 210 15% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 210 15% 20%;
-    --primary: 204 90% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 204 60% 90%;
-    --secondary-foreground: 210 15% 25%;
+    --primary: 86 94% 46%;
+    --primary-foreground: 220 25% 10%;
+    --secondary: 86 75% 88%;
+    --secondary-foreground: 95 55% 22%;
     --muted: 210 20% 92%;
     --muted-foreground: 210 10% 40%;
-    --accent: 204 90% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 86 94% 46%;
+    --accent-foreground: 220 25% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 210 20% 88%;
     --input: 210 20% 88%;
-    --ring: 204 90% 60%;
+    --ring: 86 94% 46%;
     --radius: 0.5rem;
     --sidebar-background: 220 18% 6%;
     --sidebar-foreground: 45 80% 95%;
@@ -38,11 +38,13 @@
     --sidebar-ring: 43 74% 49%;
     
     /* Panel/card background (modals, cards) — solid so modals are not transparent */
-    --panel-bg: #F5F0E8;
-    /* Custom Gold Colors */
-    --gold-primary: #D4AF37;
-    --gold-light: #F4E4BC;
-    --gold-dark: #AA8C2C;
+    --panel-bg: #F3FBDD;
+    /* Theme accent colors (derived from #85E307) */
+    --gold-primary: #85E307;
+    --gold-light: #ECFCCB;
+    --gold-dark: #3F6F00;
+    --theme-on-light: #0B0F19;
+    --theme-on-dark: #ECFCCB;
     --charcoal-primary: #0B0F19;
     --charcoal-light: #1F2937;
   }
@@ -79,7 +81,7 @@
 @layer components {
   /* Gold gradient text — use on dark backgrounds */
   .gold-gradient-text {
-    background: linear-gradient(135deg, #F4E4BC 0%, #D4AF37 50%, #AA8C2C 100%);
+    background: linear-gradient(135deg, #ECFCCB 0%, #85E307 50%, #4F8E00 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -87,7 +89,7 @@
 
   /* Dark gold gradient for light backgrounds — readable luxury heading */
   .gold-gradient-text-on-light {
-    background: linear-gradient(135deg, #78350F 0%, #B45309 40%, #92400E 100%);
+    background: linear-gradient(135deg, #345900 0%, #4F8E00 40%, #3F6F00 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -96,64 +98,64 @@
   /* Gold button */
   .gold-button {
     @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
-    background: linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%);
+    background: linear-gradient(135deg, #85E307 0%, #4F8E00 100%);
     color: #0B0F19;
   }
   
   .gold-button:hover {
-    background: linear-gradient(135deg, #F4E4BC 0%, #D4AF37 100%);
+    background: linear-gradient(135deg, #ECFCCB 0%, #85E307 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 8px 25px rgba(133, 227, 7, 0.3);
   }
   
   /* Gold border */
   .gold-border {
     border: 1px solid transparent;
     background: linear-gradient(var(--charcoal-primary), var(--charcoal-primary)) padding-box,
-                linear-gradient(135deg, #D4AF37, #AA8C2C) border-box;
+                linear-gradient(135deg, #85E307, #4F8E00) border-box;
   }
   
  /* Card with gold accent */
 .gold-card {
   @apply rounded-xl p-6;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(251, 191, 36, 0.15), transparent 55%),
-    linear-gradient(140deg, #111827 0%, #563205 45%, #451a03 100%);
-  border: 1px solid rgba(212, 175, 55, 0.35);
+    radial-gradient(ellipse at 20% 10%, rgba(133, 227, 7, 0.18), transparent 55%),
+    linear-gradient(140deg, #111827 0%, #1f3d08 45%, #152b05 100%);
+  border: 1px solid rgba(133, 227, 7, 0.35);
 }
   
   .gold-card:hover {
-    border-color: rgba(212, 175, 55, 0.5);
-    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.1);
+    border-color: rgba(133, 227, 7, 0.5);
+    box-shadow: 0 8px 32px rgba(133, 227, 7, 0.12);
   }
 
   /* Light card for sections on cream/sky — dark text, gold border */
   .gold-card-light {
     @apply rounded-xl p-6;
-    background: linear-gradient(180deg, #FFFBF5 0%, #FFF8EE 100%);
-    border: 1px solid rgba(180, 83, 9, 0.18);
-    box-shadow: 0 4px 24px rgba(120, 53, 15, 0.06);
+    background: linear-gradient(180deg, #FAFEEA 0%, #F3FBDD 100%);
+    border: 1px solid rgba(79, 142, 0, 0.22);
+    box-shadow: 0 4px 24px rgba(52, 89, 0, 0.08);
   }
 
   .gold-card-light:hover {
-    border-color: rgba(212, 175, 55, 0.45);
-    box-shadow: 0 12px 40px rgba(180, 83, 9, 0.1);
+    border-color: rgba(133, 227, 7, 0.5);
+    box-shadow: 0 12px 40px rgba(79, 142, 0, 0.12);
   }
 
   /* Price tag on light cards */
   .price-tag-light {
     @apply inline-flex items-center px-4 py-2 rounded-lg font-semibold;
-    background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(252, 211, 77, 0.25) 100%);
-    border: 1px solid rgba(180, 83, 9, 0.25);
-    color: #78350F;
+    background: linear-gradient(135deg, rgba(236, 252, 203, 0.95) 0%, rgba(133, 227, 7, 0.22) 100%);
+    border: 1px solid rgba(79, 142, 0, 0.25);
+    color: #345900;
   }
   
   /* Price tag */
   .price-tag {
     @apply inline-flex items-center px-4 py-2 rounded-lg font-semibold;
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(170, 140, 44, 0.1) 100%);
-    border: 1px solid rgba(212, 175, 55, 0.3);
-    color: #F4E4BC;
+    background: linear-gradient(135deg, rgba(133, 227, 7, 0.18) 0%, rgba(79, 142, 0, 0.15) 100%);
+    border: 1px solid rgba(133, 227, 7, 0.32);
+    color: #ECFCCB;
   }
   
   /* Live price indicator */
@@ -169,7 +171,7 @@
   /* Section divider */
   .gold-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, #D4AF37 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, #85E307 50%, transparent 100%);
   }
   
   /* Scrollbar styling */
@@ -183,16 +185,24 @@
   }
   
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #D4AF37, #AA8C2C);
+    background: linear-gradient(180deg, #85E307, #4F8E00);
     border-radius: 4px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #F4E4BC, #D4AF37);
+    background: linear-gradient(180deg, #ECFCCB, #85E307);
   }
 }
 
 @layer utilities {
+  .text-on-theme-light {
+    color: var(--theme-on-light);
+  }
+
+  .text-on-theme-dark {
+    color: var(--theme-on-dark);
+  }
+
   /* Animation utilities */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out;
@@ -224,10 +234,10 @@
   
   @keyframes glow {
     from {
-      box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+      box-shadow: 0 0 5px rgba(133, 227, 7, 0.3);
     }
     to {
-      box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+      box-shadow: 0 0 20px rgba(133, 227, 7, 0.6);
     }
   }
 

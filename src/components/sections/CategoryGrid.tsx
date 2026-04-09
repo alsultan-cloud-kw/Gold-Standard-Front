@@ -207,7 +207,7 @@ export default function CategoryGrid() {
 
   if (isLoading) {
     return (
-      <section className="py-20 md:py-28 bg-[#FAF7F2] border-y border-amber-900/5">
+      <section className="py-20 md:py-28 bg-siteBg border-y border-gold-900/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-8 w-48 bg-stone-200/80 rounded-lg mx-auto mb-3 animate-pulse" />
           <div className="h-3 w-64 bg-stone-200/50 rounded-lg mx-auto mb-10 animate-pulse" />
@@ -225,21 +225,21 @@ export default function CategoryGrid() {
   const ActiveIcon = active ? categoryIcons[active.slug] || Gem : Gem
 
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden border-y border-amber-900/8">
-      <div className="absolute inset-0 bg-[#FAF7F2]" />
+    <section className="relative py-20 md:py-28 overflow-hidden border-y border-gold-900/12">
+      <div className="absolute inset-0 bg-siteBg" />
       <div
         className="absolute inset-0 opacity-[0.85]"
         style={{
           background:
-            'radial-gradient(ellipse 120% 80% at 100% 0%, rgba(212, 175, 55, 0.14), transparent 50%), radial-gradient(ellipse 90% 70% at 0% 100%, rgba(120, 53, 15, 0.06), transparent 45%), linear-gradient(180deg, #FAF7F2 0%, #F3EBE0 100%)',
+            'radial-gradient(ellipse 120% 80% at 100% 0%, rgba(133, 227, 7, 0.16), transparent 50%), radial-gradient(ellipse 90% 70% at 0% 100%, rgba(52, 89, 0, 0.10), transparent 45%), linear-gradient(180deg, #F6FDEB 0%, #ECFCCB 100%)',
         }}
       />
-      <div className="absolute top-24 left-[8%] w-px h-32 bg-gradient-to-b from-amber-700/25 to-transparent hidden lg:block" />
-      <div className="absolute bottom-32 right-[12%] w-px h-24 bg-gradient-to-t from-amber-700/20 to-transparent hidden lg:block" />
+      <div className="absolute top-24 left-[8%] w-px h-32 bg-gradient-to-b from-gold-700/35 to-transparent hidden lg:block" />
+      <div className="absolute bottom-32 right-[12%] w-px h-24 bg-gradient-to-t from-gold-700/30 to-transparent hidden lg:block" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="text-center mb-8 md:mb-10 max-w-lg mx-auto">
-          <p className="text-[10px] md:text-[11px] font-semibold tracking-[0.3em] uppercase text-amber-800/70 mb-2">
+          <p className="text-[10px] md:text-[11px] font-semibold tracking-[0.3em] uppercase text-gold-800 mb-2">
             {t('home.browseByCategory')}
           </p>
           <h2 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight">
@@ -260,24 +260,24 @@ export default function CategoryGrid() {
                 aria-pressed={isOn}
                 className={`group flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full border transition-all duration-300 ${
                   isOn
-                    ? 'border-amber-600/50 bg-white shadow-[0_8px_30px_-8px_rgba(146,64,14,0.35)] ring-2 ring-amber-500/25 scale-[1.02]'
-                    : 'border-stone-300/60 bg-white/60 hover:bg-white hover:border-amber-500/35 hover:shadow-md'
+                    ? 'border-gold-700/55 bg-white shadow-[0_8px_30px_-8px_rgba(79,142,0,0.35)] ring-2 ring-gold-500/30 scale-[1.02]'
+                    : 'border-gold-800/20 bg-white/70 hover:bg-white hover:border-gold-600/45 hover:shadow-md'
                 }`}
               >
                 <span
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full overflow-hidden border transition-colors ${
-                    isOn ? 'border-amber-400/50 bg-amber-50' : 'border-stone-200 bg-stone-50 group-hover:border-amber-200'
+                    isOn ? 'border-gold-500/60 bg-gold-100' : 'border-gold-800/15 bg-gold-50 group-hover:border-gold-300'
                   }`}
                 >
                   {thumb ? (
                     <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
                   ) : (
-                    <Icon className="h-5 w-5 text-amber-700/60" />
+                    <Icon className="h-5 w-5 text-gold-800/70" />
                   )}
                 </span>
                 <span
                   className={`text-sm font-semibold tracking-tight ${
-                    isOn ? 'text-amber-950' : 'text-stone-800'
+                    isOn ? 'text-gold-900' : 'text-stone-800'
                   }`}
                 >
                   {rootLabel(cat)}
@@ -292,7 +292,7 @@ export default function CategoryGrid() {
             key={active.slug}
             className="relative overflow-hidden rounded-[1.75rem] md:rounded-[2rem] border border-stone-900/12 shadow-[0_25px_80px_-20px_rgba(28,25,23,0.45)] animate-category-spotlight"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950" />
+            <div className="absolute inset-0 bg-gradient-to-br from-stone-950 via-[#162906] to-[#214108]" />
             {activeImg ? (
               <div
                 className="absolute inset-0 opacity-25 bg-cover bg-center scale-105 blur-[2px]"
@@ -300,12 +300,12 @@ export default function CategoryGrid() {
               />
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-900/92 to-stone-900/75" />
-            <div className="absolute top-0 right-0 w-[60%] h-full bg-[radial-gradient(ellipse_at_70%_30%,rgba(251,191,36,0.12),transparent_55%)] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[60%] h-full bg-[radial-gradient(ellipse_at_70%_30%,rgba(133,227,7,0.16),transparent_55%)] pointer-events-none" />
 
             <div className="relative grid lg:grid-cols-12 gap-0">
               <div className="lg:col-span-4 xl:col-span-4 p-6 md:p-8 lg:p-10 flex flex-col justify-between min-h-[200px] lg:min-h-[280px] border-b lg:border-b-0 lg:border-r border-white/[0.08]">
                 <div>
-                  <p className="text-amber-200/70 text-[10px] font-semibold tracking-[0.2em] uppercase mb-2">
+                  <p className="text-gold-200/80 text-[10px] font-semibold tracking-[0.2em] uppercase mb-2">
                     {t('home.collectionLabel')}
                   </p>
                   <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-white tracking-tight leading-tight mb-4">
@@ -314,7 +314,7 @@ export default function CategoryGrid() {
                 </div>
                 <Link
                   to={`/products?category=${encodeURIComponent(active.slug)}`}
-                  className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-900/30 hover:from-amber-400 hover:to-amber-500 transition-colors"
+                  className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-gold-500 to-gold-700 px-5 py-2.5 text-sm font-semibold text-on-theme-light shadow-lg shadow-gold-900/30 hover:from-gold-400 hover:to-gold-600 transition-colors"
                 >
                   {t('home.viewAll')}
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
@@ -323,7 +323,7 @@ export default function CategoryGrid() {
 
               <div className="lg:col-span-8 xl:col-span-8 p-5 md:p-8 lg:p-10 bg-black/20">
                 {subs.length > 0 && (
-                  <p className="text-amber-200/60 text-[10px] font-semibold tracking-[0.2em] uppercase mb-3">
+                  <p className="text-gold-200/70 text-[10px] font-semibold tracking-[0.2em] uppercase mb-3">
                     {t('home.subcategoriesLabel')}
                   </p>
                 )}
@@ -339,7 +339,7 @@ export default function CategoryGrid() {
                   <div className="rounded-2xl border border-white/15 bg-white/[0.08] backdrop-blur-sm p-6 text-center">
                     <Link
                       to={`/products?category=${encodeURIComponent(active.slug)}`}
-                      className="inline-flex items-center gap-2 text-sm text-amber-200 font-semibold hover:text-amber-100"
+                      className="inline-flex items-center gap-2 text-sm text-gold-200 font-semibold hover:text-gold-100"
                     >
                       {t('home.viewAll')}
                       <ArrowRight className="w-4 h-4 rtl:rotate-180" />
@@ -357,7 +357,7 @@ export default function CategoryGrid() {
               type="button"
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={!hasPrev}
-              className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 shadow-sm hover:border-amber-400/50 disabled:opacity-35 disabled:pointer-events-none"
+              className="inline-flex items-center gap-2 rounded-full border border-gold-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 shadow-sm hover:border-gold-600/50 disabled:opacity-35 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
               Previous
@@ -366,7 +366,7 @@ export default function CategoryGrid() {
               type="button"
               onClick={() => hasNext && setPage((p) => p + 1)}
               disabled={!hasNext}
-              className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 shadow-sm hover:border-amber-400/50 disabled:opacity-35 disabled:pointer-events-none"
+              className="inline-flex items-center gap-2 rounded-full border border-gold-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 shadow-sm hover:border-gold-600/50 disabled:opacity-35 disabled:pointer-events-none"
             >
               Next
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />

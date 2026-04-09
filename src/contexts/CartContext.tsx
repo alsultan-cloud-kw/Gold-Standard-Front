@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi } from '../services/api'

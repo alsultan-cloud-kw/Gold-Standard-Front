@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { authApi } from '../services/api'
 import type { User, CustomerProfile } from '../types'
 import { isStorefrontRole } from '../constants/storefrontRoles'

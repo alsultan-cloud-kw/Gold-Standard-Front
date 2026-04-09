@@ -51,7 +51,6 @@ import AdminTradingBuybacks from './pages/admin/AdminTradingBuybacks'
 import AdminTradingVirtualGold from './pages/admin/AdminTradingVirtualGold'
 import SellGoldPage from './pages/SellGoldPage'
 import TradeGoldPage from './pages/TradeGoldPage'
-import JoinClubPage from './pages/JoinClubPage'
 import AdminClubs from './pages/admin/AdminClubs'
 import FloatingPriceReminder from './components/reminders/FloatingPriceReminder'
 

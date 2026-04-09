@@ -33,6 +33,7 @@ type Buyback = {
   branch_name?: string
   sell_date: string
   payment_method_display?: string
+  payment_method?: string
   status: string
   status_display?: string
   total_weight: string

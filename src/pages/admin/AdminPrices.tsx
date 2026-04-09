@@ -247,14 +247,14 @@ export default function AdminPrices() {
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Gold Prices</h1>
             <p className="gold-gradient-text-on-light">Manage daily gold buy/sell prices</p>
           </div>
-          {/* <button
+          <button
             onClick={handleSave}
             disabled={updatePriceMutation.isPending || isLoading}
             className="gold-button flex items-center gap-2 disabled:opacity-50"
           >
             <Save className="w-5 h-5" />
             {updatePriceMutation.isPending ? 'Saving…' : 'Save Changes'}
-          </button> */}
+          </button>
         </div>
 
         <div className="gold-card mb-8">

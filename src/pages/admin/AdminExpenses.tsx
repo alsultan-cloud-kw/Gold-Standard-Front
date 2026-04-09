@@ -153,7 +153,7 @@ export default function AdminExpenses() {
           </button>
         </div>
 
-        {summaryData && (
+        {!!summaryData && (
           <div className="gold-card mb-8">
             <h2 className="text-lg font-semibold text-gold-100 mb-4">{t('admin.expenseSummaryByDate')}</h2>
             <div className="flex flex-wrap gap-4 mb-4">
@@ -206,7 +206,7 @@ export default function AdminExpenses() {
                 </tr>
               </thead>
               <tbody>
-                {pageItems.map((e: { id: string; expense_number: string; expense_date: string; category_display?: string; description?: string; branch_name?: string; amount: number }) => (
+                {pageItems.map((e: { id: string; expense_number: string; expense_date: string; category?: string; category_display?: string; description?: string; branch_name?: string; amount: number }) => (
                   <tr key={e.id} className="border-b border-gold-500/10">
                     <td className="py-3 px-4 font-mono text-gold-100">{e.expense_number}</td>
                     <td className="py-3 px-4 text-gold-100">{e.expense_date}</td>

@@ -319,7 +319,7 @@ export default function AdminPurchases() {
             {t('admin.addPurchase')}
           </button>
         </div>
-        {todayData && (
+        {!!todayData && (
           <div className="gold-card px-6 py-4 flex items-center gap-6 mb-6">
             <div>
               <p className="text-sm text-gold-100/70">{t('admin.todayPurchases')}</p>

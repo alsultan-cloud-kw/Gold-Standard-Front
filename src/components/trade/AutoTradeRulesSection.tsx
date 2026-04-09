@@ -210,20 +210,6 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
     patchMut.mutate({ id: editingId, body: buildBody(false) })
   }
 
-  const startEdit = (r: GoldAutoTradeRule) => {
-    setEditingId(r.id)
-    setForm({
-      caratId: r.carat,
-      minBuy: numFromApi(r.min_buy_rate_kwd_per_gram),
-      maxSell: numFromApi(r.max_sell_rate_kwd_per_gram),
-      autoBuyGrams: numFromApi(r.auto_buy_grams) || '1',
-      sellAll: r.sell_all_on_trigger,
-      autoSellGrams: numFromApi(r.auto_sell_grams),
-      cooldown: String(r.cooldown_seconds ?? 300),
-      enabled: r.is_enabled,
-    })
-  }
-
   const cancelEdit = () => {
     setEditingId(null)
     setForm(emptyForm())
