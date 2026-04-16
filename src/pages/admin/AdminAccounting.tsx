@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { BookOpen, FileText, ShoppingBag, Receipt, BarChart3, ShoppingCart, Scale } from 'lucide-react'
+import { BookOpen, FileText, ShoppingBag, Receipt, ShoppingCart, Scale } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi } from '../../services/api'
 
