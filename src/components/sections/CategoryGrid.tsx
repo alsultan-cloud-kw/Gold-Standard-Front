@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Circle, Link2, Watch, Gem, Crown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react'
+import { getApiBaseUrl } from '@/lib/apiBase'
 import { productsApi } from '../../services/api'
 import type { Category } from '../../types'
 
@@ -41,7 +42,7 @@ function categoryImageSrc(category: Category): string | null {
   if (c.image_url) return c.image_url
   if (!category.image) return null
   if (category.image.startsWith('http')) return category.image
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+  const apiBase = getApiBaseUrl()
   const origin = apiBase.replace(/\/api\/?$/, '')
   const path = category.image.startsWith('/') ? category.image : `/${category.image}`
   return `${origin}${path}`
@@ -85,7 +86,7 @@ function SubcategoryGrid({
           <button
             type="button"
             onClick={() => scrollSubRow(false)}
-            className="absolute left-0 top-1/2 z-20 hidden sm:flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-stone-900/85 text-amber-100 shadow-lg backdrop-blur-sm hover:bg-stone-800 hover:border-amber-400/40 transition-colors"
+            className="absolute left-0 top-1/2 z-20 hidden sm:flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-800 shadow-lg hover:bg-stone-50 transition-colors"
             aria-label={t('home.scrollSubcategoriesPrev')}
           >
             <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
@@ -93,7 +94,7 @@ function SubcategoryGrid({
           <button
             type="button"
             onClick={() => scrollSubRow(true)}
-            className="absolute right-0 top-1/2 z-20 hidden sm:flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-stone-900/85 text-amber-100 shadow-lg backdrop-blur-sm hover:bg-stone-800 hover:border-amber-400/40 transition-colors"
+            className="absolute right-0 top-1/2 z-20 hidden sm:flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-800 shadow-lg hover:bg-stone-50 transition-colors"
             aria-label={t('home.scrollSubcategoriesNext')}
           >
             <ChevronRight className="w-4 h-4 rtl:rotate-180" />
@@ -104,11 +105,11 @@ function SubcategoryGrid({
       {needsScroll && (
         <>
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-stone-950 via-stone-950/85 to-transparent sm:w-12"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white via-white/90 to-transparent sm:w-12"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-stone-950 via-stone-950/85 to-transparent sm:w-12"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white via-white/90 to-transparent sm:w-12"
             aria-hidden
           />
         </>
@@ -134,9 +135,9 @@ function SubcategoryGrid({
             <Link
               key={item.id}
               to={`/products?category=${encodeURIComponent(item.slug)}`}
-              className={`group flex min-h-[118px] sm:min-h-[128px] snap-start flex-col items-center gap-2 rounded-xl border border-white/12 bg-white/[0.93] p-2.5 shadow-md transition-all duration-300 hover:border-amber-400/50 hover:bg-white hover:shadow-lg hover:-translate-y-0.5 ${tileWidthClass}`}
+              className={`group product-card-lime flex min-h-[118px] sm:min-h-[128px] snap-start flex-col items-center gap-2 !p-2.5 shadow-md transition-all duration-300 hover:-translate-y-0.5 ${tileWidthClass}`}
             >
-              <span className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-amber-100 to-stone-100 ring-1 ring-stone-900/10">
+              <span className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl bg-white/70 ring-1 ring-black/10">
                 {img ? (
                   <img
                     src={img}
@@ -146,14 +147,14 @@ function SubcategoryGrid({
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center">
-                    <SubIcon className="h-7 w-7 text-amber-700/45" />
+                    <SubIcon className="h-7 w-7 text-black/35" />
                   </span>
                 )}
               </span>
-              <span className="w-full text-center text-[10px] sm:text-xs font-semibold leading-snug text-stone-900 line-clamp-2 group-hover:text-amber-950">
+              <span className="w-full text-center text-[10px] sm:text-xs font-semibold leading-snug text-black line-clamp-2">
                 {label}
               </span>
-              <span className="text-amber-800/80 group-hover:text-amber-900">
+              <span className="text-black/70 group-hover:text-black">
                 <ArrowRight className="mx-auto h-3 w-3 rtl:rotate-180" />
               </span>
             </Link>
@@ -207,7 +208,7 @@ export default function CategoryGrid() {
 
   if (isLoading) {
     return (
-      <section className="py-20 md:py-28 bg-siteBg border-y border-gold-900/10">
+      <section className="py-20 md:py-28 bg-gradient-to-b from-lime-100/90 via-white to-amber-50/40 border-y border-lime-900/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-8 w-48 bg-stone-200/80 rounded-lg mx-auto mb-3 animate-pulse" />
           <div className="h-3 w-64 bg-stone-200/50 rounded-lg mx-auto mb-10 animate-pulse" />
@@ -225,13 +226,12 @@ export default function CategoryGrid() {
   const ActiveIcon = active ? categoryIcons[active.slug] || Gem : Gem
 
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden border-y border-gold-900/12">
-      <div className="absolute inset-0 bg-siteBg" />
+    <section className="relative py-20 md:py-28 overflow-hidden border-y border-lime-900/10 bg-gradient-to-b from-lime-100 via-white to-amber-50/50">
       <div
-        className="absolute inset-0 opacity-[0.85]"
+        className="absolute inset-0 opacity-50 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 120% 80% at 100% 0%, rgba(133, 227, 7, 0.16), transparent 50%), radial-gradient(ellipse 90% 70% at 0% 100%, rgba(52, 89, 0, 0.10), transparent 45%), linear-gradient(180deg, #F6FDEB 0%, #ECFCCB 100%)',
+            'radial-gradient(ellipse 100% 60% at 100% 0%, rgba(190, 242, 100, 0.55), transparent 55%), radial-gradient(ellipse 80% 50% at 0% 100%, rgba(253, 224, 71, 0.22), transparent 50%)',
         }}
       />
       <div className="absolute top-24 left-[8%] w-px h-32 bg-gradient-to-b from-gold-700/35 to-transparent hidden lg:block" />
@@ -239,11 +239,11 @@ export default function CategoryGrid() {
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="text-center mb-8 md:mb-10 max-w-lg mx-auto">
-          <p className="text-[10px] md:text-[11px] font-semibold tracking-[0.3em] uppercase text-gold-800 mb-2">
+          <p className="text-[10px] md:text-[11px] font-bold tracking-[0.3em] uppercase text-yellow-950 mb-2">
             {t('home.browseByCategory')}
           </p>
-          <h2 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight">
-            <span className="gold-gradient-text-on-light">{t('home.categories')}</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-black tracking-tight leading-tight">
+            {t('home.categories')}
           </h2>
         </header>
 
@@ -290,40 +290,38 @@ export default function CategoryGrid() {
         {active && (
           <div
             key={active.slug}
-            className="relative overflow-hidden rounded-[1.75rem] md:rounded-[2rem] border border-stone-900/12 shadow-[0_25px_80px_-20px_rgba(28,25,23,0.45)] animate-category-spotlight"
+            className="relative overflow-hidden rounded-[1.75rem] md:rounded-[2rem] border-2 border-black/10 shadow-[0_25px_70px_-18px_rgba(22,101,52,0.25)] animate-category-spotlight bg-gradient-to-br from-lime-200 via-lime-300 to-amber-200"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-950 via-[#162906] to-[#214108]" />
             {activeImg ? (
               <div
-                className="absolute inset-0 opacity-25 bg-cover bg-center scale-105 blur-[2px]"
+                className="absolute inset-0 opacity-20 bg-cover bg-center scale-105 blur-[1px]"
                 style={{ backgroundImage: `url(${activeImg})` }}
               />
             ) : null}
-            <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-900/92 to-stone-900/75" />
-            <div className="absolute top-0 right-0 w-[60%] h-full bg-[radial-gradient(ellipse_at_70%_30%,rgba(133,227,7,0.16),transparent_55%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-lime-50/80 to-amber-50/70" />
 
             <div className="relative grid lg:grid-cols-12 gap-0">
-              <div className="lg:col-span-4 xl:col-span-4 p-6 md:p-8 lg:p-10 flex flex-col justify-between min-h-[200px] lg:min-h-[280px] border-b lg:border-b-0 lg:border-r border-white/[0.08]">
+              <div className="lg:col-span-4 xl:col-span-4 p-6 md:p-8 lg:p-10 flex flex-col justify-between min-h-[200px] lg:min-h-[280px] border-b lg:border-b-0 lg:border-r border-black/10 bg-white/60 backdrop-blur-sm">
                 <div>
-                  <p className="text-gold-200/80 text-[10px] font-semibold tracking-[0.2em] uppercase mb-2">
+                  <p className="text-yellow-950 text-[10px] font-bold tracking-[0.2em] uppercase mb-2">
                     {t('home.collectionLabel')}
                   </p>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-white tracking-tight leading-tight mb-4">
+                  <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-black tracking-tight leading-tight mb-4">
                     {rootLabel(active)}
                   </h3>
                 </div>
                 <Link
                   to={`/products?category=${encodeURIComponent(active.slug)}`}
-                  className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-gold-500 to-gold-700 px-5 py-2.5 text-sm font-semibold text-on-theme-light shadow-lg shadow-gold-900/30 hover:from-gold-400 hover:to-gold-600 transition-colors"
+                  className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-yellow-300 shadow-lg hover:bg-zinc-900 transition-colors border border-black"
                 >
                   {t('home.viewAll')}
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
 
-              <div className="lg:col-span-8 xl:col-span-8 p-5 md:p-8 lg:p-10 bg-black/20">
+              <div className="lg:col-span-8 xl:col-span-8 p-5 md:p-8 lg:p-10 bg-white/40 backdrop-blur-[2px]">
                 {subs.length > 0 && (
-                  <p className="text-gold-200/70 text-[10px] font-semibold tracking-[0.2em] uppercase mb-3">
+                  <p className="text-black text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
                     {t('home.subcategoriesLabel')}
                   </p>
                 )}
@@ -336,10 +334,10 @@ export default function CategoryGrid() {
                     lang={i18n.language}
                   />
                 ) : (
-                  <div className="rounded-2xl border border-white/15 bg-white/[0.08] backdrop-blur-sm p-6 text-center">
+                  <div className="rounded-2xl border-2 border-black/10 bg-white/90 p-6 text-center shadow-sm">
                     <Link
                       to={`/products?category=${encodeURIComponent(active.slug)}`}
-                      className="inline-flex items-center gap-2 text-sm text-gold-200 font-semibold hover:text-gold-100"
+                      className="inline-flex items-center gap-2 text-sm font-bold text-black hover:text-lime-800"
                     >
                       {t('home.viewAll')}
                       <ArrowRight className="w-4 h-4 rtl:rotate-180" />

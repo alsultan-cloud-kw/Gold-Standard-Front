@@ -15,6 +15,7 @@ import {
   Crown,
   CreditCard,
   Database,
+  Wallet,
 } from 'lucide-react'
 
 const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDashboard }[] = [
@@ -22,6 +23,7 @@ const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDas
   { path: '/admin/products', labelKey: 'admin.products', icon: Package },
   { path: '/admin/categories', labelKey: 'admin.categories', icon: FolderTree },
   { path: '/admin/orders', labelKey: 'admin.orders', icon: ShoppingCart },
+  { path: '/admin/checkout-payment', labelKey: 'admin.checkoutPaymentNav', icon: Wallet },
   { path: '/admin/trading/buybacks', labelKey: 'admin.tradingBuybacks', icon: Scale },
   { path: '/admin/trading/virtual-gold', labelKey: 'admin.tradingVirtualGold', icon: Crown },
   { path: '/admin/inventory', labelKey: 'admin.inventory', icon: Warehouse },
@@ -49,8 +51,8 @@ export default function AdminNav() {
             to={path}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               isActive
-                ? 'bg-gold-500/20 text-gold-600 border border-gold-500/40'
-                : 'bg-siteBg/90 text-slate-700 hover:bg-amber-100/80 hover:text-amber-900 border border-transparent'
+                ? 'bg-lime-200/60 text-lime-900 border border-lime-300/50'
+                : 'bg-siteBg/90 text-slate-700 hover:bg-lime-100/90 hover:text-black border border-transparent'
             }`}
           >
             <Icon className="w-4 h-4" />

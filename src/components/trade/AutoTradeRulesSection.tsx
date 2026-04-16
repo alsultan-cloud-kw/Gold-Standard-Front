@@ -222,28 +222,28 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
   return (
     <div className="gold-card p-6 space-y-6" dir={isRtl ? 'rtl' : 'ltr'}>
       <div>
-        <h2 className="text-xl font-semibold text-gold-100">{t('tradeGold.auto.title')}</h2>
-        <p className="text-sm text-gold-100/70 mt-1">{t('tradeGold.auto.intro')}</p>
-        <ul className="mt-2 text-xs text-gold-100/60 list-disc ps-5 space-y-1">
+        <h2 className="text-xl font-bold text-black">{t('tradeGold.auto.title')}</h2>
+        <p className="text-sm text-stone-700 font-medium mt-1">{t('tradeGold.auto.intro')}</p>
+        <ul className="mt-2 text-xs text-stone-600 list-disc ps-5 space-y-1">
           <li>{t('tradeGold.auto.hintBuy')}</li>
           <li>{t('tradeGold.auto.hintSell')}</li>
           <li>{t('tradeGold.auto.hintRates')}</li>
         </ul>
       </div>
 
-      <div className="rounded-xl border border-gold-500/25 bg-charcoal-800/50 p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-gold-200">
+      <div className="rounded-xl border-2 border-black/10 bg-lime-50/90 p-4 space-y-4">
+        <h3 className="text-sm font-bold text-black">
           {editingId ? t('tradeGold.auto.editRule') : t('tradeGold.auto.newRule')}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-gold-100/70 block mb-1">{t('tradeGold.carat')}</label>
+            <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.carat')}</label>
             <select
               value={form.caratId}
               disabled={!!editingId}
               onChange={(e) => setForm((f) => ({ ...f, caratId: e.target.value }))}
-              className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100 disabled:opacity-60"
+              className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black disabled:opacity-60"
             >
               <option value="">{t('tradeGold.auto.pickCarat')}</option>
               {carats.map((c) => {
@@ -258,12 +258,12 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
             </select>
           </div>
           <div className="flex items-end">
-            <label className="flex items-center gap-2 text-sm text-gold-100 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-black font-medium cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.enabled}
                 onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
-                className="rounded border-gold-500/50"
+                className="rounded border-black/30"
               />
               {t('tradeGold.auto.enabled')}
             </label>
@@ -272,7 +272,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-gold-100/70 block mb-1">{t('tradeGold.auto.minBuyLabel')}</label>
+            <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.minBuyLabel')}</label>
             <input
               type="number"
               step="0.001"
@@ -280,12 +280,12 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
               value={form.minBuy}
               onChange={(e) => setForm((f) => ({ ...f, minBuy: e.target.value }))}
               placeholder={t('tradeGold.auto.optional')}
-              className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+              className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black placeholder:text-stone-500"
             />
             {canApplyBuyQuote && (
               <button
                 type="button"
-                className="mt-1 text-xs text-gold-400 hover:text-gold-300 underline"
+                className="mt-1 text-xs font-semibold text-lime-900 hover:text-black underline"
                 onClick={() =>
                   setForm((f) => ({
                     ...f,
@@ -298,7 +298,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
             )}
           </div>
           <div>
-            <label className="text-xs text-gold-100/70 block mb-1">{t('tradeGold.auto.maxSellLabel')}</label>
+            <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.maxSellLabel')}</label>
             <input
               type="number"
               step="0.001"
@@ -306,12 +306,12 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
               value={form.maxSell}
               onChange={(e) => setForm((f) => ({ ...f, maxSell: e.target.value }))}
               placeholder={t('tradeGold.auto.optional')}
-              className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+              className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black placeholder:text-stone-500"
             />
             {canApplySellQuote && (
               <button
                 type="button"
-                className="mt-1 text-xs text-gold-400 hover:text-gold-300 underline"
+                className="mt-1 text-xs font-semibold text-lime-900 hover:text-black underline"
                 onClick={() =>
                   setForm((f) => ({
                     ...f,
@@ -327,36 +327,36 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="text-xs text-gold-100/70 block mb-1">{t('tradeGold.auto.autoBuyGrams')}</label>
+            <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.autoBuyGrams')}</label>
             <input
               type="number"
               step="0.001"
               min="0"
               value={form.autoBuyGrams}
               onChange={(e) => setForm((f) => ({ ...f, autoBuyGrams: e.target.value }))}
-              className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+              className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black"
             />
           </div>
           <div className="sm:col-span-2 space-y-2">
-            <label className="flex items-center gap-2 text-sm text-gold-100 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-black font-medium cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.sellAll}
                 onChange={(e) => setForm((f) => ({ ...f, sellAll: e.target.checked }))}
-                className="rounded border-gold-500/50"
+                className="rounded border-black/30"
               />
               {t('tradeGold.auto.sellAll')}
             </label>
             {!form.sellAll && (
               <div>
-                <label className="text-xs text-gold-100/70 block mb-1">{t('tradeGold.auto.autoSellGrams')}</label>
+                <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.autoSellGrams')}</label>
                 <input
                   type="number"
                   step="0.001"
                   min="0"
                   value={form.autoSellGrams}
                   onChange={(e) => setForm((f) => ({ ...f, autoSellGrams: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black"
                 />
               </div>
             )}
@@ -364,14 +364,14 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
         </div>
 
         <div>
-          <label className="text-xs text-gold-100/70 block mb-1">{t('tradeGold.auto.cooldown')}</label>
+          <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.cooldown')}</label>
           <input
             type="number"
             min="30"
             step="1"
             value={form.cooldown}
             onChange={(e) => setForm((f) => ({ ...f, cooldown: e.target.value }))}
-            className="w-full max-w-xs px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100"
+            className="w-full max-w-xs px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black"
           />
         </div>
 
@@ -382,7 +382,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
                 type="button"
                 onClick={submitEdit}
                 disabled={patchMut.isPending}
-                className="px-4 py-2 rounded-lg bg-gold-500 text-black font-semibold hover:bg-gold-400 disabled:opacity-50"
+                className="gold-button px-4 py-2 rounded-lg font-semibold border-2 border-black/10 disabled:opacity-50"
               >
                 {patchMut.isPending ? t('tradeGold.processing') : t('tradeGold.auto.saveChanges')}
               </button>
@@ -390,7 +390,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
                 type="button"
                 onClick={cancelEdit}
                 disabled={patchMut.isPending}
-                className="px-4 py-2 rounded-lg border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
+                className="px-4 py-2 rounded-lg border-2 border-black/20 text-black font-semibold hover:bg-lime-100"
               >
                 {t('tradeGold.cancel')}
               </button>
@@ -400,7 +400,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
               type="button"
               onClick={submitCreate}
               disabled={createMut.isPending}
-              className="px-4 py-2 rounded-lg bg-gold-500 text-black font-semibold hover:bg-gold-400 disabled:opacity-50"
+              className="gold-button px-4 py-2 rounded-lg font-semibold border-2 border-black/10 disabled:opacity-50"
             >
               {createMut.isPending ? t('tradeGold.processing') : t('tradeGold.auto.createRule')}
             </button>
@@ -409,23 +409,23 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gold-200 mb-3">{t('tradeGold.auto.yourRules')}</h3>
+        <h3 className="text-sm font-bold text-black mb-3">{t('tradeGold.auto.yourRules')}</h3>
         {rulesLoading ? (
-          <p className="text-sm text-gold-100/60">{t('tradeGold.auto.loadingRules')}</p>
+          <p className="text-sm text-stone-600 font-medium">{t('tradeGold.auto.loadingRules')}</p>
         ) : rules.length === 0 ? (
-          <p className="text-sm text-gold-100/60">{t('tradeGold.auto.noRules')}</p>
+          <p className="text-sm text-stone-600 font-medium">{t('tradeGold.auto.noRules')}</p>
         ) : (
           <div className="space-y-3">
             {rules.map((r) => (
               <div
                 key={r.id}
-                className="rounded-lg border border-gold-500/20 bg-charcoal-800/60 p-4 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                className="rounded-lg border-2 border-black/10 bg-white p-4 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm"
               >
-                <div className="space-y-1 text-gold-100">
-                  <div className="font-semibold text-gold-200">
+                <div className="space-y-1 text-black">
+                  <div className="font-bold text-black">
                     {r.carat_value}K — {r.is_enabled ? t('tradeGold.auto.on') : t('tradeGold.auto.off')}
                   </div>
-                  <div className="text-xs text-gold-100/70">
+                  <div className="text-xs text-black/75 font-medium">
                     {r.min_buy_rate_kwd_per_gram != null && (
                       <span className="me-3">
                         {t('tradeGold.auto.minBuyShort')}: {numFromApi(r.min_buy_rate_kwd_per_gram) || '—'} KWD/g
@@ -438,7 +438,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
                     )}
                   </div>
                   {r.last_executed_at && (
-                    <div className="text-xs text-gold-100/50">
+                    <div className="text-xs text-stone-600">
                       {t('tradeGold.auto.lastRun')}: {new Date(r.last_executed_at).toLocaleString(dateLocale)}
                       {r.last_action ? ` · ${r.last_action}` : ''}
                       {r.last_error ? ` · ${r.last_error}` : ''}
@@ -450,7 +450,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
                     type="button"
                     onClick={() => toggleEnabled(r)}
                     disabled={toggleMut.isPending}
-                    className="px-3 py-1.5 rounded-lg border border-gold-500/40 text-gold-100 text-xs hover:bg-gold-500/10"
+                    className="px-3 py-1.5 rounded-lg border-2 border-black/20 text-black text-xs font-semibold hover:bg-lime-100"
                   >
                     {r.is_enabled ? t('tradeGold.auto.disable') : t('tradeGold.auto.enable')}
                   </button>
@@ -467,7 +467,7 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
                       if (window.confirm(t('tradeGold.auto.confirmDelete'))) deleteMut.mutate(r.id)
                     }}
                     disabled={deleteMut.isPending}
-                    className="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-300 text-xs hover:bg-red-500/10"
+                    className="px-3 py-1.5 rounded-lg border-2 border-red-600/40 text-red-700 text-xs font-semibold hover:bg-red-50"
                   >
                     {t('tradeGold.auto.delete')}
                   </button>

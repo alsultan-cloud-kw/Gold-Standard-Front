@@ -24,6 +24,46 @@ export function formatKwd(n: number | null | undefined): string {
 }
 
 /**
+ * Live sell KWD/g backing the product live total (same source as PricesPage "Sell" column).
+ * API field is named `live_buy_price_per_gram` but backend fills it from the live sell rate.
+ * Prefers club per-gram when club live total is present — mirrors {@link productUnitPrice}.
+ */
+export function liveSellPricePerGramForProduct(product: {
+  live_total_price_club?: number | null
+  live_buy_price_per_gram_club?: number | null
+  live_buy_price_per_gram?: number | null
+}): number | null {
+  const clubTotalOk =
+    product.live_total_price_club != null && !Number.isNaN(Number(product.live_total_price_club))
+  if (clubTotalOk) {
+    if (
+      product.live_buy_price_per_gram_club != null &&
+      !Number.isNaN(Number(product.live_buy_price_per_gram_club))
+    ) {
+      const n = Number(product.live_buy_price_per_gram_club)
+      if (Number.isFinite(n)) return n
+    }
+  }
+  if (product.live_buy_price_per_gram != null && !Number.isNaN(Number(product.live_buy_price_per_gram))) {
+    const n = Number(product.live_buy_price_per_gram)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+/** Implied list sell KWD/g from stored metal value ÷ weight when live feed is unavailable. */
+export function impliedListSellPerGramFromSnapshot(product: {
+  metal_value?: number | null
+  weight_grams?: number | null
+}): number | null {
+  const w = Number(product.weight_grams)
+  const mv = Number(product.metal_value)
+  if (!Number.isFinite(w) || w <= 0 || !Number.isFinite(mv) || mv < 0) return null
+  const g = mv / w
+  return Number.isFinite(g) ? g : null
+}
+
+/**
  * Difference between regular live price and club member live price per unit.
  * Returns 0 when values are missing/invalid or club price is not lower.
  */

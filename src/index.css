@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    /* Site canvas — soft green-tinted off-white */
-    --site-bg: #F6FDEB;
+    /* Site canvas — storefront uses clean white */
+    --site-bg: #ffffff;
     --background: 40 33% 96%;
     --foreground: 210 15% 20%;
     --card: 0 0% 100%;
@@ -37,8 +37,13 @@
     --sidebar-border: 220 15% 20%;
     --sidebar-ring: 43 74% 49%;
     
-    /* Panel/card background (modals, cards) — solid so modals are not transparent */
-    --panel-bg: #F3FBDD;
+    /* Panel/card background (placeholders, secondary panels) */
+    --panel-bg: #f4f4f5;
+    /* Storefront product / promo tiles — neon lime */
+    --card-lime-from: #d9f99d;
+    --card-lime-mid: #a3e635;
+    --card-lime-to: #84cc16;
+    --card-lime-text: #0a0a0a;
     /* Theme accent colors (derived from #85E307) */
     --gold-primary: #85E307;
     --gold-light: #ECFCCB;
@@ -115,31 +120,64 @@
                 linear-gradient(135deg, #85E307, #4F8E00) border-box;
   }
   
- /* Card with gold accent */
-.gold-card {
-  @apply rounded-xl p-6;
-  background:
-    radial-gradient(ellipse at 20% 10%, rgba(133, 227, 7, 0.18), transparent 55%),
-    linear-gradient(140deg, #111827 0%, #1f3d08 45%, #152b05 100%);
-  border: 1px solid rgba(133, 227, 7, 0.35);
-}
-  
-  .gold-card:hover {
-    border-color: rgba(133, 227, 7, 0.5);
-    box-shadow: 0 8px 32px rgba(133, 227, 7, 0.12);
+  /**
+   * Primary panel — light neutral surface (all pages / admin / forms).
+   * Legacy name kept so routes do not need mass class renames.
+   */
+  .gold-card {
+    @apply rounded-xl p-6;
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    border: 1px solid rgba(79, 142, 0, 0.14);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    color: var(--card-lime-text);
   }
 
-  /* Light card for sections on cream/sky — dark text, gold border */
+  .gold-card:hover {
+    border-color: rgba(79, 142, 0, 0.26);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Light card — neutral panel on white (cart, etc.) */
   .gold-card-light {
     @apply rounded-xl p-6;
-    background: linear-gradient(180deg, #FAFEEA 0%, #F3FBDD 100%);
-    border: 1px solid rgba(79, 142, 0, 0.22);
-    box-shadow: 0 4px 24px rgba(52, 89, 0, 0.08);
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    color: var(--card-lime-text);
   }
 
   .gold-card-light:hover {
-    border-color: rgba(133, 227, 7, 0.5);
-    box-shadow: 0 12px 40px rgba(79, 142, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  /**
+   * Storefront product & home feature tiles — lime surface, black copy
+   * (matches ~Tailwind lime-400 / lime-500)
+   */
+  .product-card-lime {
+    @apply rounded-xl p-6;
+    background: linear-gradient(
+      165deg,
+      var(--card-lime-from) 0%,
+      var(--card-lime-mid) 42%,
+      var(--card-lime-to) 100%
+    );
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--card-lime-text);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  }
+
+  .product-card-lime:hover {
+    border-color: rgba(0, 0, 0, 0.16);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .price-tag-lime {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-sm;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--card-lime-text);
   }
 
   /* Price tag on light cards */
@@ -215,6 +253,10 @@
   .animate-glow {
     animation: glow 2s ease-in-out infinite alternate;
   }
+
+  .animate-trend-blink {
+    animation: trendBlink 0.5s steps(2, jump-none) infinite;
+  }
   
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -241,6 +283,17 @@
     }
   }
 
+  @keyframes trendBlink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
   @keyframes categorySpotlightIn {
     from {
       opacity: 0;
@@ -255,4 +308,84 @@
   .animate-category-spotlight {
     animation: categorySpotlightIn 0.45s ease-out both;
   }
+}
+
+/**
+ * .gold-card is a light panel — remap legacy “gold on charcoal” utilities
+ * that still appear in TSX (load after Tailwind utilities).
+ */
+.gold-card input:not([type='checkbox']):not([type='radio']),
+.gold-card textarea,
+.gold-card select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.gold-card input::placeholder,
+.gold-card textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.gold-card button[class*='bg-charcoal-800'] {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+.gold-card [class*='bg-charcoal-800'],
+.gold-card [class*='bg-charcoal-900'] {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(241 245 249) !important;
+}
+
+.gold-card .text-gold-100,
+.gold-card .text-gold-100\/90,
+.gold-card .text-gold-100\/95 {
+  color: rgb(15 23 42) !important;
+}
+
+.gold-card .text-gold-100\/80 {
+  color: rgb(51 65 85) !important;
+}
+
+.gold-card .text-gold-100\/70 {
+  color: rgb(71 85 105) !important;
+}
+
+.gold-card .text-gold-100\/60,
+.gold-card .text-gold-100\/50 {
+  color: rgb(100 116 139) !important;
+}
+
+.gold-card .text-gold-100\/40,
+.gold-card .text-gold-100\/35 {
+  color: rgb(148 163 184) !important;
+}
+
+.gold-card .text-gold-200,
+.gold-card .text-gold-200\/80 {
+  color: rgb(51 65 85) !important;
+}
+
+.gold-card .text-gold-300,
+.gold-card .text-gold-300\/60 {
+  color: rgb(71 85 105) !important;
+}
+
+.gold-card .text-gold-400,
+.gold-card .text-gold-400\/60 {
+  color: rgb(180 83 9) !important;
+}
+
+.gold-card .text-red-300 {
+  color: rgb(185 28 28) !important;
+}
+
+.gold-card .text-red-400 {
+  color: rgb(220 38 38) !important;
+}
+
+.gold-card .placeholder\:text-gold-100\/40::placeholder,
+.gold-card .placeholder\:text-gold-100\/35::placeholder {
+  color: rgb(148 163 184) !important;
 }

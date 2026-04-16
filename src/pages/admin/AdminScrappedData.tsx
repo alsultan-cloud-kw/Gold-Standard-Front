@@ -112,13 +112,13 @@ export default function AdminScrappedData() {
         <div className="gold-card mb-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2">
-              <label className="text-xs text-gold-100/60">Website URL</label>
+              <label className="text-xs text-stone-600">Website URL</label>
               <div className="flex gap-2 mt-1">
                 <input
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
                   placeholder="https://example.com/rates"
-                  className="flex-1 px-3 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                  className="flex-1 px-3 py-2 bg-white border border-black/15 rounded-lg text-black"
                 />
                 <button
                   type="button"
@@ -132,7 +132,7 @@ export default function AdminScrappedData() {
                   Add
                 </button>
               </div>
-              <label className="mt-2 inline-flex items-center gap-2 text-xs text-gold-200">
+              <label className="mt-2 inline-flex items-center gap-2 text-xs text-lime-900">
                 <input
                   type="checkbox"
                   checked={renderJsForNew}
@@ -155,14 +155,14 @@ export default function AdminScrappedData() {
           </div>
 
           <div className="mt-4">
-            <label className="text-xs text-gold-100/60">Paste multiple URLs (one per line)</label>
+            <label className="text-xs text-stone-600">Paste multiple URLs (one per line)</label>
             <div className="flex flex-col lg:flex-row gap-2 mt-1">
               <textarea
                 value={bulkInput}
                 onChange={(e) => setBulkInput(e.target.value)}
                 rows={3}
                 placeholder={'https://site1.com\nhttps://site2.com'}
-                className="flex-1 px-3 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                className="flex-1 px-3 py-2 bg-white border border-black/15 rounded-lg text-black"
               />
               <button type="button" onClick={addBulkUrls} className="gold-button h-fit inline-flex items-center gap-2">
                 <Plus className="w-4 h-4" />
@@ -173,10 +173,10 @@ export default function AdminScrappedData() {
 
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gold-200">Queue ({queuedUrls.length}/9)</p>
+              <p className="text-sm text-lime-900">Queue ({queuedUrls.length}/9)</p>
               <button
                 type="button"
-                className="text-xs text-gold-300 hover:text-gold-100"
+                className="text-xs text-lime-800 hover:text-black"
                 onClick={() => setQueuedUrls([])}
               >
                 Clear queue
@@ -184,12 +184,12 @@ export default function AdminScrappedData() {
             </div>
             <div className="flex flex-wrap gap-2">
               {queuedUrls.length === 0 && (
-                <p className="text-xs text-gold-100/50">Add one or more URLs, then click Scrape queued websites.</p>
+                <p className="text-xs text-stone-500">Add one or more URLs, then click Scrape queued websites.</p>
               )}
               {queuedUrls.map((item) => (
                 <div
                   key={item.url}
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-charcoal-800 border border-gold-500/30 text-xs text-gold-100"
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-black/15 text-xs text-black"
                 >
                   <span className="max-w-[220px] truncate">{item.url}</span>
                   <span className={`px-1.5 py-0.5 rounded ${item.render_js ? 'bg-purple-500/25 text-purple-200' : 'bg-slate-500/25 text-slate-200'}`}>
@@ -197,7 +197,7 @@ export default function AdminScrappedData() {
                   </span>
                   <button
                     type="button"
-                    className="text-gold-400 hover:text-red-300"
+                    className="text-lime-800 hover:text-red-300"
                     onClick={() => setQueuedUrls((prev) => prev.filter((u) => u.url !== item.url))}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export default function AdminScrappedData() {
 
         <div className="gold-card">
           {isLoading && (
-            <div className="flex items-center justify-center gap-2 py-10 text-gold-100/60">
+            <div className="flex items-center justify-center gap-2 py-10 text-stone-600">
               <RefreshCw className="w-5 h-5 animate-spin" />
               Loading scraped data...
             </div>
@@ -234,13 +234,13 @@ export default function AdminScrappedData() {
           )}
 
           {!isLoading && !isError && normalizedEntries.length === 0 && (
-            <p className="text-gold-100/60 text-center py-8">No scrapped data found.</p>
+            <p className="text-stone-600 text-center py-8">No scrapped data found.</p>
           )}
 
           {!isLoading && !isError && normalizedEntries.length > 0 && (
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
               <div className="xl:col-span-1 space-y-2">
-                <p className="text-xs text-gold-100/60 uppercase tracking-wide">Latest 9 website snapshots</p>
+                <p className="text-xs text-stone-600 uppercase tracking-wide">Latest 9 website snapshots</p>
                 {normalizedEntries.map((entry, index) => {
                   const isActive = activeEntry?.id === entry.id
                   return (
@@ -250,12 +250,12 @@ export default function AdminScrappedData() {
                       onClick={() => setActiveId(entry.id)}
                       className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
                         isActive
-                          ? 'border-gold-400 bg-gold-500/10'
-                          : 'border-gold-500/20 bg-charcoal-800/40 hover:bg-charcoal-700/50'
+                          ? 'border-lime-500 bg-lime-100/80'
+                          : 'border-stone-200 bg-white/40 hover:bg-stone-100/50'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-gold-100">#{index + 1}</p>
+                        <p className="text-sm font-semibold text-black">#{index + 1}</p>
                         <div className="flex items-center gap-2">
                           <span
                             className={`text-[10px] px-2 py-0.5 rounded-full ${
@@ -286,36 +286,36 @@ export default function AdminScrappedData() {
                           </span>
                         </div>
                       </div>
-                      <p className="text-xs text-gold-200 mt-1 truncate">{entry.page_title || entry.url}</p>
-                      <p className="text-[11px] text-gold-100/50 truncate">{entry.url}</p>
+                      <p className="text-xs text-lime-900 mt-1 truncate">{entry.page_title || entry.url}</p>
+                      <p className="text-[11px] text-stone-500 truncate">{entry.url}</p>
                     </button>
                   )
                 })}
               </div>
 
-              <div className="xl:col-span-2 rounded-xl border border-gold-500/20 bg-charcoal-800/40 p-4">
+              <div className="xl:col-span-2 rounded-xl border border-stone-200 bg-white/40 p-4">
                 {activeEntry && (
                   <>
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div>
-                        <h2 className="text-xl font-bold text-gold-100">
+                        <h2 className="text-xl font-bold text-black">
                           {activeEntry.page_title || 'Untitled page'}
                         </h2>
                         <a
                           href={activeEntry.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-gold-300 hover:underline break-all"
+                          className="text-xs text-lime-800 hover:underline break-all"
                         >
                           {activeEntry.url}
                         </a>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gold-100/50">Scraped at</p>
-                        <p className="text-sm text-gold-100">
+                        <p className="text-xs text-stone-500">Scraped at</p>
+                        <p className="text-sm text-black">
                           {new Date(activeEntry.scraped_at).toLocaleString()}
                         </p>
-                        <p className="text-[11px] text-gold-100/60 mt-1">
+                        <p className="text-[11px] text-stone-600 mt-1">
                           Mode: {activeEntry.extracted_data?.render_mode || 'http'}
                         </p>
                         <button
@@ -336,12 +336,12 @@ export default function AdminScrappedData() {
                     ) : (
                       <div className="space-y-4">
                         <div>
-                          <p className="text-xs uppercase text-gold-100/50 mb-1">Company</p>
-                          <div className="rounded-lg border border-gold-500/15 bg-charcoal-900/40 p-3">
-                            <p className="text-sm text-gold-100">
+                          <p className="text-xs uppercase text-stone-500 mb-1">Company</p>
+                          <div className="rounded-lg border border-stone-200 bg-white/40 p-3">
+                            <p className="text-sm text-black">
                               {activeEntry.extracted_data?.company?.name || activeEntry.page_title || 'Unknown company'}
                             </p>
-                            <p className="text-xs text-gold-100/60 mt-1">
+                            <p className="text-xs text-stone-600 mt-1">
                               {activeEntry.extracted_data?.company?.website || activeEntry.url}
                             </p>
                           </div>
@@ -350,11 +350,11 @@ export default function AdminScrappedData() {
                         {activeEntry.extracted_data?.gold_prices &&
                           activeEntry.extracted_data.gold_prices.length > 0 && (
                             <div>
-                              <p className="text-xs uppercase text-gold-100/50 mb-1">Prices (Gold / Silver / Platinum)</p>
-                              <div className="overflow-x-auto rounded-lg border border-gold-500/15">
+                              <p className="text-xs uppercase text-stone-500 mb-1">Prices (Gold / Silver / Platinum)</p>
+                              <div className="overflow-x-auto rounded-lg border border-stone-200">
                                 <table className="w-full text-sm">
                                   <thead>
-                                    <tr className="border-b border-gold-500/10 text-gold-300">
+                                    <tr className="border-b border-stone-100 text-lime-800">
                                       <th className="px-3 py-2 text-left">Type</th>
                                       <th className="px-3 py-2 text-left">Buy</th>
                                       <th className="px-3 py-2 text-left">Sell</th>
@@ -364,22 +364,22 @@ export default function AdminScrappedData() {
                                   </thead>
                                   <tbody>
                                     {activeEntry.extracted_data.gold_prices.map((row, idx) => (
-                                      <tr key={`${row.carat}-${row.buy_price ?? ''}-${row.sell_price ?? ''}-${idx}`} className="border-b border-gold-500/10">
-                                        <td className="px-3 py-2 text-gold-100">{row.carat}</td>
-                                        <td className="px-3 py-2 text-gold-100">
+                                      <tr key={`${row.carat}-${row.buy_price ?? ''}-${row.sell_price ?? ''}-${idx}`} className="border-b border-stone-100">
+                                        <td className="px-3 py-2 text-black">{row.carat}</td>
+                                        <td className="px-3 py-2 text-black">
                                           {row.quote_only
                                             ? '—'
                                             : (row.buy_text ?? row.buy_price ?? '—')}
                                         </td>
-                                        <td className="px-3 py-2 text-gold-100">
+                                        <td className="px-3 py-2 text-black">
                                           {row.quote_only
                                             ? '—'
                                             : (row.sell_text ?? row.sell_price ?? '—')}
                                         </td>
-                                        <td className="px-3 py-2 text-gold-100">
+                                        <td className="px-3 py-2 text-black">
                                           {row.quote_only ? '—' : row.currency || '—'}
                                         </td>
-                                        <td className="px-3 py-2 text-gold-100 text-xs leading-snug max-w-[28rem]">
+                                        <td className="px-3 py-2 text-black text-xs leading-snug max-w-[28rem]">
                                           {row.snippet || '—'}
                                         </td>
                                       </tr>
@@ -392,7 +392,7 @@ export default function AdminScrappedData() {
                         {(!activeEntry.extracted_data?.gold_prices ||
                           activeEntry.extracted_data.gold_prices.length === 0) && (
                           <div>
-                            <p className="text-xs uppercase text-gold-100/50 mb-1">Prices (Gold / Silver / Platinum)</p>
+                            <p className="text-xs uppercase text-stone-500 mb-1">Prices (Gold / Silver / Platinum)</p>
                             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-200">
                               No rates detected on this website snapshot.
                             </div>

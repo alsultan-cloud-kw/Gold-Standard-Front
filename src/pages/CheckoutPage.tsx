@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
-import { ordersApi, authApi, invoicesApi, walletApi } from '../services/api'
+import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
 import { useQuery } from '@tanstack/react-query'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
@@ -23,10 +23,33 @@ import {
   cartLineStandardTotal,
 } from '../utils/clubCartPricing'
 
+type CheckoutProfileAddress = {
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  governorate?: string | null
+  postal_code?: string | null
+  country?: string | null
+}
+
+function firstCustomerProfileForCheckout(data: unknown): CheckoutProfileAddress | null {
+  if (!data) return null
+  if (Array.isArray(data)) return (data[0] as CheckoutProfileAddress) ?? null
+  const p = data as { results?: CheckoutProfileAddress[] }
+  return p.results && p.results.length > 0 ? p.results[0] : null
+}
+
 type SaleResponse = {
   id?: string
   invoice_number?: string
   total_amount?: string
+}
+
+type CheckoutPayRow = {
+  id: 'knet' | 'card' | 'cod' | 'wallet'
+  nameKey: 'checkoutPage.payKnet' | 'checkoutPage.payCard' | 'checkoutPage.payCod' | null
+  icon: typeof CreditCard | typeof Truck
+  disabled: boolean
 }
 
 export default function CheckoutPage() {
@@ -46,9 +69,21 @@ export default function CheckoutPage() {
   const displayFinalTotal = Math.max(0, displayTotalAfterClub - summary.discountAmount + summary.taxAmount)
 
   // Wallet balance (for showing and enabling wallet payment)
+  const { data: payCfg } = useQuery({
+    queryKey: ['checkoutPaymentMethods'],
+    queryFn: () => ordersApi.getCheckoutPaymentMethods(),
+    staleTime: 60_000,
+  })
+
   const { data: walletData } = useQuery({
     queryKey: ['myWallet'],
     queryFn: () => walletApi.getMyWallet(),
+  })
+
+  const { data: checkoutProfileData } = useQuery({
+    queryKey: ['myCustomerProfile'],
+    queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
+    enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
   })
   // Ensure numeric wallet balance (API may return string/Decimal-like)
   const walletBalanceRaw =
@@ -58,16 +93,58 @@ export default function CheckoutPage() {
       ? walletBalanceRaw
       : Number(walletBalanceRaw ?? 0) || 0
 
+  const checkoutShippingCharge = useMemo(() => {
+    if (deliveryType !== 'physical') return 0
+    const raw =
+      typeof payCfg === 'object' && payCfg != null && 'shipping_charge_kwd' in payCfg
+        ? (payCfg as { shipping_charge_kwd?: unknown }).shipping_charge_kwd
+        : 0
+    const n = Number(raw ?? 0)
+    if (!Number.isFinite(n) || n < 0) return 0
+    return n
+  }, [payCfg, deliveryType])
+  const checkoutTotalDue = Math.max(0, displayFinalTotal + checkoutShippingCharge)
+
   const walletTooLow = useMemo(
-    () => paymentMethod === 'wallet' && walletBalance < summary.totalAmount - 1e-9,
-    [paymentMethod, walletBalance, summary.totalAmount],
+    () => paymentMethod === 'wallet' && walletBalance < checkoutTotalDue - 1e-9,
+    [paymentMethod, walletBalance, checkoutTotalDue],
   )
 
   useEffect(() => {
-    if (paymentMethod === 'wallet' && walletBalance < summary.totalAmount - 1e-9) {
+    if (paymentMethod === 'wallet' && walletBalance < checkoutTotalDue - 1e-9) {
       setPaymentMethod('knet')
     }
-  }, [paymentMethod, walletBalance, summary.totalAmount])
+  }, [paymentMethod, walletBalance, checkoutTotalDue])
+
+  const paymentMethodOptions = useMemo((): CheckoutPayRow[] => {
+    const cfg = payCfg ?? { knet: true, wallet: true, credit_card: false, cash: false }
+    const rows: CheckoutPayRow[] = []
+    if (cfg.knet) rows.push({ id: 'knet', nameKey: 'checkoutPage.payKnet', icon: CreditCard, disabled: false })
+    if (cfg.credit_card) rows.push({ id: 'card', nameKey: 'checkoutPage.payCard', icon: CreditCard, disabled: false })
+    if (cfg.cash) rows.push({ id: 'cod', nameKey: 'checkoutPage.payCod', icon: Truck, disabled: false })
+    if (cfg.wallet) {
+      rows.push({
+        id: 'wallet',
+        nameKey: null,
+        icon: CreditCard,
+        disabled: walletBalance < checkoutTotalDue - 1e-9,
+      })
+    }
+    return rows
+  }, [payCfg, walletBalance, checkoutTotalDue])
+
+  useEffect(() => {
+    const allowed = new Set(paymentMethodOptions.map((m) => m.id))
+    if (!allowed.has(paymentMethod as CheckoutPayRow['id'])) {
+      const first = paymentMethodOptions.find((m) => !m.disabled)?.id ?? 'knet'
+      setPaymentMethod(first)
+      return
+    }
+    const row = paymentMethodOptions.find((m) => m.id === paymentMethod)
+    if (row?.disabled) {
+      setPaymentMethod(paymentMethodOptions.find((m) => !m.disabled)?.id ?? 'knet')
+    }
+  }, [paymentMethodOptions, paymentMethod])
 
   // Shipping fields (sent to backend as customer_*)
   const [firstName, setFirstName] = useState('')
@@ -76,7 +153,18 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
+  const [governorate, setGovernorate] = useState('')
   const [postalCode, setPostalCode] = useState('')
+
+  useEffect(() => {
+    const p = firstCustomerProfileForCheckout(checkoutProfileData)
+    if (!p) return
+    const combined = [p.address_line1, p.address_line2].filter(Boolean).join(', ')
+    setAddress((a) => a || combined)
+    setCity((c) => c || (p.city ?? ''))
+    setGovernorate((g) => g || (p.governorate ?? ''))
+    setPostalCode((pc) => pc || (p.postal_code ?? ''))
+  }, [checkoutProfileData])
 
   // Pre-fill customer info from logged-in user so the order stores the customer's email, not the viewer's
   useEffect(() => {
@@ -115,7 +203,8 @@ export default function CheckoutPage() {
     }))
 
     const customer_name = [firstName, lastName].filter(Boolean).join(' ').trim() || undefined
-    const notes = [address, city, postalCode].filter(Boolean).join(' | ') || undefined
+    const notes =
+      [address, city, governorate, postalCode].filter(Boolean).join(' | ') || undefined
 
     // Ensure we send the logged-in customer's email so the order is stored with their email
     let customerEmail = email?.trim() || undefined
@@ -319,8 +408,14 @@ export default function CheckoutPage() {
                     onChange={(e) => setCity(e.target.value)}
                   />
                   <input
-                    placeholder={t('checkoutPage.postalPh')}
+                    placeholder={t('checkoutPage.governoratePh')}
                     className="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    value={governorate}
+                    onChange={(e) => setGovernorate(e.target.value)}
+                  />
+                  <input
+                    placeholder={t('checkoutPage.postalPh')}
+                    className="md:col-span-2 px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                   />
@@ -365,19 +460,7 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <div className="space-y-3 mb-6">
-                  {(
-                    [
-                      { id: 'knet' as const, nameKey: 'checkoutPage.payKnet' as const, icon: CreditCard, disabled: false },
-                      { id: 'card' as const, nameKey: 'checkoutPage.payCard' as const, icon: CreditCard, disabled: false },
-                      { id: 'cod' as const, nameKey: 'checkoutPage.payCod' as const, icon: Truck, disabled: false },
-                      {
-                        id: 'wallet' as const,
-                        nameKey: null as null,
-                        icon: CreditCard,
-                        disabled: walletBalance < summary.totalAmount - 1e-9,
-                      },
-                    ] as const
-                  ).map((method) => (
+                  {paymentMethodOptions.map((method) => (
                     <label
                       key={method.id}
                       className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
@@ -407,7 +490,7 @@ export default function CheckoutPage() {
                         {method.id === 'wallet' && method.disabled && (
                           <span className="block text-xs text-gold-100/50 mt-1">
                             {t('checkoutPage.walletInsufficient', {
-                              total: formatOrderKwd(summary.totalAmount),
+                              total: formatOrderKwd(checkoutTotalDue),
                             })}
                           </span>
                         )}
@@ -530,12 +613,20 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   <div className="flex justify-between text-gold-100/70 text-sm">
+                    <span>{t('checkoutPage.shipping')}</span>
+                    <span className="tabular-nums">
+                      {checkoutShippingCharge > 0
+                        ? `${formatOrderKwd(checkoutShippingCharge)} KWD`
+                        : t('checkoutPage.shippingFree')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-gold-100/70 text-sm">
                     <span>{t('cartPage.tax')}</span>
                     <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} KWD</span>
                   </div>
                   <div className="border-t border-gold-500/20 pt-2 flex justify-between font-bold text-gold-100">
                     <span>{t('checkoutPage.totalDue')}</span>
-                    <span className="gold-gradient-text tabular-nums">{formatOrderKwd(displayFinalTotal)} KWD</span>
+                    <span className="gold-gradient-text tabular-nums">{formatOrderKwd(checkoutTotalDue)} KWD</span>
                   </div>
                 </div>
 
@@ -625,7 +716,11 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between text-gold-100/60">
                   <span>{t('checkoutPage.shipping')}</span>
-                  <span>{t('checkoutPage.shippingFree')}</span>
+                  <span className="tabular-nums">
+                    {checkoutShippingCharge > 0
+                      ? `${formatOrderKwd(checkoutShippingCharge)} KWD`
+                      : t('checkoutPage.shippingFree')}
+                  </span>
                 </div>
                 <div className="flex justify-between text-gold-100/60">
                   <span>{t('cartPage.tax')}</span>
@@ -636,7 +731,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-lg font-bold gap-2">
                   <span className="text-gold-100">{t('cartPage.total')}</span>
                   <span className="gold-gradient-text tabular-nums">
-                    {formatOrderKwd(displayFinalTotal)} KWD
+                    {formatOrderKwd(checkoutTotalDue)} KWD
                   </span>
                 </div>
               </div>

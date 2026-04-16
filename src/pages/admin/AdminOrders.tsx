@@ -91,7 +91,7 @@ function statusBadgeClass(status: string) {
     case 'refunded':
       return 'bg-red-500/20 text-red-400'
     default:
-      return 'bg-gold-500/20 text-gold-400'
+      return 'bg-lime-200/60 text-lime-800'
   }
 }
 
@@ -204,7 +204,7 @@ export default function AdminOrders() {
   }, [])
 
   const presetBtn =
-    'px-3 py-1.5 text-xs font-medium rounded-lg border border-gold-500/25 text-gold-100/90 hover:bg-gold-500/10 transition-colors'
+    'px-3 py-1.5 text-xs font-medium rounded-lg border border-black/15 text-stone-800 hover:bg-lime-100 transition-colors'
 
   const total = filtered.length
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -317,10 +317,10 @@ export default function AdminOrders() {
         </div>
 
         <div className="gold-card mb-6">
-          <p className="text-sm text-gold-100/70 mb-3">{t('admin.ordersDateRangeHint')}</p>
+          <p className="text-sm text-stone-700 mb-3">{t('admin.ordersDateRangeHint')}</p>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-            <p className="text-sm font-medium text-gold-100">{t('admin.dashboardPeriod')}</p>
-            <p className="text-sm text-gold-400 font-mono">
+            <p className="text-sm font-medium text-black">{t('admin.dashboardPeriod')}</p>
+            <p className="text-sm text-lime-800 font-mono">
               {allTime ? `${t('admin.presetAllTime')} · ${t('admin.dashboardThroughToday')}` : `${startDate} → ${endDate}`}
             </p>
           </div>
@@ -344,7 +344,7 @@ export default function AdminOrders() {
           <div
             className={`flex flex-col md:flex-row md:items-end gap-4 ${allTime ? 'opacity-50 pointer-events-none' : ''}`}
           >
-            <label className="flex flex-col gap-1 text-sm text-gold-100/70">
+            <label className="flex flex-col gap-1 text-sm text-stone-700">
               {t('admin.from')}
               <input
                 type="date"
@@ -353,10 +353,10 @@ export default function AdminOrders() {
                   setAllTime(false)
                   setStartDate(e.target.value)
                 }}
-                className="rounded-lg bg-charcoal-800 border border-gold-500/20 text-gold-100 px-3 py-2 text-sm"
+                className="rounded-lg bg-white border border-stone-200 text-black px-3 py-2 text-sm"
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm text-gold-100/70">
+            <label className="flex flex-col gap-1 text-sm text-stone-700">
               {t('admin.to')}
               <input
                 type="date"
@@ -365,12 +365,12 @@ export default function AdminOrders() {
                   setAllTime(false)
                   setEndDate(e.target.value)
                 }}
-                className="rounded-lg bg-charcoal-800 border border-gold-500/20 text-gold-100 px-3 py-2 text-sm"
+                className="rounded-lg bg-white border border-stone-200 text-black px-3 py-2 text-sm"
               />
             </label>
           </div>
           {allTime && (
-            <p className="text-xs text-gold-100/50 mt-2">
+            <p className="text-xs text-stone-500 mt-2">
               {t('admin.dashboardThroughToday')} — {localISODate(calendarToday())}
             </p>
           )}
@@ -378,17 +378,17 @@ export default function AdminOrders() {
 
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500" />
             <input
               type="text"
               placeholder="Search by invoice, customer, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-black/15 rounded-lg text-black"
             />
           </div>
-          <div className="flex items-center gap-2 px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg">
-            <Filter className="w-5 h-5 text-gold-400 shrink-0" />
+          <div className="flex items-center gap-2 px-4 py-3 bg-white border border-black/15 rounded-lg">
+            <Filter className="w-5 h-5 text-lime-800 shrink-0" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -406,7 +406,7 @@ export default function AdminOrders() {
 
         <div className="gold-card overflow-x-auto">
           {isLoading && (
-            <div className="flex items-center justify-center py-16 text-gold-400">
+            <div className="flex items-center justify-center py-16 text-lime-800">
               <Loader2 className="w-8 h-8 animate-spin mr-2" />
               Loading orders…
             </div>
@@ -418,7 +418,7 @@ export default function AdminOrders() {
             </div>
           )}
           {!isLoading && !isError && filtered.length === 0 && (
-            <div className="py-16 px-4 text-center text-gold-100/60">
+            <div className="py-16 px-4 text-center text-stone-600">
               {!rangeValid && <p>{t('admin.invalidDateRange')}</p>}
               {rangeValid && searchQuery.trim() !== '' && <p>{t('admin.noOrdersFound')}</p>}
               {rangeValid && searchQuery.trim() === '' && orders.length === 0 && (
@@ -433,31 +433,31 @@ export default function AdminOrders() {
           {!isLoading && !isError && filtered.length > 0 && (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/60">{t('admin.invoices')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/60">{t('admin.customer')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/60">Total</th>
-                  <th className="text-left py-3 px-4 text-gold-100/60">Status</th>
-                  <th className="text-left py-3 px-4 text-gold-100/60">Date</th>
-                  <th className="text-left py-3 px-4 text-gold-100/60">Actions</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-600">{t('admin.invoices')}</th>
+                  <th className="text-left py-3 px-4 text-stone-600">{t('admin.customer')}</th>
+                  <th className="text-left py-3 px-4 text-stone-600">Total</th>
+                  <th className="text-left py-3 px-4 text-stone-600">Status</th>
+                  <th className="text-left py-3 px-4 text-stone-600">Date</th>
+                  <th className="text-left py-3 px-4 text-stone-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {pageItems.map((order) => (
                   <tr
                     key={order.id}
-                    className="border-b border-gold-500/10 hover:bg-gold-500/5"
+                    className="border-b border-stone-100 hover:bg-lime-50"
                   >
-                    <td className="py-3 px-4 text-gold-100 font-mono text-sm">
+                    <td className="py-3 px-4 text-black font-mono text-sm">
                       {order.invoice_number}
                     </td>
-                    <td className="py-3 px-4 text-gold-100">
+                    <td className="py-3 px-4 text-black">
                       <div>{order.customer_name}</div>
                       {order.customer_phone && (
-                        <div className="text-xs text-gold-100/50">{order.customer_phone}</div>
+                        <div className="text-xs text-stone-500">{order.customer_phone}</div>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-gold-400">
+                    <td className="py-3 px-4 text-lime-800">
                       {order.total_amount} KWD
                     </td>
                     <td className="py-3 px-4">
@@ -467,13 +467,13 @@ export default function AdminOrders() {
                         {order.status_display || order.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gold-100/60 text-sm">
+                    <td className="py-3 px-4 text-stone-600 text-sm">
                       {formatDate(order.sale_date)}
                     </td>
                     <td className="py-3 px-4">
                       <button
                         type="button"
-                        className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                        className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                         title={t('admin.details')}
                         onClick={() => setDetailId(order.id)}
                       >
@@ -487,7 +487,7 @@ export default function AdminOrders() {
           )}
         </div>
         {!isLoading && !isError && total > pageSize && (
-          <div className="gold-card mt-4 flex items-center justify-between text-xs text-gold-100/70">
+          <div className="gold-card mt-4 flex items-center justify-between text-xs text-stone-700">
             <div>
               Page {page} of {totalPages} ({total} orders)
             </div>
@@ -496,7 +496,7 @@ export default function AdminOrders() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Prev
               </button>
@@ -504,7 +504,7 @@ export default function AdminOrders() {
                 type="button"
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Next
               </button>
@@ -514,14 +514,14 @@ export default function AdminOrders() {
       </div>
 
       <Dialog open={!!detailId} onOpenChange={(open) => !open && setDetailId(null)}>
-        <DialogContent className="bg-charcoal-900 border-gold-500/30 text-gold-100 max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-white border-black/15 text-black max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="gold-gradient-text">
               Order {detailData?.invoice_number || detailId}
             </DialogTitle>
           </DialogHeader>
           {detailLoading && (
-            <div className="flex items-center gap-2 text-gold-400 py-4">
+            <div className="flex items-center gap-2 text-lime-800 py-4">
               <Loader2 className="w-5 h-5 animate-spin" />
               Loading…
             </div>
@@ -529,21 +529,21 @@ export default function AdminOrders() {
           {!detailLoading && detailData && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-2">
-                <span className="text-gold-100/50">Customer</span>
+                <span className="text-stone-500">Customer</span>
                 <span>{detailData.customer_name}</span>
                 {detailData.customer_phone && (
                   <>
-                    <span className="text-gold-100/50">Phone</span>
+                    <span className="text-stone-500">Phone</span>
                     <span>{detailData.customer_phone}</span>
                   </>
                 )}
                 {(detailData.customer_email_display ?? detailData.customer_email) && (
                   <>
-                    <span className="text-gold-100/50">Email</span>
+                    <span className="text-stone-500">Email</span>
                     <span>{detailData.customer_email_display ?? detailData.customer_email}</span>
                   </>
                 )}
-                <span className="text-gold-100/50">Status</span>
+                <span className="text-stone-500">Status</span>
                 <span className="flex items-center gap-2">
                   <select
                     value={detailData.status}
@@ -554,7 +554,7 @@ export default function AdminOrders() {
                       }
                     }}
                     disabled={updateStatusMutation.isPending}
-                    className="bg-charcoal-800 border border-gold-500/30 rounded px-2 py-1 text-gold-100 text-sm cursor-pointer disabled:opacity-50"
+                    className="bg-white border border-black/15 rounded px-2 py-1 text-black text-sm cursor-pointer disabled:opacity-50"
                   >
                     {statusOptions.filter(Boolean).map((s) => (
                       <option key={s} value={s}>
@@ -563,26 +563,26 @@ export default function AdminOrders() {
                     ))}
                   </select>
                   {updateStatusMutation.isPending && (
-                    <Loader2 className="w-4 h-4 animate-spin text-gold-400 shrink-0" />
+                    <Loader2 className="w-4 h-4 animate-spin text-lime-800 shrink-0" />
                   )}
                 </span>
-                <span className="text-gold-100/50">Payment</span>
+                <span className="text-stone-500">Payment</span>
                 <span>{detailData.payment_method_display || '—'}</span>
-                <span className="text-gold-100/50">Delivery</span>
+                <span className="text-stone-500">Delivery</span>
                 <span>{detailData.delivery_type_display ?? (detailData.delivery_type === 'locked' ? 'Locked in vault' : 'Physical')}</span>
-                <span className="text-gold-100/50">Branch</span>
+                <span className="text-stone-500">Branch</span>
                 <span>{detailData.branch_name || '—'}</span>
-                <span className="text-gold-100/50">Sale date</span>
+                <span className="text-stone-500">Sale date</span>
                 <span>{formatDate(detailData.sale_date)}</span>
-                <span className="text-gold-100/50">Total</span>
-                <span className="text-gold-400 font-medium">{detailData.total_amount} KWD</span>
+                <span className="text-stone-500">Total</span>
+                <span className="text-lime-800 font-medium">{detailData.total_amount} KWD</span>
                 {detailData.journal_entry_id && (
                   <>
-                    <span className="text-gold-100/50">Journal entry</span>
+                    <span className="text-stone-500">Journal entry</span>
                     <span>
                       <Link
                         to="/admin/accounting/journal"
-                        className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300"
+                        className="inline-flex items-center gap-1 text-lime-800 hover:text-lime-800"
                       >
                         <BookOpen className="w-4 h-4" />
                         {detailData.journal_entry_number || detailData.journal_entry_id}
@@ -592,11 +592,11 @@ export default function AdminOrders() {
                 )}
                 {(detailData.pricing_source || detailData.gold_rate_snapshot) && (
                   <>
-                    <span className="text-gold-100/50">Pricing</span>
+                    <span className="text-stone-500">Pricing</span>
                     <span>
                       {detailData.pricing_source === 'live' ? 'Live rate' : detailData.pricing_source === 'fallback' ? 'Stored rate' : '—'}
                       {detailData.gold_rate_snapshot && Object.keys(detailData.gold_rate_snapshot).length > 0 && (
-                        <span className="block text-gold-100/70 text-xs mt-1">
+                        <span className="block text-stone-700 text-xs mt-1">
                           Rate snapshot: {Object.entries(detailData.gold_rate_snapshot).map(([k, v]) => `${k}K: ${v}`).join(', ')} KWD/g
                         </span>
                       )}
@@ -606,8 +606,8 @@ export default function AdminOrders() {
               </div>
               {detailData.items && detailData.items.length > 0 && (
                 <div>
-                  <div className="text-gold-100/50 mb-2">Items</div>
-                  <ul className="border border-gold-500/20 rounded-lg divide-y divide-gold-500/10">
+                  <div className="text-stone-500 mb-2">Items</div>
+                  <ul className="border border-stone-200 rounded-lg divide-y divide-gold-500/10">
                     {detailData.items.map((item) => (
                       <li
                         key={item.id}
@@ -616,11 +616,11 @@ export default function AdminOrders() {
                         <span>
                           {item.product_name || item.product_sku || 'Item'}
                           {item.product_serial_number && (
-                            <span className="text-gold-100/60 font-mono text-xs ml-1">({item.product_serial_number})</span>
+                            <span className="text-stone-600 font-mono text-xs ml-1">({item.product_serial_number})</span>
                           )}{' '}
                           × {item.quantity}
                         </span>
-                        <span className="text-gold-400 shrink-0">{item.total_price} KWD</span>
+                        <span className="text-lime-800 shrink-0">{item.total_price} KWD</span>
                       </li>
                     ))}
                   </ul>
@@ -668,18 +668,18 @@ export default function AdminOrders() {
 
       {/* Invoice preview modal: show beautiful invoice and allow download */}
       <Dialog open={invoiceModalOpen} onOpenChange={setInvoiceModalOpen}>
-        <DialogContent className="bg-charcoal-900 border-gold-500/30 text-gold-100 max-w-5xl max-h-[95vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="px-6 py-4 border-b border-gold-500/20 shrink-0">
-            <DialogTitle className="gold-gradient-text flex items-center gap-2">
+        <DialogContent className="bg-white border-black/15 text-black max-w-5xl max-h-[95vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b border-stone-200 shrink-0">
+            <DialogTitle className="gold-gradient-text-on-light flex items-center gap-2 text-black">
               <FileText className="w-5 h-5" />
               Invoice {detailData?.invoice_number}
             </DialogTitle>
             <div className="flex flex-wrap items-center gap-3 mt-3">
-              <label className="text-gold-100/70 text-sm">Template</label>
+              <label className="text-stone-700 text-sm">Template</label>
               <select
                 value={invoiceTemplateId || defaultTemplateId}
                 onChange={(e) => setInvoiceTemplateId(e.target.value)}
-                className="bg-charcoal-800 border border-gold-500/30 rounded px-3 py-2 text-gold-100 text-sm"
+                className="bg-white border border-black/15 rounded px-3 py-2 text-black text-sm"
               >
                 {saleTemplates.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -692,7 +692,7 @@ export default function AdminOrders() {
               </select>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 text-sm font-medium"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-500 text-black border border-black/10 hover:bg-lime-400 text-sm font-semibold"
                 disabled={!invoiceHtml || invoicePreviewLoading}
                 onClick={() => {
                   if (!invoiceHtml) return
@@ -717,7 +717,7 @@ export default function AdminOrders() {
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-hidden p-4">
             {invoicePreviewLoading ? (
-              <div className="flex items-center justify-center h-64 text-gold-400">
+              <div className="flex items-center justify-center h-64 text-lime-800">
                 <Loader2 className="w-8 h-8 animate-spin mr-2" />
                 Loading invoice…
               </div>
@@ -726,11 +726,11 @@ export default function AdminOrders() {
                 ref={invoiceIframeRef}
                 title="Invoice"
                 srcDoc={invoiceHtml}
-                className="w-full h-full min-h-[480px] rounded-lg border border-gold-500/20 bg-white"
+                className="w-full h-full min-h-[480px] rounded-lg border border-stone-200 bg-white"
                 sandbox="allow-same-origin"
               />
             ) : (
-              <div className="flex items-center justify-center h-64 text-gold-100/60">
+              <div className="flex items-center justify-center h-64 text-stone-600">
                 No invoice content. Check template or try default.
               </div>
             )}

@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Search, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminNav from '../../components/admin/AdminNav'
-import { adminApi, clubsApi } from '../../services/api'
-import { isStorefrontRole } from '../../constants/storefrontRoles'
+import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
+import { clubsApi } from '../../services/api'
 
 type ClubRow = {
   id: string
@@ -31,26 +31,12 @@ function asClubList(data: unknown): ClubRow[] {
   return p?.results ?? []
 }
 
-type UserRecord = {
-  id: string
-  email: string | null
-  phone_number: string | null
-  full_name: string
-  role: string
-}
-
-function asUserList(data: unknown): UserRecord[] {
-  if (Array.isArray(data)) return data as UserRecord[]
-  const p = data as { results?: UserRecord[] } | undefined
-  return p?.results ?? []
-}
-
 export default function AdminClubs() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [grantUserId, setGrantUserId] = useState('')
-  const [customerSearch, setCustomerSearch] = useState('')
-  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false)
+  const [grantClubId, setGrantClubId] = useState('')
+  const [clubSearch, setClubSearch] = useState('')
+  const [clubDropdownOpen, setClubDropdownOpen] = useState(false)
   const comboRef = useRef<HTMLDivElement>(null)
   const searchInsideRef = useRef<HTMLInputElement>(null)
   const [grantTitle, setGrantTitle] = useState('Loyalty discount')
@@ -67,32 +53,48 @@ export default function AdminClubs() {
     queryFn: () => clubsApi.getFormationConfig(),
   })
   const formationMinOrders = formationConfigData?.min_completed_orders ?? 0
+  const formationPerSlot = formationConfigData?.orders_per_additional_member
   const [minCompletedOrdersInput, setMinCompletedOrdersInput] = useState(String(formationMinOrders))
+  const [ordersPerSlotInput, setOrdersPerSlotInput] = useState('')
 
   useEffect(() => {
-    // Keep input synced when config loads/refreshes.
     if (!formationConfigLoading) {
       setMinCompletedOrdersInput(String(formationMinOrders))
+      setOrdersPerSlotInput(
+        formationPerSlot != null && formationPerSlot > 0 ? String(formationPerSlot) : '',
+      )
     }
-  }, [formationConfigLoading, formationMinOrders])
+  }, [formationConfigLoading, formationMinOrders, formationPerSlot])
 
   const updateFormationConfigMutation = useMutation({
     mutationFn: () => {
       const raw = minCompletedOrdersInput.trim()
       const i = Number(raw)
-      if (!raw || Number.isNaN(i) || !Number.isFinite(i) || i < 0) {
-        throw new Error('Enter a valid non-negative integer.')
+      if (raw === '' || Number.isNaN(i) || !Number.isFinite(i) || i < 0) {
+        throw new Error('Enter a valid non-negative integer for minimum orders.')
       }
-      return clubsApi.updateFormationConfig({ min_completed_orders: i })
+      const perRaw = ordersPerSlotInput.trim()
+      let orders_per_additional_member: number | null = null
+      if (perRaw !== '') {
+        const p = Number(perRaw)
+        if (Number.isNaN(p) || !Number.isFinite(p) || p < 0) {
+          throw new Error(t('admin.clubFormationPerSlotInvalid'))
+        }
+        orders_per_additional_member = p > 0 ? p : null
+      }
+      return clubsApi.updateFormationConfig({
+        min_completed_orders: i,
+        orders_per_additional_member,
+      })
     },
     onSuccess: () => {
-      toast.success('Club formation rule updated')
+      toast.success(t('admin.clubFormationSaved'))
       queryClient.invalidateQueries({ queryKey: ['clubFormationConfig'] })
       refetchFormationConfig().catch(() => {})
     },
     onError: (err: unknown) => {
       if (err instanceof Error) toast.error(err.message)
-      else toast.error('Failed to update')
+      else toast.error(t('admin.clubFormationSaveFailed'))
     },
   })
 
@@ -102,65 +104,74 @@ export default function AdminClubs() {
   })
   const clubs = useMemo(() => asClubList(data), [data])
 
-  const { data: usersData, isLoading: customersLoading } = useQuery({
-    queryKey: ['adminCustomers'],
-    queryFn: () => adminApi.getCustomers({ page_size: 500 }),
-  })
-  const allUsers = useMemo(() => asUserList(usersData), [usersData])
-  const customers = useMemo(
-    () => allUsers.filter((u) => isStorefrontRole(u.role)),
-    [allUsers],
+  const [clubsPage, setClubsPage] = useState(1)
+  const clubsPageSize = 10
+  const clubsTotal = clubs.length
+  const clubsTotalPages = Math.max(1, Math.ceil(clubsTotal / clubsPageSize))
+  const clubsPageRows = useMemo(
+    () => clubs.slice((clubsPage - 1) * clubsPageSize, clubsPage * clubsPageSize),
+    [clubs, clubsPage],
   )
-  const filteredCustomers = useMemo(() => {
-    if (!customerSearch.trim()) return customers
-    const q = customerSearch.toLowerCase()
-    return customers.filter(
-      (u) =>
-        u.full_name?.toLowerCase().includes(q) ||
-        (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.phone_number && u.phone_number.toLowerCase().includes(q)) ||
-        u.id.toLowerCase().includes(q),
-    )
-  }, [customers, customerSearch])
 
-  const selectedCustomer = useMemo(
-    () => customers.find((c) => c.id === grantUserId),
-    [customers, grantUserId],
+  useEffect(() => {
+    setClubsPage(1)
+  }, [data])
+
+  useEffect(() => {
+    if (clubsPage > clubsTotalPages) setClubsPage(clubsTotalPages)
+  }, [clubsPage, clubsTotalPages])
+
+  const filteredClubs = useMemo(() => {
+    if (!clubSearch.trim()) return clubs
+    const q = clubSearch.toLowerCase()
+    return clubs.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(q) ||
+        (c.head_name && c.head_name.toLowerCase().includes(q)) ||
+        (c.head_email && c.head_email.toLowerCase().includes(q)) ||
+        c.id.toLowerCase().includes(q),
+    )
+  }, [clubs, clubSearch])
+
+  const selectedClub = useMemo(
+    () => clubs.find((c) => c.id === grantClubId),
+    [clubs, grantClubId],
   )
 
   /** Options in dropdown: filtered list, plus current selection if search hides it */
-  const dropdownCustomers = useMemo(() => {
-    const ids = new Set(filteredCustomers.map((u) => u.id))
-    if (grantUserId && selectedCustomer && !ids.has(grantUserId)) {
-      return [selectedCustomer, ...filteredCustomers]
+  const dropdownClubs = useMemo(() => {
+    const ids = new Set(filteredClubs.map((c) => c.id))
+    if (grantClubId && selectedClub && !ids.has(grantClubId)) {
+      return [selectedClub, ...filteredClubs]
     }
-    return filteredCustomers
-  }, [filteredCustomers, grantUserId, selectedCustomer])
+    return filteredClubs
+  }, [filteredClubs, grantClubId, selectedClub])
 
-  function customerOptionLabel(u: UserRecord) {
-    const contact = u.email || u.phone_number || `${u.id.slice(0, 8)}…`
-    return `${u.full_name || '—'} — ${contact}`
+  function clubOptionLabel(c: ClubRow) {
+    const head = c.head_name || c.head_email || '—'
+    const count = c.member_count ?? c.members?.length ?? 0
+    return `${c.name || '—'} — ${head} (${count})`
   }
 
   useEffect(() => {
-    if (!customerDropdownOpen) return
+    if (!clubDropdownOpen) return
     const t = window.setTimeout(() => searchInsideRef.current?.focus(), 0)
     return () => window.clearTimeout(t)
-  }, [customerDropdownOpen])
+  }, [clubDropdownOpen])
 
   useEffect(() => {
-    if (!customerDropdownOpen) return
+    if (!clubDropdownOpen) return
     const onDoc = (e: MouseEvent) => {
       if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
-        setCustomerDropdownOpen(false)
+        setClubDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
-  }, [customerDropdownOpen])
+  }, [clubDropdownOpen])
 
   const grantMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const pctRaw = grantPercent.trim()
       const amtRaw = grantAmount.trim()
       const hasPct = pctRaw !== '' && !Number.isNaN(Number(pctRaw))
@@ -178,16 +189,45 @@ export default function AdminClubs() {
         const d = new Date(grantValidUntil)
         if (!Number.isNaN(d.getTime())) validUntil = d.toISOString()
       }
-      return clubsApi.grantOffer({
-        user_id: grantUserId.trim(),
+
+      const club = clubs.find((c) => c.id === grantClubId)
+      if (!club) throw new Error('Please choose a club')
+      const memberUserIds = Array.from(
+        new Set((club.members ?? []).map((m) => m.user_id).filter((id) => typeof id === 'string' && id.trim().length > 0)),
+      )
+      if (memberUserIds.length === 0) {
+        throw new Error('Selected club has no members to receive this offer')
+      }
+
+      const payloadBase = {
         title: grantTitle.trim(),
         discount_percent: pct != null && !Number.isNaN(pct) ? pct : null,
         discount_amount_kwd: amt,
         valid_until: validUntil,
-      })
+      }
+
+      const results = await Promise.allSettled(
+        memberUserIds.map((userId) =>
+          clubsApi.grantOffer({
+            user_id: userId,
+            ...payloadBase,
+          }),
+        ),
+      )
+
+      const failed = results.filter((r) => r.status === 'rejected').length
+      return {
+        total: memberUserIds.length,
+        failed,
+        ok: memberUserIds.length - failed,
+      }
     },
-    onSuccess: () => {
-      toast.success('Offer granted')
+    onSuccess: (result) => {
+      if (result.failed > 0) {
+        toast.warning(`Offer granted to ${result.ok}/${result.total} club members`)
+      } else {
+        toast.success(`Offer granted to ${result.total} club members`)
+      }
       queryClient.invalidateQueries({ queryKey: ['adminClubs'] })
       setGrantPercent('')
       setGrantAmount('')
@@ -217,88 +257,106 @@ export default function AdminClubs() {
         </div>
 
         <div className="gold-card mb-8">
-          <h2 className="text-lg font-semibold text-gold-100 mb-4">Club formation eligibility</h2>
-          <p className="text-sm text-gold-100/70 mb-4">
-            Admin can require a minimum number of completed orders before a customer can create or join a club.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div className="md:col-span-1">
-              <label className="text-xs text-gold-100/60 block mb-1">Min completed orders</label>
+          <h2 className="text-lg font-semibold text-black mb-2">{t('admin.clubFormationTitle')}</h2>
+          <p className="text-sm text-stone-700 mb-4">{t('admin.clubFormationIntro')}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs text-stone-600 block mb-1">
+                {t('admin.clubFormationMinOrdersLabel')}
+              </label>
               <input
                 type="number"
                 min={0}
-                className="w-full px-3 py-2 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm"
                 value={minCompletedOrdersInput}
                 onChange={(e) => setMinCompletedOrdersInput(e.target.value)}
                 disabled={formationConfigLoading || updateFormationConfigMutation.isPending}
               />
+              <p className="text-xs text-stone-500 mt-1.5">{t('admin.clubFormationMinOrdersHint')}</p>
             </div>
-            <div className="md:col-span-2">
-              <button
-                type="button"
-                onClick={() => updateFormationConfigMutation.mutate()}
+            <div>
+              <label className="text-xs text-stone-600 block mb-1">
+                {t('admin.clubFormationPerMemberLabel')}
+              </label>
+              <input
+                type="number"
+                min={0}
+                placeholder={t('admin.clubFormationPerMemberPlaceholder')}
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm placeholder:text-stone-500"
+                value={ordersPerSlotInput}
+                onChange={(e) => setOrdersPerSlotInput(e.target.value)}
                 disabled={formationConfigLoading || updateFormationConfigMutation.isPending}
-                className="gold-button px-4 py-2 text-sm disabled:opacity-50"
-              >
-                {updateFormationConfigMutation.isPending ? 'Saving…' : 'Save rule'}
-              </button>
+              />
+              <p className="text-xs text-stone-500 mt-1.5">{t('admin.clubFormationPerMemberHint')}</p>
             </div>
+          </div>
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => updateFormationConfigMutation.mutate()}
+              disabled={formationConfigLoading || updateFormationConfigMutation.isPending}
+              className="gold-button px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {updateFormationConfigMutation.isPending
+                ? t('admin.clubFormationSaving')
+                : t('admin.clubFormationSave')}
+            </button>
           </div>
         </div>
 
         <div className="gold-card mb-8">
-          <h2 className="text-lg font-semibold text-gold-100 mb-4">{t('admin.grantCustomerOffer')}</h2>
-          <p className="text-sm text-gold-100/70 mb-4">
+          <h2 className="text-lg font-semibold text-black mb-4">{t('admin.grantCustomerOffer')}</h2>
+          <p className="text-sm text-stone-700 mb-4">
             {t('admin.grantOfferHint')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
             <div className="md:col-span-2" ref={comboRef}>
-              <label className="text-xs text-gold-100/60 block mb-1">{t('admin.selectCustomer')}</label>
-              {customersLoading ? (
-                <p className="text-xs text-gold-100/50 py-2">Loading customers…</p>
+              <label className="text-xs text-stone-600 block mb-1">{t('admin.selectCustomer')}</label>
+              {isLoading ? (
+                <p className="text-xs text-stone-500 py-2">Loading clubs…</p>
               ) : (
                 <div className="relative mt-1">
                   <button
                     type="button"
                     id="grant-customer-combo"
-                    aria-expanded={customerDropdownOpen}
+                    aria-expanded={clubDropdownOpen}
                     aria-haspopup="listbox"
-                    onClick={() => setCustomerDropdownOpen((o) => !o)}
+                    onClick={() => setClubDropdownOpen((o) => !o)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Escape') setCustomerDropdownOpen(false)
+                      if (e.key === 'Escape') setClubDropdownOpen(false)
                     }}
-                    className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm text-left focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg bg-white border border-black/15 text-black text-sm text-left focus:outline-none focus:ring-2 focus:ring-lime-500/40"
                   >
-                    <span className={`truncate ${!selectedCustomer ? 'text-gold-100/45' : ''}`}>
-                      {selectedCustomer
-                        ? customerOptionLabel(selectedCustomer)
+                    <span className={`truncate ${!selectedClub ? 'text-stone-500' : ''}`}>
+                      {selectedClub
+                        ? clubOptionLabel(selectedClub)
                         : t('admin.selectCustomerPlaceholder')}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 shrink-0 text-gold-400/70 transition-transform ${customerDropdownOpen ? 'rotate-180' : ''}`}
+                      className={`w-4 h-4 shrink-0 text-lime-800 transition-transform ${clubDropdownOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
 
-                  {customerDropdownOpen && (
+                  {clubDropdownOpen && (
                     <div
-                      className="absolute z-50 left-0 right-0 mt-1 rounded-lg border border-gold-500/30 bg-charcoal-900 shadow-xl overflow-hidden"
+                      className="absolute z-50 left-0 right-0 mt-1 rounded-lg border border-black/15 bg-white shadow-xl overflow-hidden"
                       role="listbox"
                       aria-labelledby="grant-customer-combo"
                     >
-                      <div className="p-2 border-b border-gold-500/20 bg-charcoal-900">
+                      <div className="p-2 border-b border-stone-200 bg-white">
                         <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-400/50 pointer-events-none" />
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 pointer-events-none" />
                           <input
                             ref={searchInsideRef}
                             type="search"
-                            className="w-full pl-9 pr-3 py-2 rounded-md bg-charcoal-800 border border-gold-500/25 text-gold-100 text-sm placeholder:text-gold-100/40"
+                            className="w-full pl-9 pr-3 py-2 rounded-md bg-white border border-black/15 text-black text-sm placeholder:text-stone-500"
                             placeholder={t('admin.searchCustomers')}
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            value={clubSearch}
+                            onChange={(e) => setClubSearch(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Escape') {
                                 e.stopPropagation()
-                                setCustomerDropdownOpen(false)
+                                setClubDropdownOpen(false)
                               }
                             }}
                             autoComplete="off"
@@ -310,34 +368,34 @@ export default function AdminClubs() {
                           <button
                             type="button"
                             role="option"
-                            aria-selected={grantUserId === ''}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gold-500/10 ${grantUserId === '' ? 'bg-gold-500/5 text-gold-100/70' : 'text-gold-100/55'}`}
+                            aria-selected={grantClubId === ''}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-lime-100 ${grantClubId === '' ? 'bg-lime-50 text-stone-700' : 'text-stone-600'}`}
                             onClick={() => {
-                              setGrantUserId('')
-                              setCustomerDropdownOpen(false)
+                              setGrantClubId('')
+                              setClubDropdownOpen(false)
                             }}
                           >
                             {t('admin.selectCustomerPlaceholder')}
                           </button>
                         </li>
-                        {dropdownCustomers.length === 0 ? (
-                          <li className="px-3 py-2 text-sm text-gold-100/50">{t('admin.noCustomersMatchFilter')}</li>
+                        {dropdownClubs.length === 0 ? (
+                          <li className="px-3 py-2 text-sm text-stone-500">{t('admin.noCustomersMatchFilter')}</li>
                         ) : (
-                          dropdownCustomers.map((u) => (
-                            <li key={u.id}>
+                          dropdownClubs.map((c) => (
+                            <li key={c.id}>
                               <button
                                 type="button"
                                 role="option"
-                                aria-selected={grantUserId === u.id}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-gold-500/10 ${
-                                  grantUserId === u.id ? 'bg-amber-500/15 text-amber-100' : 'text-gold-100/90'
+                                aria-selected={grantClubId === c.id}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-lime-100 ${
+                                  grantClubId === c.id ? 'bg-amber-500/15 text-amber-100' : 'text-stone-800'
                                 }`}
                                 onClick={() => {
-                                  setGrantUserId(u.id)
-                                  setCustomerDropdownOpen(false)
+                                  setGrantClubId(c.id)
+                                  setClubDropdownOpen(false)
                                 }}
                               >
-                                {customerOptionLabel(u)}
+                                {clubOptionLabel(c)}
                               </button>
                             </li>
                           ))
@@ -349,43 +407,43 @@ export default function AdminClubs() {
               )}
             </div>
             <div>
-              <label className="text-xs text-gold-100/60 block mb-1">Title</label>
+              <label className="text-xs text-stone-600 block mb-1">Title</label>
               <input
-                className="w-full px-3 py-2 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm"
                 value={grantTitle}
                 onChange={(e) => setGrantTitle(e.target.value)}
               />
             </div>
             <div>
-              <label className="text-xs text-gold-100/60 block mb-1">Discount % (optional)</label>
+              <label className="text-xs text-stone-600 block mb-1">Discount % (optional)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 max="100"
-                className="w-full px-3 py-2 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm"
                 value={grantPercent}
                 onChange={(e) => setGrantPercent(e.target.value)}
                 placeholder="e.g. 5"
               />
             </div>
             <div>
-              <label className="text-xs text-gold-100/60 block mb-1">Fixed KWD off (optional)</label>
+              <label className="text-xs text-stone-600 block mb-1">Fixed KWD off (optional)</label>
               <input
                 type="number"
                 step="0.001"
                 min="0"
-                className="w-full px-3 py-2 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm"
                 value={grantAmount}
                 onChange={(e) => setGrantAmount(e.target.value)}
                 placeholder="e.g. 10"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs text-gold-100/60 block mb-1">Valid until (optional, datetime-local)</label>
+              <label className="text-xs text-stone-600 block mb-1">Valid until (optional, datetime-local)</label>
               <input
                 type="datetime-local"
-                className="w-full px-3 py-2 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm"
                 value={grantValidUntil}
                 onChange={(e) => setGrantValidUntil(e.target.value)}
               />
@@ -393,7 +451,7 @@ export default function AdminClubs() {
             <div className="md:col-span-2">
               <button
                 type="button"
-                disabled={grantMutation.isPending || !grantUserId.trim()}
+                disabled={grantMutation.isPending || !grantClubId.trim()}
                 onClick={() => grantMutation.mutate()}
                 className="gold-button px-4 py-2 text-sm disabled:opacity-50"
               >
@@ -404,63 +462,73 @@ export default function AdminClubs() {
         </div>
 
         <div className="gold-card overflow-x-auto">
-          <h2 className="text-lg font-semibold text-gold-100 mb-4">{t('admin.clubsList')}</h2>
+          <h2 className="text-lg font-semibold text-black mb-4">{t('admin.clubsList')}</h2>
           {isLoading ? (
-            <p className="text-gold-100/60 py-8 text-center">Loading…</p>
+            <p className="text-stone-600 py-8 text-center">Loading…</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70">Name</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70">Head</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70">Members</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70">Active</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700">Name</th>
+                  <th className="text-left py-3 px-4 text-stone-700">Head</th>
+                  <th className="text-left py-3 px-4 text-stone-700">Members</th>
+                  <th className="text-left py-3 px-4 text-stone-700">Active</th>
                 </tr>
               </thead>
               <tbody>
-                {clubs.map((c) => (
-                  <tr key={c.id} className="border-b border-gold-500/10">
-                    <td className="py-3 px-4 text-gold-100 font-medium">{c.name}</td>
-                    <td className="py-3 px-4 text-gold-100/80">
+                {clubsPageRows.map((c) => (
+                  <tr key={c.id} className="border-b border-stone-100">
+                    <td className="py-3 px-4 text-black font-medium">{c.name}</td>
+                    <td className="py-3 px-4 text-stone-800">
                       {c.head_name || '—'}
-                      {c.head_email && <span className="block text-xs text-gold-100/50">{c.head_email}</span>}
+                      {c.head_email && <span className="block text-xs text-stone-500">{c.head_email}</span>}
                     </td>
-                    <td className="py-3 px-4 text-gold-100/80">
+                    <td className="py-3 px-4 text-stone-800">
                       <div className="flex items-center justify-between gap-3">
                         <span>{c.member_count ?? '—'}</span>
                         {c.members && c.members.length > 0 && (
-                          <span className="text-xs text-gold-100/55">{c.members.length} listed</span>
+                          <span className="text-xs text-stone-600">{c.members.length} listed</span>
                         )}
                       </div>
                       {c.members && c.members.length > 0 ? (
                         <div className="mt-2 space-y-1">
                           {c.members.slice(0, 4).map((m) => (
-                            <div key={m.id} className="text-xs text-gold-100/60">
-                              <span className="text-gold-100/80 font-medium">{m.full_name}</span>{' '}
-                              <span className="text-gold-100/45">({m.role})</span>
+                            <div key={m.id} className="text-xs text-stone-600">
+                              <span className="text-stone-800 font-medium">{m.full_name}</span>{' '}
+                              <span className="text-stone-500">({m.role})</span>
                               {(m.email || m.phone_number) && (
-                                <span className="block text-[10px] text-gold-100/45">
+                                <span className="block text-[10px] text-stone-500">
                                   {m.email || m.phone_number}
                                 </span>
                               )}
                             </div>
                           ))}
                           {c.members.length > 4 && (
-                            <div className="text-[10px] text-gold-100/45">+{c.members.length - 4} more</div>
+                            <div className="text-[10px] text-stone-500">+{c.members.length - 4} more</div>
                           )}
                         </div>
                       ) : (
-                        <div className="text-xs text-gold-100/45 mt-2">No active members</div>
+                        <div className="text-xs text-stone-500 mt-2">No active members</div>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-gold-100/80">{c.is_active ? 'Yes' : 'No'}</td>
+                    <td className="py-3 px-4 text-stone-800">{c.is_active ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
           {!isLoading && clubs.length === 0 && (
-            <p className="py-8 text-center text-gold-100/60">No clubs yet.</p>
+            <p className="py-8 text-center text-stone-600">No clubs yet.</p>
+          )}
+          {!isLoading && clubsTotal > clubsPageSize && (
+            <AdminPaginationBar
+              page={clubsPage}
+              totalPages={clubsTotalPages}
+              total={clubsTotal}
+              pageSize={clubsPageSize}
+              onPageChange={setClubsPage}
+              itemLabel="clubs"
+            />
           )}
         </div>
       </div>

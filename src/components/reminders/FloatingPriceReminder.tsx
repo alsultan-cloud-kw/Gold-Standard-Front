@@ -129,7 +129,11 @@ export default function FloatingPriceReminder() {
             <Bell className={open ? 'h-5 w-5 sm:h-6 sm:w-6' : 'h-4 w-4'} />
           </span>
           <span className="flex-1 min-w-0">
-            <span className={`block font-semibold text-gold-100 ${open ? 'text-base sm:text-lg' : 'text-sm'}`}>
+            <span
+              className={`block font-semibold text-gold-100 ${
+                open ? 'text-base sm:text-lg' : 'text-sm motion-safe:animate-cart-badge-blink'
+              }`}
+            >
               {t('priceReminder.title')}
             </span>
             <span

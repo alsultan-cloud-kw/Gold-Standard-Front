@@ -12,6 +12,27 @@ export type ProductFetchTrendMap = Record<string, ProductFetchTrend>
 const RATE_SNAPSHOT_STORAGE_KEY = 'daralsabaek_rate_snapshot_v1'
 const RATE_DIRECTION_STORAGE_KEY = 'daralsabaek_rate_direction_v1'
 
+function trendsMapsEqual(a: ProductFetchTrendMap, b: ProductFetchTrendMap): boolean {
+  const keys = Object.keys(a)
+  if (keys.length !== Object.keys(b).length) return false
+  for (const k of keys) {
+    const x = a[k]
+    const y = b[k]
+    if (!y || x.trend !== y.trend || x.percent !== y.percent) return false
+  }
+  return true
+}
+
+/** Stable primitive so effects do not re-run when callers pass a new `[]` or `[p]` each render. */
+function productsDependencyKey(products: Product[] | undefined): string {
+  const list = products ?? []
+  if (list.length === 0) return ''
+  return list
+    .map((p) => `${p.id}:${p.carat?.carat_value ?? ''}`)
+    .sort()
+    .join('|')
+}
+
 function caratFromKey(key: string): number | null {
   const m = String(key || '').match(/(\d{1,2})\s*K/i)
   if (!m) return null
@@ -47,6 +68,17 @@ export function useProductPriceTrendSincePreviousFetch(products: Product[] | und
     }
     return out
   }, [data])
+
+  const rateByCaratKey = useMemo(
+    () =>
+      Object.keys(rateByCarat)
+        .sort()
+        .map((k) => `${k}=${rateByCarat[k]}`)
+        .join('&'),
+    [rateByCarat]
+  )
+
+  const productsKey = productsDependencyKey(products)
 
   useEffect(() => {
     try {
@@ -104,7 +136,7 @@ export function useProductPriceTrendSincePreviousFetch(products: Product[] | und
       next[id] = byCarat ?? { trend: null, percent: null }
     }
 
-    setTrends(next)
+    setTrends((prev) => (trendsMapsEqual(prev, next) ? prev : next))
 
     prevRateRef.current = { ...prev, ...rateByCarat }
     try {
@@ -119,7 +151,10 @@ export function useProductPriceTrendSincePreviousFetch(products: Product[] | und
     } catch {
       // Ignore storage write errors (private mode/quota).
     }
-  }, [products, rateByCarat])
+    // Intentionally omit `products` / `rateByCarat` object identity — callers often pass a new array
+    // each render (e.g. `product ? [product] : []`). Keys capture real changes; closure has latest refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- productsKey + rateByCaratKey are the stable triggers
+  }, [productsKey, rateByCaratKey])
 
   return trends
 }

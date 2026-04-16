@@ -52,21 +52,21 @@ export default function AdminJournal() {
         </div>
 
         {isLoading ? (
-          <div className="gold-card p-8 text-center text-gold-100/80">{t('common.loading')}</div>
+          <div className="gold-card p-8 text-center text-stone-800">{t('common.loading')}</div>
         ) : (
           <div className="gold-card overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.entryNumber')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.date')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.type')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.source')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.description')}</th>
-                  <th className="text-right py-3 px-4 text-gold-100/70 font-medium">{t('admin.debits')}</th>
-                  <th className="text-right py-3 px-4 text-gold-100/70 font-medium">{t('admin.credits')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.status')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.actions')}</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.entryNumber')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.date')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.type')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.source')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.description')}</th>
+                  <th className="text-right py-3 px-4 text-stone-700 font-medium">{t('admin.debits')}</th>
+                  <th className="text-right py-3 px-4 text-stone-700 font-medium">{t('admin.credits')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.status')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,21 +85,21 @@ export default function AdminJournal() {
                     ? { to: '/admin/trading/buybacks', label: `${t('admin.buyback')} ${entry.source_buyback_reference || entry.source_buyback_id}` }
                     : null
                   return (
-                  <tr key={entry.id} className="border-b border-gold-500/10">
-                    <td className="py-3 px-4 font-mono text-gold-100">{entry.entry_number}</td>
-                    <td className="py-3 px-4 text-gold-100">{entry.entry_date}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{entry.entry_type_display || entry.entry_type}</td>
-                    <td className="py-3 px-4 text-gold-100/80">
+                  <tr key={entry.id} className="border-b border-stone-100">
+                    <td className="py-3 px-4 font-mono text-black">{entry.entry_number}</td>
+                    <td className="py-3 px-4 text-black">{entry.entry_date}</td>
+                    <td className="py-3 px-4 text-stone-800">{entry.entry_type_display || entry.entry_type}</td>
+                    <td className="py-3 px-4 text-stone-800">
                       {sourceLink ? (
-                        <Link to={sourceLink.to} className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
+                        <Link to={sourceLink.to} className="inline-flex items-center gap-1 text-lime-800 hover:text-lime-800">
                           {sourceLink.label}
                           <ExternalLink className="w-3 h-3" />
                         </Link>
                       ) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-gold-100/80 max-w-xs truncate">{entry.description_en || '—'}</td>
-                    <td className="py-3 px-4 text-right text-gold-100">{Number(entry.total_debits).toLocaleString(undefined, { minimumFractionDigits: 3 })}</td>
-                    <td className="py-3 px-4 text-right text-gold-100">{Number(entry.total_credits).toLocaleString(undefined, { minimumFractionDigits: 3 })}</td>
+                    <td className="py-3 px-4 text-stone-800 max-w-xs truncate">{entry.description_en || '—'}</td>
+                    <td className="py-3 px-4 text-right text-black">{Number(entry.total_debits).toLocaleString(undefined, { minimumFractionDigits: 3 })}</td>
+                    <td className="py-3 px-4 text-right text-black">{Number(entry.total_credits).toLocaleString(undefined, { minimumFractionDigits: 3 })}</td>
                     <td className="py-3 px-4">
                       {entry.is_posted ? (
                         <span className="text-green-300 text-sm">{t('admin.posted')}</span>
@@ -112,7 +112,7 @@ export default function AdminJournal() {
                         <button
                           onClick={() => postMutation.mutate(entry.id)}
                           disabled={postMutation.isPending}
-                          className="flex items-center gap-1 text-sm text-gold-400 hover:text-gold-300"
+                          className="flex items-center gap-1 text-sm text-lime-800 hover:text-lime-800"
                         >
                           <CheckCircle className="w-4 h-4" />
                           {t('admin.post')}
@@ -124,12 +124,12 @@ export default function AdminJournal() {
               </tbody>
             </table>
             {list.length === 0 && (
-              <p className="py-8 text-center text-gold-100/60">{t('admin.noEntries')}</p>
+              <p className="py-8 text-center text-stone-600">{t('admin.noEntries')}</p>
             )}
           </div>
         )}
         {!isLoading && total > pageSize && (
-          <div className="mt-4 gold-card flex items-center justify-between text-xs text-gold-100/70">
+          <div className="mt-4 gold-card flex items-center justify-between text-xs text-stone-700">
             <div>
               Page {page} of {totalPages} ({total} entries)
             </div>
@@ -138,7 +138,7 @@ export default function AdminJournal() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Prev
               </button>
@@ -146,7 +146,7 @@ export default function AdminJournal() {
                 type="button"
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Next
               </button>

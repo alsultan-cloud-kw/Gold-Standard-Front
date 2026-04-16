@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminNav from '../../components/admin/AdminNav'
+import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { adminApi, accountingApi, inventoryApi, productsApi } from '../../services/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -294,6 +295,23 @@ export default function AdminPurchases() {
   const list = asList<{ id: string; purchase_number: string; purchase_date: string; seller_name?: string; branch_name?: string; total_amount: number }>(purchasesData)
   const today = (todayData as { total_amount?: number; count?: number }) ?? {}
 
+  const [purchasePage, setPurchasePage] = useState(1)
+  const purchasePageSize = 10
+  const purchaseTotal = list.length
+  const purchaseTotalPages = Math.max(1, Math.ceil(purchaseTotal / purchasePageSize))
+  const purchasePageItems = list.slice(
+    (purchasePage - 1) * purchasePageSize,
+    purchasePage * purchasePageSize,
+  )
+
+  useEffect(() => {
+    setPurchasePage(1)
+  }, [purchasesData])
+
+  useEffect(() => {
+    if (purchasePage > purchaseTotalPages) setPurchasePage(purchaseTotalPages)
+  }, [purchasePage, purchaseTotalPages])
+
   return (
     <div className="min-h-screen py-8 bg-[var(--site-bg)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -322,37 +340,37 @@ export default function AdminPurchases() {
         {!!todayData && (
           <div className="gold-card px-6 py-4 flex items-center gap-6 mb-6">
             <div>
-              <p className="text-sm text-gold-100/70">{t('admin.todayPurchases')}</p>
-              <p className="text-xl font-bold text-gold-400">
+              <p className="text-sm text-stone-700">{t('admin.todayPurchases')}</p>
+              <p className="text-xl font-bold text-lime-800">
                 {Number(today.total_amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
               </p>
             </div>
             <div>
-              <p className="text-sm text-gold-100/70">{t('admin.count')}</p>
-              <p className="text-xl font-bold text-gold-100">{today.count ?? 0}</p>
+              <p className="text-sm text-stone-700">{t('admin.count')}</p>
+              <p className="text-xl font-bold text-black">{today.count ?? 0}</p>
             </div>
           </div>
         )}
 
         {isLoading ? (
-          <div className="gold-card p-8 text-center text-gold-100/80">{t('common.loading')}</div>
+          <div className="gold-card p-8 text-center text-stone-800">{t('common.loading')}</div>
         ) : (
           <div className="gold-card overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.purchaseNumber')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.date')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.seller')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.branch')}</th>
-                  <th className="text-right py-3 px-4 text-gold-100/70 font-medium">{t('admin.amount')}</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.purchaseNumber')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.date')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.seller')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.branch')}</th>
+                  <th className="text-right py-3 px-4 text-stone-700 font-medium">{t('admin.amount')}</th>
                 </tr>
               </thead>
               <tbody>
-                {list.map((p) => (
+                {purchasePageItems.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-gold-500/10 cursor-pointer hover:bg-gold-500/5"
+                    className="border-b border-stone-100 cursor-pointer hover:bg-lime-50"
                     onClick={() => {
                       setSelectedPurchaseId(p.id)
                       setDetailsOpen(true)
@@ -366,11 +384,11 @@ export default function AdminPurchases() {
                       }
                     }}
                   >
-                    <td className="py-3 px-4 font-mono text-gold-100">{p.purchase_number}</td>
-                    <td className="py-3 px-4 text-gold-100">{p.purchase_date}</td>
-                    <td className="py-3 px-4 text-gold-100">{p.seller_name || '—'}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{p.branch_name || '—'}</td>
-                    <td className="py-3 px-4 text-right text-gold-400 font-medium">
+                    <td className="py-3 px-4 font-mono text-black">{p.purchase_number}</td>
+                    <td className="py-3 px-4 text-black">{p.purchase_date}</td>
+                    <td className="py-3 px-4 text-black">{p.seller_name || '—'}</td>
+                    <td className="py-3 px-4 text-stone-800">{p.branch_name || '—'}</td>
+                    <td className="py-3 px-4 text-right text-lime-800 font-medium">
                       {Number(p.total_amount).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
                     </td>
                   </tr>
@@ -378,14 +396,24 @@ export default function AdminPurchases() {
               </tbody>
             </table>
             {list.length === 0 && (
-              <p className="py-8 text-center text-gold-100/60">{t('admin.noPurchasesFound')}</p>
+              <p className="py-8 text-center text-stone-600">{t('admin.noPurchasesFound')}</p>
+            )}
+            {!isLoading && purchaseTotal > purchasePageSize && (
+              <AdminPaginationBar
+                page={purchasePage}
+                totalPages={purchaseTotalPages}
+                total={purchaseTotal}
+                pageSize={purchasePageSize}
+                onPageChange={setPurchasePage}
+                itemLabel="purchases"
+              />
             )}
           </div>
         )}
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[var(--panel-bg)] border border-gold-500/20 text-stone-800">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[var(--panel-bg)] border border-stone-200 text-stone-800">
           <DialogHeader>
             <DialogTitle className="gold-gradient-text-on-light">{t('admin.addPurchaseFromMerchant')}</DialogTitle>
           </DialogHeader>
@@ -583,15 +611,15 @@ export default function AdminPurchases() {
           if (!v) setSelectedPurchaseId(null)
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[var(--panel-bg)] border border-gold-500/20 text-stone-800">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[var(--panel-bg)] border border-stone-200 text-stone-800">
           <DialogHeader>
             <DialogTitle className="gold-gradient-text-on-light">Purchase details</DialogTitle>
           </DialogHeader>
 
           {detailsLoading ? (
-            <div className="p-4 text-gold-100/60">Loading…</div>
+            <div className="p-4 text-stone-600">Loading…</div>
           ) : !purchaseDetailsRaw ? (
-            <div className="p-4 text-gold-100/60">No purchase selected.</div>
+            <div className="p-4 text-stone-600">No purchase selected.</div>
           ) : (
             (() => {
               const pd = purchaseDetailsRaw as any
@@ -599,82 +627,82 @@ export default function AdminPurchases() {
               return (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Purchase #</p>
-                      <p className="text-gold-100 font-semibold">{pd.purchase_number || '—'}</p>
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Purchase #</p>
+                      <p className="text-black font-semibold">{pd.purchase_number || '—'}</p>
                     </div>
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Date</p>
-                      <p className="text-gold-100 font-semibold">{pd.purchase_date || '—'}</p>
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Date</p>
+                      <p className="text-black font-semibold">{pd.purchase_date || '—'}</p>
                     </div>
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Seller</p>
-                      <p className="text-gold-100 font-semibold">{pd.seller_name || '—'}</p>
-                      {pd.seller_phone && <p className="text-xs text-gold-100/60 mt-1">{pd.seller_phone}</p>}
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Seller</p>
+                      <p className="text-black font-semibold">{pd.seller_name || '—'}</p>
+                      {pd.seller_phone && <p className="text-xs text-stone-600 mt-1">{pd.seller_phone}</p>}
                     </div>
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Branch / Payment</p>
-                      <p className="text-gold-100 font-semibold">{pd.branch_name || '—'}</p>
-                      {pd.payment_method_display && <p className="text-xs text-gold-100/60 mt-1">{pd.payment_method_display}</p>}
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Branch / Payment</p>
+                      <p className="text-black font-semibold">{pd.branch_name || '—'}</p>
+                      {pd.payment_method_display && <p className="text-xs text-stone-600 mt-1">{pd.payment_method_display}</p>}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Total weight (g)</p>
-                      <p className="text-gold-100 font-semibold">{Number(pd.total_weight ?? 0).toFixed(3)}</p>
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Total weight (g)</p>
+                      <p className="text-black font-semibold">{Number(pd.total_weight ?? 0).toFixed(3)}</p>
                     </div>
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Price / g</p>
-                      <p className="text-gold-100 font-semibold">{Number(pd.price_per_gram ?? 0).toFixed(3)}</p>
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Price / g</p>
+                      <p className="text-black font-semibold">{Number(pd.price_per_gram ?? 0).toFixed(3)}</p>
                     </div>
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Total amount</p>
-                      <p className="text-gold-100 font-semibold">{Number(pd.total_amount ?? 0).toFixed(3)} KWD</p>
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Total amount</p>
+                      <p className="text-black font-semibold">{Number(pd.total_amount ?? 0).toFixed(3)} KWD</p>
                     </div>
                   </div>
 
                   {pd.notes && (
-                    <div className="p-3 bg-charcoal-800 rounded-lg">
-                      <p className="text-xs text-gold-100/60">Notes</p>
-                      <p className="text-gold-100 whitespace-pre-wrap">{pd.notes}</p>
+                    <div className="p-3 bg-white rounded-lg">
+                      <p className="text-xs text-stone-600">Notes</p>
+                      <p className="text-black whitespace-pre-wrap">{pd.notes}</p>
                     </div>
                   )}
 
-                  <div className="p-3 bg-charcoal-800 rounded-lg">
-                    <p className="text-sm font-semibold text-gold-100 mb-3">Line items</p>
+                  <div className="p-3 bg-white rounded-lg">
+                    <p className="text-sm font-semibold text-black mb-3">Line items</p>
                     {items.length === 0 ? (
-                      <p className="text-gold-100/60">No items on this purchase.</p>
+                      <p className="text-stone-600">No items on this purchase.</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-gold-500/20">
-                              <th className="text-left py-2 px-3 text-gold-100/70 font-medium">Product</th>
-                              <th className="text-left py-2 px-3 text-gold-100/70 font-medium">Metal</th>
-                              <th className="text-left py-2 px-3 text-gold-100/70 font-medium">Carat</th>
-                              <th className="text-right py-2 px-3 text-gold-100/70 font-medium">Qty</th>
-                              <th className="text-right py-2 px-3 text-gold-100/70 font-medium">Weight (g)</th>
-                              <th className="text-right py-2 px-3 text-gold-100/70 font-medium">Price / g</th>
-                              <th className="text-right py-2 px-3 text-gold-100/70 font-medium">Total</th>
+                            <tr className="border-b border-stone-200">
+                              <th className="text-left py-2 px-3 text-stone-700 font-medium">Product</th>
+                              <th className="text-left py-2 px-3 text-stone-700 font-medium">Metal</th>
+                              <th className="text-left py-2 px-3 text-stone-700 font-medium">Carat</th>
+                              <th className="text-right py-2 px-3 text-stone-700 font-medium">Qty</th>
+                              <th className="text-right py-2 px-3 text-stone-700 font-medium">Weight (g)</th>
+                              <th className="text-right py-2 px-3 text-stone-700 font-medium">Price / g</th>
+                              <th className="text-right py-2 px-3 text-stone-700 font-medium">Total</th>
                             </tr>
                           </thead>
                           <tbody>
                             {items.map((it: any, idx: number) => (
-                              <tr key={it.id || idx} className="border-b border-gold-500/10">
-                                <td className="py-2 px-3 text-gold-100">
+                              <tr key={it.id || idx} className="border-b border-stone-100">
+                                <td className="py-2 px-3 text-black">
                                   {it.product_sku || it.product_name ? (
                                     `${it.product_sku || ''} ${it.product_name || ''}`.trim()
                                   ) : (
                                     it.description || '—'
                                   )}
                                 </td>
-                                <td className="py-2 px-3 text-gold-100/80">{it.metal_type_name || '—'}</td>
-                                <td className="py-2 px-3 text-gold-100/80">{it.carat_display || '—'}</td>
-                                <td className="py-2 px-3 text-right text-gold-100">{Number(it.quantity ?? 1)}</td>
-                                <td className="py-2 px-3 text-right text-gold-400">{Number(it.weight_grams ?? 0).toFixed(3)}</td>
-                                <td className="py-2 px-3 text-right text-gold-400">{Number(it.price_per_gram ?? 0).toFixed(3)}</td>
-                                <td className="py-2 px-3 text-right text-gold-100 font-semibold">
+                                <td className="py-2 px-3 text-stone-800">{it.metal_type_name || '—'}</td>
+                                <td className="py-2 px-3 text-stone-800">{it.carat_display || '—'}</td>
+                                <td className="py-2 px-3 text-right text-black">{Number(it.quantity ?? 1)}</td>
+                                <td className="py-2 px-3 text-right text-lime-800">{Number(it.weight_grams ?? 0).toFixed(3)}</td>
+                                <td className="py-2 px-3 text-right text-lime-800">{Number(it.price_per_gram ?? 0).toFixed(3)}</td>
+                                <td className="py-2 px-3 text-right text-black font-semibold">
                                   {Number(it.total_price ?? 0).toFixed(3)}
                                 </td>
                               </tr>

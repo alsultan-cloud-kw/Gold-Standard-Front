@@ -15,6 +15,7 @@ import {
   Users,
   Share2,
   Crown,
+  Download,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
@@ -29,6 +30,17 @@ import {
   goldTradingApi,
   type BankChangeRequestRow,
 } from '../services/api'
+import { buildWalletTransactionsDocxBlob } from '../utils/walletTransactionsWordExport'
+
+const KNET_TRADE_GOLD_DEPOSIT_DESC = 'KNET wallet deposit — Gold trading'
+
+function walletDepositApiError(err: unknown, fallback: string): string {
+  const e = err as { response?: { data?: { detail?: unknown } } }
+  const d = e?.response?.data?.detail
+  if (typeof d === 'string') return d
+  if (Array.isArray(d)) return d.map(String).join(', ')
+  return fallback
+}
 
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState('profile')
@@ -48,6 +60,7 @@ export default function UserDashboard() {
         'club',
         'transactions',
         'bank_account',
+        'addresses',
         'notifications',
       ])
       if (tab && allowed.has(tab)) setActiveTab(tab)
@@ -135,9 +148,9 @@ export default function UserDashboard() {
             {activeTab === 'club' && <ClubTab />}
             {activeTab === 'transactions' && <TransactionsTab />}
             {activeTab === 'bank_account' && <BankAccountTab />}
+            {activeTab === 'addresses' && <AddressesTab />}
             {/* Placeholder tabs (can be implemented later) */}
             {/* {activeTab === 'wishlist' && <WishlistTab />} */}
-            {/* {activeTab === 'addresses' && <AddressesTab />} */}
             {/* {activeTab === 'payments' && <PaymentsTab />} */}
             {activeTab === 'notifications' && <NotificationsTab />}
           </div>
@@ -147,14 +160,32 @@ export default function UserDashboard() {
   )
 }
 
+type ActiveClubInvite = {
+  token: string
+  expires_at: string
+  max_uses: number
+  used_count: number
+}
+
 type MembershipPayload = {
   membership: { id: string; role: string; joined_at?: string } | null
-  club: { id: string; name: string; head_name?: string } | null
+  club: {
+    id: string
+    name: string
+    head_name?: string
+    head_completed_orders?: number
+    orders_per_member_slot?: number | null
+    additional_member_limit?: number | null
+    current_additional_members?: number
+    remaining_additional_members?: number | null
+    min_completed_orders_required?: number
+  } | null
   member_capacity?: {
     additional_limit: number | null
     current_additional: number
     remaining_additional: number | null
   }
+  active_invite?: ActiveClubInvite | null
 }
 
 type CustomerOfferRow = {
@@ -169,9 +200,9 @@ type CustomerOfferRow = {
 
 function ClubTab() {
   const queryClient = useQueryClient()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [clubName, setClubName] = useState('')
-  const [inviteLink, setInviteLink] = useState('')
+  const [renameDraft, setRenameDraft] = useState('')
   const [showShareOptions, setShowShareOptions] = useState(false)
 
   const { data: memData, isLoading: memLoading } = useQuery({
@@ -185,7 +216,22 @@ function ClubTab() {
   const membership = memData?.membership
   const club = memData?.club
   const memberCapacity = memData?.member_capacity
+  const activeInvite = memData?.active_invite ?? null
   const offers = Array.isArray(offersData) ? offersData : []
+
+  const inviteLink = useMemo(() => {
+    const token = activeInvite?.token
+    if (!token) return ''
+    return `${window.location.origin}/join-club?token=${encodeURIComponent(token)}`
+  }, [activeInvite?.token])
+  const remainingSlots = memberCapacity?.remaining_additional
+  const hasRemainingSlots = remainingSlots == null || remainingSlots > 0
+  const hasInviteUsesLeft = !activeInvite || activeInvite.used_count < activeInvite.max_uses
+  const canShareInvite = Boolean(inviteLink) && hasRemainingSlots && hasInviteUsesLeft
+
+  useEffect(() => {
+    if (club?.name != null) setRenameDraft(club.name)
+  }, [club?.id, club?.name])
 
   const createMutation = useMutation({
     mutationFn: () => clubsApi.createClub({ name: clubName.trim() }),
@@ -200,13 +246,23 @@ function ClubTab() {
     },
   })
 
+  const renameMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => clubsApi.updateClub(id, { name }),
+    onSuccess: () => {
+      toast.success(t('userDashboard.club.toasts.clubRenamed'))
+      queryClient.invalidateQueries({ queryKey: ['clubMembership'] })
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } }
+      toast.error(e?.response?.data?.detail || t('userDashboard.club.toasts.couldNotRenameClub'))
+    },
+  })
+
   const inviteMutation = useMutation({
     mutationFn: () => clubsApi.createInvite(club!.id),
-    onSuccess: (res) => {
-      const token = (res as { token: string }).token
-      const url = `${window.location.origin}/join-club?token=${token}`
-      setInviteLink(url)
+    onSuccess: () => {
       setShowShareOptions(false)
+      queryClient.invalidateQueries({ queryKey: ['clubMembership'] })
       toast.success(t('userDashboard.club.toasts.inviteLinkCreatedCopyBelow'))
     },
     onError: (err: unknown) => {
@@ -219,7 +275,6 @@ function ClubTab() {
     mutationFn: () => clubsApi.leave(),
     onSuccess: () => {
       toast.success(t('userDashboard.club.toasts.leftClub'))
-      setInviteLink('')
       setShowShareOptions(false)
       queryClient.invalidateQueries({ queryKey: ['clubMembership'] })
       queryClient.invalidateQueries({ queryKey: ['clubOffers'] })
@@ -231,7 +286,10 @@ function ClubTab() {
   })
 
   const copyLink = () => {
-    if (!inviteLink) return
+    if (!canShareInvite) {
+      toast.error(t('userDashboard.club.toasts.inviteBlocked'))
+      return
+    }
     void navigator.clipboard.writeText(inviteLink)
     toast.success(t('userDashboard.club.toasts.linkCopied'))
   }
@@ -250,7 +308,10 @@ function ClubTab() {
   ]
 
   const shareInviteLink = async () => {
-    if (!inviteLink) return
+    if (!canShareInvite) {
+      toast.error(t('userDashboard.club.toasts.inviteBlocked'))
+      return
+    }
     if (navigator.share) {
       try {
         await navigator.share({
@@ -303,7 +364,34 @@ function ClubTab() {
         <div className="gold-card space-y-4">
           <div>
             <p className="text-sm text-gold-100/60">{t('userDashboard.club.clubLabel')}</p>
-            <p className="text-2xl font-semibold text-gold-100">{club.name}</p>
+            {membership.role === 'head' ? (
+              <div className="mt-2 space-y-2">
+                <label className="text-xs text-gold-100/60 block">{t('userDashboard.club.clubNameLabel')}</label>
+                <div className="flex flex-wrap gap-2 items-end">
+                  <input
+                    className="flex-1 min-w-[200px] px-3 py-2 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-sm"
+                    value={renameDraft}
+                    onChange={(e) => setRenameDraft(e.target.value)}
+                    placeholder={t('userDashboard.club.clubNamePlaceholder')}
+                  />
+                  <button
+                    type="button"
+                    disabled={
+                      renameMutation.isPending ||
+                      renameDraft.trim().length < 2 ||
+                      renameDraft.trim() === club.name.trim()
+                    }
+                    onClick={() => renameMutation.mutate({ id: club.id, name: renameDraft.trim() })}
+                    className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
+                  >
+                    {renameMutation.isPending ? t('userDashboard.club.renamingClub') : t('userDashboard.club.saveClubName')}
+                  </button>
+                </div>
+                <p className="text-xs text-gold-100/50">{t('userDashboard.club.renameClubHint')}</p>
+              </div>
+            ) : (
+              <p className="text-2xl font-semibold text-gold-100">{club.name}</p>
+            )}
             <p className="text-xs text-gold-100/50 mt-1">
               {t('userDashboard.club.yourRole')} <span className="text-gold-300">{membership.role}</span>
               {club.head_name && ` · ${t('userDashboard.club.headLabel')}: ${club.head_name}`}
@@ -312,11 +400,37 @@ function ClubTab() {
 
           {membership.role === 'head' && (
             <div className="border border-gold-500/20 rounded-lg p-4 space-y-2">
-              <p className="text-xs text-gold-100/60">
-                {memberCapacity?.additional_limit == null
-                  ? 'Member limit: Unlimited'
-                  : `Members added: ${memberCapacity.current_additional}/${memberCapacity.additional_limit} (remaining ${memberCapacity.remaining_additional ?? 0})`}
-              </p>
+              <div className="text-xs text-gold-100/60 space-y-1">
+                {memberCapacity?.additional_limit == null ? (
+                  <p>{t('userDashboard.club.memberLimitUnlimited')}</p>
+                ) : (
+                  <>
+                    <p>
+                      {t('userDashboard.club.memberLimitCapped', {
+                        current: memberCapacity.current_additional,
+                        limit: memberCapacity.additional_limit,
+                        remaining: memberCapacity.remaining_additional ?? 0,
+                        orders: club.head_completed_orders ?? 0,
+                        step: club.orders_per_member_slot ?? 0,
+                      })}
+                    </p>
+                    {club.orders_per_member_slot &&
+                    club.orders_per_member_slot > 0 &&
+                    (memberCapacity.remaining_additional ?? 0) === 0 ? (
+                      <p className="text-gold-100/50">
+                        {t('userDashboard.club.memberNextSlotHint', {
+                          nextAt:
+                            (Math.floor(
+                              (club.head_completed_orders ?? 0) / club.orders_per_member_slot,
+                            ) +
+                              1) *
+                            club.orders_per_member_slot,
+                        })}
+                      </p>
+                    ) : null}
+                  </>
+                )}
+              </div>
               <p className="text-sm text-gold-100/80">{t('userDashboard.club.inviteFriendsHint')}</p>
               <button
                 type="button"
@@ -328,24 +442,44 @@ function ClubTab() {
               </button>
               {inviteLink && (
                 <div className="space-y-2">
+                  {activeInvite && (
+                    <p className="text-xs text-gold-100/50">
+                      {t('userDashboard.club.inviteExpires', {
+                        date: new Date(activeInvite.expires_at).toLocaleString(i18n.language, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }),
+                        uses: activeInvite.used_count,
+                        maxUses: activeInvite.max_uses,
+                      })}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 items-center">
                     <code className="text-xs text-gold-100/80 break-all flex-1">{inviteLink}</code>
                     <button
                       type="button"
                       onClick={shareInviteLink}
-                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 inline-flex items-center gap-1"
+                      disabled={!canShareInvite}
+                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Share2 className="w-3.5 h-3.5" />
                       {t('userDashboard.club.shareButton')}
                     </button>
+                    <span className="shrink-0 text-xs text-gold-100/50 px-0.5 select-none">
+                      {t('userDashboard.club.orBetweenActions')}
+                    </span>
                     <button
                       type="button"
                       onClick={copyLink}
-                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100"
+                      disabled={!canShareInvite}
+                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {t('userDashboard.club.copyButton')}
                     </button>
                   </div>
+                  {!canShareInvite && (
+                    <p className="text-[11px] text-gold-100/60">{t('userDashboard.club.inviteBlockedHint')}</p>
+                  )}
                   {showShareOptions && (
                     <div className="flex flex-wrap gap-2">
                       {shareLinks.map((item) => (
@@ -586,6 +720,180 @@ function ProfileTab() {
   )
 }
 
+function AddressesTab() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { data, isLoading } = useQuery({
+    queryKey: ['myCustomerProfile'],
+    queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
+  })
+  const profile = asSingleProfile(data)
+  const [addressLine1, setAddressLine1] = useState('')
+  const [addressLine2, setAddressLine2] = useState('')
+  const [city, setCity] = useState('')
+  const [governorate, setGovernorate] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [country, setCountry] = useState('Kuwait')
+
+  useEffect(() => {
+    const p = asSingleProfile(data)
+    if (!p) return
+    setAddressLine1(p.address_line1 ?? '')
+    setAddressLine2(p.address_line2 ?? '')
+    setCity(p.city ?? '')
+    setGovernorate(p.governorate ?? '')
+    setPostalCode(p.postal_code ?? '')
+    setCountry(p.country?.trim() || 'Kuwait')
+  }, [data])
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const id = profile?.id
+      if (!id) throw new Error('NO_PROFILE_ID')
+      await accountsApi.updateProfile(id, {
+        address_line1: addressLine1.trim() || null,
+        address_line2: addressLine2.trim() || null,
+        city: city.trim() || null,
+        governorate: governorate.trim() || null,
+        postal_code: postalCode.trim() || null,
+        country: country.trim() || 'Kuwait',
+      })
+    },
+    onSuccess: () => {
+      toast.success(t('userDashboard.addresses.saved'))
+      queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+    },
+    onError: (err: unknown) => {
+      const e = err as { message?: string; response?: { data?: Record<string, unknown> } }
+      if (e.message === 'NO_PROFILE_ID') {
+        toast.error(t('userDashboard.addresses.saveFailed'))
+        return
+      }
+      if (e.message) {
+        toast.error(e.message)
+        return
+      }
+      const d = e.response?.data
+      const first =
+        d && typeof d === 'object'
+          ? Object.values(d).find((v) => Array.isArray(v) && v.length)
+          : null
+      toast.error(
+        Array.isArray(first) && first[0]
+          ? String(first[0])
+          : t('userDashboard.addresses.saveFailed')
+      )
+    },
+  })
+
+  const inputClass =
+    'w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder:text-gold-100/40'
+
+  if (isLoading && !profile) {
+    return (
+      <div className="gold-card mt-4">
+        <p className="text-gold-100/60 py-8 text-center">{t('userDashboard.addresses.loading')}</p>
+      </div>
+    )
+  }
+
+  if (!profile?.id) {
+    return (
+      <div className="gold-card mt-4">
+        <p className="text-gold-100/80">{t('userDashboard.addresses.noProfile')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="gold-card mt-4">
+      <h2 className="text-xl font-bold text-gold-100 mb-2">{t('userDashboard.addresses.title')}</h2>
+      <p className="text-sm text-gold-100/60 mb-6">{t('userDashboard.addresses.subtitle')}</p>
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!profile?.id) return
+          saveMutation.mutate()
+        }}
+      >
+        <div>
+          <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.line1')}</label>
+          <input
+            type="text"
+            className={inputClass}
+            value={addressLine1}
+            onChange={(e) => setAddressLine1(e.target.value)}
+            autoComplete="street-address"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.line2')}</label>
+          <input
+            type="text"
+            className={inputClass}
+            value={addressLine2}
+            onChange={(e) => setAddressLine2(e.target.value)}
+            autoComplete="address-line2"
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.city')}</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              autoComplete="address-level2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gold-100 mb-2">
+              {t('userDashboard.addresses.governorate')}
+            </label>
+            <input
+              type="text"
+              className={inputClass}
+              value={governorate}
+              onChange={(e) => setGovernorate(e.target.value)}
+              autoComplete="address-level1"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gold-100 mb-2">
+              {t('userDashboard.addresses.postalCode')}
+            </label>
+            <input
+              type="text"
+              className={inputClass}
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              autoComplete="postal-code"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.country')}</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              autoComplete="country-name"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gold-100/50">{t('userDashboard.addresses.checkoutHint')}</p>
+        <button type="submit" className="gold-button" disabled={saveMutation.isPending}>
+          {saveMutation.isPending ? t('userDashboard.profile.saving') : t('userDashboard.addresses.save')}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 type OrderSummary = {
   id: string
   invoice_number: string
@@ -729,7 +1037,7 @@ function OrdersTab() {
         )}
       </div>
       {!isLoading && total > pageSize && (
-        <div className="gold-card mt-2 flex items-center justify-between text-xs text-gold-100/70">
+        <div className="gold-card mt-2 flex items-center justify-between text-xs text-black-100/70">
           <div>
             {t('userDashboard.orders.pagination', {
               page,
@@ -1157,6 +1465,12 @@ function LockedGoldTab() {
 
 type CustomerProfile = {
   id: string
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  governorate?: string | null
+  postal_code?: string | null
+  country?: string | null
   bank_name?: string | null
   iban?: string | null
   civil_id_front?: string | null
@@ -1411,10 +1725,48 @@ type WalletTx = {
   created_at: string
 }
 
+function parseWalletTxInstant(tx: WalletTx): Date | null {
+  if (!tx.created_at) return null
+  const d = new Date(tx.created_at)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function startOfLocalDay(ymd: string): Date {
+  const [y, m, day] = ymd.split('-').map((x) => parseInt(x, 10))
+  if (!y || !m || !day) return new Date(NaN)
+  return new Date(y, m - 1, day, 0, 0, 0, 0)
+}
+
+function endOfLocalDay(ymd: string): Date {
+  const [y, m, day] = ymd.split('-').map((x) => parseInt(x, 10))
+  if (!y || !m || !day) return new Date(NaN)
+  return new Date(y, m - 1, day, 23, 59, 59, 999)
+}
+
+function filterWalletTxsByDateRange(txs: WalletTx[], dateFrom: string, dateTo: string): WalletTx[] {
+  if (!dateFrom && !dateTo) return txs
+  return txs.filter((tx) => {
+    const d = parseWalletTxInstant(tx)
+    if (!d) return false
+    if (dateFrom) {
+      const start = startOfLocalDay(dateFrom)
+      if (d < start) return false
+    }
+    if (dateTo) {
+      const end = endOfLocalDay(dateTo)
+      if (d > end) return false
+    }
+    return true
+  })
+}
+
 function TransactionsTab() {
   const [selectedTx, setSelectedTx] = useState<WalletTx | null>(null)
   const [receipt, setReceipt] = useState<Record<string, unknown> | null>(null)
-  const { t } = useTranslation()
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [wordExporting, setWordExporting] = useState(false)
+  const { t, i18n } = useTranslation()
 
   const { data, isLoading } = useQuery({
     queryKey: ['walletTransactions'],
@@ -1422,13 +1774,25 @@ function TransactionsTab() {
   })
 
   const txs = Array.isArray(data) ? data : []
+  const rangeInvalid = Boolean(
+    dateFrom && dateTo && startOfLocalDay(dateFrom).getTime() > endOfLocalDay(dateTo).getTime(),
+  )
+  const filteredTxs = useMemo(() => {
+    if (rangeInvalid) return []
+    return filterWalletTxsByDateRange(txs, dateFrom, dateTo)
+  }, [txs, dateFrom, dateTo, rangeInvalid])
+
   const [page, setPage] = useState(1)
   const pageSize = 10
-  const total = txs.length
+  const total = filteredTxs.length
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const start = (page - 1) * pageSize
   const end = start + pageSize
-  const pageItems = txs.slice(start, end)
+  const pageItems = filteredTxs.slice(start, end)
+
+  useEffect(() => {
+    setPage(1)
+  }, [dateFrom, dateTo])
 
   const handleViewReceipt = async (tx: WalletTx) => {
     if (!tx.reference) {
@@ -1446,17 +1810,158 @@ function TransactionsTab() {
     }
   }
 
+  const downloadFilteredWord = async () => {
+    if (rangeInvalid) {
+      toast.error(t('userDashboard.transactions.toasts.invalidDateRange'))
+      return
+    }
+    if (filteredTxs.length === 0) {
+      toast.error(t('userDashboard.transactions.toasts.downloadRangeEmpty'))
+      return
+    }
+    const locale = i18n.language?.startsWith('ar') ? 'ar-KW' : undefined
+    const isRtl = i18n.dir() === 'rtl'
+    const rangeLabel =
+      dateFrom && dateTo
+        ? t('userDashboard.transactions.printRangeBoth', { from: dateFrom, to: dateTo })
+        : dateFrom
+          ? t('userDashboard.transactions.printRangeFromOnly', { from: dateFrom })
+          : dateTo
+            ? t('userDashboard.transactions.printRangeToOnly', { to: dateTo })
+            : t('userDashboard.transactions.printRangeAll')
+    const generated = new Date().toLocaleString(locale)
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '-')
+    const filename =
+      dateFrom || dateTo
+        ? `wallet-transactions-${dateFrom || 'all'}_to_${dateTo || 'all'}_${stamp}.docx`
+        : `wallet-transactions-all_${stamp}.docx`
+    setWordExporting(true)
+    try {
+      const rows = filteredTxs.map((tx) => {
+        const d = parseWalletTxInstant(tx)
+        const dateStr = d
+          ? d.toLocaleString(locale, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '—'
+        const isCredit = tx.type === 'deposit' || tx.type === 'sell'
+        const sign = isCredit ? '+' : '-'
+        return {
+          date: dateStr,
+          type: String(tx.type_display ?? tx.type),
+          description: String(tx.description || ''),
+          amount: `${sign}${Number(tx.amount).toFixed(3)} KWD`,
+          balance: `${Number(tx.balance_after).toFixed(3)} KWD`,
+          reference: String(tx.reference || '—'),
+        }
+      })
+      const blob = await buildWalletTransactionsDocxBlob({
+        documentTitle: t('userDashboard.transactions.wordDoc.title'),
+        periodLabel: t('userDashboard.transactions.wordDoc.period'),
+        periodValue: rangeLabel,
+        generatedLabel: t('userDashboard.transactions.wordDoc.generated'),
+        generatedValue: generated,
+        rowCountLabel: t('userDashboard.transactions.wordDoc.rowCount'),
+        rowCountValue: String(filteredTxs.length),
+        headers: [
+          t('userDashboard.transactions.table.date'),
+          t('userDashboard.transactions.table.type'),
+          t('userDashboard.transactions.table.description'),
+          t('userDashboard.transactions.table.amount'),
+          t('userDashboard.transactions.table.balanceAfter'),
+          t('userDashboard.transactions.wordDoc.reference'),
+        ],
+        rows,
+        isRtl,
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      toast.success(t('userDashboard.transactions.toasts.downloadComplete'))
+    } catch {
+      toast.error(t('userDashboard.transactions.toasts.downloadFailed'))
+    } finally {
+      setWordExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4 mt-4">
       <h2 className="text-xl font-bold gold-gradient-text-on-light mb-2">{t('userDashboard.transactions.title')}</h2>
       <p className="text-sm gold-gradient-text-on-light mb-4">
         {t('userDashboard.transactions.hint')}
       </p>
+
+      {!isLoading && txs.length > 0 && (
+        <div className="gold-card p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-gold-100">{t('userDashboard.transactions.dateRangeTitle')}</h3>
+          <p className="text-xs text-gold-100/60">{t('userDashboard.transactions.dateRangeHint')}</p>
+          {rangeInvalid && (
+            <p className="text-xs text-red-400">{t('userDashboard.transactions.rangeInvalid')}</p>
+          )}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
+            <div className="flex-1 min-w-[140px]">
+              <label className="text-xs text-gold-100/70 block mb-1">{t('userDashboard.transactions.dateFrom')}</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-900/40 text-gold-100 text-sm"
+              />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <label className="text-xs text-gold-100/70 block mb-1">{t('userDashboard.transactions.dateTo')}</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-900/40 text-gold-100 text-sm"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 sm:pb-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom('')
+                  setDateTo('')
+                }}
+                className="px-3 py-2 rounded-lg text-sm font-medium border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
+              >
+                {t('userDashboard.transactions.clearDateRange')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void downloadFilteredWord()}
+                disabled={rangeInvalid || filteredTxs.length === 0 || wordExporting}
+                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-amber-600 text-white hover:bg-amber-500 border border-amber-400/40 disabled:opacity-45 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4 shrink-0" aria-hidden />
+                {wordExporting
+                  ? t('userDashboard.transactions.wordDoc.generating')
+                  : t('userDashboard.transactions.downloadWord')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="gold-card">
         {isLoading ? (
           <p className="text-gold-100/60 text-center py-8">{t('userDashboard.transactions.loading')}</p>
         ) : txs.length === 0 ? (
           <p className="text-gold-100/60 text-center py-8">{t('userDashboard.transactions.noTransactionsYet')}</p>
+        ) : filteredTxs.length === 0 ? (
+          <p className="text-gold-100/60 text-center py-8">{t('userDashboard.transactions.noTransactionsInRange')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -1526,7 +2031,7 @@ function TransactionsTab() {
         )}
       </div>
       {!isLoading && total > pageSize && (
-        <div className="gold-card mt-2 flex items-center justify-between text-xs text-gold-100/70">
+        <div className="gold-card mt-2 flex items-center justify-between text-xs text-black-100/70">
           <div>
             {t('userDashboard.transactions.pagination', { page, totalPages, total })}
           </div>
@@ -1734,9 +2239,9 @@ function NotificationsTab() {
       </p>
 
       {isLoading ? (
-        <p className="text-gold-100/60 text-center py-8">Loading...</p>
+        <p className="text-black-100/60 text-center py-8">Loading...</p>
       ) : triggered.length === 0 ? (
-        <p className="text-gold-100/60 text-center py-8">No triggered reminders yet.</p>
+        <p className="text-black-100/60 text-center py-8">No triggered reminders yet.</p>
       ) : (
         <div className="space-y-3">
           {triggered.map((a) => {
@@ -1771,15 +2276,15 @@ function NotificationsTab() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm text-gold-100/70">
+                    <div className="text-sm text-black-100/70">
                       {metalLine} • {sideLabel}
                     </div>
-                    <div className="text-gold-100 font-semibold mt-1">Triggered</div>
+                    <div className="text-black-100 font-semibold mt-1">Triggered</div>
                     {thresholdText && (
                       <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
                     )}
                   </div>
-                  <div className="text-xs text-gold-100/50">
+                  <div className="text-xs text-black-100/50">
                     {d ? d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                   </div>
                 </div>
@@ -1793,11 +2298,49 @@ function NotificationsTab() {
 }
 
 function TradeGoldTab() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [depositAmount, setDepositAmount] = useState('')
+  const knetPresets = [10, 25, 50, 100] as const
+
   const { data, isLoading } = useQuery({
     queryKey: ['goldPositions'],
     queryFn: () => goldTradingApi.getPositions() as Promise<unknown>,
     retry: 1,
   })
+
+  const { data: walletData } = useQuery({
+    queryKey: ['myWallet'],
+    queryFn: () => walletApi.getMyWallet(),
+  })
+  const walletBalanceRaw = (walletData?.wallet as { balance?: unknown } | undefined)?.balance
+  const walletBalance =
+    typeof walletBalanceRaw === 'number'
+      ? walletBalanceRaw
+      : Number(walletBalanceRaw ?? 0) || 0
+
+  const depositMutation = useMutation({
+    mutationFn: (amountStr: string) =>
+      walletApi.deposit({ amount: amountStr, description: KNET_TRADE_GOLD_DEPOSIT_DESC }),
+    onSuccess: () => {
+      toast.success(t('tradeGold.knetDeposit.success'))
+      setDepositAmount('')
+      queryClient.invalidateQueries({ queryKey: ['myWallet'] })
+      queryClient.invalidateQueries({ queryKey: ['wallet', 'trade-gold'] })
+      queryClient.invalidateQueries({ queryKey: ['walletTransactions'] })
+    },
+    onError: (err: unknown) =>
+      toast.error(walletDepositApiError(err, t('tradeGold.knetDeposit.failed'))),
+  })
+
+  const submitKnetDeposit = () => {
+    const n = parseFloat(depositAmount.replace(/,/g, '.'))
+    if (!Number.isFinite(n) || n <= 0) {
+      toast.error(t('tradeGold.knetDeposit.invalidAmount'))
+      return
+    }
+    depositMutation.mutate(n.toFixed(3))
+  }
 
   const positions = Array.isArray(data) ? (data as any[]) : []
   const totalGrams = positions.reduce((sum, p) => sum + Number(p.grams_available ?? 0), 0)
@@ -1815,6 +2358,57 @@ function TradeGoldTab() {
       <p className="text-sm text-stone-600">
         Buy or sell virtual gold instantly by grams or KWD using your wallet balance.
       </p>
+
+      <div className="rounded-lg bg-charcoal-800/60 border border-gold-500/20 p-3">
+        <p className="text-xs text-gold-100/60">{t('tradeGold.walletBalance')}</p>
+        <p className="text-xl font-bold text-gold-200">{walletBalance.toFixed(3)} KWD</p>
+      </div>
+
+      <div className="rounded-lg border border-amber-500/30 bg-charcoal-800/50 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/35 flex items-center justify-center shrink-0">
+            <CreditCard className="w-4 h-4 text-amber-300" aria-hidden />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gold-100">{t('tradeGold.knetDeposit.title')}</h3>
+            <p className="text-xs text-gold-100/60 leading-snug">{t('tradeGold.knetDeposit.subtitle')}</p>
+          </div>
+        </div>
+        <p className="text-xs text-gold-100/50 leading-relaxed">{t('tradeGold.knetDeposit.note')}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {knetPresets.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setDepositAmount(String(v))}
+              className="px-2.5 py-1 rounded-md text-xs font-medium border border-amber-500/35 text-black-100/90 hover:bg-amber-500/15 transition-colors"
+            >
+              {v} KWD
+            </button>
+          ))}
+        </div>
+        <label className="block">
+          <span className="text-xs text-gold-100/60 mb-1 block">{t('tradeGold.knetDeposit.amountLabel')}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.001"
+            min="0"
+            value={depositAmount}
+            onChange={(e) => setDepositAmount(e.target.value)}
+            placeholder={t('tradeGold.knetDeposit.amountPlaceholder')}
+            className="w-full px-3 py-2 rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100 text-sm"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={submitKnetDeposit}
+          disabled={depositMutation.isPending}
+          className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-amber-600 text-white hover:bg-amber-500 border border-amber-400/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {depositMutation.isPending ? t('tradeGold.processing') : t('tradeGold.knetDeposit.cta')}
+        </button>
+      </div>
 
       {isLoading ? (
         <p className="text-gold-100/60 text-sm">Loading positions…</p>

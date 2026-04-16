@@ -137,7 +137,7 @@ export default function AdminTradingBuybacks() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gold-500/30 bg-white text-stone-800 text-sm"
+            className="px-3 py-2 rounded-lg border border-black/15 bg-white text-stone-800 text-sm"
           >
             <option value="">{t('admin.allStatuses')}</option>
             <option value="pending">Pending</option>
@@ -148,50 +148,50 @@ export default function AdminTradingBuybacks() {
         </div>
 
         {isLoading ? (
-          <div className="gold-card p-8 flex items-center justify-center gap-2 text-gold-100/80">
+          <div className="gold-card p-8 flex items-center justify-center gap-2 text-stone-800">
             <Loader2 className="w-5 h-5 animate-spin" /> Loading…
           </div>
         ) : (
           <div className="gold-card overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Number</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Customer</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Date</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Status</th>
-                  <th className="text-right py-3 px-4 text-gold-100/70 font-medium">Weight</th>
-                  <th className="text-right py-3 px-4 text-gold-100/70 font-medium">Amount</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Actions</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Number</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Customer</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Date</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Status</th>
+                  <th className="text-right py-3 px-4 text-stone-700 font-medium">Weight</th>
+                  <th className="text-right py-3 px-4 text-stone-700 font-medium">Amount</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {buybacks.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gold-100/60">
+                    <td colSpan={7} className="py-8 text-center text-stone-600">
                       No buyback orders yet.
                     </td>
                   </tr>
                 ) : (
                   pageItems.map((b) => (
-                    <tr key={b.id} className="border-b border-gold-500/10">
-                      <td className="py-3 px-4 font-mono text-gold-100 text-sm">{b.buyback_number}</td>
-                      <td className="py-3 px-4 text-gold-100">{b.customer_name}</td>
-                      <td className="py-3 px-4 text-gold-100/80 text-sm">{formatDate(b.sell_date)}</td>
+                    <tr key={b.id} className="border-b border-stone-100">
+                      <td className="py-3 px-4 font-mono text-black text-sm">{b.buyback_number}</td>
+                      <td className="py-3 px-4 text-black">{b.customer_name}</td>
+                      <td className="py-3 px-4 text-stone-800 text-sm">{formatDate(b.sell_date)}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-block px-2 py-1 rounded text-xs ${statusClass(b.status)}`}>
                           {b.status_display ?? b.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right text-gold-100 tabular-nums">{b.total_weight} g</td>
-                      <td className="py-3 px-4 text-right text-gold-400 tabular-nums">
+                      <td className="py-3 px-4 text-right text-black tabular-nums">{b.total_weight} g</td>
+                      <td className="py-3 px-4 text-right text-lime-800 tabular-nums">
                         {Number(b.total_amount).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
                       </td>
                       <td className="py-3 px-4">
                         <button
                           type="button"
                           onClick={() => setDetailId(b.id)}
-                          className="text-gold-400 hover:text-gold-300 flex items-center gap-1 text-sm"
+                          className="text-lime-800 hover:text-lime-800 flex items-center gap-1 text-sm"
                         >
                           <Eye className="w-4 h-4" /> View
                         </button>
@@ -205,7 +205,7 @@ export default function AdminTradingBuybacks() {
         )}
 
         {!isLoading && total > pageSize && (
-          <div className="mt-4 gold-card flex items-center justify-between text-xs text-gold-100/70">
+          <div className="mt-4 gold-card flex items-center justify-between text-xs text-stone-700">
             <div>
               Page {page} of {totalPages} ({total} buybacks)
             </div>
@@ -214,7 +214,7 @@ export default function AdminTradingBuybacks() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Prev
               </button>
@@ -222,7 +222,7 @@ export default function AdminTradingBuybacks() {
                 type="button"
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Next
               </button>
@@ -231,7 +231,7 @@ export default function AdminTradingBuybacks() {
         )}
 
         <Dialog open={!!detailId} onOpenChange={(open) => !open && setDetailId(null)}>
-          <DialogContent className="bg-charcoal-900 border-gold-500/30 text-gold-100 max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-white border-black/15 text-black max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="gold-gradient-text">
                 Buyback {detail?.buyback_number ?? ''}
@@ -240,19 +240,19 @@ export default function AdminTradingBuybacks() {
             {detail && (
               <div className="space-y-4 text-sm">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="text-gold-100/60">Customer</span>
+                  <span className="text-stone-600">Customer</span>
                   <span>{detail.customer_name}</span>
-                  <span className="text-gold-100/60">Phone</span>
+                  <span className="text-stone-600">Phone</span>
                   <span>{detail.customer_phone ?? '—'}</span>
-                  <span className="text-gold-100/60">Email</span>
+                  <span className="text-stone-600">Email</span>
                   <span>{detail.customer_email ?? '—'}</span>
-                  <span className="text-gold-100/60">Branch</span>
+                  <span className="text-stone-600">Branch</span>
                   <span>{detail.branch_name ?? '—'}</span>
-                  <span className="text-gold-100/60">Date</span>
+                  <span className="text-stone-600">Date</span>
                   <span>{formatDate(detail.sell_date)}</span>
-                  <span className="text-gold-100/60">Payment</span>
+                  <span className="text-stone-600">Payment</span>
                   <span>{detail.payment_method_display ?? detail.payment_method ?? '—'}</span>
-                  <span className="text-gold-100/60">Status</span>
+                  <span className="text-stone-600">Status</span>
                   <span>
                     <select
                       value={detail.status}
@@ -260,7 +260,7 @@ export default function AdminTradingBuybacks() {
                         updateStatusMutation.mutate({ id: detail.id, status: e.target.value })
                       }
                       disabled={updateStatusMutation.isPending}
-                      className="bg-charcoal-800 border border-gold-500/30 rounded px-2 py-1 text-gold-100"
+                      className="bg-white border border-black/15 rounded px-2 py-1 text-black"
                     >
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
@@ -270,11 +270,11 @@ export default function AdminTradingBuybacks() {
                   </span>
                   {detail.journal_entry_id && (
                     <>
-                      <span className="text-gold-100/60">Journal entry</span>
+                      <span className="text-stone-600">Journal entry</span>
                       <span>
                         <Link
                           to="/admin/accounting/journal"
-                          className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300"
+                          className="inline-flex items-center gap-1 text-lime-800 hover:text-lime-800"
                         >
                           <BookOpen className="w-4 h-4" />
                           {detail.journal_entry_number || detail.journal_entry_id}
@@ -285,10 +285,10 @@ export default function AdminTradingBuybacks() {
                 </div>
                 {detail.items && detail.items.length > 0 && (
                   <div>
-                    <div className="text-gold-100/60 mb-2">Items</div>
+                    <div className="text-stone-600 mb-2">Items</div>
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-gold-500/20">
+                        <tr className="border-b border-stone-200">
                           <th className="text-left py-1">Carat</th>
                           <th className="text-right py-1">Weight</th>
                           <th className="text-right py-1">Rate (KWD/g)</th>
@@ -297,7 +297,7 @@ export default function AdminTradingBuybacks() {
                       </thead>
                       <tbody>
                         {detail.items.map((i) => (
-                          <tr key={i.id} className="border-b border-gold-500/10">
+                          <tr key={i.id} className="border-b border-stone-100">
                             <td className="py-1">{i.carat_display ?? `${i.carat_value}K`}</td>
                             <td className="text-right">{i.weight_grams} g</td>
                             <td className="text-right">{Number(i.price_per_gram).toFixed(3)}</td>
@@ -308,9 +308,9 @@ export default function AdminTradingBuybacks() {
                     </table>
                   </div>
                 )}
-                <div className="flex justify-end gap-2 pt-2 border-t border-gold-500/20">
-                  <span className="text-gold-100/60">Total:</span>
-                  <span className="font-semibold text-gold-400">
+                <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+                  <span className="text-stone-600">Total:</span>
+                  <span className="font-semibold text-lime-800">
                     {Number(detail.total_amount).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
                   </span>
                 </div>

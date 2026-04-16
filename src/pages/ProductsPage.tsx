@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Grid3X3, List, SlidersHorizontal, ShoppingCart } from 'lucide-react'
-import { adminApi, productsApi, type DaralsabaekPublicRatesResponse } from '../services/api'
+import { productsApi } from '../services/api'
 import type { Product, Category } from '../types'
 import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { productImageSrc } from '../utils/productImage'
 import { productUnitPrice } from '../utils/productPrice'
 import { useCart } from '../contexts/CartContext'
-import type { ProductFetchTrendMap } from '../hooks/useProductPriceTrendSincePreviousFetch'
+import {
+  useProductPriceTrendSincePreviousFetch,
+  type ProductFetchTrendMap,
+} from '../hooks/useProductPriceTrendSincePreviousFetch'
 
 export default function ProductsPage() {
   const { t, i18n } = useTranslation()
@@ -79,54 +82,7 @@ export default function ProductsPage() {
     return true
   })
 
-  type TrendDir = 'up' | 'down' | null
-  const prevBuyByCaratRef = useRef<Record<string, number | null>>({})
-  const [caratTrendMap, setCaratTrendMap] = useState<Record<string, TrendDir>>({})
-
-  const { data: ratesData } = useQuery({
-    queryKey: ['daralsabaekPublicRates'],
-    queryFn: adminApi.getDaralsabaekPublicRates,
-    refetchInterval: 20_000,
-    retry: 1,
-  })
-
-  useEffect(() => {
-    const rates = ratesData as DaralsabaekPublicRatesResponse | undefined
-    if (!rates?.succeeded) return
-
-    const currentByCarat: Record<string, number | null> = {}
-    for (const c of rates.carats ?? []) {
-      const m = String(c.key || '').match(/(\d{1,2})\s*K/i)
-      const cv = m ? Number(m[1]) : NaN
-      currentByCarat[String(cv)] =
-        Number.isFinite(cv) && typeof c.buyTotal === 'number' ? c.buyTotal : null
-    }
-
-    setCaratTrendMap((prev) => {
-      const next = { ...prev }
-      for (const [carat, cur] of Object.entries(currentByCarat)) {
-        const prevVal = prevBuyByCaratRef.current[carat]
-        if (prevVal != null && cur != null) {
-          if (cur > prevVal) next[carat] = 'up'
-          else if (cur < prevVal) next[carat] = 'down'
-          // if equal: keep last known direction (sticky)
-        }
-      }
-      return next
-    })
-
-    prevBuyByCaratRef.current = currentByCarat
-  }, [ratesData])
-
-  const fetchTrends = useMemo<ProductFetchTrendMap>(() => {
-    const out: ProductFetchTrendMap = {}
-    for (const p of productList) {
-      const carat = p.carat?.carat_value
-      const dir = carat != null ? caratTrendMap[String(carat)] ?? null : null
-      out[p.id] = { trend: dir, percent: null }
-    }
-    return out
-  }, [productList, caratTrendMap])
+  const fetchTrends = useProductPriceTrendSincePreviousFetch(productList)
 
   const categoryLabel = (c: { name_en: string; name_ar?: string }) =>
     isAr && c.name_ar ? c.name_ar : c.name_en
@@ -154,7 +110,7 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -220,16 +176,16 @@ export default function ProductsPage() {
 
           <div className="flex items-center gap-4">
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-charcoal-800 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-stone-200 rounded-lg p-1 border border-stone-300/80">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gold-500 text-charcoal-950' : 'text-gold-100/60'}`}
+                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-lime-500 text-black shadow-sm' : 'text-stone-600'}`}
               >
                 <Grid3X3 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded ${viewMode === 'list' ? 'bg-gold-500 text-charcoal-950' : 'text-gold-100/60'}`}
+                className={`p-2 rounded ${viewMode === 'list' ? 'bg-lime-500 text-black shadow-sm' : 'text-stone-600'}`}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -238,7 +194,7 @@ export default function ProductsPage() {
             {/* Filter Button */}
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 hover:bg-gold-500/10 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-300 rounded-lg text-stone-800 hover:bg-stone-50 transition-colors shadow-sm"
             >
               <SlidersHorizontal className="w-4 h-4" />
               {t('productsPage.filters')}
@@ -250,21 +206,21 @@ export default function ProductsPage() {
           {/* Sidebar Filters */}
           {isFilterOpen && (
             <aside className="w-64 flex-shrink-0">
-              <div className="gold-card sticky top-24">
-                <h3 className="text-lg font-semibold text-gold-100 mb-4">{t('productsPage.filtersHeading')}</h3>
+              <div className="rounded-xl border border-stone-200 bg-white shadow-sm sticky top-24 p-5">
+                <h3 className="text-lg font-semibold text-stone-900 mb-4">{t('productsPage.filtersHeading')}</h3>
                 
                 {/* Categories */}
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gold-100/80 mb-3">{t('productsPage.categories')}</h4>
+                  <h4 className="text-sm font-medium text-stone-600 mb-3">{t('productsPage.categories')}</h4>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={!category}
                         onChange={() => updateParam('category', '')}
-                        className="rounded border-gold-500/30 bg-charcoal-800 text-gold-500"
+                        className="rounded border-stone-300 text-lime-600"
                       />
-                      <span className="text-sm text-gold-100/60">{t('productsPage.allCategories')}</span>
+                      <span className="text-sm text-stone-700">{t('productsPage.allCategories')}</span>
                     </label>
                     {categoryList.map((cat) => (
                       <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
@@ -272,9 +228,9 @@ export default function ProductsPage() {
                           type="checkbox"
                           checked={category === cat.slug}
                           onChange={() => updateParam('category', category === cat.slug ? '' : cat.slug)}
-                          className="rounded border-gold-500/30 bg-charcoal-800 text-gold-500"
+                          className="rounded border-stone-300 text-lime-600"
                         />
-                        <span className="text-sm text-gold-100/60">{categoryLabel(cat)}</span>
+                        <span className="text-sm text-stone-700">{categoryLabel(cat)}</span>
                       </label>
                     ))}
                   </div>
@@ -282,7 +238,7 @@ export default function ProductsPage() {
 
                 {/* Carat */}
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gold-100/80 mb-3">{t('productsPage.goldCarat')}</h4>
+                  <h4 className="text-sm font-medium text-stone-600 mb-3">{t('productsPage.goldCarat')}</h4>
                   <div className="space-y-2">
                     {['24K', '22K', '21K', '18K'].map((carat) => (
                       <label key={carat} className="flex items-center gap-2 cursor-pointer">
@@ -290,9 +246,9 @@ export default function ProductsPage() {
                           type="checkbox"
                           checked={selectedCarats.includes(carat)}
                           onChange={() => toggleCarat(carat)}
-                          className="rounded border-gold-500/30 bg-charcoal-800 text-gold-500"
+                          className="rounded border-stone-300 text-lime-600"
                         />
-                        <span className="text-sm text-gold-100/60">{carat}</span>
+                        <span className="text-sm text-stone-700">{carat}</span>
                       </label>
                     ))}
                   </div>
@@ -300,22 +256,22 @@ export default function ProductsPage() {
 
                 {/* Price Range */}
                 <div>
-                  <h4 className="text-sm font-medium text-gold-100/80 mb-3">{t('productsPage.priceRange')}</h4>
+                  <h4 className="text-sm font-medium text-stone-600 mb-3">{t('productsPage.priceRange')}</h4>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
                       placeholder={t('productsPage.minPlaceholder')}
                       value={minPriceParam}
                       onChange={(e) => updateParam('minPrice', e.target.value)}
-                      className="w-20 px-3 py-2 bg-charcoal-800 border border-gold-500/30 rounded text-sm text-gold-100"
+                      className="w-20 px-3 py-2 bg-white border border-stone-300 rounded text-sm text-stone-900"
                     />
-                    <span className="text-gold-100/40">-</span>
+                    <span className="text-stone-400">-</span>
                     <input
                       type="number"
                       placeholder={t('productsPage.maxPlaceholder')}
                       value={maxPriceParam}
                       onChange={(e) => updateParam('maxPrice', e.target.value)}
-                      className="w-20 px-3 py-2 bg-charcoal-800 border border-gold-500/30 rounded text-sm text-gold-100"
+                      className="w-20 px-3 py-2 bg-white border border-stone-300 rounded text-sm text-stone-900"
                     />
                   </div>
                 </div>
@@ -328,10 +284,13 @@ export default function ProductsPage() {
             {isLoading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="gold-card animate-pulse">
-                    <div className="aspect-[4/3] bg-gold-500/10 rounded-lg mb-4" />
-                    <div className="h-4 bg-gold-500/10 rounded mb-2" />
-                    <div className="h-4 bg-gold-500/10 rounded w-2/3" />
+                  <div
+                    key={i}
+                    className="rounded-xl border border-stone-200 bg-zinc-100/80 p-6 animate-pulse"
+                  >
+                    <div className="aspect-[4/3] bg-zinc-200 rounded-lg mb-4" />
+                    <div className="h-4 bg-zinc-200 rounded mb-2" />
+                    <div className="h-4 bg-zinc-200 rounded w-2/3" />
                   </div>
                 ))}
               </div>
@@ -352,7 +311,7 @@ export default function ProductsPage() {
               </div>
             )}
             {!isLoading && filteredProducts.length === 0 && (
-              <div className="gold-card text-center py-10 text-gold-100/70 mt-4">
+              <div className="rounded-xl border border-stone-200 bg-stone-50 text-center py-10 text-stone-600 mt-4">
                 {t('productsPage.noMatchFilters')}
               </div>
             )}
@@ -391,38 +350,38 @@ function ProductCard({
   const percentOverride = ft?.percent ?? null
 
   const addButtonClass =
-    'flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm shrink-0'
+    'flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold bg-black text-white hover:bg-zinc-800 transition-colors shadow-sm shrink-0'
 
   if (viewMode === 'list') {
     return (
-      <div className="gold-card flex flex-col sm:flex-row gap-4 hover:border-gold-500/50 transition-colors">
+      <div className="product-card-lime flex flex-col sm:flex-row gap-4 transition-colors">
         <Link to={`/products/${product.slug}`} className="flex gap-4 flex-1 min-w-0">
-          <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-charcoal-800">
+          <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-white/60 ring-1 ring-black/10">
             {imageSrc ? (
               <img src={imageSrc} alt={productName} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gold-400/40">
+              <div className="w-full h-full flex items-center justify-center text-black/40 text-sm">
                 {t('productsPage.noImage')}
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium text-gold-100 mb-1">{productName}</h3>
-            <p className="text-sm text-gold-100/60 mb-2 line-clamp-2">
+            <h3 className="text-lg font-semibold text-black mb-1">{productName}</h3>
+            <p className="text-sm text-black/65 mb-2 line-clamp-2">
               {descSource ? `${descSource.substring(0, 100)}...` : ''}
             </p>
             <div className="flex items-center gap-4 flex-wrap">
-              <span className="price-tag inline-flex items-center gap-2">
+              <span className="price-tag-lime inline-flex items-center gap-2">
                 <ProductPriceTrendArrow
                   product={product}
-                  variant="dark"
+                  variant="light"
                   showPercent
                   trendOverride={trendOverride}
                   percentOverride={percentOverride}
                 />
                 {unitPrice.toLocaleString(priceLocale)} KWD
               </span>
-              <span className="text-sm text-gold-100/40">{caratLabel}</span>
+              <span className="text-sm text-black/55">{caratLabel}</span>
             </div>
           </div>
         </Link>
@@ -437,9 +396,9 @@ function ProductCard({
   }
 
   return (
-    <div className="gold-card group flex flex-col hover:border-gold-500/50 transition-colors">
+    <div className="product-card-lime group flex flex-col transition-colors">
       <Link to={`/products/${product.slug}`} className="block flex-1 min-w-0">
-        <div className="relative overflow-hidden rounded-lg mb-4 aspect-[4/3]">
+        <div className="relative overflow-hidden rounded-lg mb-4 aspect-[4/3] ring-1 ring-black/10">
           {imageSrc ? (
             <img
               src={imageSrc}
@@ -447,24 +406,24 @@ function ProductCard({
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-charcoal-800 flex items-center justify-center">
-              <span className="text-gold-400/40">{t('productsPage.noImage')}</span>
+            <div className="w-full h-full bg-white/60 flex items-center justify-center">
+              <span className="text-black/40 text-sm">{t('productsPage.noImage')}</span>
             </div>
           )}
           <div className="absolute top-2 end-2">
-            <span className="px-2 py-1 text-xs font-medium bg-charcoal-950/80 text-gold-400 rounded">
+            <span className="px-2 py-1 text-xs font-semibold bg-white/90 text-black rounded shadow-sm ring-1 ring-black/10">
               {caratLabel}
             </span>
           </div>
         </div>
-        <h3 className="text-sm font-medium text-gold-100 group-hover:text-gold-400 transition-colors line-clamp-1">
+        <h3 className="text-sm font-semibold text-black group-hover:underline decoration-black/30 transition-colors line-clamp-1">
           {productName}
         </h3>
-        <p className="text-xs text-gold-100/50 mb-2">{product.weight_grams}g</p>
-        <div className="price-tag text-sm inline-flex items-center gap-2 flex-wrap">
+        <p className="text-xs text-black/60 mb-2">{product.weight_grams}g</p>
+        <div className="price-tag-lime text-sm inline-flex items-center gap-2 flex-wrap">
           <ProductPriceTrendArrow
             product={product}
-            variant="dark"
+            variant="light"
             showPercent
             trendOverride={trendOverride}
             percentOverride={percentOverride}

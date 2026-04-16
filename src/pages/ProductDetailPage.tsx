@@ -1,11 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ShoppingCart, Share2, Truck, Shield, ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
+import { ShoppingCart, Share2, Shield, ChevronRight, Minus, Plus } from 'lucide-react'
 import { productsApi } from '../services/api'
+import type { Product } from '../types'
 import { useCart } from '../contexts/CartContext'
-import { productUnitPrice, formatKwd } from '../utils/productPrice'
+import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
+import { useProductPriceTrendSincePreviousFetch } from '../hooks/useProductPriceTrendSincePreviousFetch'
+import {
+  productUnitPrice,
+  liveSellPricePerGramForProduct,
+  impliedListSellPerGramFromSnapshot,
+} from '../utils/productPrice'
 
 export default function ProductDetailPage() {
   const { t, i18n } = useTranslation()
@@ -14,6 +22,7 @@ export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const [selectedImage, setSelectedImage] = useState(0)
   const [showBarcodeZoom, setShowBarcodeZoom] = useState(false)
+  const [selectedQuantity, setSelectedQuantity] = useState(1)
   const { addToCart } = useCart()
 
   const { data: product, isLoading } = useQuery({
@@ -21,10 +30,15 @@ export default function ProductDetailPage() {
     queryFn: () => productsApi.getProduct(slug!),
     enabled: !!slug,
   })
+  const trendProducts = useMemo(
+    () => (product ? [product as Product] : []),
+    [product]
+  )
+  const detailFetchTrends = useProductPriceTrendSincePreviousFetch(trendProducts)
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product as any)
+      addToCart(product as any, selectedQuantity)
     }
   }
 
@@ -53,8 +67,49 @@ export default function ProductDetailPage() {
   const productName = isAr && p.name_ar ? p.name_ar : p.name_en
   const caratLabel =
     isAr && p.carat?.display_name_ar ? p.carat.display_name_ar : p.carat?.display_name_en
+  const descriptionText = (
+    isAr ? (p.description_ar || p.description_en || '') : (p.description_en || p.description_ar || '')
+  ).trim()
+
+  const sellPerGramLive = liveSellPricePerGramForProduct(p)
+  const sellPerGramSnapshot = impliedListSellPerGramFromSnapshot(p)
+  const sellPerGramDisplay = sellPerGramLive ?? sellPerGramSnapshot
+  const sellPerGramIsSnapshot = sellPerGramLive == null && sellPerGramSnapshot != null
 
   const images = p.images?.length > 0 ? p.images : [{ image: null }]
+  const detailTrend = detailFetchTrends[p.id]
+  const productUrl = typeof window !== 'undefined' ? window.location.href : ''
+
+  const handleShare = async () => {
+    if (!productUrl) return
+    const shareText = t('productDetail.shareText', { name: productName })
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: productName,
+          text: shareText,
+          url: productUrl,
+        })
+        return
+      } catch (err) {
+        const e = err as { name?: string }
+        if (e?.name === 'AbortError') return
+      }
+    }
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(productUrl)
+        toast.success(t('productDetail.linkCopied'))
+        return
+      } catch {
+        // Ignore and fallback to manual copy prompt.
+      }
+    }
+
+    window.prompt(t('productDetail.copyLinkManually'), productUrl)
+  }
 
   return (
     <div className="min-h-screen py-8">
@@ -107,6 +162,19 @@ export default function ProductDetailPage() {
                 ))}
               </div>
             )}
+            {descriptionText ? (
+              <div className="mt-6 pt-4 border-t border-stone-200/80">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
+                  {t('productDetail.descriptionHeading')}
+                </h2>
+                <p
+                  dir="auto"
+                  className="text-sm sm:text-base text-stone-700 leading-relaxed whitespace-pre-wrap"
+                >
+                  {descriptionText}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {/* Product Info */}
@@ -120,52 +188,53 @@ export default function ProductDetailPage() {
                 {/* <button className="p-2 rounded-lg bg-charcoal-800 text-gold-400 hover:bg-gold-500/10">
                   <Heart className="w-5 h-5" />
                 </button> */}
-                <button className="p-2 rounded-lg bg-charcoal-800 text-gold-400 hover:bg-gold-500/10">
+                <button
+                  type="button"
+                  onClick={() => void handleShare()}
+                  aria-label={t('productDetail.share')}
+                  className="p-2 rounded-lg bg-charcoal-800 text-gold-400 hover:bg-gold-500/10"
+                >
                   <Share2 className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Price — live = URL+markup sell/g × weight + making charge */}
+            {/* Price — sell KWD/g (same feed as Prices page); making charge not shown */}
             <div className="gold-card mb-6">
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold gold-gradient-text">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <ProductPriceTrendArrow
+                  product={p}
+                  variant="light"
+                  showPercent
+                  trendOverride={detailTrend?.trend ?? null}
+                  percentOverride={detailTrend?.percent ?? null}
+                />
+                <span className="text-3xl font-bold text-black">
                   {productUnitPrice(p).toLocaleString(priceLocale)} KWD
                 </span>
                 {p.live_total_price != null && (
-                  <span className="text-xs text-gold-400/80 font-normal">{t('productDetail.liveRate')}</span>
+                  <span className="text-xs text-black/70 font-normal">{t('productDetail.liveRate')}</span>
                 )}
               </div>
-              <div className="text-sm text-gold-100/60 space-y-1">
-                {p.live_metal_value != null ? (
-                  <>
-                    <p>
-                      {t('productDetail.metalSellWeight', { value: formatKwd(p.live_metal_value) })}
-                    </p>
-                    {p.live_buy_price_per_gram != null && (
-                      <p className="text-gold-100/40">
-                        {t('productDetail.buyRatePerGram', {
-                          value: formatKwd(p.live_buy_price_per_gram),
-                        })}
-                      </p>
-                    )}
-                    <p>{t('productDetail.makingCharge', { value: formatKwd(p.live_making_charge) })}</p>
-                  </>
-                ) : (
-                  <>
-                    <p>
-                      {t('productDetail.metalValue', {
-                        value: Number(p.metal_value ?? 0).toLocaleString(priceLocale),
+              {sellPerGramDisplay != null && (
+                <div className="text-sm text-gold-100/60 space-y-1">
+                  <p dir="auto" className="tabular-nums">
+                    <span className="text-black-200/55">{t('pricesPage.sell')}</span>{' '}
+                    <span className="font-semibold text-gold-100">
+                      {sellPerGramDisplay.toLocaleString(priceLocale, {
+                        minimumFractionDigits: 4,
+                        maximumFractionDigits: 4,
                       })}
+                    </span>
+                    <span className="text-black-200/55"> KWD/g</span>
+                  </p>
+                  {sellPerGramIsSnapshot ? (
+                    <p className="text-[11px] text-gold-200/45 leading-snug">
+                      {t('productDetail.snapshotSellRateHint')}
                     </p>
-                    <p>
-                      {t('productDetail.makingCharge', {
-                        value: Number(p.making_charge_value ?? 0).toLocaleString(priceLocale),
-                      })}
-                    </p>
-                  </>
-                )}
-              </div>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             {/* Specifications */}
@@ -265,7 +334,48 @@ export default function ProductDetailPage() {
             </div> */}
 
             {/* Actions */}
-            <div className="flex gap-4 mb-8">
+            <div className="mb-5">
+              <p className="text-xs text-gold-100/70 mb-2">{t('productDetail.quantity')}</p>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="inline-flex items-center rounded-lg border-2 border-lime-400/70 bg-lime-100">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
+                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80"
+                    aria-label={t('cartPage.decreaseQty')}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={selectedQuantity}
+                    onChange={(e) => {
+                      const next = Number.parseInt(e.target.value, 10)
+                      setSelectedQuantity(Number.isFinite(next) && next > 0 ? next : 1)
+                    }}
+                    className="w-16 bg-transparent text-center text-lime-950 font-semibold py-2 border-x border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedQuantity((q) => q + 1)}
+                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80"
+                    aria-label={t('cartPage.increaseQty')}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <Link
+                  to="/products"
+                  className="ms-auto inline-flex items-center justify-center px-6 py-2 rounded-lg font-medium gold-gradient-text-on-light border border-gold-500/50 hover:bg-gold-500/10 transition-all text-center"
+                >
+                  {t('productDetail.continueShopping')}
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mb-3">
               <button
                 onClick={handleAddToCart}
                 className="flex-1 gold-button flex items-center justify-center gap-2"
@@ -282,19 +392,11 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <Truck className="w-6 h-6 gold-gradient-text-on-light mx-auto mb-2" />
-                <p className="text-xs gold-gradient-text-on-light">{t('productDetail.freeShipping')}</p>
-              </div>
+            <div className="flex justify-center">
               <div className="text-center">
                 <Shield className="w-6 h-6 gold-gradient-text-on-light mx-auto mb-2" />
                 <p className="text-xs gold-gradient-text-on-light">{t('productDetail.certified')}</p>
               </div>
-              {/* <div className="text-center">
-                <RotateCcw className="w-6 h-6 gold-gradient-text-on-light mx-auto mb-2" />
-                <p className="text-xs gold-gradient-text-on-light">7-Day Returns</p>
-              </div> */}
             </div>
           </div>
         </div>

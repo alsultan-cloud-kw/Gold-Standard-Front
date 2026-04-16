@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TrendingUp, Download, Calendar, DollarSign, ShoppingBag, Users } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
+import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { accountingApi, adminApi, ordersApi } from '../../services/api'
 
 type SaleRow = {
@@ -190,6 +191,27 @@ export default function AdminReports() {
     () => [...salesInRange].sort((a, b) => (a.sale_date < b.sale_date ? 1 : -1)),
     [salesInRange],
   )
+
+  const ordersListPageSize = 10
+  const [ordersListPage, setOrdersListPage] = useState(1)
+  const ordersListTotal = listedOrders.length
+  const ordersListTotalPages = Math.max(1, Math.ceil(ordersListTotal / ordersListPageSize))
+  const displayedListedOrders = useMemo(
+    () =>
+      listedOrders.slice(
+        (ordersListPage - 1) * ordersListPageSize,
+        ordersListPage * ordersListPageSize,
+      ),
+    [listedOrders, ordersListPage],
+  )
+
+  useEffect(() => {
+    setOrdersListPage(1)
+  }, [dateRange, dateWindow.start, dateWindow.end, salesRaw])
+
+  useEffect(() => {
+    if (ordersListPage > ordersListTotalPages) setOrdersListPage(ordersListTotalPages)
+  }, [ordersListPage, ordersListTotalPages])
 
   const summary = useMemo(() => {
     const s = (summaryRaw ?? {}) as Partial<SalesSummary>
@@ -581,7 +603,7 @@ export default function AdminReports() {
             <select 
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="px-4 py-2 bg-white border border-black/15 rounded-lg text-black"
             >
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
@@ -591,7 +613,7 @@ export default function AdminReports() {
               <option value="custom">Custom Range</option>
             </select>
             <div className="flex items-center gap-2 text-sm">
-              <Calendar className="w-4 h-4 text-gold-400" />
+              <Calendar className="w-4 h-4 text-lime-800" />
               <input
                 type="date"
                 value={draftStart}
@@ -600,9 +622,9 @@ export default function AdminReports() {
                   setDateRange('custom')
                   setDraftStart(e.target.value)
                 }}
-                className="px-2 py-1 bg-charcoal-800 border border-gold-500/30 rounded text-gold-100 disabled:opacity-60"
+                className="px-2 py-1 bg-white border border-black/15 rounded text-black disabled:opacity-60"
               />
-              <span className="text-gold-100/60">to</span>
+              <span className="text-stone-600">to</span>
               <input
                 type="date"
                 value={draftEnd}
@@ -611,20 +633,20 @@ export default function AdminReports() {
                   setDateRange('custom')
                   setDraftEnd(e.target.value)
                 }}
-                className="px-2 py-1 bg-charcoal-800 border border-gold-500/30 rounded text-gold-100 disabled:opacity-60"
+                className="px-2 py-1 bg-white border border-black/15 rounded text-black disabled:opacity-60"
               />
               <button
                 type="button"
                 onClick={applyCustomRange}
                 disabled={dateRange === 'all'}
-                className="px-3 py-1 bg-gold-500/20 border border-gold-500/40 rounded gold-gradient-text-on-light hover:bg-gold-500/30 disabled:opacity-50"
+                className="px-3 py-1 bg-lime-200/60 border border-lime-300/50 rounded gold-gradient-text-on-light hover:bg-lime-200/80 disabled:opacity-50"
               >
                 Apply
               </button>
             </div>
             <button
               onClick={exportDailyReportFormat}
-              className="px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-400 flex items-center gap-2"
+              className="px-4 py-2 bg-white border border-black/15 rounded-lg text-lime-800 flex items-center gap-2"
             >
               <Download className="w-5 h-5" />
               Export Report
@@ -636,58 +658,58 @@ export default function AdminReports() {
           {stats.map((stat, index) => (
             <div key={index} className="gold-card">
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-lg bg-gold-500/10 flex items-center justify-center">
-                  <stat.icon className="w-6 h-6 text-gold-400" />
+                <div className="w-12 h-12 rounded-lg bg-lime-100/80 flex items-center justify-center">
+                  <stat.icon className="w-6 h-6 text-lime-800" />
                 </div>
-                <span className="text-xs text-gold-100/50">{rangeLabel}</span>
+                <span className="text-xs text-stone-500">{rangeLabel}</span>
               </div>
-              <h3 className="text-2xl font-bold text-gold-100">{stat.value}</h3>
-              <p className="text-sm text-gold-100/60">{stat.title}</p>
+              <h3 className="text-2xl font-bold text-black">{stat.value}</h3>
+              <p className="text-sm text-stone-600">{stat.title}</p>
             </div>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="gold-card">
-            <h2 className="text-xl font-bold text-gold-100 mb-4">
+            <h2 className="text-xl font-bold text-black mb-4">
               Activity Summary ({rangeLabel})
             </h2>
             {isLoading ? (
               <div className="h-64 flex items-center justify-center">
-                <p className="text-gold-100/60">Loading…</p>
+                <p className="text-stone-600">Loading…</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-charcoal-800 rounded-lg p-3">
-                    <p className="text-xs text-gold-100/60">Subtotal</p>
-                    <p className="text-sm font-semibold text-gold-100">{fmtKwd(activity.subtotal)}</p>
+                  <div className="bg-white rounded-lg p-3">
+                    <p className="text-xs text-stone-600">Subtotal</p>
+                    <p className="text-sm font-semibold text-black">{fmtKwd(activity.subtotal)}</p>
                   </div>
-                  <div className="bg-charcoal-800 rounded-lg p-3">
-                    <p className="text-xs text-gold-100/60">Discount</p>
-                    <p className="text-sm font-semibold text-gold-100">{fmtKwd(activity.discount)}</p>
+                  <div className="bg-white rounded-lg p-3">
+                    <p className="text-xs text-stone-600">Discount</p>
+                    <p className="text-sm font-semibold text-black">{fmtKwd(activity.discount)}</p>
                   </div>
-                  <div className="bg-charcoal-800 rounded-lg p-3">
-                    <p className="text-xs text-gold-100/60">Total</p>
-                    <p className="text-sm font-semibold text-gold-100">{fmtKwd(activity.total)}</p>
+                  <div className="bg-white rounded-lg p-3">
+                    <p className="text-xs text-stone-600">Total</p>
+                    <p className="text-sm font-semibold text-black">{fmtKwd(activity.total)}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-gold-100/70 mb-2">Orders by status</p>
+                  <p className="text-sm text-stone-700 mb-2">Orders by status</p>
                   <div className="space-y-2">
                     {activity.byStatus.length === 0 ? (
-                      <p className="text-gold-100/50 text-sm">No activity for selected range.</p>
+                      <p className="text-stone-500 text-sm">No activity for selected range.</p>
                     ) : (
                       activity.byStatus.map((row) => (
                         <div key={row.label} className="flex items-center gap-3">
-                          <div className="w-28 text-xs text-gold-100/75 truncate">{row.label}</div>
-                          <div className="flex-1 h-2 rounded bg-charcoal-800 overflow-hidden">
+                          <div className="w-28 text-xs text-black/75 truncate">{row.label}</div>
+                          <div className="flex-1 h-2 rounded bg-white overflow-hidden">
                             <div
-                              className="h-2 bg-gold-500/70"
+                              className="h-2 bg-lime-600/80"
                               style={{ width: `${(row.count / maxStatusCount) * 100}%` }}
                             />
                           </div>
-                          <div className="w-10 text-right text-xs text-gold-200">{row.count}</div>
+                          <div className="w-10 text-right text-xs text-lime-900">{row.count}</div>
                         </div>
                       ))
                     )}
@@ -698,39 +720,49 @@ export default function AdminReports() {
           </div>
 
           <div className="gold-card">
-            <h2 className="text-xl font-bold text-gold-100 mb-4">Orders (All Statuses, Selected Range)</h2>
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+            <h2 className="text-xl font-bold text-black mb-4">Orders (All Statuses, Selected Range)</h2>
+            <div className="space-y-2 pr-1">
               {listedOrders.length === 0 ? (
-                <p className="text-gold-100/60">No orders in selected range.</p>
+                <p className="text-stone-600">No orders in selected range.</p>
               ) : (
-                listedOrders.map((s) => (
-                  <div key={s.id} className="p-3 bg-charcoal-800 rounded-lg">
+                displayedListedOrders.map((s) => (
+                  <div key={s.id} className="p-3 bg-white rounded-lg">
                     <div className="flex items-center justify-between">
-                      <p className="text-gold-100 font-medium">{dbOrderNumber(s)}</p>
-                      <p className="text-gold-400 text-sm">{fmtKwd(toNumber(s.total_amount))}</p>
+                      <p className="text-black font-medium">{dbOrderNumber(s)}</p>
+                      <p className="text-lime-800 text-sm">{fmtKwd(toNumber(s.total_amount))}</p>
                     </div>
-                    <p className="text-xs text-gold-100/60">{s.customer_name}</p>
-                    <p className="text-xs text-gold-100/50">
+                    <p className="text-xs text-stone-600">{s.customer_name}</p>
+                    <p className="text-xs text-stone-500">
                       {(s.sale_date || '').replace('T', ' ').slice(0, 16)} · {s.status_display || s.status}
                     </p>
                   </div>
                 ))
               )}
             </div>
+            {ordersListTotal > ordersListPageSize && (
+              <AdminPaginationBar
+                page={ordersListPage}
+                totalPages={ordersListTotalPages}
+                total={ordersListTotal}
+                pageSize={ordersListPageSize}
+                onPageChange={setOrdersListPage}
+                itemLabel="orders"
+              />
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="gold-card">
-            <h2 className="text-xl font-bold text-gold-100 mb-4">Payment Mix (Selected Range)</h2>
+            <h2 className="text-xl font-bold text-black mb-4">Payment Mix (Selected Range)</h2>
             <div className="space-y-3">
               {activity.byPayment.length === 0 ? (
-                <p className="text-gold-100/60">No payment activity.</p>
+                <p className="text-stone-600">No payment activity.</p>
               ) : (
                 activity.byPayment.map((p) => (
-                  <div key={p.label} className="flex items-center justify-between p-3 bg-charcoal-800 rounded-lg">
-                    <span className="text-gold-100">{p.label}</span>
-                    <span className="text-gold-400">{p.count} orders</span>
+                  <div key={p.label} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                    <span className="text-black">{p.label}</span>
+                    <span className="text-lime-800">{p.count} orders</span>
                   </div>
                 ))
               )}
@@ -738,25 +770,25 @@ export default function AdminReports() {
           </div>
 
           <div className="gold-card">
-            <h2 className="text-xl font-bold text-gold-100 mb-4">
+            <h2 className="text-xl font-bold text-black mb-4">
               Range Summary ({rangeLabel})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Transactions</p>
-                <p className="text-gold-100 font-semibold">{summary.txCount.toLocaleString()}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Transactions</p>
+                <p className="text-black font-semibold">{summary.txCount.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Sales</p>
-                <p className="text-gold-100 font-semibold">{fmtKwd(summary.totalSales)}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Sales</p>
+                <p className="text-black font-semibold">{fmtKwd(summary.totalSales)}</p>
               </div>
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Profit</p>
-                <p className="text-gold-100 font-semibold">{fmtKwd(summary.totalProfit)}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Profit</p>
+                <p className="text-black font-semibold">{fmtKwd(summary.totalProfit)}</p>
               </div>
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Avg order value</p>
-                <p className="text-gold-100 font-semibold">{fmtKwd(avgOrderValue)}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Avg order value</p>
+                <p className="text-black font-semibold">{fmtKwd(avgOrderValue)}</p>
               </div>
             </div>
           </div>
@@ -764,30 +796,30 @@ export default function AdminReports() {
 
         <div className="gold-card mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gold-100">Purchases (Selected Range)</h2>
-            <span className="text-xs text-gold-100/50">{rangeLabel}</span>
+            <h2 className="text-xl font-bold text-black">Purchases (Selected Range)</h2>
+            <span className="text-xs text-stone-500">{rangeLabel}</span>
           </div>
           {purchasesLoading ? (
-            <p className="text-gold-100/60">Loading…</p>
+            <p className="text-stone-600">Loading…</p>
           ) : purchasesInRange.length === 0 ? (
-            <p className="text-gold-100/60">No purchases in selected range.</p>
+            <p className="text-stone-600">No purchases in selected range.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Count</p>
-                <p className="text-gold-100 font-semibold">{purchaseTotals.count.toLocaleString()}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Count</p>
+                <p className="text-black font-semibold">{purchaseTotals.count.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Total weight (g)</p>
-                <p className="text-gold-100 font-semibold">{purchaseTotals.totalWeight.toFixed(3)}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Total weight (g)</p>
+                <p className="text-black font-semibold">{purchaseTotals.totalWeight.toFixed(3)}</p>
               </div>
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Avg price / g</p>
-                <p className="text-gold-100 font-semibold">{purchaseTotals.avgPricePerGram.toFixed(3)}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Avg price / g</p>
+                <p className="text-black font-semibold">{purchaseTotals.avgPricePerGram.toFixed(3)}</p>
               </div>
-              <div className="p-3 bg-charcoal-800 rounded-lg">
-                <p className="text-xs text-gold-100/60">Total amount</p>
-                <p className="text-gold-100 font-semibold">{fmtKwd(purchaseTotals.totalAmount)}</p>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Total amount</p>
+                <p className="text-black font-semibold">{fmtKwd(purchaseTotals.totalAmount)}</p>
               </div>
             </div>
           )}

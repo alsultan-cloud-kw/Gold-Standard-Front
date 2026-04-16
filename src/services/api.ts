@@ -1,8 +1,9 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
+import { getApiBaseUrl } from '@/lib/apiBase'
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -41,7 +42,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refresh_token')
         if (refreshToken) {
           const response = await axios.post(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/token/refresh/`,
+            `${getApiBaseUrl()}/token/refresh/`,
             { refresh: refreshToken }
           )
 
@@ -267,6 +268,9 @@ export const productsApi = {
     description_en?: string
     status?: string
     is_featured?: boolean
+    /** Starting on-hand units at `initial_stock_branch_id` (or default branch). Create only. */
+    initial_stock_quantity?: number
+    initial_stock_branch_id?: string | null
   }) => {
     const token = localStorage.getItem('access_token')
     return apiService.post<unknown>('/products/products/', data, {
@@ -335,11 +339,27 @@ export const inventoryApi = {
   getBranch: (code: string) =>
     apiService.get(`/inventory/branches/${code}/`),
 
-  getInventory: (params?: unknown) =>
+  getInventory: (params?: { branch?: string; product?: string; page_size?: number; page?: number }) =>
     apiService.get('/inventory/stock/', { params }),
+
+  getInventoryDashboardSummary: () =>
+    apiService.get<{
+      total_inventory_lines: number
+      total_units_on_hand: number
+      low_stock_lines: number
+      out_of_stock_lines: number
+    }>('/inventory/stock/dashboard-summary/'),
 
   getLowStock: () =>
     apiService.get('/inventory/stock/low_stock/'),
+
+  patchInventory: (id: string, data: { low_stock_threshold?: number; quantity?: number }) =>
+    apiService.patch<unknown>(`/inventory/stock/${id}/`, data),
+
+  adjustInventory: (
+    id: string,
+    data: { new_quantity: number; reason?: string; notes?: string }
+  ) => apiService.post<unknown>(`/inventory/stock/${id}/adjust/`, data),
 }
 
 // Cart API (local storage based for now)
@@ -400,6 +420,33 @@ export const ordersApi = {
   }) =>
     apiService.post<unknown>('/accounting/sales/place-order/', data),
 
+  /** Public: which checkout payment methods the storefront may show (KNET + Wallet always true). */
+  getCheckoutPaymentMethods: () =>
+    apiService.get<{
+      knet: boolean
+      wallet: boolean
+      credit_card: boolean
+      cash: boolean
+      shipping_charge_kwd: number
+    }>('/accounting/sales/checkout-payment-methods/'),
+
+  /** Staff: read optional checkout toggles. */
+  getCheckoutPaymentSettings: () =>
+    apiService.get<{
+      enable_credit_card: boolean
+      enable_cash_on_delivery: boolean
+      shipping_charge_kwd: number
+      updated_at: string
+    }>('/accounting/sales/checkout-payment-settings/'),
+
+  /** Staff: update optional checkout toggles. */
+  updateCheckoutPaymentSettings: (data: {
+    enable_credit_card?: boolean
+    enable_cash_on_delivery?: boolean
+    shipping_charge_kwd?: number
+  }) =>
+    apiService.patch<unknown>('/accounting/sales/checkout-payment-settings/', data),
+
   /** List current user's locked gold (from orders with lock; only these can be sold back). */
   getMyLockedGold: () =>
     apiService.get<unknown[]>('/accounting/sales/my-locked-gold/'),
@@ -442,14 +489,23 @@ export const goldTradingApi = {
   getTrades: () => apiService.get<unknown[]>('/accounting/gold-trading/trades/'),
   getAdminSummary: () => apiService.get<unknown>('/accounting/gold-trading/admin-summary/'),
   getTradingConfig: () =>
-    apiService.get<{ buy_rate_adjust_add_kwd: number; sell_rate_adjust_add_kwd: number; updated_at: string }>(
-      '/accounting/gold-trading/trading-config/'
-    ),
-  updateTradingConfig: (data: { buy_rate_adjust_add_kwd?: number; sell_rate_adjust_add_kwd?: number }) =>
-    apiService.patch<{ buy_rate_adjust_add_kwd: number; sell_rate_adjust_add_kwd: number; updated_at: string }>(
-      '/accounting/gold-trading/trading-config/',
-      data
-    ),
+    apiService.get<{
+      buy_rate_adjust_add_kwd: number
+      sell_rate_adjust_add_kwd: number
+      trading_reserve_grams_by_carat?: Record<string, string | number>
+      updated_at: string
+    }>('/accounting/gold-trading/trading-config/'),
+  updateTradingConfig: (data: {
+    buy_rate_adjust_add_kwd?: number
+    sell_rate_adjust_add_kwd?: number
+    trading_reserve_grams_by_carat?: Record<string, string | number>
+  }) =>
+    apiService.patch<{
+      buy_rate_adjust_add_kwd: number
+      sell_rate_adjust_add_kwd: number
+      trading_reserve_grams_by_carat?: Record<string, string | number>
+      updated_at: string
+    }>('/accounting/gold-trading/trading-config/', data),
   quoteBuy: (data: { carat_value: number; grams?: number; kwd_amount?: number }) =>
     apiService.post<unknown>('/accounting/gold-trading/quote-buy/', data),
   quoteSell: (data: { carat_value: number; grams?: number; kwd_amount?: number }) =>
@@ -515,6 +571,8 @@ export const goldAutoTradeRulesApi = {
 /** Customer clubs (one active membership per user) + offers applied at checkout */
 export const clubsApi = {
   createClub: (data: { name: string }) => apiService.post<unknown>('/clubs/', data),
+  updateClub: (clubId: string, data: { name: string }) =>
+    apiService.patch<unknown>(`/clubs/${clubId}/`, data),
   getMyMembership: () => apiService.get<unknown>('/clubs/my-membership/'),
   getMyOffers: () => apiService.get<unknown[]>('/clubs/my-offers/'),
   join: (token: string) => apiService.post<unknown>('/clubs/join/', { token }),
@@ -527,9 +585,16 @@ export const clubsApi = {
   dissolveClub: (clubId: string) => apiService.post<unknown>(`/clubs/${clubId}/dissolve/`, {}),
   /** Admin */
   listClubs: () => apiService.get<unknown>('/clubs/'),
-  getFormationConfig: () => apiService.get<{ min_completed_orders: number }>('/clubs/formation-config/'),
-  updateFormationConfig: (data: { min_completed_orders: number }) =>
-    apiService.put('/clubs/formation-config/', data),
+  getFormationConfig: () =>
+    apiService.get<{
+      min_completed_orders: number
+      orders_per_additional_member: number | null
+      updated_at?: string
+    }>('/clubs/formation-config/'),
+  updateFormationConfig: (data: {
+    min_completed_orders: number
+    orders_per_additional_member?: number | null
+  }) => apiService.put('/clubs/formation-config/', data),
   grantOffer: (data: {
     user_id: string
     title: string
@@ -813,6 +878,16 @@ export const adminApi = {
   getDaralsabaekMetalPrices: () =>
     apiService.get<DaralsabaekMetalPricesResponse>('/scraping/daralsabaek/metal-prices/'),
 
+  /** Kw2 (ATKWT) feed normalized to same schema. */
+  getKw2MetalPrices: () =>
+    apiService.get<DaralsabaekMetalPricesResponse>('/scraping/kuwait/kw2/metal-prices/'),
+  /** Kw3 (NBJEW) feed normalized to same schema. */
+  getKw3MetalPrices: () =>
+    apiService.get<DaralsabaekMetalPricesResponse>('/scraping/kuwait/kw3/metal-prices/'),
+  /** Gold Standard gs1 (goldapi.io) feed normalized to same schema. */
+  getGoldStandardGs1MetalPrices: () =>
+    apiService.get<DaralsabaekMetalPricesResponse>('/scraping/gold-standard/gs1/metal-prices/'),
+
   /** Public: URL rates + admin additional amounts (no auth). */
   getDaralsabaekPublicRates: () =>
     apiService.get<DaralsabaekPublicRatesResponse>('/scraping/daralsabaek/public-rates/'),
@@ -831,6 +906,20 @@ export const adminApi = {
       { data },
       { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
     )
+  },
+
+  getKuwaitMarketConfig: () => {
+    const token = localStorage.getItem('access_token')
+    return apiService.get<KuwaitMarketConfigResponse>('/scraping/kuwait/config/', {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+  },
+
+  putKuwaitMarketConfig: (body: KuwaitMarketConfigPutBody) => {
+    const token = localStorage.getItem('access_token')
+    return apiService.put<KuwaitMarketConfigResponse>('/scraping/kuwait/config/', body, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
   },
 
   /** Latest scraped prices from external sources (scraping app). Requires JWT. */
@@ -916,6 +1005,27 @@ export type DaralsabaekPublicRatesResponse = {
   silver?: DaralsabaekPublicMetalSpot | null
   platinum?: DaralsabaekPublicMetalSpot | null
   silverKiloPrice?: number | null
+}
+
+export type KuwaitMarketMarkupRow = {
+  buyAdd: string
+  sellAdd: string
+  clubBuyAdd?: string
+  clubSellAdd?: string
+}
+
+export type KuwaitMarketMarkupMap = Record<string, KuwaitMarketMarkupRow>
+
+export type KuwaitMarketConfigResponse = {
+  active_source: string
+  usd_to_kwd_rate: number
+  extra_source_markups: Record<string, KuwaitMarketMarkupMap>
+}
+
+export type KuwaitMarketConfigPutBody = {
+  active_source?: string
+  usd_to_kwd_rate?: number
+  extra_source_markups?: Record<string, KuwaitMarketMarkupMap>
 }
 
 export type MetalPriceHistoryPoint = { t: string; v: number }

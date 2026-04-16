@@ -13,7 +13,7 @@ const linkKeys: { to: string; labelKey: string; icon: typeof BookOpen; key: 'acc
   { to: '/admin/trading/buybacks', labelKey: 'admin.tradingBuybacks', icon: Scale, key: 'buybacks' },
   { to: '/admin/accounting/purchases', labelKey: 'admin.purchases', icon: ShoppingBag, key: 'purchases' },
   { to: '/admin/accounting/expenses', labelKey: 'admin.expenses', icon: Receipt, key: 'expenses' },
-  { to: '/admin/accounting/reports', labelKey: 'admin.financialReports', icon: BarChart3, key: 'reports' },
+  // { to: '/admin/accounting/reports', labelKey: 'admin.financialReports', icon: BarChart3, key: 'reports' },
 ]
 
 function countFromResponse(data: unknown): number {
@@ -71,14 +71,14 @@ export default function AdminAccounting() {
             <Link
               key={to}
               to={to}
-              className="gold-card flex items-center gap-4 p-6 hover:border-gold-500/50 transition-all group"
+              className="gold-card flex items-center gap-4 p-6 hover:border-lime-400/50 transition-all group"
             >
-              <div className="w-12 h-12 rounded-lg bg-gold-500/10 flex items-center justify-center group-hover:bg-gold-500/20 transition-colors">
-                <Icon className="w-6 h-6 text-gold-400" />
+              <div className="w-12 h-12 rounded-lg bg-lime-100/80 flex items-center justify-center group-hover:bg-lime-200/60 transition-colors">
+                <Icon className="w-6 h-6 text-lime-800" />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="font-medium text-gold-100 block">{t(labelKey)}</span>
-                <span className="text-sm text-gold-100/70">
+                <span className="font-medium text-black block">{t(labelKey)}</span>
+                <span className="text-sm text-stone-700">
                   {key === 'reports' ? t('admin.viewReports') : getLabel(key)}
                 </span>
               </div>

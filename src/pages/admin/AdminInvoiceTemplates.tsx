@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, FileText, Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminNav from '../../components/admin/AdminNav'
+import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { invoicesApi } from '../../services/api'
 
 type TemplateRow = {
@@ -15,9 +16,12 @@ type TemplateRow = {
   is_active?: boolean
 }
 
+const PAGE_SIZE = 10
+
 export default function AdminInvoiceTemplates() {
   const queryClient = useQueryClient()
   const hasTriedAutoCreate = useRef(false)
+  const [page, setPage] = useState(1)
   const { data: templatesData, isLoading, isSuccess } = useQuery({
     queryKey: ['invoiceTemplates'],
     queryFn: () => invoicesApi.getTemplates(),
@@ -46,6 +50,18 @@ export default function AdminInvoiceTemplates() {
 
   const hasSaleTemplate = list.some((t) => t.template_type === 'sale')
 
+  const total = list.length
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const pageRows = useMemo(() => list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [list, page])
+
+  useEffect(() => {
+    setPage(1)
+  }, [templatesData])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -66,7 +82,7 @@ export default function AdminInvoiceTemplates() {
             type="button"
             onClick={() => createDefaultMutation.mutate()}
             disabled={createDefaultMutation.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 font-medium text-sm disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-500 text-black border border-black/10 hover:bg-lime-400 font-semibold text-sm disabled:opacity-50"
           >
             {createDefaultMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -80,12 +96,12 @@ export default function AdminInvoiceTemplates() {
         {!hasSaleTemplate && list.length === 0 && !isLoading && (
           <div className="gold-card p-8 mb-6">
             <div className="flex items-start gap-3">
-              <FileText className="w-10 h-10 text-gold-400 shrink-0" />
+              <FileText className="w-10 h-10 text-lime-800 shrink-0" />
               <div>
-                <h2 className="text-lg font-semibold text-gold-100">No invoice template yet</h2>
-                <p className="text-gold-100/80 mt-1">
-                  Click &quot;Add default Gold template&quot; to create a beautiful, gold-themed sale invoice template
-                  that matches your store. It will appear in the list below and can be selected when viewing or
+                <h2 className="text-lg font-semibold text-black">No invoice template yet</h2>
+                <p className="text-stone-800 mt-1">
+                  Click &quot;Add default Gold template&quot; to create a sale invoice template with the store lime
+                  theme and high-contrast text. It will appear in the list below and can be selected when viewing or
                   downloading invoices from Orders.
                 </p>
               </div>
@@ -94,35 +110,35 @@ export default function AdminInvoiceTemplates() {
         )}
 
         {isLoading ? (
-          <div className="gold-card p-8 text-center text-gold-100/70">Loading...</div>
+          <div className="gold-card p-8 text-center text-stone-700">Loading...</div>
         ) : (
           <div className="gold-card overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Type</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Default</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Active</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Name</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Type</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Default</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Active</th>
                 </tr>
               </thead>
               <tbody>
-                {list.map((t) => (
-                  <tr key={t.id} className="border-b border-gold-500/10">
-                    <td className="py-3 px-4 text-gold-100 font-medium">{t.name}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{t.template_type_display || t.template_type || '—'}</td>
+                {pageRows.map((t) => (
+                  <tr key={t.id} className="border-b border-stone-100">
+                    <td className="py-3 px-4 text-black font-medium">{t.name}</td>
+                    <td className="py-3 px-4 text-stone-800">{t.template_type_display || t.template_type || '—'}</td>
                     <td className="py-3 px-4">
                       {t.is_default ? (
-                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-500/20 text-amber-300">Yes</span>
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-900">Yes</span>
                       ) : (
-                        <span className="text-gold-100/60">No</span>
+                        <span className="text-stone-600">No</span>
                       )}
                     </td>
                     <td className="py-3 px-4">
                       {t.is_active ? (
-                        <span className="text-emerald-400">Yes</span>
+                        <span className="text-emerald-700">Yes</span>
                       ) : (
-                        <span className="text-gold-100/60">No</span>
+                        <span className="text-stone-600">No</span>
                       )}
                     </td>
                   </tr>
@@ -130,7 +146,17 @@ export default function AdminInvoiceTemplates() {
               </tbody>
             </table>
             {list.length === 0 && (
-              <p className="py-8 text-center text-gold-100/70">No invoice templates found. Use &quot;Add default Gold template&quot; to add one.</p>
+              <p className="py-8 text-center text-stone-700">No invoice templates found. Use &quot;Add default Gold template&quot; to add one.</p>
+            )}
+            {!isLoading && total > PAGE_SIZE && (
+              <AdminPaginationBar
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+                itemLabel="templates"
+              />
             )}
           </div>
         )}

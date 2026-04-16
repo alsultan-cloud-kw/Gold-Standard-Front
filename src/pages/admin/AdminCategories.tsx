@@ -148,44 +148,44 @@ export default function AdminCategories() {
               <FolderTree className="w-8 h-8" />
               Categories
             </h1>
-            <p className="text-gold-100/60">Root categories and subcategories for products</p>
+            <p className="text-stone-600">Root categories and subcategories for products</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm() }}>
             <button type="button" onClick={openAddRoot} className="gold-button flex items-center gap-2">
               <Plus className="w-5 h-5" />
               Add category
             </button>
-            <DialogContent className="bg-charcoal-900 border-gold-500/30 text-gold-100 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-2 border-black/15 bg-gradient-to-b from-lime-50 via-white to-amber-50/30 text-black shadow-xl">
               <DialogHeader>
-                <DialogTitle className="text-gold-100">
+                <DialogTitle className="text-xl font-bold text-black">
                   {editing ? 'Edit category' : form.parent ? 'Add subcategory' : 'Add root category'}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div>
-                  <label className="block text-sm text-gold-100/80 mb-1">Name (EN)</label>
+                  <label className="block text-sm font-semibold text-black/80 mb-1">Name (EN)</label>
                   <input
                     value={form.name_en}
                     onChange={(e) => setForm({ ...form, name_en: e.target.value })}
-                    className="w-full px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg"
+                    className="w-full px-4 py-2 bg-white border-2 border-black/15 rounded-lg text-black placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-lime-500/40"
                     placeholder="Rings"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gold-100/80 mb-1">Name (AR)</label>
+                  <label className="block text-sm font-semibold text-black/80 mb-1">Name (AR)</label>
                   <input
                     value={form.name_ar}
                     onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
-                    className="w-full px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg"
+                    className="w-full px-4 py-2 bg-white border-2 border-black/15 rounded-lg text-black placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-lime-500/40"
                     placeholder="خواتم"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gold-100/80 mb-1">Parent (subcategory)</label>
+                  <label className="block text-sm font-semibold text-black/80 mb-1">Parent (subcategory)</label>
                   <select
                     value={form.parent}
                     onChange={(e) => setForm({ ...form, parent: e.target.value })}
-                    className="w-full px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg"
+                    className="w-full px-4 py-2 bg-white border-2 border-black/15 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-lime-500/40"
                   >
                     <option value="">— Root category —</option>
                     {roots.map((r) => (
@@ -196,21 +196,21 @@ export default function AdminCategories() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gold-100/80 mb-1">Display order</label>
+                  <label className="block text-sm font-semibold text-black/80 mb-1">Display order</label>
                   <input
                     type="number"
                     value={form.display_order}
                     onChange={(e) => setForm({ ...form, display_order: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg"
+                    className="w-full px-4 py-2 bg-white border-2 border-black/15 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-lime-500/40"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gold-100/80 mb-1">Category image</label>
+                  <label className="block text-sm font-semibold text-black/80 mb-1">Category image</label>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    className="w-full text-sm text-gold-100/80 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gold-500/20 file:text-gold-200"
+                    className="w-full text-sm text-black/80 file:mr-2 file:rounded-md file:border-2 file:border-black/15 file:bg-yellow-300 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-black hover:file:bg-yellow-200"
                     onChange={(e) => {
                       const f = e.target.files?.[0]
                       if (f) {
@@ -224,11 +224,11 @@ export default function AdminCategories() {
                       <img
                         src={imagePreview}
                         alt=""
-                        className="h-24 w-24 object-cover rounded-lg border border-gold-500/30"
+                        className="h-24 w-24 object-cover rounded-lg border-2 border-black/15"
                       />
                       <button
                         type="button"
-                        className="text-xs text-gold-400 mt-1"
+                        className="text-xs font-semibold text-lime-900 hover:underline mt-1"
                         onClick={() => {
                           setImageFile(null)
                           setImagePreview(editing ? ((editing as CategoryRow).image_url || editing.image) || null : null)
@@ -239,15 +239,15 @@ export default function AdminCategories() {
                       </button>
                     </div>
                   )}
-                  <p className="text-xs text-gold-100/50 mt-1">Optional. Used for category and subcategory display.</p>
+                  <p className="text-xs text-stone-600 mt-1">Optional. Used for category and subcategory display.</p>
                 </div>
 
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer text-black font-medium">
                   <input
                     type="checkbox"
                     checked={form.is_active}
                     onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                    className="rounded border-gold-500/30"
+                    className="rounded border-black/30"
                   />
                   <span className="text-sm">Active</span>
                 </label>
@@ -256,11 +256,15 @@ export default function AdminCategories() {
                     type="button"
                     disabled={!form.name_en.trim() || !form.name_ar.trim()}
                     onClick={() => (editing ? updateMutation.mutate() : createMutation.mutate())}
-                    className="gold-button flex-1 disabled:opacity-50"
+                    className="gold-button flex-1 border-2 border-black/10 disabled:opacity-50"
                   >
                     {editing ? 'Save' : 'Create'}
                   </button>
-                  <button type="button" onClick={() => setDialogOpen(false)} className="px-4 py-2 rounded-lg border border-gold-500/30">
+                  <button
+                    type="button"
+                    onClick={() => setDialogOpen(false)}
+                    className="px-4 py-2 rounded-lg border-2 border-black/20 font-semibold text-black hover:bg-lime-100"
+                  >
                     Cancel
                   </button>
                 </div>
@@ -277,9 +281,9 @@ export default function AdminCategories() {
 
         <div className="gold-card overflow-hidden">
           {isLoading ? (
-            <div className="p-8 text-center text-gold-100/60">Loading…</div>
+            <div className="p-8 text-center text-stone-600">Loading…</div>
           ) : roots.length === 0 ? (
-            <div className="p-8 text-center text-gold-100/60">
+            <div className="p-8 text-center text-stone-600">
               No categories yet. Add a root category to get started.
             </div>
           ) : (
@@ -292,22 +296,22 @@ export default function AdminCategories() {
                         <img
                           src={(cat as CategoryRow).image_url || (cat.image as string)}
                           alt=""
-                          className="h-10 w-10 rounded object-cover border border-gold-500/20 shrink-0"
+                          className="h-10 w-10 rounded object-cover border border-stone-200 shrink-0"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded bg-charcoal-800 border border-gold-500/20 shrink-0" />
+                        <div className="h-10 w-10 rounded bg-white border border-stone-200 shrink-0" />
                       )}
-                      <span className="font-medium text-gold-100 truncate">{cat.name_en}</span>
-                      <span className="text-gold-100/40 text-sm truncate">/{cat.slug}</span>
+                      <span className="font-medium text-black truncate">{cat.name_en}</span>
+                      <span className="text-stone-500 text-sm truncate">/{cat.slug}</span>
                       {!cat.is_active && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-charcoal-700 text-gold-100/50">inactive</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-stone-100 text-stone-500">inactive</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => openAddSub(cat.id)}
-                        className="p-2 text-gold-400 hover:bg-gold-500/10 rounded text-sm"
+                        className="p-2 text-lime-800 hover:bg-lime-100 rounded text-sm"
                         title="Add subcategory"
                       >
                         <Plus className="w-4 h-4" />
@@ -315,7 +319,7 @@ export default function AdminCategories() {
                       <button
                         type="button"
                         onClick={() => openEdit(cat)}
-                        className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                        className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -332,20 +336,20 @@ export default function AdminCategories() {
                     </div>
                   </div>
                   {Array.isArray(cat.subcategories) && cat.subcategories.length > 0 && (
-                    <ul className="mt-2 ml-4 pl-4 border-l border-gold-500/20 space-y-2">
+                    <ul className="mt-2 ml-4 pl-4 border-l border-stone-200 space-y-2">
                       {cat.subcategories.map((sub) => {
                         const s = sub as CategoryRow
                         return (
                         <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
-                          <span className="flex items-center gap-2 text-gold-100/80 min-w-0">
+                          <span className="flex items-center gap-2 text-stone-800 min-w-0">
                             {s.image ? (
-                              <img src={s.image} alt="" className="h-8 w-8 rounded object-cover border border-gold-500/20 shrink-0" />
+                              <img src={s.image} alt="" className="h-8 w-8 rounded object-cover border border-stone-200 shrink-0" />
                             ) : (
-                              <div className="h-8 w-8 rounded bg-charcoal-800 border border-gold-500/20 shrink-0" />
+                              <div className="h-8 w-8 rounded bg-white border border-stone-200 shrink-0" />
                             )}
-                            <ChevronRight className="w-4 h-4 text-gold-500/50 shrink-0" />
+                            <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
                             {s.name_en}
-                            <span className="text-gold-100/40">/{s.slug}</span>
+                            <span className="text-stone-500">/{s.slug}</span>
                           </span>
                           <div className="flex gap-1">
                             <button
@@ -363,7 +367,7 @@ export default function AdminCategories() {
                                   image_url: s.image || undefined,
                                 } as CategoryRow)
                               }
-                              className="p-1 text-gold-400 hover:bg-gold-500/10 rounded"
+                              className="p-1 text-lime-800 hover:bg-lime-100 rounded"
                             >
                               <Edit2 className="w-3 h-3" />
                             </button>
@@ -388,7 +392,7 @@ export default function AdminCategories() {
           )}
         </div>
         {!isLoading && total > pageSize && (
-          <div className="mt-3 flex items-center justify-between text-xs text-gold-100/70">
+          <div className="mt-3 flex items-center justify-between text-xs text-stone-700">
             <div>
               Page {page} of {totalPages} ({total} root categories)
             </div>
@@ -397,7 +401,7 @@ export default function AdminCategories() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Prev
               </button>
@@ -405,7 +409,7 @@ export default function AdminCategories() {
                 type="button"
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Next
               </button>

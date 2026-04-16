@@ -162,15 +162,15 @@ export function PricesHistoryChart({ rates }: Props) {
   if (!rates?.succeeded) return null
 
   return (
-    <div className="gold-card ring-1 ring-gold-500/20 overflow-hidden">
+    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm overflow-hidden">
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           type="button"
           onClick={() => setMetal('gold')}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
             metal === 'gold'
-              ? 'bg-gold-500 text-charcoal-900'
-              : 'bg-gold-500/10 text-gold-200 hover:bg-gold-500/20'
+              ? 'bg-lime-500 text-black shadow-sm'
+              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
           }`}
         >
           Gold
@@ -181,8 +181,8 @@ export function PricesHistoryChart({ rates }: Props) {
             onClick={() => setMetal('silver')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               metal === 'silver'
-                ? 'bg-gold-500 text-charcoal-900'
-                : 'bg-gold-500/10 text-gold-200 hover:bg-gold-500/20'
+                ? 'bg-lime-500 text-black shadow-sm'
+                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
             }`}
           >
             Silver
@@ -194,8 +194,8 @@ export function PricesHistoryChart({ rates }: Props) {
             onClick={() => setMetal('platinum')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               metal === 'platinum'
-                ? 'bg-gold-500 text-charcoal-900'
-                : 'bg-gold-500/10 text-gold-200 hover:bg-gold-500/20'
+                ? 'bg-lime-500 text-black shadow-sm'
+                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
             }`}
           >
             Platinum
@@ -204,37 +204,37 @@ export function PricesHistoryChart({ rates }: Props) {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-        <p className="text-xs text-gold-200/50 flex-1">
+        <p className="text-xs text-stone-500 flex-1">
           Prices will be updated in {String(updateEverySec).padStart(2, '0')} sec
           {historyFetching ? ' · …' : ''}
         </p>
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="text-sm font-semibold text-[#F4E4BC] outline-none focus-visible:ring-2 focus-visible:ring-gold-500/40 rounded px-1 py-0.5 shrink-0 data-[state=open]:opacity-90"
+            className="text-sm font-semibold text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-lime-500/50 rounded px-1 py-0.5 shrink-0 data-[state=open]:opacity-90"
             type="button"
           >
             {rangeMenuLabel(chartRange)} ▼
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="min-w-[10rem] bg-charcoal-900 border border-gold-500/30 text-gold-100"
+            className="min-w-[10rem] bg-white border border-stone-200 text-stone-900 shadow-lg"
           >
             {RANGE_OPTIONS.map((opt) => (
               <DropdownMenuItem
                 key={opt.key}
-                className="cursor-pointer focus:bg-gold-500/15 focus:text-gold-50 flex items-center justify-between gap-2"
+                className="cursor-pointer focus:bg-lime-100 focus:text-black flex items-center justify-between gap-2"
                 onClick={() => setChartRange(opt.key)}
               >
                 <span>{opt.menuLabel}</span>
-                {chartRange === opt.key ? <Check className="w-4 h-4 text-gold-400 shrink-0" aria-hidden /> : null}
+                {chartRange === opt.key ? <Check className="w-4 h-4 text-lime-700 shrink-0" aria-hidden /> : null}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <h3 className="text-sm font-semibold text-gold-100 mb-1">Chart ({chartUnit})</h3>
-      <p className="text-[10px] text-gold-200/45 leading-relaxed mb-4">
+      <h3 className="text-sm font-semibold text-stone-900 mb-1">Chart ({chartUnit})</h3>
+      <p className="text-[10px] text-stone-500 leading-relaxed mb-4">
         Saved server-side (~7 days). Points are recorded about every 50s when the feed is up.
       </p>
 
@@ -243,35 +243,35 @@ export function PricesHistoryChart({ rates }: Props) {
           <RechartsLineChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <XAxis
               dataKey="label"
-              tick={{ fill: 'rgba(201, 168, 150, 0.85)', fontSize: 10 }}
+              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 10 }}
               interval="preserveStartEnd"
               tickLine={false}
-              axisLine={{ stroke: 'rgba(232, 184, 74, 0.2)' }}
+              axisLine={{ stroke: 'rgba(0,0,0,0.08)' }}
             />
             <YAxis
-              tick={{ fill: 'rgba(201, 168, 150, 0.85)', fontSize: 10 }}
+              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 10 }}
               width={48}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(232, 184, 74, 0.2)' }}
+              axisLine={{ stroke: 'rgba(0,0,0,0.08)' }}
               domain={['auto', 'auto']}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'rgba(28, 20, 16, 0.96)',
-                border: '1px solid rgba(232, 184, 74, 0.35)',
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
                 borderRadius: 8,
                 fontSize: 12,
-                color: '#FFF5EB',
+                color: '#0a0a0a',
               }}
-              labelStyle={{ color: 'rgba(201, 168, 150, 0.9)' }}
+              labelStyle={{ color: '#52525b' }}
               formatter={(value: number) => [Number(value).toFixed(4), chartUnit]}
             />
             <Line
               type="monotone"
               dataKey="v"
-              stroke="rgba(244, 216, 130, 0.9)"
+              stroke="#65a30d"
               strokeWidth={2}
-              dot={{ r: 3.5, fill: 'rgba(244, 216, 130, 0.95)', stroke: 'rgba(244, 210, 120, 0.35)', strokeWidth: 2 }}
+              dot={{ r: 3.5, fill: '#84cc16', stroke: 'rgba(0,0,0,0.12)', strokeWidth: 2 }}
               activeDot={{ r: 5 }}
             />
           </RechartsLineChart>

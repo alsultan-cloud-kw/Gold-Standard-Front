@@ -1,7 +1,9 @@
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { FileText, Mail, MessageCircle, FileDown, ArrowRight } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
+import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { invoicesApi } from '../../services/api'
 import { toast } from 'sonner'
 
@@ -15,8 +17,12 @@ type InvoiceRow = {
   created_at?: string
 }
 
+const PAGE_SIZE = 10
+
 export default function AdminInvoices() {
   const queryClient = useQueryClient()
+  const [pendingPage, setPendingPage] = useState(1)
+  const [allPage, setAllPage] = useState(1)
   const { data: invoicesData, isLoading } = useQuery({
     queryKey: ['invoices'],
     queryFn: () => invoicesApi.getInvoices(),
@@ -60,6 +66,36 @@ export default function AdminInvoices() {
     : ((invoicesData as { results?: InvoiceRow[] })?.results ?? [])
   const pending: InvoiceRow[] = Array.isArray(pendingData) ? (pendingData as InvoiceRow[]) : []
 
+  const pendingTotal = pending.length
+  const pendingTotalPages = Math.max(1, Math.ceil(pendingTotal / PAGE_SIZE))
+  const pendingSlice = useMemo(
+    () => pending.slice((pendingPage - 1) * PAGE_SIZE, pendingPage * PAGE_SIZE),
+    [pending, pendingPage],
+  )
+
+  const allTotal = list.length
+  const allTotalPages = Math.max(1, Math.ceil(allTotal / PAGE_SIZE))
+  const allSlice = useMemo(
+    () => list.slice((allPage - 1) * PAGE_SIZE, allPage * PAGE_SIZE),
+    [list, allPage],
+  )
+
+  useEffect(() => {
+    setPendingPage(1)
+  }, [pendingData])
+
+  useEffect(() => {
+    setAllPage(1)
+  }, [invoicesData])
+
+  useEffect(() => {
+    if (pendingPage > pendingTotalPages) setPendingPage(pendingTotalPages)
+  }, [pendingPage, pendingTotalPages])
+
+  useEffect(() => {
+    if (allPage > allTotalPages) setAllPage(allTotalPages)
+  }, [allPage, allTotalPages])
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -71,7 +107,7 @@ export default function AdminInvoices() {
           </div>
           <Link
             to="/admin/invoices/templates"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gold-500/50 text-gold-600 hover:bg-gold-500/10"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-lime-400/50 text-lime-900 hover:bg-lime-100 font-medium"
           >
             <FileText className="w-4 h-4" />
             Invoice Templates
@@ -81,28 +117,28 @@ export default function AdminInvoices() {
 
         {pending.length > 0 && (
           <div className="gold-card mb-8">
-            <h2 className="text-lg font-semibold text-gold-100 mb-4">Pending Delivery</h2>
+            <h2 className="text-lg font-semibold text-black mb-4">Pending Delivery</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gold-500/20">
-                    <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Invoice #</th>
-                    <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Type</th>
-                    <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Status</th>
-                    <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Actions</th>
+                  <tr className="border-b border-stone-200">
+                    <th className="text-left py-3 px-4 text-stone-700 font-medium">Invoice #</th>
+                    <th className="text-left py-3 px-4 text-stone-700 font-medium">Type</th>
+                    <th className="text-left py-3 px-4 text-stone-700 font-medium">Status</th>
+                    <th className="text-left py-3 px-4 text-stone-700 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pending.map((inv) => (
-                    <tr key={inv.id} className="border-b border-gold-500/10">
-                      <td className="py-3 px-4 font-mono text-gold-100">{inv.invoice_number}</td>
-                      <td className="py-3 px-4 text-gold-100/80">{inv.invoice_type_display || inv.invoice_type}</td>
-                      <td className="py-3 px-4 text-gold-100/80">{inv.status_display || inv.status}</td>
+                  {pendingSlice.map((inv) => (
+                    <tr key={inv.id} className="border-b border-stone-100">
+                      <td className="py-3 px-4 font-mono text-black">{inv.invoice_number}</td>
+                      <td className="py-3 px-4 text-stone-800">{inv.invoice_type_display || inv.invoice_type}</td>
+                      <td className="py-3 px-4 text-stone-800">{inv.status_display || inv.status}</td>
                       <td className="py-3 px-4 flex gap-2">
                         <button
                           onClick={() => generatePdf.mutate(inv.id)}
                           disabled={generatePdf.isPending}
-                          className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                          className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                           title="Generate PDF"
                         >
                           <FileDown className="w-4 h-4" />
@@ -110,7 +146,7 @@ export default function AdminInvoices() {
                         <button
                           onClick={() => sendEmail.mutate(inv.id)}
                           disabled={sendEmail.isPending}
-                          className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                          className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                           title="Send email"
                         >
                           <Mail className="w-4 h-4" />
@@ -118,7 +154,7 @@ export default function AdminInvoices() {
                         <button
                           onClick={() => sendWhatsApp.mutate(inv.id)}
                           disabled={sendWhatsApp.isPending}
-                          className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                          className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                           title="Send WhatsApp"
                         >
                           <MessageCircle className="w-4 h-4" />
@@ -129,36 +165,46 @@ export default function AdminInvoices() {
                 </tbody>
               </table>
             </div>
+            {pendingTotal > PAGE_SIZE && (
+              <AdminPaginationBar
+                page={pendingPage}
+                totalPages={pendingTotalPages}
+                total={pendingTotal}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPendingPage}
+                itemLabel="pending"
+              />
+            )}
           </div>
         )}
 
         {isLoading ? (
-          <div className="gold-card p-8 text-center text-gold-100/70">Loading...</div>
+          <div className="gold-card p-8 text-center text-stone-700">Loading...</div>
         ) : (
           <div className="gold-card overflow-x-auto">
-            <h2 className="text-lg font-semibold text-gold-100 mb-4">All Invoices</h2>
+            <h2 className="text-lg font-semibold text-black mb-4">All Invoices</h2>
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Invoice #</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Type</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Created</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">Actions</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Invoice #</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Type</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Status</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Created</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {list.map((inv) => (
-                  <tr key={inv.id} className="border-b border-gold-500/10">
-                    <td className="py-3 px-4 font-mono text-gold-100">{inv.invoice_number}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{inv.invoice_type_display || inv.invoice_type}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{inv.status_display || inv.status}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+                {allSlice.map((inv) => (
+                  <tr key={inv.id} className="border-b border-stone-100">
+                    <td className="py-3 px-4 font-mono text-black">{inv.invoice_number}</td>
+                    <td className="py-3 px-4 text-stone-800">{inv.invoice_type_display || inv.invoice_type}</td>
+                    <td className="py-3 px-4 text-stone-800">{inv.status_display || inv.status}</td>
+                    <td className="py-3 px-4 text-stone-800">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
                     <td className="py-3 px-4 flex gap-2">
                       <button
                         onClick={() => generatePdf.mutate(inv.id)}
                         disabled={generatePdf.isPending}
-                        className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                        className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                         title="Generate PDF"
                       >
                         <FileDown className="w-4 h-4" />
@@ -166,7 +212,7 @@ export default function AdminInvoices() {
                       <button
                         onClick={() => sendEmail.mutate(inv.id)}
                         disabled={sendEmail.isPending}
-                        className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                        className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                         title="Send email"
                       >
                         <Mail className="w-4 h-4" />
@@ -174,7 +220,7 @@ export default function AdminInvoices() {
                       <button
                         onClick={() => sendWhatsApp.mutate(inv.id)}
                         disabled={sendWhatsApp.isPending}
-                        className="p-2 text-gold-400 hover:bg-gold-500/10 rounded"
+                        className="p-2 text-lime-800 hover:bg-lime-100 rounded"
                         title="Send WhatsApp"
                       >
                         <MessageCircle className="w-4 h-4" />
@@ -185,7 +231,17 @@ export default function AdminInvoices() {
               </tbody>
             </table>
             {list.length === 0 && (
-              <p className="py-8 text-center text-gold-100/70">No invoices found.</p>
+              <p className="py-8 text-center text-stone-700">No invoices found.</p>
+            )}
+            {!isLoading && allTotal > PAGE_SIZE && (
+              <AdminPaginationBar
+                page={allPage}
+                totalPages={allTotalPages}
+                total={allTotal}
+                pageSize={PAGE_SIZE}
+                onPageChange={setAllPage}
+                itemLabel="invoices"
+              />
             )}
           </div>
         )}

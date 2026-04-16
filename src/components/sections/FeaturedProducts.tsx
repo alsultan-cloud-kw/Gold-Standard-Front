@@ -22,7 +22,7 @@ export default function FeaturedProducts({ title, products, viewAllLink, fetchTr
   }
 
   return (
-    <section className="py-20">
+    <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -81,9 +81,9 @@ function ProductCard({
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
   return (
-    <div className="gold-card group">
+    <div className="product-card-lime group">
       <Link to={`/products/${product.slug}`}>
-        <div className="relative overflow-hidden rounded-lg mb-4 aspect-[4/3]">
+        <div className="relative overflow-hidden rounded-lg mb-4 aspect-[4/3] ring-1 ring-black/10">
           {imageSrc ? (
             <img
               src={imageSrc}
@@ -91,19 +91,19 @@ function ProductCard({
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-panelBg flex items-center justify-center">
-              <span className="text-stone-400">No Image</span>
+            <div className="w-full h-full bg-white/60 flex items-center justify-center">
+              <span className="text-black/50 text-sm">No Image</span>
             </div>
           )}
           
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {product.is_featured && (
-              <span className="px-2 py-1 text-xs font-medium bg-gold-500 text-charcoal-950 rounded">
+              <span className="px-2 py-1 text-xs font-semibold bg-black/85 text-white rounded shadow-sm">
                 Featured
               </span>
             )}
-            <span className="px-2 py-1 text-xs font-medium bg-stone-800/90 text-amber-200 rounded">
+            <span className="px-2 py-1 text-xs font-semibold bg-white/90 text-black rounded shadow-sm ring-1 ring-black/10">
               {product.carat?.display_name_en}
             </span>
           </div>
@@ -114,7 +114,7 @@ function ProductCard({
               e.preventDefault()
               onAddToCart()
             }}
-            className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-gold-500 text-charcoal-950 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-gold-400"
+            className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-zinc-800"
           >
             <ShoppingCart className="w-5 h-5" />
           </button>
@@ -122,20 +122,20 @@ function ProductCard({
       </Link>
 
       <Link to={`/products/${product.slug}`}>
-        <h3 className="text-base font-medium text-stone-900 group-hover:text-gold-400 transition-colors line-clamp-1 mb-1">
+        <h3 className="text-base font-semibold text-black group-hover:underline decoration-black/40 transition-colors line-clamp-1 mb-1">
           {product.name_en}
         </h3>
       </Link>
       
-      <p className="text-sm text-stone-900/50 mb-3">
+      <p className="text-sm text-black/65 mb-3">
         {product.weight_grams}g • {product.category?.name_en}
       </p>
       
       <div className="flex items-center justify-between gap-2">
-        <div className="price-tag inline-flex items-center gap-2 flex-wrap">
+        <div className="price-tag-lime flex-wrap">
           <ProductPriceTrendArrow
             product={product}
-            variant="dark"
+            variant="light"
             showPercent
             trendOverride={trendOverride}
             percentOverride={percentOverride}
@@ -143,7 +143,7 @@ function ProductCard({
           <span>{productUnitPrice(product).toLocaleString()} KWD</span>
         </div>
         {product.live_buy_price_per_gram != null && (
-          <span className="text-xs text-stone-900/40">
+          <span className="text-xs text-black/55">
             {formatKwd(product.live_buy_price_per_gram)} KWD/g
           </span>
         )}

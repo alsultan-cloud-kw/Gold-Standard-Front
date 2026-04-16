@@ -22,6 +22,8 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
+import CompanyPricesPage from './pages/CompanyPricesPage'
+import NewsPage from './pages/NewsPage'
 import TermsOfServicePage from './pages/TermsOfServicePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import DataDeletionPage from './pages/DataDeletionPage'
@@ -49,6 +51,7 @@ import AdminInvoices from './pages/admin/AdminInvoices'
 import AdminInvoiceTemplates from './pages/admin/AdminInvoiceTemplates'
 import AdminTradingBuybacks from './pages/admin/AdminTradingBuybacks'
 import AdminTradingVirtualGold from './pages/admin/AdminTradingVirtualGold'
+import AdminCheckoutPayment from './pages/admin/AdminCheckoutPayment'
 import SellGoldPage from './pages/SellGoldPage'
 import TradeGoldPage from './pages/TradeGoldPage'
 import AdminClubs from './pages/admin/AdminClubs'
@@ -82,11 +85,11 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-siteBg flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold gold-gradient-text">Gold & Jewelry</h2>
-          <p className="text-gold-300/60 mt-2">Loading...</p>
+          <div className="w-16 h-16 border-4 border-lime-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-semibold gold-gradient-text-on-light">Gold Standard</h2>
+          <p className="text-stone-500 mt-2">Loading...</p>
         </div>
       </div>
     )
@@ -99,7 +102,7 @@ function App() {
           <Router>
             <div className="min-h-screen bg-siteBg">
               <Navbar />
-              <main className="pt-16">
+              <main className="pt-24">
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
@@ -115,6 +118,8 @@ function App() {
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/branches" element={<BranchesPage />} />
                   <Route path="/prices" element={<PricesPage />} />
+                  <Route path="/company-prices" element={<CompanyPricesPage />} />
+                  <Route path="/news" element={<NewsPage />} />
                   <Route path="/terms" element={<TermsOfServicePage />} />
                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
                   <Route path="/data-deletion" element={<DataDeletionPage />} />
@@ -126,6 +131,7 @@ function App() {
                   <Route path="/admin/products" element={<AdminProducts />} />
                   <Route path="/admin/categories" element={<AdminCategories />} />
                   <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/checkout-payment" element={<AdminCheckoutPayment />} />
                   <Route path="/admin/trading/buybacks" element={<AdminTradingBuybacks />} />
                   <Route path="/admin/trading/virtual-gold" element={<AdminTradingVirtualGold />} />
                   <Route path="/admin/inventory" element={<AdminInventory />} />

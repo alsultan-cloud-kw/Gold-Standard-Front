@@ -60,7 +60,7 @@ module.exports = {
           800: '#3F6F00',
           900: '#345900',
         },
-        siteBg: '#F6FDEB',
+        siteBg: '#ffffff',
         charcoal: {
           50: '#F9FAFB',
           100: '#F3F4F6',
@@ -98,11 +98,31 @@ module.exports = {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" },
         },
+        /** LTR locales: ticker content moves left → right (translate -50% → 0). */
+        "gold-marquee-ltr": {
+          "0%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        /** RTL locales: ticker content moves right → left (translate 0 → -50%). */
+        "gold-marquee-rtl": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        /** Navbar cart quantity badge — continuous blink while cart has items */
+        "cart-badge-blink": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "25%": { opacity: "0.25", transform: "scale(0.92)" },
+          "50%": { opacity: "1", transform: "scale(1.06)" },
+          "75%": { opacity: "0.25", transform: "scale(0.92)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
+        "gold-marquee-ltr": "gold-marquee-ltr 42s linear infinite",
+        "gold-marquee-rtl": "gold-marquee-rtl 42s linear infinite",
+        "cart-badge-blink": "cart-badge-blink 0.65s ease-in-out infinite",
       },
     },
   },

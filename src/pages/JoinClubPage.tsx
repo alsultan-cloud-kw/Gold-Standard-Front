@@ -12,6 +12,7 @@ export default function JoinClubPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const navigate = useNavigate()
   const [tried, setTried] = useState(false)
+  const [joinErrorDetail, setJoinErrorDetail] = useState('')
 
   const joinMutation = useMutation({
     mutationFn: () => clubsApi.join(token),
@@ -21,7 +22,9 @@ export default function JoinClubPage() {
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } }
-      toast.error(e?.response?.data?.detail || 'Could not join club')
+      const detail = e?.response?.data?.detail || 'Could not join club'
+      setJoinErrorDetail(detail)
+      toast.error(detail)
     },
   })
 
@@ -88,7 +91,9 @@ export default function JoinClubPage() {
           </>
         ) : joinMutation.isError ? (
           <>
-            <p className="text-gold-100/80">Something went wrong. You can try again from your dashboard.</p>
+            <p className="text-gold-100/80">
+              {joinErrorDetail || 'Something went wrong. You can try again from your dashboard.'}
+            </p>
             <Link to="/dashboard" className="text-gold-400 hover:text-gold-300">
               Go to dashboard
             </Link>

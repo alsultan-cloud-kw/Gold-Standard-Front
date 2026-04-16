@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
   ShoppingCart, 
@@ -32,11 +32,13 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
   const { getItemCount } = useCart()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const navLinks = [
     { nameKey: 'nav.home', href: '/' },
     { nameKey: 'nav.products', href: '/products' },
     { nameKey: 'nav.prices', href: '/prices' },
+    { nameKey: 'nav.news', href: '/news' },
     { nameKey: 'nav.tradeGold', href: '/trade-gold' },
     // { nameKey: 'nav.sellGold', href: '/sell-gold' },
     // { nameKey: 'nav.branches', href: '/branches' },
@@ -49,8 +51,16 @@ export default function Navbar() {
     navigate('/')
   }
 
+  const isPathActive = (href: string) => {
+    if (href === '/') return location.pathname === '/'
+    return location.pathname === href || location.pathname.startsWith(`${href}/`)
+  }
+
+  const isPricesActive =
+    isPathActive('/prices') || isPathActive('/company-prices')
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-siteBg/95 backdrop-blur-md border-b border-amber-900/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200">
       {/* Top Bar */}
       <div className="bg-gold-500/10 border-b border-gold-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -106,14 +116,58 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
-              <Link
-                key={link.nameKey}
-                to={link.href}
-                className="text-sm font-medium text-slate-800 hover:text-gold-600 transition-colors relative group"
-              >
-                {t(link.nameKey)}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 group-hover:w-full rtl:right-0 rtl:left-auto" />
-              </Link>
+              link.nameKey === 'nav.prices' ? (
+                <DropdownMenu key={link.nameKey}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={`inline-flex items-center gap-1 text-sm font-medium transition-colors relative group ${
+                        isPricesActive ? 'text-gold-700' : 'text-slate-800 hover:text-gold-600'
+                      }`}
+                    >
+                      {t('nav.prices')}
+                      <ChevronDown className="w-3.5 h-3.5" />
+                      <span
+                        className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 rtl:right-0 rtl:left-auto ${
+                          isPricesActive ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`}
+                      />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="min-w-[200px] bg-white border-gold-500/30">
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/prices"
+                        className={`cursor-pointer ${isPathActive('/prices') ? 'text-gold-700 font-semibold' : ''}`}
+                      >
+                        {t('nav.customerPrices')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/company-prices"
+                        className={`cursor-pointer ${isPathActive('/company-prices') ? 'text-gold-700 font-semibold' : ''}`}
+                      >
+                        {t('nav.companyPrices')}
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link
+                  key={link.nameKey}
+                  to={link.href}
+                  className={`text-sm font-medium transition-colors relative group ${
+                    isPathActive(link.href) ? 'text-gold-700' : 'text-slate-800 hover:text-gold-600'
+                  }`}
+                >
+                  {t(link.nameKey)}
+                  <span
+                    className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 rtl:right-0 rtl:left-auto ${
+                      isPathActive(link.href) ? 'w-full' : 'w-0 group-hover:w-full'
+                    }`}
+                  />
+                </Link>
+              )
             ))}
           </div>
 
@@ -134,7 +188,7 @@ export default function Navbar() {
             >
               <ShoppingCart className="w-5 h-5" />
               {getItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold-500 text-charcoal-950 text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-0.5 bg-gold-500 text-charcoal-950 text-xs font-bold rounded-full flex items-center justify-center tabular-nums motion-safe:animate-cart-badge-blink">
                   {getItemCount()}
                 </span>
               )}
@@ -219,14 +273,14 @@ export default function Navbar() {
 
       {/* Search Bar */}
       {isSearchOpen && (
-        <div className="border-t border-amber-900/10 bg-siteBg/95 backdrop-blur-md">
+        <div className="border-t border-stone-200 bg-white/95 backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
               <input
                 type="text"
                 placeholder={t('nav.searchPlaceholder')}
-                className="w-full pl-12 pr-4 py-3 bg-siteBg border border-amber-900/15 rounded-lg text-slate-900 placeholder-stone-400 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-600/30 rtl:pl-4 rtl:pr-12"
+                className="w-full pl-12 pr-4 py-3 bg-white border border-stone-200 rounded-lg text-slate-900 placeholder-stone-400 focus:outline-none focus:border-lime-600 focus:ring-1 focus:ring-lime-500/25 rtl:pl-4 rtl:pr-12"
               />
             </div>
           </div>
@@ -235,18 +289,58 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-amber-900/10 bg-siteBg/95 backdrop-blur-md">
+        <div className="lg:hidden border-t border-stone-200 bg-white/95 backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
-                <Link
-                  key={link.nameKey}
-                  to={link.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="px-4 py-3 text-slate-800 hover:text-gold-600 hover:bg-gold-500/10 rounded-lg transition-colors"
-                >
-                  {t(link.nameKey)}
-                </Link>
+                link.nameKey === 'nav.prices' ? (
+                  <div key={link.nameKey} className="px-2 py-1">
+                    <div
+                      className={`px-2 py-2 text-sm font-semibold rounded-lg ${
+                        isPricesActive ? 'text-gold-700 bg-gold-500/10' : 'text-slate-700'
+                      }`}
+                    >
+                      {t('nav.prices')}
+                    </div>
+                    <div className="mt-1 flex flex-col gap-1">
+                      <Link
+                        to="/prices"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                          isPathActive('/prices')
+                            ? 'text-gold-700 bg-gold-500/15 font-semibold'
+                            : 'text-slate-800 hover:text-gold-600 hover:bg-gold-500/10'
+                        }`}
+                      >
+                        {t('nav.customerPrices')}
+                      </Link>
+                      <Link
+                        to="/company-prices"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                          isPathActive('/company-prices')
+                            ? 'text-gold-700 bg-gold-500/15 font-semibold'
+                            : 'text-slate-800 hover:text-gold-600 hover:bg-gold-500/10'
+                        }`}
+                      >
+                        {t('nav.companyPrices')}
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    key={link.nameKey}
+                    to={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg transition-colors ${
+                      isPathActive(link.href)
+                        ? 'text-gold-700 bg-gold-500/15 font-semibold'
+                        : 'text-slate-800 hover:text-gold-600 hover:bg-gold-500/10'
+                    }`}
+                  >
+                    {t(link.nameKey)}
+                  </Link>
+                )
               ))}
               {!isAuthenticated && (
                 <Link

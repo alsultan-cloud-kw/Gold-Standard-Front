@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { productsApi } from '../../services/api'
+import { productsApi, inventoryApi } from '../../services/api'
 import AdminNav from '../../components/admin/AdminNav'
 import type { Product } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { getApiBaseUrl } from '@/lib/apiBase'
 
 type Paginated<T> = { count: number; next: string | null; previous: string | null; results: T[] }
 type CategoryOpt = { id: string; name_en: string; slug?: string; parent?: string | null }
@@ -14,6 +15,7 @@ type SubCat = { id: string; name_en: string; slug?: string }
 type CategoryRoot = { id: string; name_en: string; subcategories?: SubCat[] }
 type MetalTypeOpt = { id: string; display_name_en: string; name?: string }
 type CaratOpt = { id: string; display_name_en: string; carat_value?: number }
+type BranchOpt = { id: string; code: string; name_en: string }
 
 function asResults<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[]
@@ -27,7 +29,7 @@ function primaryImageUrl(product: Product & { primary_image?: { image?: string; 
   if (img.image_url) return img.image_url
   if (img.image?.startsWith('http')) return img.image
   if (img.image) {
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+    const apiBase = getApiBaseUrl()
     const origin = apiBase.replace(/\/api\/?$/, '')
     return `${origin}${img.image.startsWith('/') ? '' : '/'}${img.image}`
   }
@@ -74,6 +76,8 @@ export default function AdminProducts() {
     description_en: '',
     status: 'active',
     is_featured: false,
+    initial_stock_quantity: '0',
+    initial_stock_branch_id: '',
   })
 
   const { data: productsData, isLoading } = useQuery({
@@ -101,6 +105,11 @@ export default function AdminProducts() {
     queryFn: () => productsApi.getCarats(),
   })
 
+  const { data: branchesData } = useQuery({
+    queryKey: ['inventoryBranches', 'admin-products'],
+    queryFn: () => inventoryApi.getBranches(),
+  })
+
   const productList = useMemo(() => {
     const list = asResults<Product>(productsData)
     if (!searchQuery.trim()) return list
@@ -124,6 +133,7 @@ export default function AdminProducts() {
   const roots = useMemo(() => (Array.isArray(categoryTree) ? (categoryTree as CategoryRoot[]) : []), [categoryTree])
   const metalTypes = useMemo(() => asResults<MetalTypeOpt>(metalTypesData), [metalTypesData])
   const carats = useMemo(() => asResults<CaratOpt>(caratsData), [caratsData])
+  const branchOptions = useMemo(() => asResults<BranchOpt>(branchesData), [branchesData])
 
   function resetForm() {
     setForm({
@@ -143,6 +153,8 @@ export default function AdminProducts() {
       description_en: '',
       status: 'active',
       is_featured: false,
+      initial_stock_quantity: '0',
+      initial_stock_branch_id: '',
     })
     setEditingSlug(null)
     setEditingId(null)
@@ -193,6 +205,8 @@ export default function AdminProducts() {
         description_en: String(detail.description_en ?? ''),
         status: String(detail.status ?? 'active'),
         is_featured: Boolean(detail.is_featured),
+        initial_stock_quantity: String(detail.initial_stock_quantity ?? '0'),
+        initial_stock_branch_id: String(detail.initial_stock_branch_id ?? ''),
       })
       setEditingBarcodeValue(String(detail.barcode_value ?? ''))
       setEditingBarcodeImageUrl(String(detail.barcode_image_url ?? ''))
@@ -218,7 +232,8 @@ export default function AdminProducts() {
       const making = parseFloat(form.making_charge_amount)
       if (Number.isNaN(making)) throw new Error('Invalid making charge')
 
-      const payload = {
+      const initialQty = Math.max(0, Math.floor(Number(form.initial_stock_quantity) || 0))
+      const payload: Parameters<typeof productsApi.createProduct>[0] = {
         sku: form.sku.trim(),
         name_ar: form.name_ar.trim(),
         name_en: form.name_en.trim(),
@@ -229,10 +244,16 @@ export default function AdminProducts() {
         weight_grams: weight,
         making_charge_type: form.making_charge_type,
         making_charge_amount: making,
-        description_ar: form.description_ar.trim() || undefined,
-        description_en: form.description_en.trim() || undefined,
+        description_ar: form.description_ar.trim(),
+        description_en: form.description_en.trim(),
         status: form.status,
         is_featured: form.is_featured,
+      }
+      if (!editingSlug) {
+        payload.initial_stock_quantity = initialQty
+        if (form.initial_stock_branch_id.trim()) {
+          payload.initial_stock_branch_id = form.initial_stock_branch_id.trim()
+        }
       }
 
       if (!payload.category_id || !payload.metal_type_id || !payload.carat_id)
@@ -255,6 +276,9 @@ export default function AdminProducts() {
     },
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] })
+      queryClient.invalidateQueries({ queryKey: ['inventoryStock'] })
+      queryClient.invalidateQueries({ queryKey: ['lowStock'] })
+      queryClient.invalidateQueries({ queryKey: ['inventoryDashboardSummary'] })
       const serial = created?.serial_number
       toast.success(
         editingSlug
@@ -279,7 +303,7 @@ export default function AdminProducts() {
   })
 
   const inputClass =
-    'w-full px-3 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 text-sm'
+    'w-full px-3 py-2 bg-white border-2 border-black/15 rounded-lg text-black text-sm placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-lime-500/40 focus:border-black/25'
 
   return (
     <div className="min-h-screen py-8">
@@ -298,26 +322,28 @@ export default function AdminProducts() {
 
         <div className="flex gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500" />
             <input
               type="text"
               placeholder="Search by name, SKU, serial, slug..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-black/15 rounded-lg text-black"
             />
           </div>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm() }}>
-          <DialogContent className="bg-charcoal-900 border-gold-500/30 text-gold-100 max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto border-2 border-black/15 bg-gradient-to-b from-lime-50 via-white to-amber-50/30 text-black shadow-xl sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>{editingSlug ? 'Edit product' : 'Add product'}</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-black">
+                {editingSlug ? 'Edit product' : 'Add product'}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-gold-100/60">SKU *</label>
+                  <label className="text-xs font-semibold text-black/80">SKU *</label>
                   <input
                     className={inputClass}
                     value={form.sku}
@@ -326,9 +352,9 @@ export default function AdminProducts() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gold-100/60">Serial number</label>
+                  <label className="text-xs font-semibold text-black/80">Serial number</label>
                   <input
-                    className={inputClass + ' bg-charcoal-900/80'}
+                    className={inputClass + ' bg-stone-100 text-stone-700 cursor-default'}
                     readOnly
                     value={
                       editingSlug
@@ -339,31 +365,31 @@ export default function AdminProducts() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-gold-100/60">Barcode</label>
+                <label className="text-xs font-semibold text-black/80">Barcode</label>
                 {editingSlug ? (
-                  <div className="mt-1 p-3 rounded-lg border border-gold-500/20 bg-charcoal-900/60">
-                    <p className="text-sm text-gold-100 font-mono break-all">
+                  <div className="mt-1 p-3 rounded-lg border-2 border-black/10 bg-white/90">
+                    <p className="text-sm text-black font-mono break-all">
                       {editingBarcodeValue || '—'}
                     </p>
                     {editingBarcodeImageUrl ? (
                       <img
                         src={editingBarcodeImageUrl}
                         alt="Product barcode"
-                        className="mt-2 h-14 w-auto bg-white rounded p-1 border border-gold-500/20"
+                        className="mt-2 h-14 w-auto bg-white rounded p-1 border border-black/15"
                       />
                     ) : (
-                      <p className="text-xs text-gold-100/50 mt-2">Barcode image not available.</p>
+                      <p className="text-xs text-stone-600 mt-2">Barcode image not available.</p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs text-gold-100/50 mt-1">
+                  <p className="text-xs text-stone-600 mt-1">
                     Barcode value and image are auto-generated after product creation.
                   </p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-gold-100/60">Weight (g) *</label>
+                  <label className="text-xs font-semibold text-black/80">Weight (g) *</label>
                   <input
                     type="number"
                     step="0.001"
@@ -373,18 +399,71 @@ export default function AdminProducts() {
                   />
                 </div>
               </div>
+              {!editingSlug && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs font-semibold text-black/80">{t('admin.initialStockQty')}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        className={inputClass}
+                        value={form.initial_stock_quantity}
+                        onChange={(e) => setForm({ ...form, initial_stock_quantity: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-black/80">{t('admin.initialStockBranch')}</label>
+                      <select
+                        className={inputClass}
+                        value={form.initial_stock_branch_id}
+                        onChange={(e) => setForm({ ...form, initial_stock_branch_id: e.target.value })}
+                      >
+                        <option value="">{t('admin.initialStockBranchHint')}</option>
+                        {branchOptions.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.code} — {b.name_en}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-stone-600">{t('admin.initialStockQtyHint')}</p>
+                </>
+              )}
               <div>
-                <label className="text-xs text-gold-100/60">Name (EN) *</label>
+                <label className="text-xs font-semibold text-black/80">Name (EN) *</label>
                 <input className={inputClass} value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-gold-100/60">Name (AR) *</label>
+                <label className="text-xs font-semibold text-black/80">Name (AR) *</label>
                 <input className={inputClass} value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-black/80">Description (EN)</label>
+                <textarea
+                  className={inputClass + ' min-h-[88px] resize-y'}
+                  rows={4}
+                  placeholder="Optional — shown on the product page under the image."
+                  value={form.description_en}
+                  onChange={(e) => setForm({ ...form, description_en: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-black/80">Description (AR)</label>
+                <textarea
+                  className={inputClass + ' min-h-[88px] resize-y'}
+                  rows={4}
+                  placeholder="اختياري — يظهر في صفحة المنتج تحت الصورة."
+                  value={form.description_ar}
+                  onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
+                />
               </div>
               {roots.length > 0 ? (
                 <>
                   <div>
-                    <label className="text-xs text-gold-100/60">Category (parent) *</label>
+                    <label className="text-xs font-semibold text-black/80">Category (parent) *</label>
                     <select
                       className={inputClass}
                       value={form.parent_category_id}
@@ -403,7 +482,7 @@ export default function AdminProducts() {
                         </option>
                       ))}
                     </select>
-                    <p className="text-xs text-gold-100/50 mt-1">
+                    <p className="text-xs text-stone-600 mt-1">
                       If this category has subcategories, you can narrow the product to one below.
                     </p>
                   </div>
@@ -413,7 +492,7 @@ export default function AdminProducts() {
                     if (!subs || subs.length === 0) return null
                     return (
                       <div>
-                        <label className="text-xs text-gold-100/60">Subcategory</label>
+                        <label className="text-xs font-semibold text-black/80">Subcategory</label>
                         <select
                           className={inputClass}
                           value={form.subcategory_id}
@@ -432,7 +511,7 @@ export default function AdminProducts() {
                 </>
               ) : (
                 <div>
-                  <label className="text-xs text-gold-100/60">Category *</label>
+                  <label className="text-xs font-semibold text-black/80">Category *</label>
                   <select
                     className={inputClass}
                     value={form.parent_category_id}
@@ -451,7 +530,7 @@ export default function AdminProducts() {
                 </div>
               )}
               <div>
-                <label className="text-xs text-gold-100/60">Metal type *</label>
+                <label className="text-xs font-semibold text-black/80">Metal type *</label>
                 <select
                   className={inputClass}
                   value={form.metal_type_id}
@@ -466,7 +545,7 @@ export default function AdminProducts() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gold-100/60">Carat *</label>
+                <label className="text-xs font-semibold text-black/80">Carat *</label>
                 <select
                   className={inputClass}
                   value={form.carat_id}
@@ -482,7 +561,7 @@ export default function AdminProducts() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-gold-100/60">Making charge type</label>
+                  <label className="text-xs font-semibold text-black/80">Making charge type</label>
                   <select
                     className={inputClass}
                     value={form.making_charge_type}
@@ -496,7 +575,7 @@ export default function AdminProducts() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gold-100/60">Making charge amount</label>
+                  <label className="text-xs font-semibold text-black/80">Making charge amount</label>
                   <input
                     type="number"
                     step="0.001"
@@ -507,7 +586,7 @@ export default function AdminProducts() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-gold-100/60">Status</label>
+                <label className="text-xs font-semibold text-black/80">Status</label>
                 <select
                   className={inputClass}
                   value={form.status}
@@ -520,24 +599,25 @@ export default function AdminProducts() {
                   ))}
                 </select>
               </div>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-black font-medium cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.is_featured}
                   onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                  className="rounded border-black/30"
                 />
                 Featured
               </label>
               <div>
-                <label className="text-xs text-gold-100/60">Product image</label>
+                <label className="text-xs font-semibold text-black/80">Product image</label>
                 <input
                   ref={fileRef}
                   type="file"
                   accept="image/*"
-                  className="w-full text-sm text-gold-100/70 file:mr-2 file:rounded file:border-0 file:bg-gold-500/20 file:px-2 file:py-1"
+                  className="w-full text-sm text-black/80 file:mr-2 file:rounded-md file:border-2 file:border-black/15 file:bg-yellow-300 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-black hover:file:bg-yellow-200"
                   onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 />
-                <p className="text-xs text-gold-100/50 mt-1">
+                <p className="text-xs text-stone-600 mt-1">
                   {editingSlug ? 'Optional — replaces primary if set.' : 'Optional — set as primary after create.'}
                 </p>
               </div>
@@ -546,11 +626,15 @@ export default function AdminProducts() {
                   type="button"
                   disabled={saveMutation.isPending}
                   onClick={() => saveMutation.mutate()}
-                  className="gold-button flex-1 disabled:opacity-50"
+                  className="gold-button flex-1 border-2 border-black/10 disabled:opacity-50"
                 >
                   {saveMutation.isPending ? 'Saving…' : editingSlug ? 'Update' : 'Create'}
                 </button>
-                <button type="button" onClick={() => setDialogOpen(false)} className="px-4 py-2 rounded-lg border border-gold-500/30">
+                <button
+                  type="button"
+                  onClick={() => setDialogOpen(false)}
+                  className="px-4 py-2 rounded-lg border-2 border-black/20 font-semibold text-black hover:bg-lime-100"
+                >
                   Cancel
                 </button>
               </div>
@@ -561,26 +645,26 @@ export default function AdminProducts() {
         <div className="gold-card overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-gold-500/20">
-                <th className="text-left align-middle py-3 px-4 text-gold-100/60 font-medium w-[22%]">
+              <tr className="border-b border-stone-200">
+                <th className="text-left align-middle py-3 px-4 text-stone-600 font-medium w-[22%]">
                   Product
                 </th>
-                <th className="text-left align-middle py-3 px-4 text-gold-100/60 font-medium w-[14%]">
+                <th className="text-left align-middle py-3 px-4 text-stone-600 font-medium w-[14%]">
                   Category
                 </th>
-                <th className="text-left align-middle py-3 px-4 text-gold-100/60 font-medium font-mono text-xs w-[12%]">
+                <th className="text-left align-middle py-3 px-4 text-stone-600 font-medium font-mono text-xs w-[12%]">
                   SKU
                 </th>
-                <th className="text-left align-middle py-3 px-4 text-gold-100/60 font-medium font-mono text-xs w-[14%]">
+                <th className="text-left align-middle py-3 px-4 text-stone-600 font-medium font-mono text-xs w-[14%]">
                   Serial
                 </th>
-                <th className="text-right align-middle py-3 px-4 text-gold-100/60 font-medium w-[10%]">
+                <th className="text-right align-middle py-3 px-4 text-stone-600 font-medium w-[10%]">
                   Price
                 </th>
-                <th className="text-center align-middle py-3 px-4 text-gold-100/60 font-medium w-[10%]">
+                <th className="text-center align-middle py-3 px-4 text-stone-600 font-medium w-[10%]">
                   Status
                 </th>
-                <th className="text-center align-middle py-3 px-4 text-gold-100/60 font-medium w-[14%]">
+                <th className="text-center align-middle py-3 px-4 text-stone-600 font-medium w-[14%]">
                   Actions
                 </th>
               </tr>
@@ -588,13 +672,13 @@ export default function AdminProducts() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center align-middle text-gold-100/60">
+                  <td colSpan={7} className="py-8 text-center align-middle text-stone-600">
                     Loading...
                   </td>
                 </tr>
               ) : productList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center align-middle text-gold-100/60">
+                  <td colSpan={7} className="py-8 text-center align-middle text-stone-600">
                     No products. Add one to get started.
                   </td>
                 </tr>
@@ -606,35 +690,35 @@ export default function AdminProducts() {
                       ? (product.category as { name_en: string }).name_en
                       : '—'
                   return (
-                    <tr key={product.id} className="border-b border-gold-500/10 align-middle">
+                    <tr key={product.id} className="border-b border-stone-100 align-middle">
                       <td className="py-3 px-4 align-middle text-left">
                         <div className="flex items-center gap-3 min-w-0">
                           {src ? (
                             <img
                               src={src}
                               alt=""
-                              className="w-10 h-10 shrink-0 rounded object-cover bg-charcoal-800"
+                              className="w-10 h-10 shrink-0 rounded object-cover bg-white"
                             />
                           ) : (
-                            <div className="w-10 h-10 shrink-0 rounded bg-charcoal-800" />
+                            <div className="w-10 h-10 shrink-0 rounded bg-white" />
                           )}
-                          <span className="text-gold-100 truncate" title={product.name_en}>
+                          <span className="text-black truncate" title={product.name_en}>
                             {product.name_en}
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 align-middle text-left text-gold-100/80">
+                      <td className="py-3 px-4 align-middle text-left text-stone-800">
                         <div className="truncate" title={categoryName}>
                           {categoryName}
                         </div>
                       </td>
-                      <td className="py-3 px-4 align-middle text-left text-gold-100/60 font-mono text-xs whitespace-nowrap">
+                      <td className="py-3 px-4 align-middle text-left text-stone-600 font-mono text-xs whitespace-nowrap">
                         {product.sku}
                       </td>
-                      <td className="py-3 px-4 align-middle text-left text-gold-100/70 font-mono text-xs whitespace-nowrap">
+                      <td className="py-3 px-4 align-middle text-left text-stone-700 font-mono text-xs whitespace-nowrap">
                         {(product as Product & { serial_number?: string }).serial_number ?? '—'}
                       </td>
-                      <td className="py-3 px-4 align-middle text-right text-gold-400 whitespace-nowrap tabular-nums">
+                      <td className="py-3 px-4 align-middle text-right text-lime-800 whitespace-nowrap tabular-nums">
                         {(() => {
                           const live = (product as Product).live_total_price
                           const base = (product as Product).current_price
@@ -652,7 +736,7 @@ export default function AdminProducts() {
                           <button
                             type="button"
                             onClick={() => openEdit(product)}
-                            className="p-2 text-gold-400 hover:bg-gold-500/10 rounded align-middle"
+                            className="p-2 text-lime-800 hover:bg-lime-100 rounded align-middle"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -676,7 +760,7 @@ export default function AdminProducts() {
             </tbody>
           </table>
           {total > pageSize && (
-            <div className="flex items-center justify-between mt-3 text-xs text-gold-100/70">
+            <div className="flex items-center justify-between mt-3 text-xs text-stone-700">
               <div>
                 Page {page} of {totalPages} ({total} products)
               </div>
@@ -685,7 +769,7 @@ export default function AdminProducts() {
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                  className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
                 >
                   Prev
                 </button>
@@ -693,7 +777,7 @@ export default function AdminProducts() {
                   type="button"
                   onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                   disabled={page >= totalPages}
-                  className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                  className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
                 >
                   Next
                 </button>

@@ -65,50 +65,38 @@ export default function ProductPriceTrendArrow({
     variant === 'light' ? 'text-stone-500' : 'text-gold-200/70'
 
   const iconCls = 'w-[1.125rem] h-[1.125rem] sm:w-5 sm:h-5 shrink-0 stroke-[2.75]'
+  if (!trend && !forceVisible) return null
 
-  if (trend === 'up') {
-    const title = pctStr
-      ? t('productsPage.priceTrendUp', { percent: pctStr })
-      : t('productsPage.priceTrendUpShort')
-    return (
-      <span
-        className={`inline-flex items-center gap-1 ${className}`}
-        title={title}
-        role="img"
-        aria-label={title}
-      >
-        <ArrowUp className={`${iconCls} ${upClass}`} aria-hidden />
-        {showPercent && pctStr ? (
-          <span className={`text-[10px] sm:text-[11px] font-bold tabular-nums leading-none ${pctMuted}`}>
-            {pctStr}%
-          </span>
-        ) : null}
-      </span>
-    )
-  }
-  if (trend === 'down') {
-    const title = pctStr
-      ? t('productsPage.priceTrendDown', { percent: pctStr })
-      : t('productsPage.priceTrendDownShort')
-    return (
-      <span
-        className={`inline-flex items-center gap-1 ${className}`}
-        title={title}
-        role="img"
-        aria-label={title}
-      >
-        <ArrowDown className={`${iconCls} ${downClass}`} aria-hidden />
-        {showPercent && pctStr ? (
-          <span className={`text-[10px] sm:text-[11px] font-bold tabular-nums leading-none ${pctMutedDown}`}>
-            {pctStr}%
-          </span>
-        ) : null}
-      </span>
-    )
-  }
-  if (!forceVisible) return null
+  const title =
+    trend === 'up'
+      ? pctStr
+        ? t('productsPage.priceTrendUp', { percent: pctStr })
+        : t('productsPage.priceTrendUpShort')
+      : trend === 'down'
+        ? pctStr
+          ? t('productsPage.priceTrendDown', { percent: pctStr })
+          : t('productsPage.priceTrendDownShort')
+        : t('productsPage.priceTrendNoChange')
 
-  const title = t('productsPage.priceTrendNoChange')
+  const upIconClass =
+    trend === 'up'
+      ? `${iconCls} ${upClass} animate-trend-blink`
+      : trend === 'down'
+        ? `${iconCls} ${neutralClass}`
+        : `${iconCls} ${neutralClass}`
+  const downIconClass =
+    trend === 'down'
+      ? `${iconCls} ${downClass} animate-trend-blink`
+      : trend === 'up'
+        ? `${iconCls} ${neutralClass}`
+        : `${iconCls} ${neutralClass}`
+  const pctClass =
+    trend === 'up'
+      ? pctMuted
+      : trend === 'down'
+        ? pctMutedDown
+        : neutralClass
+
   return (
     <span
       className={`inline-flex items-center gap-1 ${className}`}
@@ -116,11 +104,20 @@ export default function ProductPriceTrendArrow({
       role="img"
       aria-label={title}
     >
-      <ArrowUp className={`${iconCls} ${neutralClass}`} aria-hidden />
+      <span className="inline-flex items-center leading-none">
+        <ArrowUp className={upIconClass} aria-hidden />
+        <ArrowDown className={downIconClass} aria-hidden />
+      </span>
       {showPercent ? (
-        <span className={`text-[10px] sm:text-[11px] font-bold tabular-nums leading-none ${neutralClass}`}>
-          0.00%
-        </span>
+        pctStr ? (
+          <span className={`text-[10px] sm:text-[11px] font-bold tabular-nums leading-none ${pctClass}`}>
+            {pctStr}%
+          </span>
+        ) : trend ? null : (
+          <span className={`text-[10px] sm:text-[11px] font-bold tabular-nums leading-none ${neutralClass}`}>
+            0.00%
+          </span>
+        )
       ) : null}
     </span>
   )

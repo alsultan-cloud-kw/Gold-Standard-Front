@@ -155,32 +155,32 @@ export default function AdminExpenses() {
 
         {!!summaryData && (
           <div className="gold-card mb-8">
-            <h2 className="text-lg font-semibold text-gold-100 mb-4">{t('admin.expenseSummaryByDate')}</h2>
+            <h2 className="text-lg font-semibold text-black mb-4">{t('admin.expenseSummaryByDate')}</h2>
             <div className="flex flex-wrap gap-4 mb-4">
               <label className="flex items-center gap-2">
-                <span className="text-gold-100/70 text-sm">{t('admin.from')}</span>
+                <span className="text-stone-700 text-sm">{t('admin.from')}</span>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gold-500/30 rounded-lg bg-white text-stone-800"
+                  className="px-3 py-2 border border-black/15 rounded-lg bg-white text-stone-800"
                 />
               </label>
               <label className="flex items-center gap-2">
-                <span className="text-gold-100/70 text-sm">{t('admin.to')}</span>
+                <span className="text-stone-700 text-sm">{t('admin.to')}</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gold-500/30 rounded-lg bg-white text-stone-800"
+                  className="px-3 py-2 border border-black/15 rounded-lg bg-white text-stone-800"
                 />
               </label>
             </div>
-            <p className="text-gold-100/80 mb-2">
-              {t('admin.totalExpenses')}: <strong className="text-gold-400">{Number(summary?.total_expenses ?? 0).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD</strong>
+            <p className="text-stone-800 mb-2">
+              {t('admin.totalExpenses')}: <strong className="text-lime-800">{Number(summary?.total_expenses ?? 0).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD</strong>
             </p>
             {summary?.summary && summary.summary.length > 0 && (
-              <ul className="list-disc list-inside text-gold-100/80 text-sm">
+              <ul className="list-disc list-inside text-stone-800 text-sm">
                 {summary.summary.map((s: { category: string; total: number }, i: number) => (
                   <li key={i}>{s.category}: {Number(s.total).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD</li>
                 ))}
@@ -190,30 +190,30 @@ export default function AdminExpenses() {
         )}
 
         {isLoading ? (
-          <div className="gold-card p-8 text-center text-gold-100/80">{t('common.loading')}</div>
+          <div className="gold-card p-8 text-center text-stone-800">{t('common.loading')}</div>
         ) : (
           <div className="gold-card overflow-x-auto">
-            <h2 className="text-lg font-semibold text-gold-100 mb-4">{t('admin.expenseList')}</h2>
+            <h2 className="text-lg font-semibold text-black mb-4">{t('admin.expenseList')}</h2>
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gold-500/20">
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.expenseNumber')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.date')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.category')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.description')}</th>
-                  <th className="text-left py-3 px-4 text-gold-100/70 font-medium">{t('admin.branch')}</th>
-                  <th className="text-right py-3 px-4 text-gold-100/70 font-medium">{t('admin.amount')}</th>
+                <tr className="border-b border-stone-200">
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.expenseNumber')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.date')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.category')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.description')}</th>
+                  <th className="text-left py-3 px-4 text-stone-700 font-medium">{t('admin.branch')}</th>
+                  <th className="text-right py-3 px-4 text-stone-700 font-medium">{t('admin.amount')}</th>
                 </tr>
               </thead>
               <tbody>
                 {pageItems.map((e: { id: string; expense_number: string; expense_date: string; category?: string; category_display?: string; description?: string; branch_name?: string; amount: number }) => (
-                  <tr key={e.id} className="border-b border-gold-500/10">
-                    <td className="py-3 px-4 font-mono text-gold-100">{e.expense_number}</td>
-                    <td className="py-3 px-4 text-gold-100">{e.expense_date}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{e.category_display || e.category || '—'}</td>
-                    <td className="py-3 px-4 text-gold-100/80 max-w-xs truncate">{e.description || '—'}</td>
-                    <td className="py-3 px-4 text-gold-100/80">{e.branch_name || '—'}</td>
-                    <td className="py-3 px-4 text-right text-gold-400 font-medium">
+                  <tr key={e.id} className="border-b border-stone-100">
+                    <td className="py-3 px-4 font-mono text-black">{e.expense_number}</td>
+                    <td className="py-3 px-4 text-black">{e.expense_date}</td>
+                    <td className="py-3 px-4 text-stone-800">{e.category_display || e.category || '—'}</td>
+                    <td className="py-3 px-4 text-stone-800 max-w-xs truncate">{e.description || '—'}</td>
+                    <td className="py-3 px-4 text-stone-800">{e.branch_name || '—'}</td>
+                    <td className="py-3 px-4 text-right text-lime-800 font-medium">
                       {Number(e.amount).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
                     </td>
                   </tr>
@@ -221,12 +221,12 @@ export default function AdminExpenses() {
               </tbody>
             </table>
             {list.length === 0 && (
-              <p className="py-8 text-center text-gold-100/60">No expenses found.</p>
+              <p className="py-8 text-center text-stone-600">No expenses found.</p>
             )}
           </div>
         )}
         {!isLoading && total > pageSize && (
-          <div className="mt-4 gold-card flex items-center justify-between text-xs text-gold-100/70">
+          <div className="mt-4 gold-card flex items-center justify-between text-xs text-stone-700">
             <div>
               Page {page} of {totalPages} ({total} expenses)
             </div>
@@ -235,7 +235,7 @@ export default function AdminExpenses() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Prev
               </button>
@@ -243,7 +243,7 @@ export default function AdminExpenses() {
                 type="button"
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+                className="px-3 py-1 rounded-full border border-lime-400/60 disabled:opacity-40 hover:bg-lime-100"
               >
                 Next
               </button>
@@ -252,7 +252,7 @@ export default function AdminExpenses() {
         )}
 
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-[var(--panel-bg)] border border-gold-500/30 rounded-xl shadow-xl text-stone-800">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-[var(--panel-bg)] border border-black/15 rounded-xl shadow-xl text-stone-800">
             <DialogHeader>
               <DialogTitle className="gold-gradient-text-on-light">{t('admin.addExpense')}</DialogTitle>
             </DialogHeader>
