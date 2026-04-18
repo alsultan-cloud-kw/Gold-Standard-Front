@@ -5,7 +5,9 @@ import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  // Root-relative assets so deep links (e.g. /products/slug) load /assets/* correctly.
+  // Relative base ('./') breaks shared URLs: ./assets/ resolves under /products/assets/.
+  base: '/',
   envPrefix: ['VITE_', 'BACKEND_'],
   plugins: [inspectAttr(), react()],
   server: {
