@@ -105,14 +105,24 @@ export default function AdminInvoices() {
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Invoices</h1>
             <p className="text-stone-600 mt-1">Manage and deliver invoices</p>
           </div>
-          <Link
-            to="/admin/invoices/templates"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-lime-400/50 text-lime-900 hover:bg-lime-100 font-medium"
-          >
-            <FileText className="w-4 h-4" />
-            Invoice Templates
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/admin/invoices/terms"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-lime-400/50 text-lime-900 hover:bg-lime-100 font-medium"
+            >
+              <FileText className="w-4 h-4" />
+              Terms &amp; Conditions
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/admin/invoices/templates"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-lime-400/50 text-lime-900 hover:bg-lime-100 font-medium"
+            >
+              <FileText className="w-4 h-4" />
+              Invoice Templates
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
 
         {pending.length > 0 && (

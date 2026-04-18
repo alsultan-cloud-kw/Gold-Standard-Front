@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
+import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { getApiBaseUrl } from '@/lib/apiBase'
 
 // Create axios instance
@@ -20,7 +20,12 @@ api.interceptors.request.use(
     const lang = localStorage.getItem('app_lang') || document.documentElement.getAttribute('lang') || 'en'
     config.headers['Accept-Language'] = lang.startsWith('ar') ? 'ar' : 'en'
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type']
+      // Let the runtime set multipart boundary (do not send application/json)
+      if (config.headers instanceof AxiosHeaders) {
+        config.headers.delete('Content-Type')
+      } else if (config.headers && typeof config.headers === 'object') {
+        delete (config.headers as Record<string, unknown>)['Content-Type']
+      }
     }
     return config
   },
@@ -811,6 +816,16 @@ export const invoicesApi = {
     apiService.post('/invoices/templates/', data),
   updateTemplate: (id: string, data: unknown) =>
     apiService.patch(`/invoices/templates/${id}/`, data),
+
+  /** Admin: sale invoice Terms & Conditions lines (shown on printed/HTML invoice). */
+  getTermsConditions: () => apiService.get('/invoices/terms-conditions/'),
+  createTermsCondition: (data: { content: string; order?: number; is_active?: boolean }) =>
+    apiService.post('/invoices/terms-conditions/', data),
+  updateTermsCondition: (
+    id: string,
+    data: Partial<{ content: string; order: number; is_active: boolean }>,
+  ) => apiService.patch(`/invoices/terms-conditions/${id}/`, data),
+  deleteTermsCondition: (id: string) => apiService.delete(`/invoices/terms-conditions/${id}/`),
 
   getDeliveryLogs: (params?: Record<string, string>) =>
     apiService.get('/invoices/delivery-logs/', { params }),

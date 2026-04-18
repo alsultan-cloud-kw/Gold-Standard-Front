@@ -54,6 +54,12 @@ export default function ProductsPage() {
   const productsResp = products as PaginatedResponse<Product> | undefined
   const productList = useMemo(() => productsResp?.results ?? [], [productsResp])
 
+  /** Match HomePage new arrivals / public API: only active products on the storefront (staff would otherwise see inactive from list). */
+  const activeProductList = useMemo(
+    () => productList.filter((p) => p.status === 'active'),
+    [productList],
+  )
+
   const categoriesResp = categories as PaginatedResponse<Category> | undefined
   const categoryList = categoriesResp?.results || []
 
@@ -69,20 +75,22 @@ export default function ProductsPage() {
   const minPrice = minPriceParam ? Number(minPriceParam) : NaN
   const maxPrice = maxPriceParam ? Number(maxPriceParam) : NaN
 
-  const filteredProducts = productList.filter((product) => {
-    const unitPrice = productUnitPrice(product)
-    const productCaratValue = product.carat?.carat_value
-    const productCaratLabel = productCaratValue ? `${productCaratValue}K` : null
+  const filteredProducts = useMemo(() => {
+    return activeProductList.filter((product) => {
+      const unitPrice = productUnitPrice(product)
+      const productCaratValue = product.carat?.carat_value
+      const productCaratLabel = productCaratValue ? `${productCaratValue}K` : null
 
-    if (selectedCarats.length > 0 && (!productCaratLabel || !selectedCarats.includes(productCaratLabel))) {
-      return false
-    }
-    if (Number.isFinite(minPrice) && unitPrice < minPrice) return false
-    if (Number.isFinite(maxPrice) && unitPrice > maxPrice) return false
-    return true
-  })
+      if (selectedCarats.length > 0 && (!productCaratLabel || !selectedCarats.includes(productCaratLabel))) {
+        return false
+      }
+      if (Number.isFinite(minPrice) && unitPrice < minPrice) return false
+      if (Number.isFinite(maxPrice) && unitPrice > maxPrice) return false
+      return true
+    })
+  }, [activeProductList, caratsParam, minPriceParam, maxPriceParam])
 
-  const fetchTrends = useProductPriceTrendSincePreviousFetch(productList)
+  const fetchTrends = useProductPriceTrendSincePreviousFetch(activeProductList)
 
   const categoryLabel = (c: { name_en: string; name_ar?: string }) =>
     isAr && c.name_ar ? c.name_ar : c.name_en

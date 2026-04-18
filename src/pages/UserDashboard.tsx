@@ -595,12 +595,23 @@ function ProfileTab() {
         phone_number: phoneNumber.trim() || null,
         date_of_birth: dateOfBirth || null,
       })
-      if (profile?.id && (frontFile || backFile)) {
+      if (frontFile || backFile) {
+        const fresh = await queryClient.fetchQuery({
+          queryKey: ['myCustomerProfile'],
+          queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
+        })
+        const p = asSingleProfile(fresh)
+        if (!p?.id) {
+          toast.error(t('userDashboard.profile.toasts.customerProfileNotFoundForUpload'))
+          return
+        }
         const formData = new FormData()
         if (frontFile) formData.append('civil_id_front', frontFile)
         if (backFile) formData.append('civil_id_back', backFile)
-        await accountsApi.updateProfile(profile.id, formData)
+        await accountsApi.updateProfile(p.id, formData)
         queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+        setFrontFile(null)
+        setBackFile(null)
       }
       toast.success(t('userDashboard.profile.toasts.profileUpdatedSuccess'))
     } catch (err) {
@@ -667,7 +678,7 @@ function ProfileTab() {
                 <input
                   type="file"
                   accept="image/*"
-                  className="hidden"
+                  className="sr-only"
                   onChange={(e) => setFrontFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -692,7 +703,7 @@ function ProfileTab() {
                 <input
                   type="file"
                   accept="image/*"
-                  className="hidden"
+                  className="sr-only"
                   onChange={(e) => setBackFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -1481,8 +1492,11 @@ type CustomerProfile = {
 function asSingleProfile(data: unknown): CustomerProfile | null {
   if (!data) return null
   if (Array.isArray(data)) return (data[0] as CustomerProfile) ?? null
-  const p = data as { results?: CustomerProfile[] }
-  return p.results && p.results.length > 0 ? p.results[0] : null
+  const p = data as { results?: CustomerProfile[]; id?: string; user?: unknown }
+  if (p.results && p.results.length > 0) return p.results[0]
+  // Non-paginated single object (or future API shape)
+  if (typeof p.id === 'string' && p.user !== undefined) return p as CustomerProfile
+  return null
 }
 
 function BankAccountTab() {

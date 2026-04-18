@@ -77,6 +77,12 @@ export default function AdminInvoiceTemplates() {
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Invoice Templates</h1>
             <p className="text-stone-600 mt-1">Manage invoice layout and branding for orders</p>
+            <Link
+              to="/admin/invoices/terms"
+              className="inline-flex items-center gap-1 text-sm text-lime-800 hover:underline mt-2"
+            >
+              Edit Terms &amp; Conditions for invoices
+            </Link>
           </div>
           <button
             type="button"

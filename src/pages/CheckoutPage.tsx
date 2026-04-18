@@ -52,6 +52,13 @@ type CheckoutPayRow = {
   disabled: boolean
 }
 
+type PlaceOrderErrorPayload = {
+  detail?: unknown
+  product_sku?: unknown
+  available_quantity?: unknown
+  requested_quantity?: unknown
+}
+
 export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
@@ -238,6 +245,39 @@ export default function CheckoutPage() {
     } catch (e: unknown) {
       const err = e as { response?: { data?: unknown } }
       const data = err?.response?.data
+      if (data && typeof data === 'object') {
+        const d = data as PlaceOrderErrorPayload
+        const sku = typeof d.product_sku === 'string' ? d.product_sku : null
+        const availableRaw =
+          typeof d.available_quantity === 'number'
+            ? d.available_quantity
+            : Number(d.available_quantity ?? NaN)
+        const requestedRaw =
+          typeof d.requested_quantity === 'number'
+            ? d.requested_quantity
+            : Number(d.requested_quantity ?? NaN)
+        const available = Number.isFinite(availableRaw) ? Math.max(0, Math.trunc(availableRaw)) : null
+        const requested = Number.isFinite(requestedRaw) ? Math.max(0, Math.trunc(requestedRaw)) : null
+
+        if (sku && available != null) {
+          toast.error(
+            t('checkoutPage.stockOnlyLeftForSku', {
+              available,
+              sku,
+            })
+          )
+          return
+        }
+        if (available != null && requested != null) {
+          toast.error(
+            t('checkoutPage.stockInsufficientRequested', {
+              available,
+              requested,
+            })
+          )
+          return
+        }
+      }
       let msg: string | null = null
       if (typeof data === 'string') msg = data
       else if (data && typeof data === 'object' && 'detail' in data) {

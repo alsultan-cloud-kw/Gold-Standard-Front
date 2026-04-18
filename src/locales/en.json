@@ -454,7 +454,9 @@
     "yourPrice": "Your price",
     "shipping": "Shipping",
     "shippingFree": "Free",
-    "secureCheckout": "Secure checkout"
+    "secureCheckout": "Secure checkout",
+    "stockOnlyLeftForSku": "Only {{available}} left in stock for SKU {{sku}}.",
+    "stockInsufficientRequested": "Insufficient stock. Requested {{requested}}, available {{available}}."
   },
   "contactPage": {
     "title": "Contact Us",
@@ -677,6 +679,29 @@
     "reports": "Reports",
     "accounting": "Accounting",
     "invoices": "Invoices",
+    "invoiceTerms": {
+      "title": "Invoice Terms & Conditions",
+      "subtitle": "These lines appear on sale invoices (HTML preview and PDF). Drag order with the number field: lower numbers appear first.",
+      "fallbackHint": "If no active lines are saved here, the invoice uses built-in default wording until you add terms below.",
+      "backToInvoices": "Back to Invoices",
+      "addHeading": "Add a new term",
+      "contentLabel": "Text",
+      "contentPlaceholder": "Enter the full sentence or clause…",
+      "orderLabel": "Order",
+      "activeLabel": "Active (show on invoice)",
+      "addButton": "Add term",
+      "save": "Save changes",
+      "delete": "Delete",
+      "loading": "Loading…",
+      "empty": "No terms saved yet. Add your first term above, or the invoice will use default text.",
+      "created": "Term added.",
+      "saved": "Term updated.",
+      "deleted": "Term removed.",
+      "saveFailed": "Could not save. Check that you are logged in as staff and try again.",
+      "deleteFailed": "Could not delete this term.",
+      "contentRequired": "Enter the term text before saving.",
+      "confirmDelete": "Remove this term from invoices?"
+    },
     "clubsNav": "Clubs",
     "clubsTitle": "Clubs & customer offers",
     "clubsSubtitle": "View clubs and grant discount offers to customers (used at checkout; new club members inherit the head's active offers).",
@@ -719,7 +744,7 @@
     "salesOrders": "Sales (Customer Orders)",
     "purchases": "Purchases (from merchants)",
     "expenses": "Expenses",
-    "financialReports": "Financial Reports (P&L, Balance Sheet)",
+    "financialReports": "Financial Reports",
     "inDatabase": "in database",
     "view": "View",
     "viewReports": "View reports",
@@ -755,7 +780,7 @@
     "actions": "Actions",
     "edit": "Edit",
     "delete": "Delete",
-    "addProduct": "Add product",
+    "addProduct": "Add Product",
     "addCategory": "Add category",
     "name": "Name",
     "description": "Description",
@@ -829,7 +854,6 @@
     "paymentMethod": "Payment method",
     "noPurchasesFound": "No purchases found. Add a purchase to record merchant buys and receive product into inventory.",
     "purchasesSubtitleLong": "Purchase from merchants; link product to receive into inventory.",
-    "financialReports": "Financial Reports",
     "financialReportsSubtitle": "Profit & Loss and Balance Sheet — professional accounting view",
     "tradingSellOrders": "Trading – Customer sell orders",
     "customersSubtitle": "Users in the database",
@@ -854,7 +878,6 @@
     "bankRequestsNav": "Bank requests",
     "bankChangeFailed": "Action failed",
     "productsSubtitle": "Add, edit, and upload images",
-    "addProduct": "Add Product",
     "tradingBuybacksSubtitle": "Gold buybacks: customers sell gold to the store (sell rate). Admin purchases from merchants are under Accounting → Purchases.",
     "allStatuses": "All statuses"
   },
@@ -949,7 +972,8 @@
       "saveChanges": "Save Changes",
       "toasts": {
         "profileUpdatedSuccess": "Profile updated successfully",
-        "failedToUpdateProfile": "Failed to update profile"
+        "failedToUpdateProfile": "Failed to update profile",
+        "customerProfileNotFoundForUpload": "Could not load your customer profile to save ID documents. Please refresh the page or contact support."
       }
     },
     "addresses": {

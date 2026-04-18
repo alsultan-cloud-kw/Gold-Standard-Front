@@ -454,7 +454,9 @@
     "yourPrice": "سعرك",
     "shipping": "الشحن",
     "shippingFree": "مجاني",
-    "secureCheckout": "دفع آمن"
+    "secureCheckout": "دفع آمن",
+    "stockOnlyLeftForSku": "المتوفر فقط {{available}} من المخزون للرمز {{sku}}.",
+    "stockInsufficientRequested": "المخزون غير كافٍ. المطلوب {{requested}} والمتوفر {{available}}."
   },
   "contactPage": {
     "title": "اتصل بنا",
@@ -677,6 +679,29 @@
     "reports": "التقارير",
     "accounting": "المحاسبة",
     "invoices": "الفواتير",
+    "invoiceTerms": {
+      "title": "الشروط والأحكام على الفاتورة",
+      "subtitle": "تظهر هذه البنود في فواتير البيع (معاينة HTML وPDF). رقم الترتيب: الأقل يظهر أولاً.",
+      "fallbackHint": "إذا لم تُحفظ أي بنود نشطة هنا، تستخدم الفاتورة النص الافتراضي المدمج حتى تضيف شروطاً أدناه.",
+      "backToInvoices": "العودة إلى الفواتير",
+      "addHeading": "إضافة بند جديد",
+      "contentLabel": "النص",
+      "contentPlaceholder": "اكتب الجملة أو البند كاملاً…",
+      "orderLabel": "الترتيب",
+      "activeLabel": "نشط (يظهر على الفاتورة)",
+      "addButton": "إضافة بند",
+      "save": "حفظ التعديلات",
+      "delete": "حذف",
+      "loading": "جاري التحميل…",
+      "empty": "لا توجد بنود بعد. أضف البند الأول أعلاه، أو ستستخدم الفاتورة النص الافتراضي.",
+      "created": "تمت إضافة البند.",
+      "saved": "تم تحديث البند.",
+      "deleted": "تم حذف البند.",
+      "saveFailed": "تعذر الحفظ. تأكد من تسجيل الدخول كموظف وحاول مرة أخرى.",
+      "deleteFailed": "تعذر حذف هذا البند.",
+      "contentRequired": "أدخل نص البند قبل الحفظ.",
+      "confirmDelete": "إزالة هذا البند من الفواتير؟"
+    },
     "clubsNav": "النوادي",
     "clubsTitle": "النوادي وعروض العملاء",
     "clubsSubtitle": "عرض النوادي ومنح عروض خصم للعملاء (تُطبَّق عند الدفع؛ يرث الأعضاء الجدد عروض رئيس النادي النشطة).",
@@ -719,7 +744,7 @@
     "salesOrders": "المبيعات (طلبات العملاء)",
     "purchases": "المشتريات (من التجار)",
     "expenses": "المصروفات",
-    "financialReports": "التقارير المالية (الأرباح والخسائر، الميزانية)",
+    "financialReports": "التقارير المالية",
     "inDatabase": "في قاعدة البيانات",
     "view": "عرض",
     "viewReports": "عرض التقارير",
@@ -829,7 +854,6 @@
     "paymentMethod": "طريقة الدفع",
     "noPurchasesFound": "لم يتم العثور على مشتريات. أضف مشتريات لتسجيل مشتريات التجار واستلام المنتج إلى المخزون.",
     "purchasesSubtitleLong": "الشراء من التجار؛ ربط المنتج للاستلام إلى المخزون.",
-    "financialReports": "التقارير المالية",
     "financialReportsSubtitle": "الأرباح والخسائر والميزانية العمومية — عرض محاسبي احترافي",
     "tradingSellOrders": "التداول – أوامر بيع العملاء",
     "customersSubtitle": "المستخدمون في قاعدة البيانات",
@@ -854,7 +878,6 @@
     "bankRequestsNav": "طلبات تغيير البنك",
     "bankChangeFailed": "فشل الإجراء",
     "productsSubtitle": "إضافة وتعديل وتحميل الصور",
-    "addProduct": "إضافة منتج",
     "tradingBuybacksSubtitle": "إعادة شراء الذهب: العملاء يبيعون الذهب للمتجر. مشتريات الإدارة من التجار تحت المحاسبة → المشتريات.",
     "allStatuses": "جميع الحالات"
   },
@@ -949,7 +972,8 @@
       "saveChanges": "حفظ التغييرات",
       "toasts": {
         "profileUpdatedSuccess": "تم تحديث الملف الشخصي بنجاح",
-        "failedToUpdateProfile": "فشل تحديث الملف الشخصي"
+        "failedToUpdateProfile": "فشل تحديث الملف الشخصي",
+        "customerProfileNotFoundForUpload": "تعذر تحميل ملف العميل لحفظ مستندات الهوية. يرجى تحديث الصفحة أو التواصل مع الدعم."
       }
     },
     "addresses": {
