@@ -1,47 +1,124 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { clubsApi } from '../services/api'
+import { formatApiErrorMessage } from '../utils/apiErrors'
+
+const JOIN_NEXT = (token: string) =>
+  `/join-club?token=${encodeURIComponent(token)}`
 
 export default function JoinClubPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  const token = searchParams.get('token') || ''
+  const token = searchParams.get('token')?.trim() || ''
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const navigate = useNavigate()
-  const [tried, setTried] = useState(false)
-  const [joinErrorDetail, setJoinErrorDetail] = useState('')
+  const queryClient = useQueryClient()
+  const joinAttemptedRef = useRef(false)
+
+  const previewQuery = useQuery({
+    queryKey: ['clubInvitePreview', token],
+    queryFn: () => clubsApi.invitePreview(token),
+    enabled: Boolean(token),
+    retry: 1,
+  })
 
   const joinMutation = useMutation({
     mutationFn: () => clubsApi.join(token),
     onSuccess: () => {
-      toast.success('You joined the club.')
-      navigate('/dashboard', { replace: true })
-    },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { detail?: string } } }
-      const detail = e?.response?.data?.detail || 'Could not join club'
-      setJoinErrorDetail(detail)
-      toast.error(detail)
+      toast.success(t('joinClub.toasts.joined'))
+      void queryClient.invalidateQueries({ queryKey: ['clubMembership'] })
+      void queryClient.invalidateQueries({ queryKey: ['clubOffers'] })
+      navigate('/dashboard?tab=club', { replace: true })
     },
   })
 
+  const joinErrorMessage = joinMutation.isError
+    ? formatApiErrorMessage(joinMutation.error, t('joinClub.toasts.joinFailed'))
+    : ''
+  const isAlreadyInOtherClub =
+    joinMutation.isError && joinErrorMessage.toLowerCase().includes('already belong')
+
+  const alreadyClubRedirectDone = useRef(false)
   useEffect(() => {
-    if (!token || authLoading) return
-    if (!isAuthenticated || tried) return
-    setTried(true)
+    if (!isAlreadyInOtherClub || alreadyClubRedirectDone.current) return
+    alreadyClubRedirectDone.current = true
+    toast.success(t('joinClub.toasts.alreadyMember'))
+    void queryClient.invalidateQueries({ queryKey: ['clubMembership'] })
+    void queryClient.invalidateQueries({ queryKey: ['clubOffers'] })
+    navigate('/dashboard?tab=club', { replace: true })
+  }, [isAlreadyInOtherClub, navigate, queryClient, t])
+
+  useEffect(() => {
+    joinAttemptedRef.current = false
+    alreadyClubRedirectDone.current = false
+  }, [token])
+
+  useEffect(() => {
+    if (!token || authLoading || !isAuthenticated) return
+    if (!previewQuery.isSuccess || previewQuery.data?.valid !== true) return
+    if (joinAttemptedRef.current) return
+    joinAttemptedRef.current = true
     joinMutation.mutate()
-  }, [token, isAuthenticated, authLoading, tried])
+  }, [token, authLoading, isAuthenticated, previewQuery.isSuccess, previewQuery.data?.valid, joinMutation.mutate])
+
+  const retryJoin = () => {
+    joinAttemptedRef.current = false
+    joinMutation.reset()
+    joinMutation.mutate()
+  }
 
   if (!token) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
-        <div className="gold-card max-w-md text-center">
-          <p className="text-gold-100">Missing invite link. Ask your friend for a valid club invitation.</p>
-          <Link to="/" className="inline-block mt-4 text-gold-400 hover:text-gold-300">
-            Home
+        <div className="gold-card max-w-md text-center space-y-4">
+          <h1 className="text-xl font-semibold text-gold-100">{t('joinClub.missingTokenTitle')}</h1>
+          <p className="text-gold-100/80 text-sm">{t('joinClub.missingTokenBody')}</p>
+          <Link to="/" className="inline-block gold-button px-4 py-2">
+            {t('joinClub.goHome')}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (previewQuery.isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+        <p className="text-gold-100/70 text-sm">{t('joinClub.loadingInvite')}</p>
+      </div>
+    )
+  }
+
+  if (previewQuery.isError) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="gold-card max-w-md text-center space-y-4">
+          <p className="text-gold-100/80 text-sm">{t('joinClub.previewLoadError')}</p>
+          <Link to="/" className="inline-block text-gold-400 hover:text-gold-300">
+            {t('joinClub.goHome')}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const preview = previewQuery.data
+  if (preview && preview.valid === false) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="gold-card max-w-md text-center space-y-4">
+          <h1 className="text-xl font-semibold text-gold-100">{t('joinClub.invalidTitle')}</h1>
+          <p className="text-gold-100/80 text-sm">
+            {preview.detail || t('joinClub.invalidBody')}
+          </p>
+          <Link to="/" className="inline-block gold-button px-4 py-2">
+            {t('joinClub.goHome')}
           </Link>
         </div>
       </div>
@@ -57,23 +134,60 @@ export default function JoinClubPage() {
   }
 
   if (!isAuthenticated) {
+    const next = JOIN_NEXT(token)
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4 py-8">
+        <div className="gold-card max-w-lg text-center space-y-5 w-full">
+          <h1 className="text-2xl font-semibold text-gold-100">{t('joinClub.title')}</h1>
+          {preview?.club_name && (
+            <p className="text-gold-200 font-medium text-lg">{preview.club_name}</p>
+          )}
+          <p className="text-gold-100/80 text-sm leading-relaxed">{t('joinClub.subtitle')}</p>
+          {preview?.head_name && (
+            <p className="text-gold-100/60 text-xs">
+              {t('joinClub.headLabel', { name: preview.head_name })}
+            </p>
+          )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Link to={`/login?next=${encodeURIComponent(next)}`} className="gold-button inline-flex justify-center px-4 py-2.5">
+              {t('joinClub.logIn')}
+            </Link>
+            <Link
+              to={`/register?next=${encodeURIComponent(next)}`}
+              className="inline-flex justify-center px-4 py-2.5 rounded-lg border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
+            >
+              {t('joinClub.register')}
+            </Link>
+          </div>
+          <p className="text-gold-100/50 text-xs pt-2">{t('joinClub.afterAuthHint')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isAlreadyInOtherClub) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
+        <p className="text-gold-100/70 text-sm">{t('joinClub.redirecting')}</p>
+      </div>
+    )
+  }
+
+  if (joinMutation.isError) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="gold-card max-w-md text-center space-y-4">
-          <h1 className="text-xl font-semibold text-gold-100">Join a club</h1>
-          <p className="text-gold-100/80 text-sm">Sign in or register to accept this invitation.</p>
+          <p className="text-gold-100/80 text-sm">{joinErrorMessage}</p>
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <button type="button" onClick={() => retryJoin()} className="gold-button px-4 py-2">
+              {t('joinClub.tryAgain')}
+            </button>
             <Link
-              to={`/login?next=${encodeURIComponent(`/join-club?token=${token}`)}`}
-              className="gold-button inline-flex justify-center px-4 py-2"
+              to="/dashboard?tab=club"
+              className="inline-flex justify-center px-4 py-2 text-gold-400 hover:text-gold-300"
             >
-              Log in
-            </Link>
-            <Link
-              to={`/register?next=${encodeURIComponent(`/join-club?token=${token}`)}`}
-              className="inline-flex justify-center px-4 py-2 rounded-lg border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
-            >
-              Register
+              {t('joinClub.goDashboard')}
             </Link>
           </div>
         </div>
@@ -84,21 +198,8 @@ export default function JoinClubPage() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="gold-card max-w-md text-center space-y-4">
-        {joinMutation.isPending || !tried ? (
-          <>
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-gold-400" />
-            <p className="text-gold-100/80">Joining club…</p>
-          </>
-        ) : joinMutation.isError ? (
-          <>
-            <p className="text-gold-100/80">
-              {joinErrorDetail || 'Something went wrong. You can try again from your dashboard.'}
-            </p>
-            <Link to="/dashboard" className="text-gold-400 hover:text-gold-300">
-              Go to dashboard
-            </Link>
-          </>
-        ) : null}
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-gold-400" />
+        <p className="text-gold-100/80">{t('joinClub.joining')}</p>
       </div>
     </div>
   )

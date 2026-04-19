@@ -1,6 +1,8 @@
 import {
+  AlignmentType,
   Document,
   HeadingLevel,
+  ImageRun,
   Packer,
   Paragraph,
   Table,
@@ -21,6 +23,29 @@ export type WalletTransactionWordRow = {
   reference: string
 }
 
+/** Contact / branding block shown above the statement title (matches site footer). */
+export type WalletWordBrandHeader = {
+  companyName: string
+  tagline: string
+  websiteLabel: string
+  websiteUrl: string
+  address: string
+  phone: string
+  email: string
+  hours: string
+}
+
+async function loadBundledLogoPng(): Promise<Uint8Array | null> {
+  try {
+    const href = new URL('../assets/logo.png', import.meta.url).href
+    const res = await fetch(href)
+    if (!res.ok) return null
+    return new Uint8Array(await res.arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
 export async function buildWalletTransactionsDocxBlob(params: {
   documentTitle: string
   periodLabel: string
@@ -32,8 +57,10 @@ export async function buildWalletTransactionsDocxBlob(params: {
   headers: [string, string, string, string, string, string]
   rows: WalletTransactionWordRow[]
   isRtl: boolean
+  brand: WalletWordBrandHeader
 }): Promise<Blob> {
   const rtl = params.isRtl
+  const logoBytes = await loadBundledLogoPng()
 
   const textRun = (text: string, bold = false) =>
     new TextRun({
@@ -90,12 +117,73 @@ export async function buildWalletTransactionsDocxBlob(params: {
     rows: [headerRow, ...bodyRows],
   })
 
+  const brand = params.brand
+  const brandHeaderChildren: Paragraph[] = []
+
+  if (logoBytes) {
+    brandHeaderChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 160 },
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: logoBytes,
+            transformation: { width: 200, height: 64 },
+          }),
+        ],
+      }),
+    )
+  }
+
+  brandHeaderChildren.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: rtl,
+      spacing: { after: 80 },
+      children: [textRun(brand.companyName, true)],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: rtl,
+      spacing: { after: 120 },
+      children: [textRun(brand.tagline, false)],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: rtl,
+      spacing: { after: 80 },
+      children: [textRun(`${brand.websiteLabel}: ${brand.websiteUrl}`, false)],
+    }),
+    new Paragraph({
+      bidirectional: rtl,
+      spacing: { after: 40 },
+      children: [textRun(brand.address, false)],
+    }),
+    new Paragraph({
+      bidirectional: rtl,
+      spacing: { after: 40 },
+      children: [textRun(brand.phone, false)],
+    }),
+    new Paragraph({
+      bidirectional: rtl,
+      spacing: { after: 40 },
+      children: [textRun(brand.email, false)],
+    }),
+    new Paragraph({
+      bidirectional: rtl,
+      spacing: { after: 240 },
+      children: [textRun(brand.hours, false)],
+    }),
+  )
+
   const doc = new Document({
-    creator: 'Gold Standard',
+    creator: brand.companyName,
     title: params.documentTitle,
     sections: [
       {
         children: [
+          ...brandHeaderChildren,
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
             bidirectional: rtl,

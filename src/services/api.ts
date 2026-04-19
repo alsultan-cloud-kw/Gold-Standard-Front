@@ -581,6 +581,15 @@ export const clubsApi = {
   getMyMembership: () => apiService.get<unknown>('/clubs/my-membership/'),
   getMyOffers: () => apiService.get<unknown[]>('/clubs/my-offers/'),
   join: (token: string) => apiService.post<unknown>('/clubs/join/', { token }),
+  /** Public: validate token and show club name on /join-club (no auth). */
+  invitePreview: (token: string) =>
+    apiService.get<{
+      valid: boolean
+      detail?: string
+      club_name?: string | null
+      head_name?: string | null
+      expires_at?: string | null
+    }>(`/clubs/invite-preview/?token=${encodeURIComponent(token)}`),
   leave: () => apiService.post<unknown>('/clubs/leave/', {}),
   createInvite: (clubId: string, body?: { max_uses?: number }) =>
     apiService.post<{ token: string; expires_at: string; max_uses: number }>(

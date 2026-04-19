@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import './App.css'
@@ -24,8 +24,7 @@ import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
 import CompanyPricesPage from './pages/CompanyPricesPage'
 import NewsPage from './pages/NewsPage'
-import TermsOfServicePage from './pages/TermsOfServicePage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServiceAndPrivacyPolicyPage from './pages/TermsOfServiceAndPrivacyPolicyPage'
 import DataDeletionPage from './pages/DataDeletionPage'
 
 // Admin Components
@@ -56,6 +55,7 @@ import AdminCheckoutPayment from './pages/admin/AdminCheckoutPayment'
 import SellGoldPage from './pages/SellGoldPage'
 import TradeGoldPage from './pages/TradeGoldPage'
 import AdminClubs from './pages/admin/AdminClubs'
+import JoinClubPage from './pages/JoinClubPage'
 import FloatingPriceReminder from './components/reminders/FloatingPriceReminder'
 
 // Context
@@ -115,6 +115,7 @@ function App() {
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/join-club" element={<JoinClubPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route
                     path="/dashboard"
@@ -130,8 +131,9 @@ function App() {
                   <Route path="/prices" element={<PricesPage />} />
                   <Route path="/company-prices" element={<CompanyPricesPage />} />
                   <Route path="/news" element={<NewsPage />} />
-                  <Route path="/terms" element={<TermsOfServicePage />} />
-                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms-and-privacy" element={<TermsOfServiceAndPrivacyPolicyPage />} />
+                  <Route path="/terms" element={<Navigate to="/terms-and-privacy" replace />} />
+                  <Route path="/privacy" element={<Navigate to="/terms-and-privacy" replace />} />
                   <Route path="/data-deletion" element={<DataDeletionPage />} />
                   <Route path="/sell-gold" element={<SellGoldPage />} />
                   <Route path="/trade-gold" element={<TradeGoldPage />} />

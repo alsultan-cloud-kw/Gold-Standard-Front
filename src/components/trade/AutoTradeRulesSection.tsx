@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
+  adminApi,
   goldAutoTradeRulesApi,
+  type DaralsabaekPublicCarat,
+  type DaralsabaekPublicRatesResponse,
   type GoldAutoTradeRule,
   type GoldAutoTradeRuleWrite,
   productsApi,
@@ -37,20 +40,14 @@ function parseApiError(err: unknown, fallback: string): string {
   return fallback
 }
 
-export type QuotePreview = {
-  carat_value: number
-  /** Adjusted buy KWD/g from quote-buy (matches server auto-buy trigger). */
-  buy_rate?: number
-  /** Adjusted sell KWD/g from quote-sell (matches server auto-sell trigger). */
-  sell_rate?: number
-}
-
-type Props = { quotePreview: QuotePreview | null }
-
 const emptyForm = () => ({
   caratId: '',
-  minBuy: '',
-  maxSell: '',
+  /** Manual reference buy (KWD/g) when Prices page has no buy rate for this carat. */
+  buyRef: '',
+  /** Additional amount on buy (± KWD/g); with Prices page rate, empty means “not using buy threshold”. */
+  buyAdj: '',
+  sellRef: '',
+  sellAdj: '',
   autoBuyGrams: '1',
   sellAll: true,
   autoSellGrams: '',
@@ -58,7 +55,57 @@ const emptyForm = () => ({
   enabled: true,
 })
 
-export default function AutoTradeRulesSection({ quotePreview }: Props) {
+function matchPublicCaratRow(
+  carats: DaralsabaekPublicCarat[] | undefined,
+  caratValue: number | undefined,
+): DaralsabaekPublicCarat | null {
+  if (caratValue == null || !carats?.length) return null
+  return (
+    carats.find((c) => {
+      const m = String(c.key || '').match(/(\d{1,2})\s*K/i)
+      return m ? parseInt(m[1], 10) === caratValue : false
+    }) ?? null
+  )
+}
+
+function computeMinBuyThreshold(form: { buyRef: string; buyAdj: string }, pricePageBuy: number | null): number | null {
+  const liveBuy = pricePageBuy != null && Number.isFinite(pricePageBuy) ? pricePageBuy : null
+  if (liveBuy != null) {
+    if (form.buyAdj.trim() === '') return null
+    const adj = parseFloat(form.buyAdj)
+    if (!Number.isFinite(adj)) return null
+    return liveBuy + adj
+  }
+  const baseRaw = form.buyRef.trim()
+  if (baseRaw === '') return null
+  const base = parseFloat(baseRaw)
+  if (!Number.isFinite(base)) return null
+  const adj = form.buyAdj.trim() === '' ? 0 : parseFloat(form.buyAdj)
+  if (!Number.isFinite(adj)) return null
+  return base + adj
+}
+
+function computeMaxSellThreshold(
+  form: { sellRef: string; sellAdj: string },
+  pricePageSell: number | null,
+): number | null {
+  const liveSell = pricePageSell != null && Number.isFinite(pricePageSell) ? pricePageSell : null
+  if (liveSell != null) {
+    if (form.sellAdj.trim() === '') return null
+    const adj = parseFloat(form.sellAdj)
+    if (!Number.isFinite(adj)) return null
+    return liveSell + adj
+  }
+  const baseRaw = form.sellRef.trim()
+  if (baseRaw === '') return null
+  const base = parseFloat(baseRaw)
+  if (!Number.isFinite(base)) return null
+  const adj = form.sellAdj.trim() === '' ? 0 : parseFloat(form.sellAdj)
+  if (!Number.isFinite(adj)) return null
+  return base + adj
+}
+
+export default function AutoTradeRulesSection() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const dateLocale = i18n.language?.startsWith('ar') ? 'ar-KW' : undefined
@@ -138,25 +185,36 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
     return c?.carat_value
   }, [carats, form.caratId])
 
-  const canApplyBuyQuote =
-    quotePreview &&
-    formCaratValue != null &&
-    quotePreview.carat_value === formCaratValue &&
-    quotePreview.buy_rate != null &&
-    Number.isFinite(quotePreview.buy_rate)
+  const { data: publicRatesRaw, isLoading: publicRatesLoading } = useQuery({
+    queryKey: ['daralsabaekPublicRates'],
+    queryFn: adminApi.getDaralsabaekPublicRates,
+    refetchInterval: 20_000,
+    retry: 1,
+  })
+  const publicRes = publicRatesRaw as DaralsabaekPublicRatesResponse | undefined
+  const publicCaratRow = useMemo(
+    () => (publicRes?.succeeded ? matchPublicCaratRow(publicRes.carats, formCaratValue) : null),
+    [publicRes?.succeeded, publicRes?.carats, formCaratValue],
+  )
+  const pricePageBuy =
+    publicCaratRow?.buyTotal != null && Number.isFinite(publicCaratRow.buyTotal) ? publicCaratRow.buyTotal : null
+  const pricePageSell =
+    publicCaratRow?.sellTotal != null && Number.isFinite(publicCaratRow.sellTotal)
+      ? publicCaratRow.sellTotal
+      : null
 
-  const canApplySellQuote =
-    quotePreview &&
-    formCaratValue != null &&
-    quotePreview.carat_value === formCaratValue &&
-    quotePreview.sell_rate != null &&
-    Number.isFinite(quotePreview.sell_rate)
+  const minBuyTotal = useMemo(
+    () => computeMinBuyThreshold(form, pricePageBuy),
+    [form.buyRef, form.buyAdj, pricePageBuy],
+  )
+  const maxSellTotal = useMemo(
+    () => computeMaxSellThreshold(form, pricePageSell),
+    [form.sellRef, form.sellAdj, pricePageSell],
+  )
 
   const buildBody = (includeCarat: boolean): GoldAutoTradeRuleWrite | Partial<GoldAutoTradeRuleWrite> => {
-    const minRaw = form.minBuy.trim()
-    const maxRaw = form.maxSell.trim()
-    const minBuy = minRaw === '' ? null : parseFloat(minRaw)
-    const maxSell = maxRaw === '' ? null : parseFloat(maxRaw)
+    const minBuy = computeMinBuyThreshold(form, pricePageBuy)
+    const maxSell = computeMaxSellThreshold(form, pricePageSell)
     const autoBuy = parseFloat(form.autoBuyGrams)
     const cooldown = parseInt(form.cooldown, 10)
     const autoSell =
@@ -187,15 +245,15 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
       toast.error(t('tradeGold.auto.pickCarat'))
       return
     }
-    if (form.enabled && !form.minBuy.trim() && !form.maxSell.trim()) {
+    if (form.enabled && minBuyTotal == null && maxSellTotal == null) {
       toast.error(t('tradeGold.auto.needThreshold'))
       return
     }
-    if (form.enabled && form.minBuy.trim() && (!parseFloat(form.autoBuyGrams) || parseFloat(form.autoBuyGrams) <= 0)) {
+    if (form.enabled && minBuyTotal != null && (!parseFloat(form.autoBuyGrams) || parseFloat(form.autoBuyGrams) <= 0)) {
       toast.error(t('tradeGold.auto.needAutoBuyGrams'))
       return
     }
-    if (form.enabled && form.maxSell.trim() && !form.sellAll) {
+    if (form.enabled && maxSellTotal != null && !form.sellAll) {
       const g = parseFloat(form.autoSellGrams)
       if (!Number.isFinite(g) || g <= 0) {
         toast.error(t('tradeGold.auto.needAutoSellGrams'))
@@ -242,7 +300,16 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
             <select
               value={form.caratId}
               disabled={!!editingId}
-              onChange={(e) => setForm((f) => ({ ...f, caratId: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  caratId: e.target.value,
+                  buyRef: '',
+                  buyAdj: '',
+                  sellRef: '',
+                  sellAdj: '',
+                }))
+              }
               className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black disabled:opacity-60"
             >
               <option value="">{t('tradeGold.auto.pickCarat')}</option>
@@ -270,58 +337,105 @@ export default function AutoTradeRulesSection({ quotePreview }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-5">
           <div>
-            <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.minBuyLabel')}</label>
-            <input
-              type="number"
-              step="0.001"
-              min="0"
-              value={form.minBuy}
-              onChange={(e) => setForm((f) => ({ ...f, minBuy: e.target.value }))}
-              placeholder={t('tradeGold.auto.optional')}
-              className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black placeholder:text-stone-500"
-            />
-            {canApplyBuyQuote && (
-              <button
-                type="button"
-                className="mt-1 text-xs font-semibold text-lime-900 hover:text-black underline"
-                onClick={() =>
-                  setForm((f) => ({
-                    ...f,
-                    minBuy: (quotePreview!.buy_rate as number).toFixed(3),
-                  }))
-                }
-              >
-                {t('tradeGold.auto.applyBuyQuote')}
-              </button>
-            )}
+            <label className="text-xs font-semibold text-black block mb-1.5">{t('tradeGold.auto.minBuyLabel')}</label>
+            <div
+              dir="ltr"
+              className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border-2 border-black/10 bg-white px-3 py-2.5"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 shrink-0">
+                {t('tradeGold.auto.pricesPageRate')}
+              </span>
+              {publicRatesLoading && form.caratId ? (
+                <span className="text-sm text-stone-500 tabular-nums">…</span>
+              ) : pricePageBuy != null ? (
+                <span className="text-base font-bold text-black tabular-nums shrink-0">{pricePageBuy.toFixed(3)}</span>
+              ) : form.caratId ? (
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={form.buyRef}
+                  onChange={(e) => setForm((f) => ({ ...f, buyRef: e.target.value }))}
+                  placeholder={t('tradeGold.auto.refRatePlaceholder')}
+                  className="w-[6.75rem] shrink-0 px-2 py-1.5 rounded-lg border-2 border-black/15 bg-lime-50/50 text-sm font-semibold text-black tabular-nums"
+                />
+              ) : (
+                <span className="text-sm text-stone-400 tabular-nums">—</span>
+              )}
+              <span className="text-xs text-stone-500 shrink-0">KWD/g</span>
+              <span className="text-lg font-bold text-black shrink-0 px-0.5" aria-hidden>
+                +
+              </span>
+              <input
+                type="number"
+                step="0.001"
+                value={form.buyAdj}
+                onChange={(e) => setForm((f) => ({ ...f, buyAdj: e.target.value }))}
+                placeholder="0"
+                disabled={!form.caratId}
+                className="w-[6.75rem] shrink-0 px-2 py-1.5 rounded-lg border-2 border-black/15 bg-white text-sm font-semibold text-black tabular-nums disabled:opacity-50"
+              />
+              <span className="text-lg font-bold text-black/35 shrink-0 px-0.5" aria-hidden>
+                =
+              </span>
+              <span className="text-base font-bold text-lime-950 tabular-nums min-w-[4.5rem] shrink-0">
+                {minBuyTotal != null ? minBuyTotal.toFixed(3) : '—'}
+              </span>
+              <span className="text-xs text-stone-500 shrink-0">KWD/g</span>
+            </div>
+            <p className="text-[11px] text-stone-600 mt-1">{t('tradeGold.auto.rateRowFootnote')}</p>
           </div>
+
           <div>
-            <label className="text-xs font-semibold text-black block mb-1">{t('tradeGold.auto.maxSellLabel')}</label>
-            <input
-              type="number"
-              step="0.001"
-              min="0"
-              value={form.maxSell}
-              onChange={(e) => setForm((f) => ({ ...f, maxSell: e.target.value }))}
-              placeholder={t('tradeGold.auto.optional')}
-              className="w-full px-3 py-2 rounded-lg border-2 border-black/15 bg-white text-black placeholder:text-stone-500"
-            />
-            {canApplySellQuote && (
-              <button
-                type="button"
-                className="mt-1 text-xs font-semibold text-lime-900 hover:text-black underline"
-                onClick={() =>
-                  setForm((f) => ({
-                    ...f,
-                    maxSell: (quotePreview!.sell_rate as number).toFixed(3),
-                  }))
-                }
-              >
-                {t('tradeGold.auto.applySellQuote')}
-              </button>
-            )}
+            <label className="text-xs font-semibold text-black block mb-1.5">{t('tradeGold.auto.maxSellLabel')}</label>
+            <div
+              dir="ltr"
+              className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border-2 border-black/10 bg-white px-3 py-2.5"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 shrink-0">
+                {t('tradeGold.auto.pricesPageRate')}
+              </span>
+              {publicRatesLoading && form.caratId ? (
+                <span className="text-sm text-stone-500 tabular-nums">…</span>
+              ) : pricePageSell != null ? (
+                <span className="text-base font-bold text-black tabular-nums shrink-0">{pricePageSell.toFixed(3)}</span>
+              ) : form.caratId ? (
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={form.sellRef}
+                  onChange={(e) => setForm((f) => ({ ...f, sellRef: e.target.value }))}
+                  placeholder={t('tradeGold.auto.refRatePlaceholder')}
+                  className="w-[6.75rem] shrink-0 px-2 py-1.5 rounded-lg border-2 border-black/15 bg-lime-50/50 text-sm font-semibold text-black tabular-nums"
+                />
+              ) : (
+                <span className="text-sm text-stone-400 tabular-nums">—</span>
+              )}
+              <span className="text-xs text-stone-500 shrink-0">KWD/g</span>
+              <span className="text-lg font-bold text-black shrink-0 px-0.5" aria-hidden>
+                +
+              </span>
+              <input
+                type="number"
+                step="0.001"
+                value={form.sellAdj}
+                onChange={(e) => setForm((f) => ({ ...f, sellAdj: e.target.value }))}
+                placeholder="0"
+                disabled={!form.caratId}
+                className="w-[6.75rem] shrink-0 px-2 py-1.5 rounded-lg border-2 border-black/15 bg-white text-sm font-semibold text-black tabular-nums disabled:opacity-50"
+              />
+              <span className="text-lg font-bold text-black/35 shrink-0 px-0.5" aria-hidden>
+                =
+              </span>
+              <span className="text-base font-bold text-lime-950 tabular-nums min-w-[4.5rem] shrink-0">
+                {maxSellTotal != null ? maxSellTotal.toFixed(3) : '—'}
+              </span>
+              <span className="text-xs text-stone-500 shrink-0">KWD/g</span>
+            </div>
+            <p className="text-[11px] text-stone-600 mt-1">{t('tradeGold.auto.rateRowFootnote')}</p>
           </div>
         </div>
 

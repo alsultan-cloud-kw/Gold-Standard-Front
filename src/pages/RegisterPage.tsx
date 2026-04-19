@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { STOREFRONT_USER_ROLES, type StorefrontUserRole } from '../constants/storefrontRoles'
 import { formatApiErrorMessage } from '../utils/apiErrors'
+import { safeAppNextPath } from '../utils/safeNextPath'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -79,7 +80,8 @@ export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const nextPath = searchParams.get('next')
+  const nextPath = safeAppNextPath(searchParams.get('next'))
+  const loginHref = nextPath != null ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,7 +96,7 @@ export default function RegisterPage() {
       return
     }
     if (!acceptedLegal) {
-      toast.error('Please accept the Terms of Service and Privacy Policy to continue.')
+      toast.error(t('auth.termsAcceptRequired'))
       return
     }
 
@@ -113,7 +115,7 @@ export default function RegisterPage() {
         privacy_policy_accepted: acceptedLegal,
       })
       toast.success(t('auth.registerSuccess'))
-      if (nextPath && nextPath.startsWith('/')) {
+      if (nextPath) {
         navigate(nextPath)
       } else {
         navigate('/')
@@ -393,8 +395,7 @@ export default function RegisterPage() {
                   <Trans
                     i18nKey="auth.termsAgreement"
                     components={{
-                      termsLink: <Link to="/terms" className="text-gold-400 hover:text-gold-300" />,
-                      privacyLink: <Link to="/privacy" className="text-gold-400 hover:text-gold-300" />,
+                      legalLink: <Link to="/terms-and-privacy" className="text-gold-400 hover:text-gold-300" />,
                     }}
                   />
                 </span>
@@ -420,7 +421,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-gold-100/60">
               {t('auth.hasAccount')}{' '}
-              <Link to="/login" className="text-gold-400 hover:text-gold-300 font-medium">
+              <Link to={loginHref} className="text-gold-400 hover:text-gold-300 font-medium">
                 {t('auth.signInLink')}
               </Link>
             </p>

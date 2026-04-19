@@ -485,17 +485,7 @@ export default function TradeGoldPage() {
           </div>
         </div>
 
-        <AutoTradeRulesSection
-          quotePreview={
-            quote && quote.carat_value === caratValue
-              ? {
-                  carat_value: caratValue,
-                  buy_rate: side === 'buy' ? quote.price_per_gram : undefined,
-                  sell_rate: side === 'sell' ? quote.price_per_gram : undefined,
-                }
-              : null
-          }
-        />
+        <AutoTradeRulesSection />
 
         <div className="gold-card p-6">
           <h3 className="text-lg font-bold text-black mb-4">{t('tradeGold.recentTrades')}</h3>

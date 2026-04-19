@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
@@ -42,32 +42,42 @@ function walletDepositApiError(err: unknown, fallback: string): string {
   return fallback
 }
 
+const DASHBOARD_TABS = new Set([
+  'profile',
+  'orders',
+  'locked_gold',
+  'trade_gold',
+  'club',
+  'transactions',
+  'bank_account',
+  'addresses',
+  'notifications',
+])
+
+function readDashboardTabFromUrl(): string {
+  try {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab && DASHBOARD_TABS.has(tab)) return tab
+  } catch {
+    // Ignore invalid query params.
+  }
+  return 'profile'
+}
+
 export default function UserDashboard() {
-  const [activeTab, setActiveTab] = useState('profile')
+  const [activeTab, setActiveTab] = useState(readDashboardTabFromUrl)
+  const location = useLocation()
   const { user, logout } = useAuth()
   const { t } = useTranslation()
 
   useEffect(() => {
-    // Allow deep-linking into a specific tab (e.g. "/dashboard?tab=club").
     try {
-      const params = new URLSearchParams(window.location.search)
-      const tab = params.get('tab')
-      const allowed = new Set([
-        'profile',
-        'orders',
-        'locked_gold',
-        'trade_gold',
-        'club',
-        'transactions',
-        'bank_account',
-        'addresses',
-        'notifications',
-      ])
-      if (tab && allowed.has(tab)) setActiveTab(tab)
+      const tab = new URLSearchParams(location.search).get('tab')
+      if (tab && DASHBOARD_TABS.has(tab)) setActiveTab(tab)
     } catch {
       // Ignore invalid query params.
     }
-  }, [])
+  }, [location.search])
 
   const tabs = [
     { id: 'profile', name: t('userDashboard.tabs.profile'), icon: User },
@@ -1891,6 +1901,16 @@ function TransactionsTab() {
         ],
         rows,
         isRtl,
+        brand: {
+          companyName: t('userDashboard.transactions.wordDoc.brandName'),
+          tagline: t('userDashboard.transactions.wordDoc.brandTagline'),
+          websiteLabel: t('userDashboard.transactions.wordDoc.websiteLabel'),
+          websiteUrl: t('userDashboard.transactions.wordDoc.websiteUrl'),
+          address: t('userDashboard.transactions.wordDoc.brandAddress'),
+          phone: t('userDashboard.transactions.wordDoc.brandPhone'),
+          email: t('userDashboard.transactions.wordDoc.brandEmail'),
+          hours: t('userDashboard.transactions.wordDoc.brandHours'),
+        },
       })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

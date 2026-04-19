@@ -27,11 +27,10 @@ export default function Footer() {
       { nameKey: 'footer.contactUs', href: '/contact' },
       { nameKey: 'footer.faqs', href: '#' },
       { nameKey: 'footer.shippingInfo', href: '#' },
-      { nameKey: 'footer.returnPolicy', href: '#' },
+      { nameKey: 'footer.returnPolicy', href: '/terms-and-privacy' },
     ],
     legal: [
-      { nameKey: 'footer.privacyPolicy', href: '/privacy' },
-      { nameKey: 'footer.termsOfService', href: '/terms' },
+      { nameKey: 'footer.termsAndPrivacy', href: '/terms-and-privacy' },
       { nameKey: 'footer.dataDeletion', href: '/data-deletion' },
     ],
   }

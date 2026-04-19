@@ -25,7 +25,11 @@ export default function FloatingPriceReminder() {
   const { user, isAuthenticated } = useAuth()
   const [open, setOpen] = useState(false)
 
-  const hidden = pathname === '/checkout' || pathname.startsWith('/admin')
+  const hidden =
+    pathname === '/checkout' ||
+    pathname.startsWith('/admin') ||
+    pathname === '/join-club' ||
+    pathname.startsWith('/join-club/')
 
   const { data, isLoading } = useQuery({
     queryKey: ['daralsabaekPublicRates'],

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Phone, Lock, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
+import { safeAppNextPath } from '../utils/safeNextPath'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -19,7 +20,9 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const nextPath = searchParams.get('next')
+  const nextPath = safeAppNextPath(searchParams.get('next'))
+  const registerHref =
+    nextPath != null ? `/register?next=${encodeURIComponent(nextPath)}` : '/register'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +36,7 @@ export default function LoginPage() {
 
       await login(credentials)
       toast.success(t('auth.loginSuccess'))
-      if (nextPath && nextPath.startsWith('/')) {
+      if (nextPath) {
         navigate(nextPath)
       } else {
         navigate('/')
@@ -178,7 +181,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-gold-100/60">
               {t('auth.noAccount')}{' '}
-              <Link to="/register" className="text-gold-400 hover:text-gold-300 font-medium">
+              <Link to={registerHref} className="text-gold-400 hover:text-gold-300 font-medium">
                 {t('auth.createOne')}
               </Link>
             </p>
