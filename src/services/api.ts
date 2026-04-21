@@ -790,6 +790,9 @@ export const priceAlertsApi = {
 
   /** Cancel/remove an alert. */
   deletePriceAlert: (id: string) => apiService.delete(`/accounts/price-alerts/${id}/`),
+
+  /** Admin/staff: list all reminders across users. */
+  getAllPriceAlertsForAdmin: () => apiService.get('/accounts/price-alerts/'),
 }
 
 // Invoices API
@@ -944,6 +947,16 @@ export const adminApi = {
     return apiService.put<KuwaitMarketConfigResponse>('/scraping/kuwait/config/', body, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
+  },
+
+  /** Admin: manually trigger reminder threshold processing now. */
+  triggerPriceReminderProcessingNow: () => {
+    const token = localStorage.getItem('access_token')
+    return apiService.post<{ ok: boolean; message: string }>(
+      '/scraping/reminders/test-trigger/',
+      {},
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined },
+    )
   },
 
   /** Latest scraped prices from external sources (scraping app). Requires JWT. */

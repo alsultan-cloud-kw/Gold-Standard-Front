@@ -30,7 +30,7 @@ const RANGE_OPTIONS: { key: ChartRange; menuLabel: string }[] = [
 ]
 
 function rangeMenuLabel(key: ChartRange): string {
-  return RANGE_OPTIONS.find((o) => o.key === key)?.menuLabel ?? '1 Day'
+  return RANGE_OPTIONS.find((o) => o.key === key)?.menuLabel ?? '1 Hour'
 }
 
 function numOrNull(v: unknown): number | null {
@@ -48,7 +48,7 @@ function numOrNull(v: unknown): number | null {
 function rangeBackMs(r: ChartRange): number {
   switch (r) {
     case 'live':
-      return 45 * 60 * 1000
+      return 10 * 60 * 1000
     case '1h':
       return 60 * 60 * 1000
     case '1d':
@@ -61,10 +61,77 @@ function rangeBackMs(r: ChartRange): number {
 }
 
 function formatChartTick(d: Date, range: ChartRange) {
-  if (range === '1w' || range === '1d') {
+  if (range === '1w') {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }
+  if (range === '1d') {
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  }
   return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+}
+
+function bucketMsForRange(range: ChartRange): number {
+  switch (range) {
+    // Short ranges: keep minute-by-minute movement.
+    case 'live':
+    case '1h':
+      return 60_000
+    // Longer ranges: aggregate for readability.
+    case '1d':
+      return 15 * 60_000
+    case '1w':
+      return 60 * 60_000
+    default:
+      return 60_000
+  }
+}
+
+function aggregatePointsByBucket(points: ChartPoint[], range: ChartRange): ChartPoint[] {
+  if (points.length <= 2) return points
+  const bucketMs = bucketMsForRange(range)
+  const grouped = new Map<number, ChartPoint>()
+  for (const p of points) {
+    const ts = new Date(p.t).getTime()
+    if (!Number.isFinite(ts)) continue
+    const bucketStart = Math.floor(ts / bucketMs) * bucketMs
+    // Keep the latest point inside each bucket so chart reflects the most recent value in that interval.
+    const prev = grouped.get(bucketStart)
+    if (!prev || new Date(prev.t).getTime() <= ts) {
+      grouped.set(bucketStart, p)
+    }
+  }
+  return [...grouped.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, p]) => p)
+}
+
+function normalizeShortRangeToOneMinute(points: ChartPoint[], range: ChartRange): ChartPoint[] {
+  if ((range !== 'live' && range !== '1h') || points.length === 0) return points
+
+  const sorted = [...points]
+    .map((p) => ({ ...p, ms: new Date(p.t).getTime() }))
+    .filter((p) => Number.isFinite(p.ms))
+    .sort((a, b) => a.ms - b.ms)
+
+  if (sorted.length === 0) return points
+
+  const minuteMs = 60_000
+  const startMs = Math.floor(sorted[0].ms / minuteMs) * minuteMs
+  const endMs = Math.floor(sorted[sorted.length - 1].ms / minuteMs) * minuteMs
+
+  let idx = 0
+  let currentV = sorted[0].v
+  const minuteSeries: ChartPoint[] = []
+
+  for (let ts = startMs; ts <= endMs; ts += minuteMs) {
+    while (idx < sorted.length && sorted[idx].ms <= ts) {
+      currentV = sorted[idx].v
+      idx += 1
+    }
+    minuteSeries.push({ t: new Date(ts).toISOString(), v: currentV })
+  }
+
+  return minuteSeries.length > 0 ? minuteSeries : points
 }
 
 function buildChartPoints(
@@ -105,7 +172,7 @@ type Props = {
 
 export function PricesHistoryChart({ rates }: Props) {
   const [metal, setMetal] = useState<MetalTab>('gold')
-  const [chartRange, setChartRange] = useState<ChartRange>('1d')
+  const [chartRange, setChartRange] = useState<ChartRange>('1h')
 
   const { data: historyData, isFetching: historyFetching } = useQuery({
     queryKey: ['metalPriceHistory', metal, chartRange],
@@ -139,7 +206,9 @@ export function PricesHistoryChart({ rates }: Props) {
 
   const chartPoints = useMemo(() => {
     const hp = (historyData?.points ?? []) as ChartPoint[]
-    return buildChartPoints(hp, liveChartV, chartRange)
+    const withLive = buildChartPoints(hp, liveChartV, chartRange)
+    const grouped = aggregatePointsByBucket(withLive, chartRange)
+    return normalizeShortRangeToOneMinute(grouped, chartRange)
   }, [historyData?.points, liveChartV, chartRange])
 
   const chartRows = useMemo(
@@ -152,6 +221,25 @@ export function PricesHistoryChart({ rates }: Props) {
     [chartPoints, chartRange],
   )
 
+  const shortRangeUsdTicks = useMemo(() => {
+    const shouldUseOneDollarStep =
+      (chartRange === 'live' || chartRange === '1h') && chartUnit === 'USD/oz'
+    if (!shouldUseOneDollarStep || chartRows.length === 0) return null
+
+    const values = chartRows.map((r) => r.v).filter((v) => Number.isFinite(v))
+    if (values.length === 0) return null
+
+    const minV = Math.min(...values)
+    const maxV = Math.max(...values)
+    const pad = minV === maxV ? 1 : 0
+    const start = Math.floor(minV - pad)
+    const end = Math.ceil(maxV + pad)
+
+    const ticks: number[] = []
+    for (let v = start; v <= end; v += 1) ticks.push(v)
+    return ticks.length > 0 ? ticks : null
+  }, [chartRange, chartUnit, chartRows])
+
   const showSilverTab =
     rates?.silver?.buyTotal != null ||
     rates?.silver?.sellTotal != null
@@ -162,12 +250,12 @@ export function PricesHistoryChart({ rates }: Props) {
   if (!rates?.succeeded) return null
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+    <div className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2 mb-5">
         <button
           type="button"
           onClick={() => setMetal('gold')}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
             metal === 'gold'
               ? 'bg-lime-500 text-black shadow-sm'
               : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
@@ -179,7 +267,7 @@ export function PricesHistoryChart({ rates }: Props) {
           <button
             type="button"
             onClick={() => setMetal('silver')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
               metal === 'silver'
                 ? 'bg-lime-500 text-black shadow-sm'
                 : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
@@ -192,7 +280,7 @@ export function PricesHistoryChart({ rates }: Props) {
           <button
             type="button"
             onClick={() => setMetal('platinum')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
               metal === 'platinum'
                 ? 'bg-lime-500 text-black shadow-sm'
                 : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
@@ -204,13 +292,13 @@ export function PricesHistoryChart({ rates }: Props) {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-        <p className="text-xs text-stone-500 flex-1">
+        <p className="text-sm text-stone-500 flex-1">
           Prices will be updated in {String(updateEverySec).padStart(2, '0')} sec
           {historyFetching ? ' · …' : ''}
         </p>
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="text-sm font-semibold text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-lime-500/50 rounded px-1 py-0.5 shrink-0 data-[state=open]:opacity-90"
+            className="text-base font-semibold text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-lime-500/50 rounded px-1 py-0.5 shrink-0 data-[state=open]:opacity-90"
             type="button"
           >
             {rangeMenuLabel(chartRange)} ▼
@@ -233,34 +321,35 @@ export function PricesHistoryChart({ rates }: Props) {
         </DropdownMenu>
       </div>
 
-      <h3 className="text-sm font-semibold text-stone-900 mb-1">Chart ({chartUnit})</h3>
-      <p className="text-[10px] text-stone-500 leading-relaxed mb-4">
-        Saved server-side (~7 days). Points are recorded about every 50s when the feed is up.
+      <h3 className="text-base font-semibold text-stone-900 mb-1">Chart ({chartUnit})</h3>
+      <p className="text-xs sm:text-sm text-stone-500 leading-relaxed mb-5">
+        10 mins and 1 hour show minute-by-minute changes. 1 day and 1 week are grouped into larger intervals for readability.
       </p>
 
-      <div className="w-full h-[220px] -mx-1">
+      <div className="w-full h-[260px] sm:h-[280px] -mx-1">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsLineChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <XAxis
               dataKey="label"
-              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 10 }}
+              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 12 }}
               interval="preserveStartEnd"
               tickLine={false}
               axisLine={{ stroke: 'rgba(0,0,0,0.08)' }}
             />
             <YAxis
-              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 10 }}
-              width={48}
+              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 12 }}
+              width={56}
               tickLine={false}
               axisLine={{ stroke: 'rgba(0,0,0,0.08)' }}
-              domain={['auto', 'auto']}
+              domain={shortRangeUsdTicks ? [shortRangeUsdTicks[0], shortRangeUsdTicks[shortRangeUsdTicks.length - 1]] : ['auto', 'auto']}
+              ticks={shortRangeUsdTicks ?? undefined}
             />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'rgba(255, 255, 255, 0.98)',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
                 borderRadius: 8,
-                fontSize: 12,
+                fontSize: 14,
                 color: '#0a0a0a',
               }}
               labelStyle={{ color: '#52525b' }}

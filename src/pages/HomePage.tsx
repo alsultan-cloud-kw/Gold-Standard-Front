@@ -235,7 +235,7 @@ export default function HomePage() {
       </section>
 
       {/* Metal price history — same chart as Prices page */}
-      <section className="py-10 sm:py-12 bg-white border-b border-stone-200/80">
+      <section className="py-12 sm:py-14 bg-white border-b border-stone-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <PricesHistoryChart rates={publicRatesRes} />
         </div>
@@ -509,16 +509,16 @@ function ProductCard({
             </div>
           )}
           <div className="absolute top-2 right-2 rtl:right-auto rtl:left-2">
-            <span className="px-2 py-1 text-xs font-semibold bg-white/90 text-black rounded shadow-sm ring-1 ring-black/10">
+            <span className="px-2 py-1 text-sm font-semibold bg-white/90 text-black rounded shadow-sm ring-1 ring-black/10">
               {caratName}
             </span>
           </div>
         </div>
-        <h3 className="text-sm font-semibold text-black group-hover:underline decoration-black/30 transition-colors line-clamp-1">
+        <h3 className="text-base font-semibold text-black group-hover:underline decoration-black/30 transition-colors line-clamp-1">
           {productName}
         </h3>
-        <p className="text-xs text-black/60 mb-2 font-medium">{product.weight_grams}g</p>
-        <div className="price-tag-lime text-sm inline-flex items-center gap-2 flex-wrap">
+        <p className="text-sm text-black/60 mb-2 font-medium">{product.weight_grams}g</p>
+        <div className="price-tag-lime text-base inline-flex items-center gap-2 flex-wrap">
           <ProductPriceTrendArrow
             product={product}
             variant="light"
@@ -532,7 +532,7 @@ function ProductCard({
       <button
         type="button"
         onClick={() => addToCart(product)}
-        className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold bg-black text-white hover:bg-zinc-800 transition-colors shadow-sm"
+        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-base font-semibold bg-black text-white hover:bg-zinc-800 transition-colors shadow-sm"
       >
         <ShoppingCart className="w-4 h-4 shrink-0" />
         {t('home.addToCart')}

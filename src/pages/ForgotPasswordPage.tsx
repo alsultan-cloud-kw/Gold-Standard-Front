@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { authApi } from '../services/api'
 
 type Step = 'request' | 'otp' | 'password'
+const GENERIC_RESET_SENT_MESSAGE = 'If this user account exists, a reset code has been sent.'
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState<Step>('request')
@@ -29,18 +30,22 @@ export default function ForgotPasswordPage() {
         method === 'email'
           ? { email: email.trim(), phone_number: '' }
           : { email: '', phone_number: phoneNumber.trim() }
-      const res = await authApi.forgotPassword(payload) as { message?: string; error?: string }
-      toast.success(res.message || 'Check your email for the code.')
+      await authApi.forgotPassword(payload)
+      toast.success(GENERIC_RESET_SENT_MESSAGE)
       setStep('otp')
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string }; status?: number } })?.response?.data
       const status = (err as { response?: { status?: number } })?.response?.status
-      if (data?.error) {
+      const normalizedErr = String(data?.error || '').toLowerCase()
+      if (status === 404 || normalizedErr.includes('user not found')) {
+        toast.success(GENERIC_RESET_SENT_MESSAGE)
+        setStep('otp')
+      } else if (data?.error) {
         toast.error(data.error)
       } else if (status === 503) {
         toast.error('Email could not be sent. Try again later.')
       } else {
-        toast.error('User not found or request failed.')
+        toast.error('Request failed. Try again later.')
       }
     } finally {
       setIsLoading(false)

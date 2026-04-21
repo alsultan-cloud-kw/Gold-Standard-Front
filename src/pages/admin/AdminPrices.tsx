@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { TrendingUp, Save, RefreshCw } from 'lucide-react'
+import { TrendingUp, Save, RefreshCw, BellRing } from 'lucide-react'
 import {
   productsApi,
   adminApi,
+  priceAlertsApi,
   type DaralsabaekMetalPricesResponse,
 } from '../../services/api'
 import AdminNav from '../../components/admin/AdminNav'
@@ -29,6 +30,19 @@ type GoldPriceRow = {
   buy_price_per_gram: string | number | null
   sell_price_per_gram: string | number | null
   spread?: number | null
+}
+
+type AdminPriceAlertRow = {
+  id: string
+  status?: string
+  spot_metal?: string
+  gold_carats?: number | string | null
+  price_side?: string
+  target_price?: string | number | null
+  condition?: string
+  created_at?: string | null
+  triggered_at?: string | null
+  user?: { full_name?: string | null; phone_number?: string | null; email?: string | null } | null
 }
 
 type MarkupRow = {
@@ -397,6 +411,24 @@ export default function AdminPrices() {
     },
   })
 
+  const { data: adminPriceAlertsData, isLoading: adminPriceAlertsLoading } = useQuery({
+    queryKey: ['adminPriceAlerts'],
+    queryFn: priceAlertsApi.getAllPriceAlertsForAdmin,
+    refetchInterval: 30_000,
+  })
+
+  const testReminderTriggerMutation = useMutation({
+    mutationFn: adminApi.triggerPriceReminderProcessingNow,
+    onSuccess: (res) => {
+      const msg = (res as { message?: string } | undefined)?.message || 'Reminder check executed.'
+      toast.success(msg)
+      queryClient.invalidateQueries({ queryKey: ['priceAlerts'] })
+    },
+    onError: () => {
+      toast.error('Could not run reminder trigger test.')
+    },
+  })
+
   const handleSave = async () => {
     try {
       const payload: Record<string, MarkupRow> = {}
@@ -467,6 +499,17 @@ export default function AdminPrices() {
   }
 
   const list = (goldPrices as GoldPriceRow[]) || []
+  const adminPriceAlerts = Array.isArray(adminPriceAlertsData)
+    ? (adminPriceAlertsData as AdminPriceAlertRow[])
+    : (((adminPriceAlertsData as { results?: AdminPriceAlertRow[] } | undefined)?.results ?? []) as AdminPriceAlertRow[])
+  const activeReminders = adminPriceAlerts
+    .filter((x) => x.status === 'active')
+    .sort((a, b) => {
+      const ad = a.created_at ? new Date(a.created_at).getTime() : 0
+      const bd = b.created_at ? new Date(b.created_at).getTime() : 0
+      return bd - ad
+    })
+    .slice(0, 25)
   const selectedResult =
     previewSource === 'kw2'
       ? apiResultKw2
@@ -568,14 +611,25 @@ export default function AdminPrices() {
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Gold Prices</h1>
             <p className="text-stone-700 font-medium">Manage daily gold buy/sell prices</p>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={updatePriceMutation.isPending || isLoading}
-            className="gold-button flex items-center gap-2 disabled:opacity-50"
-          >
-            <Save className="w-5 h-5" />
-            {updatePriceMutation.isPending ? 'Saving…' : 'Save Changes'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => testReminderTriggerMutation.mutate()}
+              disabled={testReminderTriggerMutation.isPending}
+              className="px-4 py-2 rounded-lg border-2 border-black/20 bg-lime-100 text-black font-semibold hover:bg-lime-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              <BellRing className="w-4 h-4" />
+              {testReminderTriggerMutation.isPending ? 'Running…' : 'Test Trigger Reminder Now'}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={updatePriceMutation.isPending || isLoading}
+              className="gold-button flex items-center gap-2 disabled:opacity-50"
+            >
+              <Save className="w-5 h-5" />
+              {updatePriceMutation.isPending ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
         </div>
 
         <div className="gold-card mb-6 border-2 border-amber-500/20">
@@ -1112,6 +1166,61 @@ export default function AdminPrices() {
           <h2 className="text-xl font-bold text-black mb-4">Price History</h2>
           <p className="text-stone-700 text-center py-8">Chart placeholder</p>
         </div> */}
+
+        <div className="gold-card mt-8">
+          <h2 className="text-xl font-bold text-black mb-2">Active customer reminders</h2>
+          <p className="text-xs text-stone-700 mb-4">
+            One active threshold reminder per customer is enforced. Latest 25 shown.
+          </p>
+          {adminPriceAlertsLoading ? (
+            <p className="text-stone-700 text-center py-4">Loading reminders…</p>
+          ) : activeReminders.length === 0 ? (
+            <p className="text-stone-700 text-center py-4">No active reminders.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-black/10 text-stone-700">
+                    <th className="py-2 pe-3">Customer</th>
+                    <th className="py-2 pe-3">Metal</th>
+                    <th className="py-2 pe-3">Side</th>
+                    <th className="py-2 pe-3">Condition</th>
+                    <th className="py-2 pe-3">Target</th>
+                    <th className="py-2 pe-3">Set at</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeReminders.map((r) => {
+                    const metal =
+                      (r.spot_metal || 'gold') === 'gold'
+                        ? `${r.gold_carats ?? '—'}K gold`
+                        : r.spot_metal || '—'
+                    const target = r.target_price != null ? Number(r.target_price) : NaN
+                    return (
+                      <tr key={r.id} className="border-b border-black/5 text-black">
+                        <td className="py-2 pe-3">
+                          <div className="font-semibold">{r.user?.full_name || '—'}</div>
+                          <div className="text-xs text-stone-600">
+                            {r.user?.phone_number || r.user?.email || '—'}
+                          </div>
+                        </td>
+                        <td className="py-2 pe-3">{metal}</td>
+                        <td className="py-2 pe-3">{r.price_side || '—'}</td>
+                        <td className="py-2 pe-3">{r.condition || '—'}</td>
+                        <td className="py-2 pe-3">
+                          {Number.isFinite(target) ? `${target.toFixed(3)} KWD/g` : '—'}
+                        </td>
+                        <td className="py-2 pe-3">
+                          {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

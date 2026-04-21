@@ -118,7 +118,7 @@ export default function UserDashboard() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gold-100">{user?.full_name}</h3>
-                  <p className="text-sm text-gold-100/60">{user?.email}</p>
+                  <p className="text-sm text-gold-100/60"></p>
                 </div>
               </div>
 
@@ -2212,6 +2212,8 @@ function TransactionsTab() {
 type PriceAlertRow = {
   id: string
   alert_type?: string
+  reminder_mode?: 'threshold' | 'delta' | string
+  delta_value?: string | number | null
   spot_metal?: string
   spot_metal_display?: string
   gold_carats?: number | string | null
@@ -2220,6 +2222,14 @@ type PriceAlertRow = {
   target_price?: string | number | null
   condition?: string
   status?: string
+  notification_status?: string
+  last_notification_error?: string | null
+  triggered_context?: {
+    side?: string
+    current_rate?: string
+    [key: string]: unknown
+  } | null
+  created_at?: string | null
   triggered_at?: string | null
 }
 
@@ -2254,7 +2264,15 @@ function NotificationsTab() {
     }
   }, [])
 
-  const alerts = Array.isArray(data) ? (data as PriceAlertRow[]) : []
+  const alertsPayload = data as { results?: PriceAlertRow[] } | PriceAlertRow[] | undefined
+  const alerts = Array.isArray(alertsPayload) ? alertsPayload : alertsPayload?.results ?? []
+  const active = alerts
+    .filter((a) => a.status === 'active')
+    .sort((a, b) => {
+      const ad = a.created_at ? new Date(a.created_at).getTime() : 0
+      const bd = b.created_at ? new Date(b.created_at).getTime() : 0
+      return bd - ad
+    })
   const triggered = alerts
     .filter((a) => a.status === 'triggered')
     .sort((a, b) => {
@@ -2274,11 +2292,75 @@ function NotificationsTab() {
 
       {isLoading ? (
         <p className="text-black-100/60 text-center py-8">Loading...</p>
-      ) : triggered.length === 0 ? (
-        <p className="text-black-100/60 text-center py-8">No triggered reminders yet.</p>
       ) : (
-        <div className="space-y-3">
-          {triggered.map((a) => {
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-base font-semibold text-black-100 mb-2">Set reminders</h3>
+            {active.length === 0 ? (
+              <p className="text-black-100/60 text-center py-6">No active reminder set.</p>
+            ) : (
+              <div className="space-y-3">
+                {active.map((a) => {
+                  const goldCaratNum = a.gold_carats != null ? Number(a.gold_carats) : NaN
+                  const metal = (a.spot_metal || 'gold').toLowerCase()
+                  const metalLine =
+                    metal === 'silver'
+                      ? 'Silver'
+                      : metal === 'platinum'
+                        ? 'Platinum'
+                        : Number.isFinite(goldCaratNum)
+                          ? `${goldCaratNum}K gold`
+                          : a.spot_metal_display || 'Gold'
+                  const sideLabel = a.price_side_display ?? a.price_side ?? '—'
+                  const target = a.target_price != null ? Number(a.target_price) : NaN
+                  const d = a.created_at ? new Date(a.created_at) : null
+                  const deltaVal = a.delta_value != null ? Number(a.delta_value) : NaN
+                  const thresholdText =
+                    a.reminder_mode === 'delta'
+                      ? `Rate changes by ${Number.isFinite(deltaVal) ? deltaVal.toFixed(3) : '—'} KWD/g from your set baseline.`
+                      : a.condition === 'above'
+                        ? `rate increases above ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                        : a.condition === 'below'
+                          ? `rate decreases below ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                          : ''
+                  return (
+                    <div key={a.id} className="gold-card p-4 border border-lime-500/30">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm text-black-100/70">
+                            {metalLine} • {sideLabel}
+                          </div>
+                          <div className="text-black-100 font-semibold mt-1">Active</div>
+                          {thresholdText && (
+                            <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
+                          )}
+                        </div>
+                        <div className="text-xs text-black-100/50">
+                          {d
+                            ? d.toLocaleString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '—'}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-base font-semibold text-black-100 mb-2">Triggered reminders</h3>
+            {triggered.length === 0 ? (
+              <p className="text-black-100/60 text-center py-6">No triggered reminders yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {triggered.map((a) => {
             const goldCaratNum = a.gold_carats != null ? Number(a.gold_carats) : NaN
             const metal = (a.spot_metal || 'gold').toLowerCase()
             const metalLine =
@@ -2293,13 +2375,23 @@ function NotificationsTab() {
             const target = a.target_price != null ? Number(a.target_price) : NaN
             const d = a.triggered_at ? new Date(a.triggered_at) : null
             const isNew = a.triggered_at ? d!.getTime() > lastSeenAtMs : false
+            const deltaVal = a.delta_value != null ? Number(a.delta_value) : NaN
+            const triggeredSide = String(a.triggered_context?.side || '').toLowerCase()
+            const sideTriggeredText =
+              triggeredSide === 'buy'
+                ? 'Triggered by buy price.'
+                : triggeredSide === 'sell'
+                  ? 'Triggered by sell price.'
+                  : ''
 
             const thresholdText =
-              a.condition === 'above'
-                ? `rate increases above ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
-                : a.condition === 'below'
-                  ? `rate decreases below ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
-                  : ''
+              a.reminder_mode === 'delta'
+                ? `Rate moved by ${Number.isFinite(deltaVal) ? deltaVal.toFixed(3) : '—'} KWD/g from your set baseline.`
+                : a.condition === 'above'
+                  ? `rate increases above ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                  : a.condition === 'below'
+                    ? `rate decreases below ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                    : ''
 
             return (
               <div
@@ -2317,6 +2409,17 @@ function NotificationsTab() {
                     {thresholdText && (
                       <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
                     )}
+                    {sideTriggeredText && (
+                      <div className="text-xs text-black-100/60 mt-1">{sideTriggeredText}</div>
+                    )}
+                    <div className="text-xs text-black-100/60 mt-2">
+                      Delivery: {a.notification_status ?? 'pending'}
+                    </div>
+                    {a.last_notification_error ? (
+                      <div className="text-xs text-red-700/90 mt-1 break-words">
+                        {a.last_notification_error}
+                      </div>
+                    ) : null}
                   </div>
                   <div className="text-xs text-black-100/50">
                     {d ? d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
@@ -2324,7 +2427,10 @@ function NotificationsTab() {
                 </div>
               </div>
             )
-          })}
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

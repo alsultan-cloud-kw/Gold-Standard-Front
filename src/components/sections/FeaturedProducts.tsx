@@ -132,7 +132,7 @@ function ProductCard({
       </p>
       
       <div className="flex items-center justify-between gap-2">
-        <div className="price-tag-lime flex-wrap">
+        <div className="price-tag-lime text-base flex-wrap">
           <ProductPriceTrendArrow
             product={product}
             variant="light"
@@ -143,7 +143,7 @@ function ProductCard({
           <span>{productUnitPrice(product).toLocaleString()} KWD</span>
         </div>
         {product.live_buy_price_per_gram != null && (
-          <span className="text-xs text-black/55">
+          <span className="text-sm text-black/55 shrink-0">
             {formatKwd(product.live_buy_price_per_gram)} KWD/g
           </span>
         )}
