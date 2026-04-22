@@ -2,7 +2,7 @@ import type { DaralsabaekPublicRatesResponse } from '../services/api'
 
 export type PriceReminderBuildErrorCode = 'liveRatesUnavailable' | 'invalidDelta' | 'noValidRates'
 
-type SpotMetal = 'gold' | 'silver' | 'platinum'
+type SpotMetal = 'gold'
 
 /**
  * Build one delta-criteria payload for all spot rates currently visible to customers.
@@ -41,18 +41,6 @@ export function buildSpotPriceAlertPayloads(params: {
     if (!Number.isFinite(cv) || cv <= 0) continue
     pushBaseline('gold', cv, 'buy', c.buyTotal ?? null)
     pushBaseline('gold', cv, 'sell', c.sellTotal ?? null)
-  }
-
-  const silver = res.silver
-  if (silver) {
-    pushBaseline('silver', null, 'buy', silver.buyTotal ?? null)
-    pushBaseline('silver', null, 'sell', silver.sellTotal ?? null)
-  }
-
-  const platinum = res.platinum
-  if (platinum) {
-    pushBaseline('platinum', null, 'buy', platinum.buyTotal ?? null)
-    pushBaseline('platinum', null, 'sell', platinum.sellTotal ?? null)
   }
 
   if (Object.keys(baselineRates).length === 0) {

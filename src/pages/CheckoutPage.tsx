@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   CreditCard,
@@ -43,6 +43,7 @@ type SaleResponse = {
   id?: string
   invoice_number?: string
   total_amount?: string
+  payment_url?: string
 }
 
 type CheckoutPayRow = {
@@ -63,6 +64,7 @@ export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
   const navigate = useNavigate()
+  const location = useLocation()
   const [step, setStep] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState('knet')
   const [deliveryType, setDeliveryType] = useState<'physical' | 'locked'>('physical')
@@ -195,6 +197,42 @@ export default function CheckoutPage() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const knetStatus = params.get('knet_status')
+    if (!knetStatus) return
+
+    const saleId = params.get('sale_id') || undefined
+    const invoice = params.get('invoice') || undefined
+    const normalizeDone = () => navigate('/checkout', { replace: true })
+
+    if (knetStatus === 'success') {
+      const finishSuccess = (sale: SaleResponse | null) => {
+        if (sale) setLastOrder(sale)
+        clearCart()
+        toast.success(
+          (sale?.invoice_number || invoice)
+            ? t('checkoutPage.knetPaidWithInvoice', { invoice: sale?.invoice_number || invoice })
+            : t('checkoutPage.knetPaid'),
+        )
+        normalizeDone()
+      }
+
+      if (saleId) {
+        ordersApi
+          .getOrder(saleId)
+          .then((res) => finishSuccess((res as SaleResponse) ?? null))
+          .catch(() => finishSuccess(null))
+      } else {
+        finishSuccess(null)
+      }
+      return
+    }
+
+    toast.error(t('checkoutPage.knetFailed'))
+    normalizeDone()
+  }, [location.search, navigate, clearCart, t])
+
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('access_token')
     if (!token) {
@@ -235,6 +273,12 @@ export default function CheckoutPage() {
         customer_email: customerEmail,
         notes,
       })) as SaleResponse
+
+      if (paymentMethod === 'knet' && data.payment_url) {
+        window.location.assign(data.payment_url)
+        return
+      }
+
       setLastOrder(data)
       clearCart()
       toast.success(

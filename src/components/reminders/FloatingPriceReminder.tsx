@@ -50,9 +50,7 @@ export default function FloatingPriceReminder() {
   const watchSummary = useMemo(() => {
     if (!res?.succeeded) return null
     const goldKeys = carats.map((c) => c.key).filter(Boolean)
-    const hasSilver = !!(res.silver?.buyTotal != null || res.silver?.sellTotal != null)
-    const hasPlatinum = !!(res.platinum?.buyTotal != null || res.platinum?.sellTotal != null)
-    return { goldKeys, hasSilver, hasPlatinum }
+    return { goldKeys }
   }, [res, carats])
 
   const createAlertsMutation = useMutation({
@@ -93,13 +91,7 @@ export default function FloatingPriceReminder() {
   if (hidden) return null
 
   const ratesReady = !!res?.succeeded
-  const hasSpotRates =
-    ratesReady &&
-    (carats.length > 0 ||
-      res?.silver?.buyTotal != null ||
-      res?.silver?.sellTotal != null ||
-      res?.platinum?.buyTotal != null ||
-      res?.platinum?.sellTotal != null)
+  const hasSpotRates = ratesReady && carats.length > 0
 
   const inputDisabled = !hasSpotRates || createAlertsMutation.isPending
   const saveDisabled =
@@ -178,18 +170,6 @@ export default function FloatingPriceReminder() {
                 <p>
                   <span className="text-gold-200/55">{t('priceReminder.watchGoldLabel')} </span>
                   {watchSummary.goldKeys.join(', ')} — {t('priceReminder.watchBuySellBoth')}
-                </p>
-              ) : null}
-              {watchSummary?.hasSilver ? (
-                <p>
-                  <span className="text-gold-200/55">{t('priceReminder.watchSilverLabel')} </span>
-                  {t('priceReminder.watchBuySellBoth')}
-                </p>
-              ) : null}
-              {watchSummary?.hasPlatinum ? (
-                <p>
-                  <span className="text-gold-200/55">{t('priceReminder.watchPlatinumLabel')} </span>
-                  {t('priceReminder.watchBuySellBoth')}
                 </p>
               ) : null}
               <p className="text-xs text-gold-200/50 leading-relaxed pt-1">{t('priceReminder.watchHowItWorks')}</p>

@@ -14,10 +14,10 @@ export default function AboutPage() {
   const { t } = useTranslation()
 
   const stats = [
-    { value: '15+', labelKey: 'aboutPage.statYears' as const },
-    { value: '5', labelKey: 'aboutPage.statBranches' as const },
-    { value: '50K+', labelKey: 'aboutPage.statCustomers' as const },
-    { value: '100%', labelKey: 'aboutPage.statCertified' as const },
+    { value: '', labelKey: 'aboutPage.statYears' as const },
+    { value: '', labelKey: 'aboutPage.statBranches' as const },
+    { value: '', labelKey: 'aboutPage.statCustomers' as const },
+    { value: '', labelKey: 'aboutPage.statCertified' as const },
   ]
 
   return (
@@ -30,17 +30,18 @@ export default function AboutPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
           {stats.map((stat, index) => (
             <div key={index} className="product-card-lime text-center">
               <div className="text-3xl md:text-4xl font-bold text-black mb-2">{stat.value}</div>
               <div className="text-sm font-semibold text-black/75">{t(stat.labelKey)}</div>
             </div>
           ))}
-        </div>
+        </div> */}
 
         {/* Our Story */}
-        <div className="mb-16">
+        
+        {/* <div className="mb-16">
           <h2 className="text-3xl font-bold text-black mb-8 text-center">{t('aboutPage.storyTitle')}</h2>
           <div className="relative">
             <div className="absolute left-1/2 -translate-x-1/2 h-full w-0.5 bg-lime-400/70" />
@@ -67,7 +68,7 @@ export default function AboutPage() {
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Our Values */}
         <div className="mb-16">

@@ -447,6 +447,9 @@
     "loginRequired": "Please log in to place an order",
     "orderPlacedWithInvoice": "Order {{invoice}} placed successfully",
     "orderPlaced": "Order placed successfully",
+    "knetPaidWithInvoice": "KNET payment successful for order {{invoice}}.",
+    "knetPaid": "KNET payment successful.",
+    "knetFailed": "KNET payment failed or was cancelled. Please try again.",
     "placeOrderError": "Could not place order. Try again or contact support.",
     "invoiceIdMissing": "Order ID missing; cannot load invoice.",
     "popupsBlocked": "Allow pop-ups to download invoice",
@@ -524,7 +527,7 @@
   },
   "aboutPage": {
     "title": "About Us",
-    "hero": "Gold & Jewelry Trading Co. has been Kuwait's trusted partner for gold and jewelry trading since 2008. We combine traditional values with modern technology to provide the best trading experience.",
+    "hero": "Gold Standard has been Kuwait's trusted partner for gold and jewelry trading. We combine traditional values with modern technology to provide the best trading experience.",
     "statYears": "Years of Experience",
     "statBranches": "Branches",
     "statCustomers": "Happy Customers",
@@ -537,27 +540,27 @@
     "visionBody": "To become the leading gold trading platform in the Middle East, recognized for our innovation, transparency, and commitment to customer satisfaction, while preserving the rich tradition of gold craftsmanship.",
     "m": {
       "founded": {
-        "year": "2008",
+        "year": "",
         "title": "Founded",
         "description": "Started as a small gold trading shop in Kuwait City"
       },
       "firstBranch": {
-        "year": "2012",
+        "year": "",
         "title": "First Branch",
         "description": "Opened our first branch in Al-Mubarakiya"
       },
       "expansion": {
-        "year": "2015",
+        "year": "",
         "title": "Expansion",
         "description": "Expanded to 3 branches across Kuwait"
       },
       "digital": {
-        "year": "2018",
+        "year": "",
         "title": "Digital Platform",
         "description": "Launched our online trading platform"
       },
       "innovation": {
-        "year": "2023",
+        "year": "",
         "title": "Innovation",
         "description": "Introduced AI-powered price forecasting"
       }
