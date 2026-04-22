@@ -1,7 +1,6 @@
 import { Award, Users, TrendingUp, Shield } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const MILESTONE_IDS = ['founded', 'firstBranch', 'expansion', 'digital', 'innovation'] as const
 const VALUE_IDS = ['trust', 'quality', 'customer', 'innovation'] as const
 const VALUE_ICONS = {
   trust: Shield,
@@ -12,13 +11,6 @@ const VALUE_ICONS = {
 
 export default function AboutPage() {
   const { t } = useTranslation()
-
-  const stats = [
-    { value: '', labelKey: 'aboutPage.statYears' as const },
-    { value: '', labelKey: 'aboutPage.statBranches' as const },
-    { value: '', labelKey: 'aboutPage.statCustomers' as const },
-    { value: '', labelKey: 'aboutPage.statCertified' as const },
-  ]
 
   return (
     <div className="min-h-screen py-8 bg-gradient-to-b from-lime-50/50 via-white to-white">
