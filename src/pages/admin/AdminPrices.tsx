@@ -284,7 +284,6 @@ export default function AdminPrices() {
     retry: 1,
   })
 
-  const liveSource = (kuwaitConfig?.active_source || 'kw1').toLowerCase()
   const [previewSource, setPreviewSource] = useState<string>('kw1')
   const previewBootstrapped = useRef(false)
   useEffect(() => {
@@ -292,16 +291,6 @@ export default function AdminPrices() {
     setPreviewSource((kuwaitConfig.active_source || 'kw1').toLowerCase())
     previewBootstrapped.current = true
   }, [kuwaitConfig])
-
-  const setActiveSource = useMutation({
-    mutationFn: (active_source: string) => adminApi.putKuwaitMarketConfig({ active_source }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kuwaitMarketConfig'] })
-      queryClient.invalidateQueries({ queryKey: ['daralsabaekPublicRates'] })
-      toast.success('Website prices now use this source')
-    },
-    onError: () => toast.error('Could not update source'),
-  })
 
   useEffect(() => {
     if (kw2Hydrated.current || !kuwaitConfig) return
@@ -589,17 +578,6 @@ export default function AdminPrices() {
       ? 'goldapi.io'
       : 'getMetalSellAndBuyPrices'
 
-  const liveLabel =
-    liveSource === 'kw2'
-      ? 'KW2'
-      : liveSource === 'kw3'
-      ? 'KW3'
-      : liveSource === 'gs1'
-      ? 'GS1'
-      : liveSource === 'kw4' || liveSource === 'kw5'
-      ? liveSource.toUpperCase()
-      : 'KW1'
-  const previewMismatch = previewSource !== liveSource
   const fmt = (n: number) => (typeof n === 'number' && !Number.isNaN(n) ? n.toFixed(4) : '—')
 
   return (
