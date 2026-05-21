@@ -1041,7 +1041,10 @@ export type DaralsabaekPublicRatesResponse = {
   /** Live silver KWD/g + markup (same shape as a carat row). */
   silver?: DaralsabaekPublicMetalSpot | null
   platinum?: DaralsabaekPublicMetalSpot | null
+  palladium?: DaralsabaekPublicMetalSpot | null
   silverKiloPrice?: number | null
+  /** "goldapi.io" once backend is on the unified upstream. */
+  source?: string
 }
 
 export type KuwaitMarketMarkupRow = {

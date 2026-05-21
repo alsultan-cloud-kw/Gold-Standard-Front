@@ -632,62 +632,35 @@ export default function AdminPrices() {
           </div>
         </div>
 
-        <div className="gold-card mb-6 border-2 border-amber-500/20">
-          <h2 className="text-xl font-bold text-black mb-2">Kuwait market prices</h2>
-          <p className="text-sm text-stone-700 mb-3">
-            Pick a feed below to preview it in this page (rates, URL refresh, and additional amounts).
-            Customers still see <span className="font-semibold text-black">{liveLabel}</span> until you
-            apply your preview to the website.
-          </p>
-          <div className="flex flex-wrap items-center gap-4 mb-4">
-            {(['kw1', 'kw2', 'kw3', 'kw4', 'kw5'] as const).map((src) => {
-              const disabled = src === 'kw4' || src === 'kw5'
-              return (
-                <label
-                  key={src}
-                  className={`text-sm font-semibold flex items-center gap-2 ${
-                    disabled ? 'text-stone-400 cursor-not-allowed' : 'text-black cursor-pointer'
-                  }`}
+        <div className="gold-card mb-6 border-2 border-emerald-500/30 bg-emerald-50/70">
+          <div className="flex flex-wrap items-start gap-3 justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-black mb-1">Live metal prices source</h2>
+              <p className="text-sm text-stone-800 font-medium">
+                Single trusted upstream:{' '}
+                <a
+                  href="https://www.goldapi.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-800 font-bold hover:underline"
                 >
-                  <input
-                    type="radio"
-                    name="admin-price-preview-kw"
-                    checked={previewSource === src}
-                    disabled={disabled}
-                    onChange={() => !disabled && setPreviewSource(src)}
-                  />
-                  {src.toUpperCase()}
-                </label>
-              )
-            })}
-          </div>
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-black/10 bg-amber-50/80 px-4 py-3">
-            <p className="text-sm text-stone-800 font-medium">
-              {previewMismatch ? (
-                <>
-                  Preview: <span className="font-bold text-black">{selectedLabel}</span>
-                  <span className="text-stone-600"> — </span>
-                  Live on site: <span className="font-bold text-amber-900">{liveLabel}</span>
-                </>
-              ) : (
-                <>
-                  Preview matches the website: <span className="font-bold text-black">{liveLabel}</span>
-                </>
-              )}
-            </p>
-            <button
-              type="button"
-              disabled={
-                !previewMismatch ||
-                setActiveSource.isPending ||
-                previewSource === 'kw4' ||
-                previewSource === 'kw5'
-              }
-              onClick={() => setActiveSource.mutate(previewSource)}
-              className="text-sm font-bold px-4 py-2 rounded-lg bg-black text-lime-100 hover:bg-stone-900 disabled:opacity-45 disabled:cursor-not-allowed"
-            >
-              {setActiveSource.isPending ? 'Applying…' : 'Use preview for website prices'}
-            </button>
+                  GoldAPI.io
+                </a>{' '}
+                — gold (XAU), silver (XAG), platinum (XPT), palladium (XPD). Prices are fetched
+                server-side every 60s and exposed via{' '}
+                <code className="text-xs bg-white px-1.5 py-0.5 rounded border border-emerald-200">
+                  /api/prices/current/
+                </code>{' '}
+                and{' '}
+                <code className="text-xs bg-white px-1.5 py-0.5 rounded border border-emerald-200">
+                  /api/prices/history/
+                </code>
+                .
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold px-3 py-1">
+              Active
+            </span>
           </div>
         </div>
 
@@ -957,20 +930,10 @@ export default function AdminPrices() {
         </div>
 
         <div className="gold-card mb-8 border-2 border-lime-500/25">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="text-xl font-bold text-black">Gold Standard Prices</h2>
-            <label className="text-sm font-semibold text-black flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="admin-price-preview-kw"
-                checked={previewSource === 'gs1'}
-                onChange={() => setPreviewSource('gs1')}
-              />
-              Preview GS1 (apply on website from the banner above)
-            </label>
-          </div>
+          <h2 className="text-xl font-bold text-black mb-2">USD → KWD conversion</h2>
           <p className="text-sm text-stone-700 font-medium mb-3">
-            GS1 uses GoldAPI (XAU/USD) and converts to KWD using the constant below.
+            GoldAPI returns USD prices; this constant is used to convert spot rates and gram prices
+            to KWD across the storefront, mobile, and accounting reports.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-lg border border-black/10 p-3 bg-lime-50/70">
@@ -983,23 +946,15 @@ export default function AdminPrices() {
                 className="w-full mt-1 px-3 py-2 bg-white border border-black/15 rounded text-black"
               />
             </div>
-            <div className="rounded-lg border border-black/10 p-3 bg-lime-50/70">
-              <p className="text-xs text-stone-700 font-semibold">Source</p>
-              <a
-                href="https://www.goldapi.io/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-amber-800 font-semibold hover:underline text-sm"
-              >
-                goldapi.io (XAU/USD)
-              </a>
+            <div className="rounded-lg border border-black/10 p-3 bg-lime-50/70 flex flex-col justify-between">
+              <p className="text-xs text-stone-700 font-semibold">Refresh GoldAPI now</p>
               <button
                 type="button"
                 className="mt-2 text-sm font-semibold text-black hover:text-lime-900 flex items-center gap-1"
                 onClick={() => refetchGs1()}
               >
                 <RefreshCw className={`w-4 h-4 ${gs1Loading ? 'animate-spin' : ''}`} />
-                Refresh GS1
+                Refresh prices
               </button>
             </div>
           </div>

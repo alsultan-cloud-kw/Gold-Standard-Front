@@ -14,8 +14,9 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { productsApi, adminApi, type DaralsabaekPublicRatesResponse } from '../services/api'
+import { productsApi, type DaralsabaekPublicRatesResponse } from '../services/api'
 import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
+import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import type { Product } from '../types'
 import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { productImageSrc } from '../utils/productImage'
@@ -57,12 +58,8 @@ export default function HomePage() {
     queryFn: productsApi.getNewArrivals,
   })
 
-  // Same key as GoldPriceTicker / PricesPage — shared cache for public rates + chart
-  const { data: publicRates } = useQuery({
-    queryKey: ['daralsabaekPublicRates'],
-    queryFn: adminApi.getDaralsabaekPublicRates,
-    refetchInterval: 20_000,
-  })
+  // Same enriched feed as PricesPage (includes palladium when backend or /prices/current/ provides it)
+  const { data: publicRates } = useEnrichedPublicRates(20_000)
   const publicRatesRes = publicRates as DaralsabaekPublicRatesResponse | undefined
 
   const homeTrendProducts = useMemo(() => {

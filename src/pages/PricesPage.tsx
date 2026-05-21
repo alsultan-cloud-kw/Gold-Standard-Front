@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, RefreshCw, Scale } from 'lucide-react'
+import { ArrowDown, ArrowUp, RefreshCw, Scale, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   adminApi,
+  type DaralsabaekPublicMetalSpot,
   type DaralsabaekPublicRatesResponse,
   type KuwaitMarketConfigResponse,
 } from '../services/api'
+import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
+import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 
 /**
  * Public gold prices: live URL + admin additional amounts.
@@ -26,12 +29,7 @@ export default function PricesPage() {
     return () => window.clearInterval(id)
   }, [])
 
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['daralsabaekPublicRates'],
-    queryFn: adminApi.getDaralsabaekPublicRates,
-    refetchInterval: 20_000,
-    retry: 1,
-  })
+  const { data, isLoading, isError, refetch, isFetching } = useEnrichedPublicRates(20_000)
   const { data: kuwaitConfigRaw } = useQuery({
     queryKey: ['kuwaitMarketConfigPublic'],
     queryFn: adminApi.getKuwaitMarketConfig,
@@ -71,6 +69,14 @@ export default function PricesPage() {
   const carats = res?.carats ?? []
   const silver = res?.silver ?? null
   const platinum = res?.platinum ?? null
+  const palladium = res?.palladium ?? null
+  const preciousRows: Array<{ key: 'Silver' | 'Platinum' | 'Palladium'; data: DaralsabaekPublicMetalSpot | null }> = [
+    { key: 'Silver', data: silver },
+    { key: 'Platinum', data: platinum },
+    { key: 'Palladium', data: palladium },
+  ]
+  /** Always show Silver, Platinum, Palladium cards (GoldAPI.io four-metal feed). */
+  const visiblePrecious = preciousRows
 
   type TrendDir = 'up' | 'down' | null
   const normalizeTrendKey = (rawKey: string) => {
@@ -132,6 +138,13 @@ export default function PricesPage() {
         : []),
     ]
 
+    if (palladium?.key) {
+      entries.push({
+        key: normalizeTrendKey(palladium.key),
+        rate: typeof palladium.buyTotal === 'number' ? palladium.buyTotal : null,
+      })
+    }
+
     setTrendByKey((prevTrend) => {
       const nextTrend: Record<string, TrendDir> = { ...prevTrend }
       for (const item of entries) {
@@ -166,7 +179,19 @@ export default function PricesPage() {
     } catch {
       // Ignore local storage write issues.
     }
-  }, [res?.succeeded, carats, silver?.key, silver?.buyTotal, silver?.sellTotal, platinum?.key, platinum?.buyTotal, platinum?.sellTotal])
+  }, [
+    res?.succeeded,
+    carats,
+    silver?.key,
+    silver?.buyTotal,
+    silver?.sellTotal,
+    platinum?.key,
+    platinum?.buyTotal,
+    platinum?.sellTotal,
+    palladium?.key,
+    palladium?.buyTotal,
+    palladium?.sellTotal,
+  ])
 
   const TileTrendIcon = ({ dir }: { dir: TrendDir }) => {
     const iconCls = 'w-[1.125rem] h-[1.125rem] sm:w-5 sm:h-5 shrink-0 stroke-[2.75]'
@@ -204,18 +229,15 @@ export default function PricesPage() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-2 mt-4">{t('pricesPage.title')}</h1>
-            {/* <p className="text-gold-200/70 mt-1 text-sm">
-              Rates from{' '}
-              <a
-                href="https://api.daralsabaek.com/api/goldAndFundBalance/getMetalSellAndBuyPrices"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gold-500 hover:underline"
-              >
-                getMetalSellAndBuyPrices
-              </a>
-              , including our adjustment (KWD/g). Enter weight below to see totals.
-            </p> */}
+            <div className="inline-flex items-center gap-2 text-xs text-stone-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5">
+                <ShieldCheck className="w-3.5 h-3.5" aria-hidden />
+                <span className="font-semibold">Trusted source</span>
+              </span>
+              <span className="text-stone-500">
+                Live spot from GoldAPI.io · gold, silver, platinum, palladium
+              </span>
+            </div>
           </div>
           <button
             type="button"
@@ -427,18 +449,16 @@ export default function PricesPage() {
             </div>
             ) : null}
 
-            {/* {hasPrecious ? (
-              <div>
+            <div>
                 <h2 className="text-sm font-semibold text-stone-800 mb-4 uppercase tracking-wider">
-                  Silver &amp; platinum (KWD/g)
+                  {t('pricesPage.preciousTitle', 'Silver · Platinum · Palladium (KWD/g)')}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[silver, platinum].filter(Boolean).map((m) => {
-                    if (!m?.key) return null
-                    const label = m.key === 'Silver' ? 'Silver' : 'Platinum'
-                    const tileDir = resolveTileDir(m.key)
-                    const buyTotal = m.buyTotal != null ? m.buyTotal : null
-                    const sellTotal = m.sellTotal != null ? m.sellTotal : null
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {visiblePrecious.map(({ key: label, data: m }) => {
+                    const spot = m ?? { key: label, buyTotal: null, sellTotal: null }
+                    const tileDir = resolveTileDir(spot.key)
+                    const buyTotal = spot.buyTotal != null ? spot.buyTotal : null
+                    const sellTotal = spot.sellTotal != null ? spot.sellTotal : null
                     const spread =
                       typeof buyTotal === 'number' && typeof sellTotal === 'number'
                         ? sellTotal - buyTotal
@@ -452,7 +472,7 @@ export default function PricesPage() {
                         ? sellForWeight - buyForWeight
                         : null
                     return (
-                      <div key={m.key} className="product-card-lime">
+                      <div key={spot.key} className="product-card-lime">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center border border-black/10">
                             <TileTrendIcon dir={tileDir} />
@@ -526,7 +546,8 @@ export default function PricesPage() {
                   </p>
                 )}
               </div>
-            ) : null} */}
+
+            <PricesHistoryChart rates={res} />
 
             <p className="text-xs gold-gradient-text-on-light text-center">{t('pricesPage.disclaimer')}</p>
           </div>

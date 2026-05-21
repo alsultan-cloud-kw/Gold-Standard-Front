@@ -16,8 +16,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '@/services/api'
+import { METAL_SYMBOL_BY_KEY, pricingApi } from '@/services/pricingApi'
 
-type MetalTab = 'gold' | 'silver' | 'platinum'
+type MetalTab = 'gold' | 'silver' | 'platinum' | 'palladium'
 type ChartRange = 'live' | '1h' | '1d' | '1w'
 
 type ChartPoint = { t: string; v: number }
@@ -174,12 +175,55 @@ export function PricesHistoryChart({ rates }: Props) {
   const [metal, setMetal] = useState<MetalTab>('gold')
   const [chartRange, setChartRange] = useState<ChartRange>('1h')
 
-  const { data: historyData, isFetching: historyFetching } = useQuery({
-    queryKey: ['metalPriceHistory', metal, chartRange],
-    queryFn: () => adminApi.getMetalPriceHistory({ metal, range: chartRange }),
+  // Prefer the unified `/api/prices/history/` endpoint (GoldAPI-backed snapshots).
+  // Fall back to the legacy `/scraping/daralsabaek/price-history/` for gold/silver/platinum if
+  // the new endpoint has no rows yet (Celery beat populates it on the server).
+  const { data: pricingHistory, isFetching: pricingHistoryFetching } = useQuery({
+    queryKey: ['pricingHistory', metal, chartRange],
+    queryFn: () =>
+      pricingApi.getHistory({ metal: METAL_SYMBOL_BY_KEY[metal], range: chartRange }),
     enabled: rates?.succeeded === true,
     staleTime: 25_000,
+    retry: 1,
   })
+  const newHistoryAvailable = (pricingHistory?.points?.length ?? 0) > 0
+
+  const { data: legacyHistoryData, isFetching: legacyHistoryFetching } = useQuery({
+    queryKey: ['metalPriceHistoryLegacy', metal, chartRange],
+    queryFn: () => adminApi.getMetalPriceHistory({ metal, range: chartRange }),
+    enabled: rates?.succeeded === true && !newHistoryAvailable && metal !== 'palladium',
+    staleTime: 25_000,
+  })
+  const historyFetching = pricingHistoryFetching || legacyHistoryFetching
+
+  // Normalize both responses into ChartPoint[] for the existing renderer.
+  const historyData = useMemo(() => {
+    if (newHistoryAvailable && pricingHistory) {
+      const usePriceField = chartRange === 'live' || chartRange === '1h' || metal !== 'gold'
+      const points: ChartPoint[] = pricingHistory.points
+        .map((p) => ({
+          t: p.t,
+          v:
+            // Gold short-range chart prefers troy-ounce price (USD/oz); other ranges use 24K KWD/g.
+            metal === 'gold'
+              ? Number(p.price ?? p.price_gram_24k ?? 0)
+              : Number(p.price_gram_24k ?? p.price ?? 0),
+        }))
+        .filter((p) => Number.isFinite(p.v))
+      return {
+        metal,
+        range: chartRange,
+        unit:
+          metal === 'gold'
+            ? usePriceField
+              ? 'USD/oz'
+              : 'KWD/g'
+            : 'KWD/g',
+        points,
+      }
+    }
+    return legacyHistoryData
+  }, [newHistoryAvailable, pricingHistory, legacyHistoryData, metal, chartRange])
 
   const carats = rates?.carats ?? []
   const byKey = useMemo(() => new Map(carats.map((c) => [c.key, c])), [carats])
@@ -201,7 +245,8 @@ export function PricesHistoryChart({ rates }: Props) {
       return numOrNull(byKey.get('24K')?.buyTotal)
     }
     if (metal === 'silver') return numOrNull(rates.silver?.buyTotal)
-    return numOrNull(rates.platinum?.buyTotal)
+    if (metal === 'platinum') return numOrNull(rates.platinum?.buyTotal)
+    return numOrNull(rates.palladium?.buyTotal)
   }, [metal, chartUnit, rates, byKey, goldOuncePrice])
 
   const chartPoints = useMemo(() => {
@@ -240,55 +285,33 @@ export function PricesHistoryChart({ rates }: Props) {
     return ticks.length > 0 ? ticks : null
   }, [chartRange, chartUnit, chartRows])
 
-  const showSilverTab =
-    rates?.silver?.buyTotal != null ||
-    rates?.silver?.sellTotal != null
-  const showPlatinumTab =
-    rates?.platinum?.buyTotal != null ||
-    rates?.platinum?.sellTotal != null
+  // GoldAPI.io feed always includes these four metals — show all tabs (not only when API field exists).
+  const METAL_TABS: { id: MetalTab; label: string }[] = [
+    { id: 'gold', label: 'Gold' },
+    { id: 'silver', label: 'Silver' },
+    { id: 'platinum', label: 'Platinum' },
+    { id: 'palladium', label: 'Palladium' },
+  ]
 
   if (!rates?.succeeded) return null
 
   return (
     <div className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm overflow-hidden">
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <button
-          type="button"
-          onClick={() => setMetal('gold')}
-          className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
-            metal === 'gold'
-              ? 'bg-lime-500 text-black shadow-sm'
-              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-          }`}
-        >
-          Gold
-        </button>
-        {showSilverTab ? (
+        {METAL_TABS.map(({ id, label }) => (
           <button
+            key={id}
             type="button"
-            onClick={() => setMetal('silver')}
+            onClick={() => setMetal(id)}
             className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
-              metal === 'silver'
+              metal === id
                 ? 'bg-lime-500 text-black shadow-sm'
                 : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
             }`}
           >
-            Silver
+            {label}
           </button>
-        ) : null}
-        {showPlatinumTab ? (
-          <button
-            type="button"
-            onClick={() => setMetal('platinum')}
-            className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
-              metal === 'platinum'
-                ? 'bg-lime-500 text-black shadow-sm'
-                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-            }`}
-          >
-            Platinum
-          </button>
-        ) : null}
+        ))}
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">

@@ -58,11 +58,12 @@ export default function GoldPriceTicker() {
   const kuwaitConfig = kuwaitConfigRaw as KuwaitMarketConfigResponse | undefined
   const rawCarats = res?.carats ?? []
 
-  /** Gold karats only — exclude any silver/platinum-style rows if present in the carats list. */
+  /** Gold karats only — exclude any silver/platinum/palladium-style rows if present in the carats list. */
   const carats = useMemo(() => {
     return rawCarats.filter((c) => {
       const k = String(c.key).toUpperCase().replace(/\s/g, '')
-      if (k === 'AG' || k === 'PT' || k.includes('SILVER') || k.includes('PLATINUM')) return false
+      if (k === 'AG' || k === 'PT' || k === 'PD') return false
+      if (k.includes('SILVER') || k.includes('PLATINUM') || k.includes('PALLADIUM')) return false
       return true
     })
   }, [rawCarats])
