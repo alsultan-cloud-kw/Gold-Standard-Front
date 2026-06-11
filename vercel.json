@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/__clerk/:path*", "destination": "/api/clerk-fapi/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

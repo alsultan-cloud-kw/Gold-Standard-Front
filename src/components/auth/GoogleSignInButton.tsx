@@ -20,10 +20,17 @@ function buildOAuthUrls(redirectComplete: string) {
 
 function getClerkUnavailableMessage() {
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ?? ''
-  const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  const host = window.location.hostname
+  const isLocalhost = ['localhost', '127.0.0.1'].includes(host)
+  const isGoldStandard =
+    host === 'goldstandardkw.com' || host === 'www.goldstandardkw.com'
 
   if (isLocalhost && publishableKey.startsWith('pk_live_')) {
     return 'Clerk production keys do not load on localhost. Use a pk_test key locally, or test on goldstandardkw.com.'
+  }
+
+  if (isGoldStandard || publishableKey.includes('goldstandardkw')) {
+    return 'Clerk is not loading. Add the DNS record for clerk.goldstandardkw.com in Clerk Dashboard → Domains, then wait for verification.'
   }
 
   return null

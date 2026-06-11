@@ -31,7 +31,16 @@ export default function ClerkAuthBridge() {
               : t('auth.accountInactive'),
           )
         } else {
-          toast.error(t('auth.googleSignInFailed'))
+          const apiError =
+            (err as { response?: { data?: { error?: string; detail?: string } } })?.response?.data
+              ?.error ||
+            (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+          const message = (err as Error)?.message
+          toast.error(
+            apiError === 'Invalid Clerk session token'
+              ? 'Clerk session could not be verified on the server. Check Django CLERK_SECRET_KEY and redeploy.'
+              : apiError || message || t('auth.googleSignInFailed'),
+          )
         }
         console.error('Clerk → Django sync failed:', err)
       } finally {
