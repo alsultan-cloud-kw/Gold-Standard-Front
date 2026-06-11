@@ -395,10 +395,24 @@ export default function AdminReports() {
     const headers = ['Side', 'Date', 'Detail', 'Carat', 'Weight g', 'Amount KWD']
     const rows: (string | number)[][] = []
     for (const r of buy) {
-      rows.push(['BUY', String(r.date || '').slice(0, 10), String(r.detail || ''), r.carat ?? '', r.weight_grams ?? 0, r.total_amount ?? 0])
+      rows.push([
+        'BUY',
+        String(r.date || '').slice(0, 10),
+        String(r.detail || ''),
+        String(r.carat ?? ''),
+        toNumber(r.weight_grams),
+        toNumber(r.total_amount),
+      ])
     }
     for (const r of sell) {
-      rows.push(['SELL', String(r.date || '').slice(0, 10), String(r.detail || ''), r.carat ?? '', r.weight_grams ?? r.gross_weight ?? 0, r.gross_amount ?? r.total_amount ?? 0])
+      rows.push([
+        'SELL',
+        String(r.date || '').slice(0, 10),
+        String(r.detail || ''),
+        String(r.carat ?? ''),
+        toNumber(r.weight_grams ?? r.gross_weight),
+        toNumber(r.gross_amount ?? r.total_amount),
+      ])
     }
     downloadCsv(`gold_flow_${dateWindow.start}_${dateWindow.end}`, headers, rows)
   }

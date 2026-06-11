@@ -7,9 +7,14 @@ import App from './App.tsx'
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
+if (!clerkPublishableKey) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY')
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ClerkProvider
+      publishableKey={clerkPublishableKey}
       afterSignOutUrl="/"
       signInUrl="/login"
       signUpUrl="/register"
@@ -18,7 +23,6 @@ createRoot(document.getElementById('root')!).render(
         'https://www.goldstandardkw.com',
         'https://goldstandardkw.com',
       ]}
-      {...(clerkPublishableKey ? { publishableKey: clerkPublishableKey } : {})}
     >
       <App />
     </ClerkProvider>
