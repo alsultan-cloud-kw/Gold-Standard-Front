@@ -8,11 +8,11 @@ export type NumberedClause = {
 
 const WHATSAPP_META_EN = `WhatsApp and Meta (business messaging)
 
-If you contact us or agree to receive messages through WhatsApp (including WhatsApp Business), you consent to receive service-related communications such as account, order, delivery, payment, and security updates. Promotional or marketing messages are sent only where permitted by applicable law and Meta’s WhatsApp Business policies, with appropriate consent or opt-in when required. Standard message and data rates may apply according to your mobile operator. You must not use our WhatsApp channels for unlawful, abusive, fraudulent, harmful, or spam activity. You may opt out of non-essential messages using instructions in the chat or by contacting customer service at 220950001. WhatsApp is provided by Meta Platforms; your use of WhatsApp is also subject to Meta’s Terms of Service and Privacy Policy. If we use WhatsApp Business Platform APIs or authorized business solution providers, your information may be processed by those providers as described in their notices.`
+If you contact us or agree to receive messages through WhatsApp (including WhatsApp Business), you consent to receive service-related communications such as account, order, delivery, payment, and security updates. Promotional or marketing messages are sent only where permitted by applicable law and Meta’s WhatsApp Business policies, with appropriate consent or opt-in when required. Standard message and data rates may apply according to your mobile operator. You must not use our WhatsApp channels for unlawful, abusive, fraudulent, harmful, or spam activity. You may opt out of non-essential messages using instructions in the chat or by contacting customer service at +965 9853 8538. WhatsApp is provided by Meta Platforms; your use of WhatsApp is also subject to Meta’s Terms of Service and Privacy Policy. If we use WhatsApp Business Platform APIs or authorized business solution providers, your information may be processed by those providers as described in their notices.`
 
 const WHATSAPP_META_AR = `واتساب وميتا (رسائل الأعمال)
 
-إذا تواصلت معنا أو وافقت على استلام الرسائل عبر واتساب (بما في ذلك واتساب أعمال)، فإنك توافق على تلقي رسائل متعلقة بالخدمة مثل الحساب والطلب والتوصيل والدفع والأمن. تُرسل الرسائل الترويجية أو التسويقية فقط حيث يسمح القانون المعمول به وسياسات واتساب أعمال ميتا، وبموافقة أو اشتراك مناسب عند الاقتضاء. قد تنطبق رسوم الرسائل والبيانات وفق مشغل شبكتك. يجب عدم استخدام قنوات واتساب لدينا لأي نشاط غير قانوني أو مسيء أو احتيالي أو ضار أو بريد مزعج. يمكنك إلغاء الرسائل غير الضرورية باتباع التعليمات في المحادثة أو بالاتصال بخدمة العملاء 220950001. تقدّم شركة ميتا منصّات واتساب؛ ويخضع استخدامك لواتساب أيضًا لشروط ميتا وسياسة الخصوصية. إذا استخدمنا واجهات برمجة تطبيقات واتساب أعمال أو مزوّدي حلول أعمال معتمدين، فقد تُعالج معلوماتك لدى هؤلاء المزوّدين وفق إشعاراتهم.`
+إذا تواصلت معنا أو وافقت على استلام الرسائل عبر واتساب (بما في ذلك واتساب أعمال)، فإنك توافق على تلقي رسائل متعلقة بالخدمة مثل الحساب والطلب والتوصيل والدفع والأمن. تُرسل الرسائل الترويجية أو التسويقية فقط حيث يسمح القانون المعمول به وسياسات واتساب أعمال ميتا، وبموافقة أو اشتراك مناسب عند الاقتضاء. قد تنطبق رسوم الرسائل والبيانات وفق مشغل شبكتك. يجب عدم استخدام قنوات واتساب لدينا لأي نشاط غير قانوني أو مسيء أو احتيالي أو ضار أو بريد مزعج. يمكنك إلغاء الرسائل غير الضرورية باتباع التعليمات في المحادثة أو بالاتصال بخدمة العملاء +965 9853 8538. تقدّم شركة ميتا منصّات واتساب؛ ويخضع استخدامك لواتساب أيضًا لشروط ميتا وسياسة الخصوصية. إذا استخدمنا واجهات برمجة تطبيقات واتساب أعمال أو مزوّدي حلول أعمال معتمدين، فقد تُعالج معلوماتك لدى هؤلاء المزوّدين وفق إشعاراتهم.`
 
 const TERMS_EN = `The Gold Standard website and application (hereinafter referred to as the "Company" or "Gold Standard") is owned and operated by Gold Standard Jewellers and Precious Metals Company. It aims to enable users to browse and purchase gold, jewelry, and related services. Your use of the website or application in any form, whether for browsing or making purchases, constitutes express agreement to be bound by all the terms and conditions set forth below, in addition to all related policies. The Company reserves the right to modify or update these terms at any time without prior notice. Amendments shall be effective immediately upon posting, and it is the user's responsibility to review them periodically. Continued use of the website constitutes full acceptance of any modifications.
 
@@ -38,7 +38,7 @@ The company does not guarantee that the site or services will be free from error
 
 These terms and conditions shall be governed by and construed in accordance with the laws of the State of Kuwait, and the Kuwaiti courts shall have full jurisdiction to adjudicate any dispute arising therefrom. If any provision of these terms is deemed invalid or unenforceable, such invalidity or unenforceability shall not affect the validity of the remaining provisions.
 
-For any inquiries or comments, you can contact customer service via 220950001. Your use of the website or application constitutes explicit acceptance of all terms and conditions.`
+For any inquiries or comments, you can contact customer service via +965 9853 8538. Your use of the website or application constitutes explicit acceptance of all terms and conditions.`
 
 const TERMS_AR = `الشروط والأحكام – Gold Standard
 
@@ -66,7 +66,7 @@ const TERMS_AR = `الشروط والأحكام – Gold Standard
 
 تخضع هذه الشروط والأحكام وتُفسر وفقًا لقوانين دولة الكويت، ويكون للمحاكم الكويتية الاختصاص الكامل في الفصل بأي نزاع ينشأ عنها، وفي حال اعتبار أي بند من هذه الشروط غير صالح أو غير قابل للتنفيذ، فإن ذلك لا يؤثر على بقية البنود.
 
-لأي استفسارات أو ملاحظات، يمكنكم التواصل مع خدمة العملاء عبر الرقم 220950001، ويُعد استخدامك للموقع أو التطبيق موافقة صريحة على جميع ما ورد في هذه الشروط والأحكام، مع احتفاظ الشركة بحق تعديلها في أي وقت دون إشعار مسبق.`
+لأي استفسارات أو ملاحظات، يمكنكم التواصل مع خدمة العملاء عبر الرقم +965 9853 8538، ويُعد استخدامك للموقع أو التطبيق موافقة صريحة على جميع ما ورد في هذه الشروط والأحكام، مع احتفاظ الشركة بحق تعديلها في أي وقت دون إشعار مسبق.`
 
 function pickLang(lang: string | undefined): 'en' | 'ar' {
   return lang?.toLowerCase().startsWith('ar') ? 'ar' : 'en'

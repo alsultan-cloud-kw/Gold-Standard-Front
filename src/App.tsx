@@ -16,6 +16,8 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import SsoCallbackPage from './pages/SsoCallbackPage'
+import ClerkAuthBridge from './components/auth/ClerkAuthBridge'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UserDashboard from './pages/UserDashboard'
 import AboutPage from './pages/AboutPage'
@@ -100,8 +102,9 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
+        <AuthProvider>
+          <ClerkAuthBridge />
+          <CartProvider>
           <Router>
             <div className="min-h-screen bg-siteBg">
               <Navbar />
@@ -115,6 +118,7 @@ function App() {
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/sso-callback" element={<SsoCallbackPage />} />
                   <Route path="/join-club" element={<JoinClubPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route

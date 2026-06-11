@@ -1,0 +1,44 @@
+import { useEffect, useRef } from 'react'
+import { useAuth as useClerkAuth } from '@clerk/react'
+import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../../contexts/AuthContext'
+
+/** After Clerk OAuth, exchange session for Django JWT so the rest of the app keeps working. */
+export default function ClerkAuthBridge() {
+  const { t } = useTranslation()
+  const { isSignedIn, isLoaded, getToken } = useClerkAuth()
+  const { isAuthenticated, isLoading, loginWithClerk } = useAuth()
+  const syncingRef = useRef(false)
+
+  useEffect(() => {
+    if (!isLoaded || isLoading || !isSignedIn || isAuthenticated || syncingRef.current) return
+
+    syncingRef.current = true
+    void (async () => {
+      try {
+        const token = await getToken()
+        if (!token) throw new Error('No Clerk session')
+        await loginWithClerk(token)
+      } catch (err: unknown) {
+        const res = (err as { response?: { status?: number; data?: { error?: string; admin_email?: string } } })
+          ?.response
+        if (res?.status === 403 && res?.data?.error === 'inactive') {
+          const adminEmail = res.data.admin_email || ''
+          toast.error(
+            adminEmail
+              ? t('auth.accountInactiveWithAdmin', { email: adminEmail })
+              : t('auth.accountInactive'),
+          )
+        } else {
+          toast.error(t('auth.googleSignInFailed'))
+        }
+        console.error('Clerk → Django sync failed:', err)
+      } finally {
+        syncingRef.current = false
+      }
+    })()
+  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, getToken, loginWithClerk, t])
+
+  return null
+}

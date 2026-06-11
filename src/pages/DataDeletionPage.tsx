@@ -14,7 +14,7 @@ export default function DataDeletionPage() {
             <h2 className="text-lg font-semibold text-gold-100">1. How to Request Data Deletion</h2>
             <p>
               To request deletion of your account data, including WhatsApp-related communication records,
-              send an email to <span className="text-gold-300">infosultangold@gmail.com</span> with the
+              send an email to <span className="text-gold-300">info@goldstandardkw.com</span> with the
               subject line <span className="text-gold-300">"Data Deletion Request"</span>.
             </p>
             <p>Please include the following in your request:</p>
@@ -71,7 +71,7 @@ export default function DataDeletionPage() {
             <h2 className="text-lg font-semibold text-gold-100">7. Contact</h2>
             <p>
               For all deletion-related requests, contact:
-              <span className="text-gold-300"> infosultangold@gmail.com</span>
+              <span className="text-gold-300"> info@goldstandardkw.com</span>
             </p>
           </section>
         </div>

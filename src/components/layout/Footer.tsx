@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { GS_CONTACT } from '@/constants/contact'
 import { useTranslation } from 'react-i18next'
 import { 
   MapPin, 
@@ -113,18 +114,19 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-gold-400 flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-slate-700">
-                  Al-Mubarakiya Street,<br />
-                  Kuwait City, Kuwait
-                </span>
+                <span className="text-sm text-slate-700">{GS_CONTACT.addressEn}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-gold-400 flex-shrink-0" />
-                <span className="text-sm text-slate-700">+965 1234 5678</span>
+                <a href={`tel:${GS_CONTACT.phoneTel}`} className="text-sm text-slate-700 hover:text-gold-600">
+                  {GS_CONTACT.phone}
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gold-400 flex-shrink-0" />
-                <span className="text-sm text-slate-700">info@goldjewelry.com</span>
+                <a href={`mailto:${GS_CONTACT.email}`} className="text-sm text-slate-700 hover:text-gold-600">
+                  {GS_CONTACT.email}
+                </a>
               </li>
               <li className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-gold-400 flex-shrink-0 mt-0.5" />

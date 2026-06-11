@@ -168,7 +168,7 @@ export default function ForgotPasswordPage() {
                         type="tel"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="+965 1234 5678"
+                        placeholder="+965 9853 8538"
                         className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
                         required
                       />

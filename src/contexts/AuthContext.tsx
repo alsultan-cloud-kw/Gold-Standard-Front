@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (credentials: { email?: string; phone_number?: string; password: string }) => Promise<void>
+  loginWithClerk: (clerkSessionToken: string) => Promise<void>
   register: (data: unknown) => Promise<void>
   logout: () => void
   updateUser: (data: unknown) => Promise<void>
@@ -61,6 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const loginWithClerk = async (clerkSessionToken: string) => {
+    const response = await authApi.clerkLogin(clerkSessionToken)
+    localStorage.setItem('access_token', response.access)
+    localStorage.setItem('refresh_token', response.refresh)
+    setUser(response.user as User)
+  }
+
   const register = async (data: unknown) => {
     try {
       const response = await authApi.register(data)
@@ -102,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithClerk,
         register,
         logout,
         updateUser,

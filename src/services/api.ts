@@ -98,6 +98,12 @@ export const authApi = {
   login: (credentials: { email?: string; phone_number?: string; password: string }) =>
     apiService.post<{ user: unknown; refresh: string; access: string }>('/accounts/users/login/', credentials),
 
+  clerkLogin: (clerkSessionToken: string) =>
+    apiService.post<{ user: unknown; refresh: string; access: string; created?: boolean }>(
+      '/accounts/users/clerk_login/',
+      { clerk_session_token: clerkSessionToken },
+    ),
+
   register: (data: unknown) =>
     apiService.post<{ user: unknown; refresh: string; access: string }>('/accounts/users/register/', data),
 
@@ -917,7 +923,12 @@ export const adminApi = {
 
   /** Public: URL rates + admin additional amounts (no auth). */
   getDaralsabaekPublicRates: () =>
-    apiService.get<DaralsabaekPublicRatesResponse>('/scraping/daralsabaek/public-rates/'),
+    api
+      .get<DaralsabaekPublicRatesResponse>('/scraping/daralsabaek/public-rates/', {
+        // Backend returns 502/503 when GoldAPI is down — still JSON; do not treat as a network error.
+        validateStatus: (status) => status >= 200 && status < 600,
+      })
+      .then((res) => res.data),
 
   /** Public: saved metal price snapshots for chart (no auth). */
   getMetalPriceHistory: (params: { metal: string; range: string }) =>

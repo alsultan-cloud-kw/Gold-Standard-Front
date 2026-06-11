@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { safeAppNextPath } from '../utils/safeNextPath'
+import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -68,6 +69,17 @@ export default function LoginPage() {
         </div>
 
         <div className="gold-card">
+          <GoogleSignInButton mode="sign-in" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gold-500/20" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-charcoal-900 px-2 text-gold-100/50">{t('auth.orEmailPhone')}</span>
+            </div>
+          </div>
+
           <div className="flex gap-2 mb-6">
             <button
               type="button"

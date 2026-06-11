@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { TrendingUp, Download, Calendar, DollarSign, ShoppingBag, Users } from 'lucide-react'
+import { TrendingUp, Download, Calendar, DollarSign, ShoppingBag, Users, Eye, FileSpreadsheet } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { accountingApi, adminApi, ordersApi } from '../../services/api'
+import { downloadCsv } from '../../utils/reportExport'
 
 type SaleRow = {
   id: string
@@ -90,11 +91,28 @@ function dbOrderNumber(sale: SaleRow): string {
   return val || '-'
 }
 
+type ReportView = 'overview' | 'sales_detail' | 'profit_loss' | 'gold_flow'
+
+type PLData = {
+  revenue?: number
+  cost_of_goods_sold?: number
+  purchases?: number
+  gross_profit?: number
+  gross_margin?: number
+  buyback_cost?: number
+  operating_expenses?: number
+  net_profit?: number
+  net_margin?: number
+  expense_breakdown?: { category_display?: string; category: string; total: number }[]
+}
+
 export default function AdminReports() {
   const [dateRange, setDateRange] = useState('7d')
   const [dateWindow, setDateWindow] = useState<{ start: string; end: string }>(() => getPresetDateWindow('7d'))
   const [draftStart, setDraftStart] = useState(dateWindow.start)
   const [draftEnd, setDraftEnd] = useState(dateWindow.end)
+  const [activeView, setActiveView] = useState<ReportView>('overview')
+  const [previewOrderId, setPreviewOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (dateRange === 'custom' || dateRange === 'all') return
@@ -171,6 +189,14 @@ export default function AdminReports() {
     d.setDate(1)
     return d.toISOString().slice(0, 10)
   }, [dateWindow.start])
+
+  const plEnabled = dateRange !== 'all' && !!dateWindow.start && !!dateWindow.end
+  const { data: plRaw } = useQuery({
+    queryKey: ['adminReportsPL', dateWindow.start, dateWindow.end],
+    queryFn: () => accountingApi.getProfitLoss(dateWindow.start, dateWindow.end) as Promise<PLData>,
+    enabled: plEnabled,
+  })
+  const pl = plRaw as PLData | undefined
 
   const canUseGoldSummaryExtended =
     dateRange !== 'all' &&
@@ -330,6 +356,51 @@ export default function AdminReports() {
     setDateWindow({ start, end })
     setDraftStart(start)
     setDraftEnd(end)
+  }
+
+  const exportOrdersCsv = () => {
+    const headers = ['Invoice', 'Date', 'Customer', 'Status', 'Payment', 'Subtotal', 'Discount', 'Total', 'Profit']
+    const rows = salesInRange.map((s) => [
+      dbOrderNumber(s),
+      (s.sale_date || '').slice(0, 10),
+      s.customer_name || '',
+      s.status_display || s.status || '',
+      s.payment_method_display || s.payment_method || '',
+      toNumber(s.subtotal),
+      toNumber(s.discount_amount),
+      toNumber(s.total_amount),
+      toNumber(s.profit),
+    ])
+    const suffix = dateRange === 'all' ? 'all' : `${dateWindow.start}_${dateWindow.end}`
+    downloadCsv(`orders_${suffix}`, headers, rows)
+  }
+
+  const exportProfitLossCsv = () => {
+    if (!pl) return
+    downloadCsv(`profit_loss_${dateWindow.start}_${dateWindow.end}`, ['Line', 'KWD'], [
+      ['Revenue', pl.revenue ?? 0],
+      ['COGS', pl.cost_of_goods_sold ?? 0],
+      ['Purchases', pl.purchases ?? 0],
+      ['Gross profit', pl.gross_profit ?? 0],
+      ['Buybacks', pl.buyback_cost ?? 0],
+      ['Operating expenses', pl.operating_expenses ?? 0],
+      ['Net profit', pl.net_profit ?? 0],
+    ])
+  }
+
+  const exportGoldFlowCsv = () => {
+    const gs = goldSummaryRaw as { buying?: { rows?: unknown[] }; selling?: { rows?: unknown[] } } | undefined
+    const buy = (gs?.buying?.rows ?? []) as Array<Record<string, unknown>>
+    const sell = (gs?.selling?.rows ?? []) as Array<Record<string, unknown>>
+    const headers = ['Side', 'Date', 'Detail', 'Carat', 'Weight g', 'Amount KWD']
+    const rows: (string | number)[][] = []
+    for (const r of buy) {
+      rows.push(['BUY', String(r.date || '').slice(0, 10), String(r.detail || ''), r.carat ?? '', r.weight_grams ?? 0, r.total_amount ?? 0])
+    }
+    for (const r of sell) {
+      rows.push(['SELL', String(r.date || '').slice(0, 10), String(r.detail || ''), r.carat ?? '', r.weight_grams ?? r.gross_weight ?? 0, r.gross_amount ?? r.total_amount ?? 0])
+    }
+    downloadCsv(`gold_flow_${dateWindow.start}_${dateWindow.end}`, headers, rows)
   }
 
   const exportDailyReportFormat = () => {
@@ -645,15 +716,130 @@ export default function AdminReports() {
               </button>
             </div>
             <button
+              type="button"
+              onClick={exportOrdersCsv}
+              className="px-3 py-2 bg-white border border-black/15 rounded-lg text-black flex items-center gap-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              CSV Orders
+            </button>
+            {plEnabled && (
+              <button
+                type="button"
+                onClick={exportProfitLossCsv}
+                disabled={!pl}
+                className="px-3 py-2 bg-white border border-black/15 rounded-lg text-black flex items-center gap-2 text-sm disabled:opacity-50"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                CSV P&amp;L
+              </button>
+            )}
+            <button
               onClick={exportDailyReportFormat}
-              className="px-4 py-2 bg-white border border-black/15 rounded-lg text-lime-800 flex items-center gap-2"
+              className="px-4 py-2 bg-lime-100 border border-lime-300/60 rounded-lg text-lime-900 flex items-center gap-2 font-medium"
             >
               <Download className="w-5 h-5" />
-              Export Report
+              Print / PDF
             </button>
           </div>
         </div>
 
+        <div className="flex flex-wrap gap-2 mb-6">
+          {(
+            [
+              ['overview', 'Overview'],
+              ['sales_detail', 'Sales detail'],
+              ['profit_loss', 'Profit & loss'],
+              ['gold_flow', 'Gold movement'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveView(id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+                activeView === id
+                  ? 'bg-lime-200/80 border-lime-400 text-black'
+                  : 'bg-white border-black/15 text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-stone-600 mb-6 -mt-2">
+          Data from Django API (storefront checkout → sales, admin → purchases/buybacks, accounting → P&amp;L).
+          Same database as{' '}
+          <a href="https://www.goldstandardkw.com" className="text-lime-800 underline" target="_blank" rel="noreferrer">
+            goldstandardkw.com
+          </a>
+          .
+        </p>
+
+        {activeView === 'profit_loss' && plEnabled && (
+          <div className="gold-card mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-black">Profit &amp; loss ({rangeLabel})</h2>
+              <button
+                type="button"
+                onClick={exportProfitLossCsv}
+                disabled={!pl}
+                className="text-sm flex items-center gap-1 text-lime-800 disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" /> Export CSV
+              </button>
+            </div>
+            {!pl ? (
+              <p className="text-stone-600">Loading P&amp;L…</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {[
+                  ['Revenue', pl.revenue],
+                  ['COGS', pl.cost_of_goods_sold],
+                  ['Purchases', pl.purchases],
+                  ['Gross profit', pl.gross_profit, pl.gross_margin],
+                  ['Buyback cost', pl.buyback_cost],
+                  ['Operating expenses', pl.operating_expenses],
+                  ['Net profit', pl.net_profit, pl.net_margin],
+                ].map(([label, val, pct]) => (
+                  <div key={String(label)} className="p-3 bg-white rounded-lg flex justify-between">
+                    <span className="text-stone-600">{label}</span>
+                    <span className="font-semibold text-black">
+                      {fmtKwd(toNumber(val))}
+                      {pct != null ? ` (${toNumber(pct).toFixed(1)}%)` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeView === 'gold_flow' && canUseGoldSummary && (
+          <div className="gold-card mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-black">Gold movement ({rangeLabel})</h2>
+              <button type="button" onClick={exportGoldFlowCsv} className="text-sm flex items-center gap-1 text-lime-800">
+                <Download className="w-4 h-4" /> Export CSV
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Buy amount</p>
+                <p className="font-semibold">{fmtKwd(purchaseTotals.totalAmount)}</p>
+              </div>
+              <div className="p-3 bg-white rounded-lg">
+                <p className="text-xs text-stone-600">Buy weight (g)</p>
+                <p className="font-semibold">{purchaseTotals.totalWeight.toFixed(3)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-stone-500">Source: GET /accounting/accounts/gold_summary/</p>
+          </div>
+        )}
+
+        {(activeView === 'overview' || activeView === 'sales_detail') && (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <div key={index} className="gold-card">
@@ -727,9 +913,19 @@ export default function AdminReports() {
               ) : (
                 displayedListedOrders.map((s) => (
                   <div key={s.id} className="p-3 bg-white rounded-lg">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <p className="text-black font-medium">{dbOrderNumber(s)}</p>
-                      <p className="text-lime-800 text-sm">{fmtKwd(toNumber(s.total_amount))}</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewOrderId(s.id)}
+                          className="p-1 rounded hover:bg-stone-100 text-stone-600"
+                          title="View line items"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <p className="text-lime-800 text-sm">{fmtKwd(toNumber(s.total_amount))}</p>
+                      </div>
                     </div>
                     <p className="text-xs text-stone-600">{s.customer_name}</p>
                     <p className="text-xs text-stone-500">
@@ -793,7 +989,10 @@ export default function AdminReports() {
             </div>
           </div>
         </div>
+        </>
+        )}
 
+        {(activeView === 'overview' || activeView === 'sales_detail') && (
         <div className="gold-card mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-black">Purchases (Selected Range)</h2>
@@ -824,6 +1023,61 @@ export default function AdminReports() {
             </div>
           )}
         </div>
+        )}
+
+        {previewOrderId && (() => {
+          const order = salesInRange.find((s) => s.id === previewOrderId)
+          if (!order) return null
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+              onClick={() => setPreviewOrderId(null)}
+            >
+              <div
+                className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-auto p-6 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-lg font-bold text-black mb-2">{dbOrderNumber(order)}</h3>
+                <p className="text-sm text-stone-600 mb-4">
+                  {order.customer_name} · {fmtKwd(toNumber(order.total_amount))}
+                </p>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">SKU</th>
+                      <th className="text-right py-2">Qty</th>
+                      <th className="text-right py-2">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(order.items ?? []).length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-4 text-stone-500 text-center">
+                          No line items in API response
+                        </td>
+                      </tr>
+                    ) : (
+                      (order.items ?? []).map((item, i) => (
+                        <tr key={item.id ?? i} className="border-b border-stone-100">
+                          <td className="py-2">{item.product_sku || item.product_name || '—'}</td>
+                          <td className="text-right py-2">{item.quantity ?? 1}</td>
+                          <td className="text-right py-2">{fmtKwd(toNumber(item.total_price))}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+                <button
+                  type="button"
+                  onClick={() => setPreviewOrderId(null)}
+                  className="mt-4 px-4 py-2 bg-stone-100 rounded-lg text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </div>
   )

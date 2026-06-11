@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
@@ -46,6 +47,8 @@ const MAKING_TYPES = [
 export default function AdminProducts() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const deepLinkEditHandled = useRef<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSlug, setEditingSlug] = useState<string | null>(null)
@@ -225,6 +228,16 @@ export default function AdminProducts() {
     setDialogOpen(true)
   }
 
+  useEffect(() => {
+    const slug = searchParams.get('edit')?.trim()
+    if (!slug || isLoading || dialogOpen) return
+    if (deepLinkEditHandled.current === slug) return
+    const product = productList.find((p) => p.slug === slug)
+    if (!product) return
+    deepLinkEditHandled.current = slug
+    void openEdit(product)
+  }, [searchParams, isLoading, dialogOpen, productList])
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const weight = parseFloat(form.weight_grams)
@@ -333,7 +346,21 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm() }}>
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(o) => {
+            setDialogOpen(o)
+            if (!o) {
+              resetForm()
+              if (searchParams.get('edit')) {
+                const next = new URLSearchParams(searchParams)
+                next.delete('edit')
+                setSearchParams(next, { replace: true })
+                deepLinkEditHandled.current = null
+              }
+            }
+          }}
+        >
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto border-2 border-black/15 bg-gradient-to-b from-lime-50 via-white to-amber-50/30 text-black shadow-xl sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold text-black">

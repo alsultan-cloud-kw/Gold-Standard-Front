@@ -4,5 +4,6 @@ export function getApiBaseUrl(): string {
   const v = env.VITE_BACKEND_API_URL ?? env.VITE_API_URL ?? env.BACKEND_API_URL
   if (typeof v === 'string' && v.trim()) return v.trim().replace(/\/$/, '')
   if (import.meta.env.DEV) return '/api'
-  return 'http://localhost:8000/api'
+  // Vercel/production builds must not fall back to localhost (browser cannot reach it).
+  return 'https://api.goldstandardkw.com/api'
 }

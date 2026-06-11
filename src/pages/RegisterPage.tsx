@@ -31,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { RegionFlagImg } from '@/components/RegionFlagImg'
 import { getRegionDisplayName, getSortedIso2RegionCodes } from '@/lib/registrationRegions'
 import { cn } from '@/lib/utils'
+import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 
 const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
   customer: 'auth.roleCustomer',
@@ -136,6 +137,17 @@ export default function RegisterPage() {
         </div>
 
         <div className="gold-card">
+          <GoogleSignInButton mode="sign-up" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gold-500/20" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-charcoal-900 px-2 text-gold-100/50">{t('auth.orRegisterWithEmail')}</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.accountType')}</label>
