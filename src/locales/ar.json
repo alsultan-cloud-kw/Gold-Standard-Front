@@ -584,6 +584,8 @@
     "orEmailPhone": "أو الدخول بالبريد / الجوال",
     "orRegisterWithEmail": "أو التسجيل بالبريد",
     "invalidCredentials": "بيانات الدخول غير صحيحة. حاول مرة أخرى.",
+    "captchaRequired": "يرجى إكمال التحقق الأمني.",
+    "captchaFailed": "فشل التحقق الأمني. حاول مرة أخرى.",
     "accountInactive": "حسابك غير نشط. يرجى التواصل مع المسؤول.",
     "accountInactiveWithAdmin": "حسابك غير نشط. يرجى التواصل مع المسؤول. بريد المسؤول: {{email}}",
     "createAccountTitle": "إنشاء حساب",

@@ -95,7 +95,12 @@ export const configApi = {
 
 // Auth API
 export const authApi = {
-  login: (credentials: { email?: string; phone_number?: string; password: string }) =>
+  login: (credentials: {
+    email?: string
+    phone_number?: string
+    password: string
+    turnstile_token?: string
+  }) =>
     apiService.post<{ user: unknown; refresh: string; access: string }>('/accounts/users/login/', credentials),
 
   clerkLogin: (clerkSessionToken: string) =>

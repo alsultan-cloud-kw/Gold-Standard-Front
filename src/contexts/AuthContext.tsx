@@ -8,7 +8,12 @@ interface AuthContextType {
   profile: CustomerProfile | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (credentials: { email?: string; phone_number?: string; password: string }) => Promise<void>
+  login: (credentials: {
+    email?: string
+    phone_number?: string
+    password: string
+    turnstile_token?: string
+  }) => Promise<void>
   loginWithClerk: (clerkSessionToken: string) => Promise<void>
   register: (data: unknown) => Promise<void>
   logout: () => void
@@ -50,7 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const login = async (credentials: { email?: string; phone_number?: string; password: string }) => {
+  const login = async (credentials: {
+    email?: string
+    phone_number?: string
+    password: string
+    turnstile_token?: string
+  }) => {
     try {
       const response = await authApi.login(credentials)
       localStorage.setItem('access_token', response.access)

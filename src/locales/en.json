@@ -608,6 +608,8 @@
     "orEmailPhone": "or sign in with email / phone",
     "orRegisterWithEmail": "or register with email",
     "invalidCredentials": "Invalid credentials. Please try again.",
+    "captchaRequired": "Please complete the security check.",
+    "captchaFailed": "Security verification failed. Please try again.",
     "accountInactive": "Your account is inactive. Please contact the administrator.",
     "accountInactiveWithAdmin": "Your account is inactive. Please contact the administrator. Admin email: {{email}}",
     "createAccountTitle": "Create Account",

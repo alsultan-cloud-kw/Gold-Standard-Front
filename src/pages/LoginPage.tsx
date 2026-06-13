@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { safeAppNextPath } from '../utils/safeNextPath'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
+import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
+import { isTurnstileConfigured } from '@/lib/turnstile'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -17,6 +19,12 @@ export default function LoginPage() {
     phone_number: '',
     password: '',
   })
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const clearTurnstile = useCallback(() => {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }, [])
 
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -27,6 +35,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isTurnstileConfigured && !turnstileToken) {
+      toast.error(t('auth.captchaRequired'))
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -35,7 +49,10 @@ export default function LoginPage() {
           ? { email: formData.email, password: formData.password }
           : { phone_number: formData.phone_number, password: formData.password }
 
-      await login(credentials)
+      await login({
+        ...credentials,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      })
       toast.success(t('auth.loginSuccess'))
       if (nextPath) {
         navigate(nextPath)
@@ -43,9 +60,12 @@ export default function LoginPage() {
         navigate('/')
       }
     } catch (err: unknown) {
+      clearTurnstile()
       const res = (err as { response?: { status?: number; data?: { error?: string; admin_email?: string } } })
         ?.response
-      if (res?.status === 403 && res?.data?.error === 'inactive') {
+      if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
+        toast.error(t('auth.captchaFailed'))
+      } else if (res?.status === 403 && res?.data?.error === 'inactive') {
         const adminEmail = res.data.admin_email || ''
         toast.error(
           adminEmail
@@ -174,9 +194,16 @@ export default function LoginPage() {
               </Link>
             </div>
 
+            <TurnstileWidget
+              ref={turnstileRef}
+              onToken={setTurnstileToken}
+              onExpire={clearTurnstile}
+              onError={clearTurnstile}
+            />
+
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || (isTurnstileConfigured && !turnstileToken)}
               className="w-full gold-button flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (

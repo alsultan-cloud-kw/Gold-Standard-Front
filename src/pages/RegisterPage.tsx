@@ -32,6 +32,8 @@ import { RegionFlagImg } from '@/components/RegionFlagImg'
 import { getRegionDisplayName, getSortedIso2RegionCodes } from '@/lib/registrationRegions'
 import { cn } from '@/lib/utils'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
+import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
+import { isTurnstileConfigured } from '@/lib/turnstile'
 
 const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
   customer: 'auth.roleCustomer',
@@ -68,6 +70,12 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [acceptedLegal, setAcceptedLegal] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const clearTurnstile = useCallback(() => {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }, [])
   const [formData, setFormData] = useState({
     full_name: '',
     nationality: '',
@@ -101,6 +109,11 @@ export default function RegisterPage() {
       return
     }
 
+    if (isTurnstileConfigured && !turnstileToken) {
+      toast.error(t('auth.captchaRequired'))
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -114,6 +127,7 @@ export default function RegisterPage() {
         role: formData.role,
         terms_accepted: acceptedLegal,
         privacy_policy_accepted: acceptedLegal,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
       toast.success(t('auth.registerSuccess'))
       if (nextPath) {
@@ -122,7 +136,13 @@ export default function RegisterPage() {
         navigate('/')
       }
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, t('auth.registerFailed')))
+      clearTurnstile()
+      const res = (error as { response?: { status?: number; data?: { error?: string } } })?.response
+      if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
+        toast.error(t('auth.captchaFailed'))
+      } else {
+        toast.error(formatApiErrorMessage(error, t('auth.registerFailed')))
+      }
     } finally {
       setIsLoading(false)
     }
@@ -414,9 +434,20 @@ export default function RegisterPage() {
               </label>
             </div>
 
+            <TurnstileWidget
+              ref={turnstileRef}
+              onToken={setTurnstileToken}
+              onExpire={clearTurnstile}
+              onError={clearTurnstile}
+            />
+
             <button
               type="submit"
-              disabled={isLoading || !acceptedLegal}
+              disabled={
+                isLoading ||
+                !acceptedLegal ||
+                (isTurnstileConfigured && !turnstileToken)
+              }
               className="w-full gold-button flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
