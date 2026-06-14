@@ -31,7 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { RegionFlagImg } from '@/components/RegionFlagImg'
 import { getRegionDisplayName, getSortedIso2RegionCodes } from '@/lib/registrationRegions'
 import { cn } from '@/lib/utils'
-import GoogleSignInButton from '../components/auth/GoogleSignInButton'
+import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 
@@ -157,7 +157,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="gold-card">
-          <GoogleSignInButton mode="sign-up" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
+          <SocialSignInButtons mode="sign-up" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

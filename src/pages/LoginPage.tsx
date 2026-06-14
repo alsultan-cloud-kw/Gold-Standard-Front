@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { safeAppNextPath } from '../utils/safeNextPath'
-import GoogleSignInButton from '../components/auth/GoogleSignInButton'
+import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
         </div>
 
         <div className="gold-card">
-          <GoogleSignInButton mode="sign-in" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
+          <SocialSignInButtons mode="sign-in" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
