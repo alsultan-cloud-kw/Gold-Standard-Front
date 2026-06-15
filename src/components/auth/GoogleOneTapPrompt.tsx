@@ -170,26 +170,28 @@ export default function GoogleOneTapPrompt() {
       )}
 
       {showFallback && (
-        <div className="fixed bottom-5 end-5 z-[60] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-black/15 overflow-hidden">
+        <div className="fixed top-[5.75rem] end-4 sm:end-6 z-[45] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-stone-200/80 bg-white/95 shadow-xl shadow-black/10 backdrop-blur-md">
           <button
             type="button"
             onClick={dismissFallback}
-            className="absolute end-3 top-3 rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+            className="absolute end-2.5 top-2.5 rounded-full p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
             aria-label="Dismiss sign-in prompt"
           >
             <X className="h-4 w-4" />
           </button>
-          <div className="px-5 py-5 pe-10">
-            <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-gold-500/15 text-charcoal-950">
-              <span className="text-sm font-bold">GS</span>
+          <div className="px-4 py-4 pe-9">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-500/15 text-charcoal-950 ring-1 ring-gold-500/15">
+                <span className="text-sm font-bold">GS</span>
+              </div>
+              <h2 className="text-sm font-semibold leading-5 text-stone-950">{t('auth.signInNudgeTitle')}</h2>
             </div>
-            <h2 className="text-base font-semibold text-stone-950">{t('auth.signInNudgeTitle')}</h2>
             <p className="mt-1 text-sm leading-5 text-stone-600">{t('auth.signInNudgeBody')}</p>
             <button
               type="button"
               onClick={() => void continueWithGoogle()}
               disabled={oauthBusy}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-60"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 active:scale-[0.99] disabled:opacity-60"
             >
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-stone-950">G</span>
               {oauthBusy ? t('auth.oauthSigningIn') : t('auth.continueWithGoogle')}
@@ -200,7 +202,7 @@ export default function GoogleOneTapPrompt() {
                 dismissFallback()
                 window.location.assign('/login')
               }}
-              className="mt-2 w-full text-center text-xs font-medium text-stone-500 hover:text-stone-800"
+              className="mt-2 w-full text-center text-xs font-medium text-stone-500 transition hover:text-stone-800"
             >
               {t('auth.signInWithEmail')}
             </button>
