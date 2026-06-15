@@ -209,6 +209,8 @@ export default function CheckoutPage() {
     const saleId = params.get('sale_id') || undefined
     const invoice = params.get('invoice') || undefined
     const reason = params.get('reason') || undefined
+    const result = (params.get('result') || '').toUpperCase()
+    const successResult = ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(result)
     if (!knetStatus && !saleId) return
 
     let cancelled = false
@@ -233,7 +235,7 @@ export default function CheckoutPage() {
 
     const verifyPayment = async () => {
       if (!saleId) {
-        if (knetStatus === 'success') finishSuccess(null)
+        if (knetStatus === 'success' || successResult) finishSuccess(null)
         else finishFailed(reason)
         return
       }
@@ -253,7 +255,7 @@ export default function CheckoutPage() {
         await new Promise((r) => setTimeout(r, 1500))
       }
 
-      if (knetStatus === 'success') {
+      if (knetStatus === 'success' || successResult) {
         try {
           const res = (await ordersApi.getOrder(saleId)) as SaleResponse
           finishSuccess(res ?? null)
