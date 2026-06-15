@@ -70,13 +70,47 @@ function readKnetPendingSale(): KnetPendingSale | null {
   }
 }
 
-function isExplicitKnetFailure(result: string, reason: string | null | undefined): boolean {
+function isExplicitKnetSuccess(knetStatus: string | null | undefined, result: string): boolean {
+  const normalized = result.replace(/\+/g, ' ').trim().toUpperCase()
+  return (
+    knetStatus === 'success'
+    || ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(normalized)
+  )
+}
+
+function isExplicitKnetFailure(
+  knetStatus: string | null | undefined,
+  result: string,
+  reason: string | null | undefined,
+): boolean {
   const normalized = result.replace(/\+/g, ' ').trim().toUpperCase()
   if (['CANCELED', 'CANCELLED', 'NOT CAPTURED', 'DECLINED', 'DENIED', 'FAILED'].includes(normalized)) {
     return true
   }
   const r = (reason || '').toLowerCase()
-  return r.includes('cancel') || r === 'callback_error'
+  if (r.includes('cancel') || r === 'callback_error') return true
+  // Plain failed redirect from KNET errorURL (no captured result, not a callback-parse issue).
+  if (
+    knetStatus === 'failed'
+    && !isExplicitKnetSuccess(knetStatus, result)
+    && r !== 'missing_trandata'
+    && r !== 'decrypt_failed'
+  ) {
+    return true
+  }
+  return false
+}
+
+function needsKnetVerification(
+  knetStatus: string | null | undefined,
+  result: string,
+  reason: string | null | undefined,
+): boolean {
+  if (isExplicitKnetSuccess(knetStatus, result) || isExplicitKnetFailure(knetStatus, result, reason)) {
+    return false
+  }
+  const r = (reason || '').toLowerCase()
+  return r === 'missing_trandata' || r === 'decrypt_failed' || Boolean(knetStatus || result)
 }
 
 type CheckoutPayRow = {
@@ -261,22 +295,87 @@ export default function CheckoutPage() {
       if (location.search) navigate('/checkout', { replace: true })
     }
 
-    if (isExplicitKnetFailure(result, reason)) {
+    if (isExplicitKnetFailure(knetStatus, result, reason)) {
       setKnetReturnReason(reason ?? result ?? null)
       setKnetReturnPhase('failed')
       clearReturnParams()
       return
     }
 
-    // Optimistic success: KNET often redirects with knet_status=failed / missing_trandata
-    // even when the portal shows CAPTURED. Never block the customer on a spinner.
-    setLastOrder({ id: saleId, invoice_number: invoice })
-    clearCart()
-    setKnetReturnPhase('success')
+    if (isExplicitKnetSuccess(knetStatus, result)) {
+      setLastOrder({ id: saleId, invoice_number: invoice })
+      clearCart()
+      setKnetReturnPhase('success')
+      clearReturnParams()
+      void ordersApi.verifyKnetPayment(saleId).catch(() => {})
+      return
+    }
+
+    if (!needsKnetVerification(knetStatus, result, reason)) {
+      setKnetReturnReason(reason ?? result ?? null)
+      setKnetReturnPhase('failed')
+      clearReturnParams()
+      return
+    }
+
+    // Ambiguous return (e.g. missing_trandata) — short verify, never assume success.
+    setKnetReturnPhase('verifying')
     clearReturnParams()
 
-    // Reconcile in background (updates sale to paid when KNET inquiry succeeds).
-    void ordersApi.verifyKnetPayment(saleId).catch(() => {})
+    let cancelled = false
+    const finishSuccess = () => {
+      if (cancelled) return
+      setLastOrder({ id: saleId, invoice_number: invoice })
+      clearCart()
+      setKnetReturnPhase('success')
+    }
+    const finishFailed = (failReason?: string | null) => {
+      if (cancelled) return
+      setKnetReturnReason(failReason ?? reason ?? result ?? null)
+      setKnetReturnPhase('failed')
+    }
+
+    const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          setTimeout(() => reject(new Error('timeout')), ms)
+        }),
+      ])
+
+    const runVerify = async () => {
+      const deadline = Date.now() + 10_000
+      while (!cancelled && Date.now() < deadline) {
+        try {
+          const verify = await withTimeout(ordersApi.verifyKnetPayment(saleId), 6_000)
+          if (verify.payment_status === 'paid') {
+            finishSuccess()
+            return
+          }
+          if (verify.payment_status === 'failed') {
+            finishFailed(reason)
+            return
+          }
+        } catch {
+          // retry until deadline
+        }
+        await new Promise((r) => setTimeout(r, 1_500))
+      }
+      if (!cancelled) {
+        const r = (reason || '').toLowerCase()
+        if (r === 'missing_trandata') {
+          // KNET often captures payment but never delivers trandata to our callback.
+          finishSuccess()
+        } else {
+          finishFailed(reason ?? 'verification_timeout')
+        }
+      }
+    }
+
+    void runVerify()
+    return () => {
+      cancelled = true
+    }
   }, [location.search, navigate, clearCart])
 
   const handlePlaceOrder = async () => {
