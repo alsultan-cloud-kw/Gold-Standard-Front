@@ -1,4 +1,5 @@
 type GsiMomentNotification = {
+  isDisplayed: () => boolean
   isNotDisplayed: () => boolean
   isSkippedMoment: () => boolean
   getNotDisplayedReason: () => string
@@ -66,11 +67,11 @@ type ClerkOneTapClient = {
 export async function promptGoogleOneTap(
   clientId: string,
   clerk: ClerkOneTapClient,
-  onUnavailable?: (reason: string) => void,
+  onMoment?: (moment: { type: 'displayed' | 'unavailable'; reason?: string }) => void,
 ): Promise<void> {
   await loadGoogleGsiScript()
   if (!window.google?.accounts?.id) {
-    onUnavailable?.('gsi_unavailable')
+    onMoment?.({ type: 'unavailable', reason: 'gsi_unavailable' })
     return
   }
 
@@ -94,10 +95,12 @@ export async function promptGoogleOneTap(
   })
 
   window.google.accounts.id.prompt((notification) => {
-    if (notification.isNotDisplayed()) {
-      onUnavailable?.(notification.getNotDisplayedReason() || 'not_displayed')
+    if (notification.isDisplayed()) {
+      onMoment?.({ type: 'displayed' })
+    } else if (notification.isNotDisplayed()) {
+      onMoment?.({ type: 'unavailable', reason: notification.getNotDisplayedReason() || 'not_displayed' })
     } else if (notification.isSkippedMoment()) {
-      onUnavailable?.(notification.getSkippedReason() || 'skipped')
+      onMoment?.({ type: 'unavailable', reason: notification.getSkippedReason() || 'skipped' })
     }
   })
 }

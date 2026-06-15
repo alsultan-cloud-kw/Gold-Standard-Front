@@ -619,6 +619,8 @@
     "continueWithApple": "Continue with Apple",
     "signInWithEmail": "Sign in with email",
     "createAccount": "Create account",
+    "signInNudgeTitle": "Sign in faster next time",
+    "signInNudgeBody": "Save your cart, track orders, and check out smoothly with your Google account.",
     "oauthSigningIn": "Connecting…",
     "googleSigningIn": "Connecting…",
     "googleSignInFailed": "Google sign-in failed. Please try again.",

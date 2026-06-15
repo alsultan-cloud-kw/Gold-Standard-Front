@@ -595,6 +595,8 @@
     "continueWithApple": "المتابعة مع Apple",
     "signInWithEmail": "تسجيل الدخول بالبريد",
     "createAccount": "إنشاء حساب",
+    "signInNudgeTitle": "سجّل دخولك بسرعة في المرة القادمة",
+    "signInNudgeBody": "احفظ سلتك، وتابع طلباتك، وأكمل الدفع بسلاسة باستخدام حساب Google.",
     "oauthSigningIn": "جاري الاتصال…",
     "googleSigningIn": "جاري الاتصال…",
     "googleSignInFailed": "فشل تسجيل الدخول عبر Google. حاول مرة أخرى.",
