@@ -1,16 +1,12 @@
-import { useEffect, useRef } from 'react'
-import { useAuth as useClerkAuth } from '@clerk/react'
+import { useEffect, useRef, useState } from 'react'
+import { ClerkLoaded, GoogleOneTap, useAuth as useClerkAuth, useClerk } from '@clerk/react'
 import { useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { useGoogleOneTapSignIn } from '@/hooks/useGoogleOneTapSignIn'
+import { cancelGoogleOneTap, promptGoogleOneTap } from '@/lib/googleOneTap'
 
 const HIDDEN_PATHS = new Set(['/login', '/register', '/sso-callback', '/forgot-password'])
-/** Shown once per browser tab session so navigation does not re-prompt. */
-const SESSION_ATTEMPTED_KEY = 'gs_google_one_tap_attempted'
-/** Brief pause after page is ready — responsive but not a popup slap. */
-const SHOW_DELAY_MS = 900
+const PROMPT_DELAY_MS = 700
 
-function hasAccessToken(): boolean {
+function hasDjangoJwt(): boolean {
   try {
     return Boolean(localStorage.getItem('access_token'))
   } catch {
@@ -19,49 +15,77 @@ function hasAccessToken(): boolean {
 }
 
 /**
- * Google One Tap for guests: opens once per session after a short delay.
- * Uses Clerk programmatic API (not a persistent mount) to avoid slow re-init on SPA navigation.
+ * Google One Tap for storefront guests.
+ * - With VITE_GOOGLE_CLIENT_ID: native GIS prompt (needs JS origins on your Google OAuth client).
+ * - Otherwise: Clerk <GoogleOneTap /> (needs custom Google credentials in Clerk Dashboard).
+ * ClerkAuthBridge exchanges the Clerk session for Django JWT after sign-in.
  */
 export default function GoogleOneTapPrompt() {
   const { pathname } = useLocation()
   const { isSignedIn, isLoaded: clerkLoaded } = useClerkAuth()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const { openGoogleOneTap, clerkLoaded: clerkReady } = useGoogleOneTapSignIn()
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clerk = useClerk()
+  const [useClerkComponent, setUseClerkComponent] = useState(false)
+  const promptedRef = useRef(false)
 
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? ''
+  const redirectUrl = `${window.location.origin}${pathname}${window.location.search}`
   const hiddenPath = HIDDEN_PATHS.has(pathname)
-  const tokenPresent = hasAccessToken()
-
-  // Guests without a JWT: do not wait on Django auth bootstrap.
-  const guestReady =
+  const showPrompt =
     clerkLoaded
-    && clerkReady
+    && clerk.loaded
     && !isSignedIn
+    && !hasDjangoJwt()
     && !hiddenPath
-    && (!tokenPresent || (!authLoading && !isAuthenticated))
 
   useEffect(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
+    if (!showPrompt) {
+      cancelGoogleOneTap()
+      return
     }
 
-    if (!guestReady) return
-    if (sessionStorage.getItem(SESSION_ATTEMPTED_KEY)) return
+    if (!googleClientId) {
+      setUseClerkComponent(true)
+      return
+    }
 
-    timerRef.current = setTimeout(() => {
-      if (sessionStorage.getItem(SESSION_ATTEMPTED_KEY)) return
-      sessionStorage.setItem(SESSION_ATTEMPTED_KEY, '1')
-      openGoogleOneTap()
-    }, SHOW_DELAY_MS)
+    if (promptedRef.current) return
+
+    const timer = window.setTimeout(() => {
+      if (promptedRef.current || !clerk.loaded) return
+      promptedRef.current = true
+
+      void promptGoogleOneTap(googleClientId, clerk, (reason) => {
+        console.info('Google One Tap unavailable, using Clerk fallback:', reason)
+        setUseClerkComponent(true)
+      })
+    }, PROMPT_DELAY_MS)
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-        timerRef.current = null
-      }
+      window.clearTimeout(timer)
+      cancelGoogleOneTap()
     }
-  }, [guestReady, openGoogleOneTap, pathname])
+  }, [showPrompt, googleClientId, clerk, pathname])
 
-  return null
+  useEffect(() => {
+    if (!showPrompt) {
+      promptedRef.current = false
+      setUseClerkComponent(!googleClientId)
+    }
+  }, [showPrompt, googleClientId])
+
+  if (!showPrompt) return null
+
+  if (googleClientId && !useClerkComponent) return null
+
+  return (
+    <ClerkLoaded>
+      <GoogleOneTap
+        cancelOnTapOutside
+        itpSupport
+        fedCmSupport
+        signInForceRedirectUrl={redirectUrl}
+        signUpForceRedirectUrl={redirectUrl}
+      />
+    </ClerkLoaded>
+  )
 }

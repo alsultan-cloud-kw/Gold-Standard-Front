@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 /** After Clerk OAuth, exchange session for Django JWT so the rest of the app keeps working. */
 export default function ClerkAuthBridge() {
   const { t } = useTranslation()
-  const { isSignedIn, isLoaded, getToken } = useClerkAuth()
+  const { isSignedIn, isLoaded, getToken, signOut } = useClerkAuth()
   const { isAuthenticated, isLoading, loginWithClerk } = useAuth()
   const syncingRef = useRef(false)
 
@@ -43,11 +43,16 @@ export default function ClerkAuthBridge() {
           )
         }
         console.error('Clerk → Django sync failed:', err)
+        try {
+          await signOut()
+        } catch {
+          // ignore
+        }
       } finally {
         syncingRef.current = false
       }
     })()
-  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, getToken, loginWithClerk, t])
+  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, getToken, loginWithClerk, signOut, t])
 
   return null
 }
