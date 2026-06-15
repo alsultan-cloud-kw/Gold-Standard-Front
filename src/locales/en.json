@@ -617,6 +617,8 @@
     "loginSuccess": "Login successful!",
     "continueWithGoogle": "Continue with Google",
     "continueWithApple": "Continue with Apple",
+    "signInWithEmail": "Sign in with email",
+    "createAccount": "Create account",
     "oauthSigningIn": "Connecting…",
     "googleSigningIn": "Connecting…",
     "googleSignInFailed": "Google sign-in failed. Please try again.",

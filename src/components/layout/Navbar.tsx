@@ -17,6 +17,8 @@ import { GS_CONTACT } from '@/constants/contact'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
+import { useGoogleOneTapSignIn } from '@/hooks/useGoogleOneTapSignIn'
+import GoogleIcon from '@/components/auth/GoogleIcon'
 import logo from '../../assets/logo.png'
 import {
   DropdownMenu,
@@ -36,6 +38,7 @@ export default function Navbar() {
   const { getItemCount } = useCart()
   const navigate = useNavigate()
   const location = useLocation()
+  const { openGoogleOneTap } = useGoogleOneTapSignIn()
 
   const navLinks = [
     { nameKey: 'nav.home', href: '/' },
@@ -64,6 +67,10 @@ export default function Navbar() {
 
   const isPricesActive =
     isPathActive('/prices') || isPathActive('/company-prices')
+
+  const handleGoogleOneTap = () => {
+    openGoogleOneTap()
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200">
@@ -257,13 +264,41 @@ export default function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link
-                to="/login"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-charcoal-950 bg-gradient-to-r from-gold-400 to-gold-500 rounded-lg hover:from-gold-300 hover:to-gold-400 transition-all"
-              >
-                <User className="w-4 h-4" />
-                {t('nav.login')}
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-charcoal-950 bg-gradient-to-r from-gold-400 to-gold-500 rounded-lg hover:from-gold-300 hover:to-gold-400 transition-all"
+                  >
+                    <User className="w-4 h-4" />
+                    {t('nav.login')}
+                    <ChevronDown className="w-4 h-4 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-white border-gold-500/30">
+                  <DropdownMenuItem
+                    onClick={handleGoogleOneTap}
+                    className="text-slate-800 hover:text-gold-700 hover:bg-gold-500/10 cursor-pointer font-medium"
+                  >
+                    <GoogleIcon className="w-5 h-5 mr-2 rtl:ml-2 rtl:mr-0" />
+                    {t('auth.continueWithGoogle')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gold-500/20" />
+                  <DropdownMenuItem
+                    onClick={() => navigate('/login')}
+                    className="text-slate-700 hover:text-gold-600 hover:bg-gold-500/10 cursor-pointer"
+                  >
+                    <User className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                    {t('auth.signInWithEmail')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate('/register')}
+                    className="text-slate-700 hover:text-gold-600 hover:bg-gold-500/10 cursor-pointer"
+                  >
+                    {t('auth.createAccount')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             {/* Mobile Menu Button */}
@@ -349,13 +384,26 @@ export default function Navbar() {
                 )
               ))}
               {!isAuthenticated && (
-                <Link
-                  to="/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="mt-2 px-4 py-3 text-center text-charcoal-950 font-medium bg-gradient-to-r from-gold-400 to-gold-500 rounded-lg"
-                >
-                  {t('nav.loginRegister')}
-                </Link>
+                <div className="mt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleGoogleOneTap()
+                      setIsMenuOpen(false)
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 text-charcoal-950 font-medium bg-white border border-stone-200 rounded-lg"
+                  >
+                    <GoogleIcon />
+                    {t('auth.continueWithGoogle')}
+                  </button>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="px-4 py-3 text-center text-charcoal-950 font-medium bg-gradient-to-r from-gold-400 to-gold-500 rounded-lg"
+                  >
+                    {t('nav.loginRegister')}
+                  </Link>
+                </div>
               )}
             </div>
           </div>

@@ -18,6 +18,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SsoCallbackPage from './pages/SsoCallbackPage'
 import ClerkAuthBridge from './components/auth/ClerkAuthBridge'
+import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UserDashboard from './pages/UserDashboard'
 import AboutPage from './pages/AboutPage'
@@ -106,6 +107,7 @@ function App() {
           <ClerkAuthBridge />
           <CartProvider>
           <Router>
+            <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
               <Navbar />
               <main className="pt-24">

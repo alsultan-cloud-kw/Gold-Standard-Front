@@ -593,6 +593,8 @@
     "loginSuccess": "تم تسجيل الدخول بنجاح!",
     "continueWithGoogle": "المتابعة مع Google",
     "continueWithApple": "المتابعة مع Apple",
+    "signInWithEmail": "تسجيل الدخول بالبريد",
+    "createAccount": "إنشاء حساب",
     "oauthSigningIn": "جاري الاتصال…",
     "googleSigningIn": "جاري الاتصال…",
     "googleSignInFailed": "فشل تسجيل الدخول عبر Google. حاول مرة أخرى.",
