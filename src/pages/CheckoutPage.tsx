@@ -240,21 +240,38 @@ export default function CheckoutPage() {
         return
       }
 
-      const maxAttempts = 12
+      // Actively reconcile with KNET (server-to-server inquiry). KNET's response
+      // notification can fail to arrive, so we drive confirmation from here instead
+      // of passively waiting for the sale status to flip.
+      const maxAttempts = 10
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         if (cancelled) return
         try {
-          const res = (await ordersApi.getOrder(saleId)) as SaleResponse
+          const res = (await ordersApi.verifyKnetPayment(saleId)) as SaleResponse
           if (res?.payment_status === 'paid') {
             finishSuccess(res)
             return
           }
+          if (res?.payment_status === 'failed') {
+            finishFailed(res?.payment_status ?? reason)
+            return
+          }
         } catch {
-          // keep polling — callback may still be processing
+          // fall back to a plain status read while the inquiry settles
+          try {
+            const order = (await ordersApi.getOrder(saleId)) as SaleResponse
+            if (order?.payment_status === 'paid') {
+              finishSuccess(order)
+              return
+            }
+          } catch {
+            // keep polling
+          }
         }
-        await new Promise((r) => setTimeout(r, 1500))
+        await new Promise((r) => setTimeout(r, 2000))
       }
 
+      // Final fallback: trust the gateway's redirect signal if it said success.
       if (knetStatus === 'success' || successResult) {
         try {
           const res = (await ordersApi.getOrder(saleId)) as SaleResponse
