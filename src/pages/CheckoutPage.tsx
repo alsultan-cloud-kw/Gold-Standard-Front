@@ -43,8 +43,12 @@ type SaleResponse = {
   id?: string
   invoice_number?: string
   total_amount?: string
+  payment_status?: string
+  payment_method?: string
   payment_url?: string
 }
+
+type KnetReturnPhase = 'idle' | 'verifying' | 'success' | 'failed'
 
 type CheckoutPayRow = {
   id: 'knet' | 'card' | 'cod' | 'wallet'
@@ -70,6 +74,8 @@ export default function CheckoutPage() {
   const [deliveryType, setDeliveryType] = useState<'physical' | 'locked'>('physical')
   const [submitting, setSubmitting] = useState(false)
   const [lastOrder, setLastOrder] = useState<SaleResponse | null>(null)
+  const [knetReturnPhase, setKnetReturnPhase] = useState<KnetReturnPhase>('idle')
+  const [knetReturnReason, setKnetReturnReason] = useState<string | null>(null)
   const { cart, clearCart } = useCart()
   const summary = useOrderSummaryDisplay(cart)
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =
@@ -200,38 +206,70 @@ export default function CheckoutPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const knetStatus = params.get('knet_status')
-    if (!knetStatus) return
-
     const saleId = params.get('sale_id') || undefined
     const invoice = params.get('invoice') || undefined
-    const normalizeDone = () => navigate('/checkout', { replace: true })
+    const reason = params.get('reason') || undefined
+    if (!knetStatus && !saleId) return
 
-    if (knetStatus === 'success') {
-      const finishSuccess = (sale: SaleResponse | null) => {
-        if (sale) setLastOrder(sale)
-        clearCart()
-        toast.success(
-          (sale?.invoice_number || invoice)
-            ? t('checkoutPage.knetPaidWithInvoice', { invoice: sale?.invoice_number || invoice })
-            : t('checkoutPage.knetPaid'),
-        )
-        normalizeDone()
-      }
+    let cancelled = false
+    setKnetReturnPhase('verifying')
+    setKnetReturnReason(reason ?? null)
 
-      if (saleId) {
-        ordersApi
-          .getOrder(saleId)
-          .then((res) => finishSuccess((res as SaleResponse) ?? null))
-          .catch(() => finishSuccess(null))
-      } else {
-        finishSuccess(null)
-      }
-      return
+    const finishSuccess = (sale: SaleResponse | null) => {
+      if (cancelled) return
+      const order = sale ?? (saleId ? { id: saleId, invoice_number: invoice } : null)
+      if (order) setLastOrder(order)
+      clearCart()
+      setKnetReturnPhase('success')
+      navigate('/checkout', { replace: true })
     }
 
-    toast.error(t('checkoutPage.knetFailed'))
-    normalizeDone()
-  }, [location.search, navigate, clearCart, t])
+    const finishFailed = (failReason?: string | null) => {
+      if (cancelled) return
+      setKnetReturnReason(failReason ?? reason ?? null)
+      setKnetReturnPhase('failed')
+      navigate('/checkout', { replace: true })
+    }
+
+    const verifyPayment = async () => {
+      if (!saleId) {
+        if (knetStatus === 'success') finishSuccess(null)
+        else finishFailed(reason)
+        return
+      }
+
+      const maxAttempts = 12
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        if (cancelled) return
+        try {
+          const res = (await ordersApi.getOrder(saleId)) as SaleResponse
+          if (res?.payment_status === 'paid') {
+            finishSuccess(res)
+            return
+          }
+        } catch {
+          // keep polling — callback may still be processing
+        }
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+
+      if (knetStatus === 'success') {
+        try {
+          const res = (await ordersApi.getOrder(saleId)) as SaleResponse
+          finishSuccess(res ?? null)
+        } catch {
+          finishSuccess({ id: saleId, invoice_number: invoice })
+        }
+        return
+      }
+      finishFailed(reason)
+    }
+
+    void verifyPayment()
+    return () => {
+      cancelled = true
+    }
+  }, [location.search, navigate, clearCart])
 
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('access_token')
@@ -365,33 +403,105 @@ export default function CheckoutPage() {
     }
   }
 
-  if (cart.items.length === 0 && lastOrder) {
+  const formatKwd = (value: string | number | undefined) => {
+    const n = Number(value ?? 0)
+    if (!Number.isFinite(n)) return '—'
+    return formatOrderKwd(n)
+  }
+
+  if (knetReturnPhase === 'verifying') {
     return (
-      <div className="min-h-screen py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="w-24 h-24 rounded-full bg-gold-500/10 flex items-center justify-center mx-auto mb-6">
-            <Check className="w-12 h-12 text-gold-400" />
+      <div className="min-h-screen flex items-center justify-center py-16 px-4">
+        <div className="max-w-md w-full text-center rounded-2xl border border-amber-200/60 bg-white/80 backdrop-blur-sm shadow-lg p-10">
+          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-6">
+            <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
           </div>
-          <h1 className="text-2xl font-bold gold-gradient-text-on-light mb-4">{t('checkoutPage.orderConfirmed')}</h1>
-          {lastOrder.invoice_number && (
-            <p className="text-gold-400 font-mono mb-2">
-              {t('checkoutPage.invoiceNumber', { number: lastOrder.invoice_number })}
-            </p>
+          <h1 className="text-xl font-semibold text-stone-900 mb-2">{t('checkoutPage.knetVerifyingTitle')}</h1>
+          <p className="text-stone-600 text-sm leading-relaxed">{t('checkoutPage.knetVerifyingBody')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (knetReturnPhase === 'failed') {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-16 px-4">
+        <div className="max-w-lg w-full text-center rounded-2xl border border-red-200/70 bg-white shadow-lg p-10">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
+            <CreditCard className="w-8 h-8 text-red-500" />
+          </div>
+          <h1 className="text-xl font-semibold text-stone-900 mb-2">{t('checkoutPage.knetFailedTitle')}</h1>
+          <p className="text-stone-600 text-sm mb-6">{t('checkoutPage.knetFailedBody')}</p>
+          {knetReturnReason && (
+            <p className="text-xs text-stone-400 font-mono mb-6">{knetReturnReason}</p>
           )}
-          <p className="gold-gradient-text-on-light mb-8">{t('checkoutPage.orderSavedNote')}</p>
           <div className="flex flex-wrap justify-center gap-3">
-            <button
-              type="button"
-              onClick={handleDownloadInvoice}
-              disabled={downloadingInvoice}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-600 text-amber-700 hover:bg-amber-50 font-medium disabled:opacity-50"
-            >
-              {downloadingInvoice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {t('checkoutPage.downloadInvoice')}
+            <button type="button" onClick={() => setKnetReturnPhase('idle')} className="gold-button px-6">
+              {t('checkoutPage.knetTryAgain')}
             </button>
-            <Link to="/products" className="gold-button inline-flex items-center gap-2">
-              {t('cartPage.continueShopping')}
+            <Link to="/cart" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50">
+              {t('checkoutPage.backToCart')}
             </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if ((cart.items.length === 0 && lastOrder) || knetReturnPhase === 'success') {
+    const order = lastOrder
+    return (
+      <div className="min-h-screen py-16 px-4">
+        <div className="max-w-lg mx-auto">
+          <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/80 to-white shadow-lg overflow-hidden">
+            <div className="px-8 pt-10 pb-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5 ring-4 ring-emerald-50">
+                <Check className="w-10 h-10 text-emerald-600" strokeWidth={2.5} />
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700 mb-2">
+                {t('checkoutPage.paymentSuccessBadge')}
+              </p>
+              <h1 className="text-2xl font-bold text-stone-900 mb-2">{t('checkoutPage.orderConfirmed')}</h1>
+              <p className="text-stone-600 text-sm">{t('checkoutPage.knetSuccessSubtitle')}</p>
+            </div>
+            <div className="mx-8 mb-8 rounded-xl border border-stone-200/80 bg-white/90 divide-y divide-stone-100 text-sm">
+              {order?.invoice_number && (
+                <div className="flex justify-between gap-4 px-5 py-3.5">
+                  <span className="text-stone-500">{t('checkoutPage.confirmInvoice')}</span>
+                  <span className="font-mono font-medium text-stone-900">{order.invoice_number}</span>
+                </div>
+              )}
+              {order?.total_amount != null && (
+                <div className="flex justify-between gap-4 px-5 py-3.5">
+                  <span className="text-stone-500">{t('checkoutPage.confirmAmount')}</span>
+                  <span className="font-semibold text-stone-900">{formatKwd(order.total_amount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between gap-4 px-5 py-3.5">
+                <span className="text-stone-500">{t('checkoutPage.confirmPayment')}</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-stone-900">
+                  <CreditCard className="w-4 h-4 text-amber-600" />
+                  {t('checkoutPage.payKnet')}
+                </span>
+              </div>
+            </div>
+            <div className="px-8 pb-10 flex flex-col sm:flex-row justify-center gap-3">
+              <button
+                type="button"
+                onClick={handleDownloadInvoice}
+                disabled={downloadingInvoice || !order?.id}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-amber-600 text-amber-800 hover:bg-amber-50 font-medium disabled:opacity-50"
+              >
+                {downloadingInvoice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {t('checkoutPage.downloadInvoice')}
+              </button>
+              <Link to="/dashboard" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-stone-900 text-white hover:bg-stone-800 font-medium">
+                {t('checkoutPage.viewMyOrders')}
+              </Link>
+              <Link to="/products" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50 font-medium">
+                {t('cartPage.continueShopping')}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
