@@ -404,7 +404,13 @@ export const ordersApi = {
 
   /** Customer-driven KNET reconciliation: backend inquires KNET and updates the sale. */
   verifyKnetPayment: (id: string) =>
-    apiService.post(`/accounting/sales/${id}/verify-knet/`),
+    apiService.post<{
+      sale_id: string
+      invoice_number: string
+      payment_status: 'paid' | 'failed' | 'pending'
+      status: string
+      total_amount: string
+    }>(`/accounting/sales/${id}/verify-knet/`),
 
   createOrder: (data: unknown) =>
     apiService.post('/accounting/sales/', data),
