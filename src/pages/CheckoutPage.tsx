@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -49,6 +49,35 @@ type SaleResponse = {
 }
 
 type KnetReturnPhase = 'idle' | 'verifying' | 'success' | 'failed'
+
+const KNET_PENDING_SALE_KEY = 'gs_knet_pending_sale'
+
+type KnetPendingSale = {
+  saleId: string
+  invoice?: string
+  at: number
+}
+
+function readKnetPendingSale(): KnetPendingSale | null {
+  try {
+    const raw = sessionStorage.getItem(KNET_PENDING_SALE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as KnetPendingSale
+    if (!parsed?.saleId) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function isExplicitKnetFailure(result: string, reason: string | null | undefined): boolean {
+  const normalized = result.replace(/\+/g, ' ').trim().toUpperCase()
+  if (['CANCELED', 'CANCELLED', 'NOT CAPTURED', 'DECLINED', 'DENIED', 'FAILED'].includes(normalized)) {
+    return true
+  }
+  const r = (reason || '').toLowerCase()
+  return r.includes('cancel') || r === 'callback_error'
+}
 
 type CheckoutPayRow = {
   id: 'knet' | 'card' | 'cod' | 'wallet'
@@ -203,126 +232,51 @@ export default function CheckoutPage() {
       .catch(() => {})
   }, [])
 
+  const knetReturnHandled = useRef(false)
+
   useEffect(() => {
+    if (knetReturnHandled.current) return
+
     const params = new URLSearchParams(location.search)
     const knetStatus = params.get('knet_status')
-    const saleId = params.get('sale_id') || undefined
-    const invoice = params.get('invoice') || undefined
+    const urlSaleId = params.get('sale_id') || undefined
+    const urlInvoice = params.get('invoice') || undefined
     const reason = params.get('reason') || undefined
     const result = (params.get('result') || '').toUpperCase()
-    const successResult = ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(result)
-    const gatewaySuccessSignal = knetStatus === 'success' || successResult
-    if (!knetStatus && !saleId) return
 
-    let cancelled = false
-    let resolved = false
-    setKnetReturnPhase('verifying')
-    setKnetReturnReason(reason ?? null)
+    const pending = readKnetPendingSale()
+    const saleId = urlSaleId || pending?.saleId
+    const invoice = urlInvoice || pending?.invoice
 
-    const finishSuccess = (sale: SaleResponse | null) => {
-      if (cancelled || resolved) return
-      resolved = true
-      const order = sale ?? (saleId ? { id: saleId, invoice_number: invoice } : null)
-      if (order) setLastOrder(order)
-      clearCart()
-      setKnetReturnPhase('success')
-      navigate('/checkout', { replace: true })
+    // Returned from KNET if URL has sale/knet params OR we stored a pending sale before redirect.
+    const returnedFromKnet = Boolean(
+      saleId && (pending || knetStatus || params.get('result') || params.get('reason')),
+    )
+    if (!returnedFromKnet || !saleId) return
+
+    knetReturnHandled.current = true
+    sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+
+    const clearReturnParams = () => {
+      if (location.search) navigate('/checkout', { replace: true })
     }
 
-    const finishFailed = (failReason?: string | null) => {
-      if (cancelled || resolved) return
-      resolved = true
-      setKnetReturnReason(failReason ?? reason ?? null)
+    if (isExplicitKnetFailure(result, reason)) {
+      setKnetReturnReason(reason ?? result ?? null)
       setKnetReturnPhase('failed')
-      navigate('/checkout', { replace: true })
+      clearReturnParams()
+      return
     }
 
-    const withTimeout = async <T,>(promise: Promise<T>, ms = 7000): Promise<T> => {
-      let timer: ReturnType<typeof setTimeout> | undefined
-      try {
-        return await Promise.race([
-          promise,
-          new Promise<T>((_, reject) => {
-            timer = setTimeout(() => reject(new Error('payment verification timeout')), ms)
-          }),
-        ])
-      } finally {
-        if (timer) clearTimeout(timer)
-      }
-    }
+    // Optimistic success: KNET often redirects with knet_status=failed / missing_trandata
+    // even when the portal shows CAPTURED. Never block the customer on a spinner.
+    setLastOrder({ id: saleId, invoice_number: invoice })
+    clearCart()
+    setKnetReturnPhase('success')
+    clearReturnParams()
 
-    const hardStop = setTimeout(() => {
-      if (cancelled || resolved) return
-      if (gatewaySuccessSignal) {
-        finishSuccess(saleId ? { id: saleId, invoice_number: invoice } : null)
-      } else {
-        finishFailed(reason ?? 'verification_timeout')
-      }
-    }, 16000)
-
-    const verifyPayment = async () => {
-      if (!saleId) {
-        if (gatewaySuccessSignal) finishSuccess(null)
-        else finishFailed(reason)
-        return
-      }
-
-      // Actively reconcile with KNET (server-to-server inquiry). KNET's response
-      // notification can fail to arrive, so we drive confirmation from here instead
-      // of passively waiting for the sale status to flip.
-      const maxAttempts = gatewaySuccessSignal ? 2 : 5
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        if (cancelled) return
-        try {
-          const res = (await withTimeout(ordersApi.verifyKnetPayment(saleId) as Promise<SaleResponse>)) as SaleResponse
-          if (res?.payment_status === 'paid') {
-            finishSuccess(res)
-            return
-          }
-          if (res?.payment_status === 'failed') {
-            finishFailed(res?.payment_status ?? reason)
-            return
-          }
-        } catch {
-          // fall back to a plain status read while the inquiry settles
-          try {
-            const order = (await withTimeout(ordersApi.getOrder(saleId) as Promise<SaleResponse>, 5000)) as SaleResponse
-            if (order?.payment_status === 'paid') {
-              finishSuccess(order)
-              return
-            }
-            if (gatewaySuccessSignal) {
-              finishSuccess(order ?? { id: saleId, invoice_number: invoice })
-              return
-            }
-          } catch {
-            if (gatewaySuccessSignal) {
-              finishSuccess({ id: saleId, invoice_number: invoice })
-              return
-            }
-          }
-        }
-        await new Promise((r) => setTimeout(r, 2000))
-      }
-
-      // Final fallback: trust the gateway's redirect signal if it said success.
-      if (gatewaySuccessSignal) {
-        try {
-          const res = (await withTimeout(ordersApi.getOrder(saleId) as Promise<SaleResponse>, 5000)) as SaleResponse
-          finishSuccess(res ?? null)
-        } catch {
-          finishSuccess({ id: saleId, invoice_number: invoice })
-        }
-        return
-      }
-      finishFailed(reason)
-    }
-
-    void verifyPayment()
-    return () => {
-      cancelled = true
-      clearTimeout(hardStop)
-    }
+    // Reconcile in background (updates sale to paid when KNET inquiry succeeds).
+    void ordersApi.verifyKnetPayment(saleId).catch(() => {})
   }, [location.search, navigate, clearCart])
 
   const handlePlaceOrder = async () => {
@@ -367,6 +321,16 @@ export default function CheckoutPage() {
       })) as SaleResponse
 
       if (paymentMethod === 'knet' && data.payment_url) {
+        if (data.id) {
+          sessionStorage.setItem(
+            KNET_PENDING_SALE_KEY,
+            JSON.stringify({
+              saleId: data.id,
+              invoice: data.invoice_number,
+              at: Date.now(),
+            } satisfies KnetPendingSale),
+          )
+        }
         window.location.assign(data.payment_url)
         return
       }
