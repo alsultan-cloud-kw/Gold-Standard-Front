@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
@@ -78,29 +77,6 @@ const queryClient = new QueryClient({
 })
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    // Simulate initial loading
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-lime-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold gold-gradient-text-on-light">Gold Standard</h2>
-          <p className="text-stone-500 mt-2">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
         <AuthProvider>
