@@ -211,6 +211,7 @@ export default function CheckoutPage() {
     const reason = params.get('reason') || undefined
     const result = (params.get('result') || '').toUpperCase()
     const successResult = ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(result)
+    const gatewaySuccessSignal = knetStatus === 'success' || successResult
     if (!knetStatus && !saleId) return
 
     let cancelled = false
@@ -233,9 +234,23 @@ export default function CheckoutPage() {
       navigate('/checkout', { replace: true })
     }
 
+    const withTimeout = async <T,>(promise: Promise<T>, ms = 7000): Promise<T> => {
+      let timer: ReturnType<typeof setTimeout> | undefined
+      try {
+        return await Promise.race([
+          promise,
+          new Promise<T>((_, reject) => {
+            timer = setTimeout(() => reject(new Error('payment verification timeout')), ms)
+          }),
+        ])
+      } finally {
+        if (timer) clearTimeout(timer)
+      }
+    }
+
     const verifyPayment = async () => {
       if (!saleId) {
-        if (knetStatus === 'success' || successResult) finishSuccess(null)
+        if (gatewaySuccessSignal) finishSuccess(null)
         else finishFailed(reason)
         return
       }
@@ -243,11 +258,11 @@ export default function CheckoutPage() {
       // Actively reconcile with KNET (server-to-server inquiry). KNET's response
       // notification can fail to arrive, so we drive confirmation from here instead
       // of passively waiting for the sale status to flip.
-      const maxAttempts = 10
+      const maxAttempts = gatewaySuccessSignal ? 2 : 5
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         if (cancelled) return
         try {
-          const res = (await ordersApi.verifyKnetPayment(saleId)) as SaleResponse
+          const res = (await withTimeout(ordersApi.verifyKnetPayment(saleId) as Promise<SaleResponse>)) as SaleResponse
           if (res?.payment_status === 'paid') {
             finishSuccess(res)
             return
@@ -259,20 +274,27 @@ export default function CheckoutPage() {
         } catch {
           // fall back to a plain status read while the inquiry settles
           try {
-            const order = (await ordersApi.getOrder(saleId)) as SaleResponse
+            const order = (await withTimeout(ordersApi.getOrder(saleId) as Promise<SaleResponse>, 5000)) as SaleResponse
             if (order?.payment_status === 'paid') {
               finishSuccess(order)
               return
             }
+            if (gatewaySuccessSignal) {
+              finishSuccess(order ?? { id: saleId, invoice_number: invoice })
+              return
+            }
           } catch {
-            // keep polling
+            if (gatewaySuccessSignal) {
+              finishSuccess({ id: saleId, invoice_number: invoice })
+              return
+            }
           }
         }
         await new Promise((r) => setTimeout(r, 2000))
       }
 
       // Final fallback: trust the gateway's redirect signal if it said success.
-      if (knetStatus === 'success' || successResult) {
+      if (gatewaySuccessSignal) {
         try {
           const res = (await ordersApi.getOrder(saleId)) as SaleResponse
           finishSuccess(res ?? null)
