@@ -215,11 +215,13 @@ export default function CheckoutPage() {
     if (!knetStatus && !saleId) return
 
     let cancelled = false
+    let resolved = false
     setKnetReturnPhase('verifying')
     setKnetReturnReason(reason ?? null)
 
     const finishSuccess = (sale: SaleResponse | null) => {
-      if (cancelled) return
+      if (cancelled || resolved) return
+      resolved = true
       const order = sale ?? (saleId ? { id: saleId, invoice_number: invoice } : null)
       if (order) setLastOrder(order)
       clearCart()
@@ -228,7 +230,8 @@ export default function CheckoutPage() {
     }
 
     const finishFailed = (failReason?: string | null) => {
-      if (cancelled) return
+      if (cancelled || resolved) return
+      resolved = true
       setKnetReturnReason(failReason ?? reason ?? null)
       setKnetReturnPhase('failed')
       navigate('/checkout', { replace: true })
@@ -247,6 +250,15 @@ export default function CheckoutPage() {
         if (timer) clearTimeout(timer)
       }
     }
+
+    const hardStop = setTimeout(() => {
+      if (cancelled || resolved) return
+      if (gatewaySuccessSignal) {
+        finishSuccess(saleId ? { id: saleId, invoice_number: invoice } : null)
+      } else {
+        finishFailed(reason ?? 'verification_timeout')
+      }
+    }, 16000)
 
     const verifyPayment = async () => {
       if (!saleId) {
@@ -296,7 +308,7 @@ export default function CheckoutPage() {
       // Final fallback: trust the gateway's redirect signal if it said success.
       if (gatewaySuccessSignal) {
         try {
-          const res = (await ordersApi.getOrder(saleId)) as SaleResponse
+          const res = (await withTimeout(ordersApi.getOrder(saleId) as Promise<SaleResponse>, 5000)) as SaleResponse
           finishSuccess(res ?? null)
         } catch {
           finishSuccess({ id: saleId, invoice_number: invoice })
@@ -309,6 +321,7 @@ export default function CheckoutPage() {
     void verifyPayment()
     return () => {
       cancelled = true
+      clearTimeout(hardStop)
     }
   }, [location.search, navigate, clearCart])
 
