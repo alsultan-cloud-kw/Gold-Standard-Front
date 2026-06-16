@@ -1,5 +1,6 @@
 import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { getApiBaseUrl } from '@/lib/apiBase'
+import type { KnetReceiptDetails } from '@/types'
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -411,6 +412,9 @@ export const ordersApi = {
       status: string
       total_amount: string
     }>(`/accounting/sales/${id}/verify-knet/`),
+
+  getKnetReceipt: (id: string) =>
+    apiService.get<KnetReceiptDetails>(`/accounting/sales/${id}/knet-receipt/`),
 
   createOrder: (data: unknown) =>
     apiService.post('/accounting/sales/', data),

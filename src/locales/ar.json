@@ -494,6 +494,27 @@
     "stockOnlyLeftForSku": "المتوفر فقط {{available}} من المخزون للرمز {{sku}}.",
     "stockInsufficientRequested": "المخزون غير كافٍ. المطلوب {{requested}} والمتوفر {{available}}."
   },
+  "knetReceipt": {
+    "loading": "جاري تحميل إيصال الدفع...",
+    "missingSale": "رقم الطلب غير موجود.",
+    "loadError": "تعذر تحميل إيصال كي نت.",
+    "errorTitle": "الإيصال غير متاح",
+    "badge": "إيصال دفع كي نت",
+    "capturedTitle": "تم تحصيل الدفع",
+    "notCapturedTitle": "لم يتم تحصيل الدفع",
+    "subtitle": "احتفظ بهذا الإيصال لسجلاتك. هذه التفاصيل مطابقة لمعاملة بوابة كي نت.",
+    "paymentDetails": "تفاصيل الدفع",
+    "merchant": "التاجر",
+    "orderNumber": "رقم الطلب",
+    "paymentId": "رقم الدفع",
+    "transactionId": "رقم المعاملة",
+    "trackId": "رقم التتبع / المرجع",
+    "referenceId": "مرجع البوابة",
+    "amount": "المبلغ",
+    "dateTime": "التاريخ والوقت",
+    "status": "النتيجة / الحالة",
+    "unavailable": "غير متاح"
+  },
   "contactPage": {
     "title": "اتصل بنا",
     "subtitle": "لديك أسئلة؟ يسعدنا تواصلك. أرسل لنا رسالة وسنرد في أقرب وقت ممكن.",

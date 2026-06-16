@@ -518,6 +518,27 @@
     "stockOnlyLeftForSku": "Only {{available}} left in stock for SKU {{sku}}.",
     "stockInsufficientRequested": "Insufficient stock. Requested {{requested}}, available {{available}}."
   },
+  "knetReceipt": {
+    "loading": "Loading payment receipt...",
+    "missingSale": "Order ID is missing.",
+    "loadError": "Could not load the KNET receipt.",
+    "errorTitle": "Receipt unavailable",
+    "badge": "KNET payment receipt",
+    "capturedTitle": "Payment captured",
+    "notCapturedTitle": "Payment not captured",
+    "subtitle": "Keep this receipt for your records. These details match the KNET gateway transaction.",
+    "paymentDetails": "Payment details",
+    "merchant": "Merchant",
+    "orderNumber": "Order number",
+    "paymentId": "Payment ID",
+    "transactionId": "Transaction ID",
+    "trackId": "Track / Reference ID",
+    "referenceId": "Gateway reference",
+    "amount": "Amount",
+    "dateTime": "Date and time",
+    "status": "Result / status",
+    "unavailable": "Unavailable"
+  },
   "contactPage": {
     "title": "Contact Us",
     "subtitle": "Have questions? We would love to hear from you. Send us a message and we will respond as soon as possible.",

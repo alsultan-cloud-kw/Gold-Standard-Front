@@ -291,48 +291,40 @@ export default function CheckoutPage() {
     knetReturnHandled.current = true
     sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
 
-    const clearReturnParams = () => {
-      if (location.search) navigate('/checkout', { replace: true })
+    const goToReceipt = () => {
+      navigate(`/payment-receipt/${saleId}`, { replace: true, state: { invoice } })
     }
 
     if (isExplicitKnetFailure(knetStatus, result, reason)) {
-      setKnetReturnReason(reason ?? result ?? null)
-      setKnetReturnPhase('failed')
-      clearReturnParams()
+      goToReceipt()
       return
     }
 
     if (isExplicitKnetSuccess(knetStatus, result)) {
-      setLastOrder({ id: saleId, invoice_number: invoice })
       clearCart()
-      setKnetReturnPhase('success')
-      clearReturnParams()
       void ordersApi.verifyKnetPayment(saleId).catch(() => {})
+      goToReceipt()
       return
     }
 
     if (!needsKnetVerification(knetStatus, result, reason)) {
-      setKnetReturnReason(reason ?? result ?? null)
-      setKnetReturnPhase('failed')
-      clearReturnParams()
+      goToReceipt()
       return
     }
 
     // Ambiguous return (e.g. missing_trandata) — short verify, never assume success.
     setKnetReturnPhase('verifying')
-    clearReturnParams()
 
     let cancelled = false
     const finishSuccess = () => {
       if (cancelled) return
-      setLastOrder({ id: saleId, invoice_number: invoice })
       clearCart()
-      setKnetReturnPhase('success')
+      goToReceipt()
     }
     const finishFailed = (failReason?: string | null) => {
       if (cancelled) return
       setKnetReturnReason(failReason ?? reason ?? result ?? null)
-      setKnetReturnPhase('failed')
+      goToReceipt()
     }
 
     const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>

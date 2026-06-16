@@ -39,6 +39,25 @@ export interface CustomerProfile {
   preferred_language: string
 }
 
+export interface KnetReceiptDetails {
+  merchant_name: string
+  sale_id: string
+  invoice_number: string
+  payment_status: string
+  order_status: string
+  payment_method: string
+  result: string
+  amount: string
+  currency: string
+  transaction_datetime: string
+  transaction_timezone: string
+  track_id?: string | null
+  payment_id?: string | null
+  transaction_id?: string | null
+  reference_id?: string | null
+  auth_code?: string | null
+}
+
 // Product Types
 export interface MetalType {
   id: string
