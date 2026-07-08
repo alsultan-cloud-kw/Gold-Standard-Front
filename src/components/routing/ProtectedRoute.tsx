@@ -1,24 +1,27 @@
 import type { ReactNode } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
+import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
+import { isStaffRole, resolvePostAuthPath } from '../../utils/authRedirect'
 
-const STAFF_ROLES: readonly User['role'][] = [
-  'cashier',
+export { isStaffRole }
+
+const CATALOG_MANAGER_ROLES: readonly User['role'][] = [
   'branch_manager',
   'general_manager',
   'admin',
 ]
 
-function isStaffRole(role: string | undefined): boolean {
-  return !!role && (STAFF_ROLES as readonly string[]).includes(role)
+function isCatalogManagerRole(role: string | undefined): boolean {
+  return !!role && (CATALOG_MANAGER_ROLES as readonly string[]).includes(role)
 }
 
-function AuthLoadingFallback() {
+export function AuthLoadingFallback({ message = 'Loading…' }: { message?: string }) {
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
       <div className="w-12 h-12 border-4 border-lime-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm text-gold-100/70">Loading…</p>
+      <p className="text-sm text-gold-100/70">{message}</p>
     </div>
   )
 }
@@ -41,6 +44,31 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 /**
+ * Auth pages only (login, register, forgot password).
+ * Redirects signed-in users away — prevents duplicate login errors.
+ */
+export function GuestOnlyRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isSignedIn, isLoaded: clerkLoaded } = useClerkAuth()
+  const [searchParams] = useSearchParams()
+
+  if (isLoading || !clerkLoaded) {
+    return <AuthLoadingFallback />
+  }
+
+  if (isSignedIn && !isAuthenticated) {
+    return <AuthLoadingFallback message="Completing sign-in…" />
+  }
+
+  if (isAuthenticated) {
+    const target = resolvePostAuthPath(user, searchParams.get('next'))
+    return <Navigate to={target} replace />
+  }
+
+  return <Outlet />
+}
+
+/**
  * Staff-only layout for `/admin/*`.
  * Use as a parent route: `<Route element={<StaffRoute />}>…</Route>`.
  */
@@ -59,6 +87,29 @@ export function StaffRoute() {
 
   if (!isStaffRole(user?.role)) {
     return <Navigate to="/" replace />
+  }
+
+  return <Outlet />
+}
+
+/**
+ * Catalog managers only — product/category admin in website.
+ */
+export function CatalogManagerRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
+
+  if (isLoading) {
+    return <AuthLoadingFallback />
+  }
+
+  if (!isAuthenticated) {
+    const next = encodeURIComponent(`${location.pathname}${location.search}`)
+    return <Navigate to={`/login?next=${next}`} replace />
+  }
+
+  if (!isCatalogManagerRole(user?.role)) {
+    return <Navigate to="/admin" replace />
   }
 
   return <Outlet />

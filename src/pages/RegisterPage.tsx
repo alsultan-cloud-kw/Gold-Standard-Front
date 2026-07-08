@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Eye,
@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import { STOREFRONT_USER_ROLES, type StorefrontUserRole } from '../constants/storefrontRoles'
 import { formatApiErrorMessage } from '../utils/apiErrors'
 import { safeAppNextPath } from '../utils/safeNextPath'
+import { resolvePostAuthPath } from '../utils/authRedirect'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -33,6 +34,9 @@ import { getRegionDisplayName, getSortedIso2RegionCodes } from '@/lib/registrati
 import { cn } from '@/lib/utils'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
+import KycRegistrationFields, { type KycQuestion } from '../components/auth/KycRegistrationFields'
+import AmlOpenSanctionsNotice from '../components/auth/AmlOpenSanctionsNotice'
+import { authApi } from '../services/api'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 
 const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
@@ -85,6 +89,16 @@ export default function RegisterPage() {
     confirm_password: '',
     role: 'customer' as StorefrontUserRole,
   })
+  const [kycQuestions, setKycQuestions] = useState<KycQuestion[]>([])
+  const [kycAnswers, setKycAnswers] = useState<Record<string, string | boolean>>({})
+  const [kycErrors, setKycErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    void authApi.getKycQuestions().then((res) => {
+      const rows = res.questions as KycQuestion[] | undefined
+      setKycQuestions(Array.isArray(rows) ? rows : [])
+    }).catch(() => setKycQuestions([]))
+  }, [])
 
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -117,7 +131,7 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      await register({
+      const registeredUser = await register({
         full_name: formData.full_name,
         nationality: formData.nationality.toUpperCase(),
         email: formData.email || undefined,
@@ -127,17 +141,18 @@ export default function RegisterPage() {
         role: formData.role,
         terms_accepted: acceptedLegal,
         privacy_policy_accepted: acceptedLegal,
+        kyc_answers: kycAnswers,
+        registration_source: 'website',
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
       toast.success(t('auth.registerSuccess'))
-      if (nextPath) {
-        navigate(nextPath)
-      } else {
-        navigate('/')
-      }
+      navigate(resolvePostAuthPath(registeredUser, nextPath))
     } catch (error) {
       clearTurnstile()
-      const res = (error as { response?: { status?: number; data?: { error?: string } } })?.response
+      const res = (error as { response?: { status?: number; data?: { error?: string; kyc_answers?: Record<string, string> } } })?.response
+      if (res?.data?.kyc_answers && typeof res.data.kyc_answers === 'object') {
+        setKycErrors(res.data.kyc_answers)
+      }
       if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
         toast.error(t('auth.captchaFailed'))
       } else {
@@ -154,6 +169,9 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold gold-gradient-text mb-2">{t('auth.createAccountTitle')}</h1>
           <p className="text-gold-100/60">{t('auth.registerSubtitle')}</p>
+          <div className="mt-4 flex justify-center">
+            <AmlOpenSanctionsNotice />
+          </div>
         </div>
 
         <div className="gold-card">
@@ -413,6 +431,20 @@ export default function RegisterPage() {
                 />
               </div>
             </div>
+
+            <KycRegistrationFields
+              questions={kycQuestions}
+              answers={kycAnswers}
+              errors={kycErrors}
+              onChange={(key, value) => {
+                setKycAnswers((prev) => ({ ...prev, [key]: value }))
+                setKycErrors((prev) => {
+                  const next = { ...prev }
+                  delete next[key]
+                  return next
+                })
+              }}
+            />
 
             <div>
               <label className="flex items-start gap-2 cursor-pointer">

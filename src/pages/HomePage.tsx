@@ -14,6 +14,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { productsApi, type DaralsabaekPublicRatesResponse } from '../services/api'
 import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
@@ -141,6 +142,7 @@ export default function HomePage() {
                   {t('home.heroCtaBullion')}
                   <ArrowRight className="w-5 h-5 rtl:rotate-180 shrink-0" />
                 </Link>
+                {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                 <Link
                   to="/trade-gold"
                   className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold text-black bg-white border-2 border-black/80 hover:bg-yellow-300 hover:border-black transition-all shadow-sm"
@@ -148,6 +150,7 @@ export default function HomePage() {
                   {t('nav.tradeGold')}
                   <LineChart className="w-4 h-4 shrink-0" />
                 </Link>
+                ) : null}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button

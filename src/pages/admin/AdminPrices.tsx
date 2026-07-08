@@ -16,6 +16,7 @@ const PRECIOUS_METAL_KEYS = ['Silver', 'Platinum'] as const
 type PreciousKey = (typeof PRECIOUS_METAL_KEYS)[number]
 type MarkupKey = CaratKey | PreciousKey
 const ALL_MARKUP_KEYS: MarkupKey[] = [...CARAT_KEYS, ...PRECIOUS_METAL_KEYS]
+const OUNCE_MARKUP_KEY = 'Ounce' as const
 
 const MARKUP_STORAGE_KEY = 'adminGoldAdditionalKwdPerGram'
 
@@ -134,6 +135,18 @@ function normalizeMarkupRows(partial: Record<string, Partial<MarkupRow>> | undef
   return out
 }
 
+function normalizeGs1MarkupRows(partial: Record<string, Partial<MarkupRow>> | undefined) {
+  const out = normalizeMarkupRows(partial)
+  const ounce = partial?.[OUNCE_MARKUP_KEY]
+  out[OUNCE_MARKUP_KEY] = {
+    buyAdd: ounce?.buyAdd ?? '0',
+    sellAdd: ounce?.sellAdd ?? '0',
+    clubBuyAdd: ounce?.clubBuyAdd ?? '0',
+    clubSellAdd: ounce?.clubSellAdd ?? '0',
+  }
+  return out
+}
+
 export default function AdminPrices() {
   const [prices] = useState<Record<string, { buy: string; sell: string }>>({})
   const [additional, setAdditional] = useState<Record<string, MarkupRow>>(() => loadAdditional())
@@ -144,7 +157,7 @@ export default function AdminPrices() {
     normalizeMarkupRows(undefined)
   )
   const [additionalGs1, setAdditionalGs1] = useState<Record<string, MarkupRow>>(() =>
-    normalizeMarkupRows(undefined)
+    normalizeGs1MarkupRows(undefined)
   )
   const [usdToKwdRate, setUsdToKwdRate] = useState<string>('0.307')
   const kw2Hydrated = useRef(false)
@@ -312,7 +325,7 @@ export default function AdminPrices() {
     if (gs1Hydrated.current || !kuwaitConfig) return
     const src = kuwaitConfig.extra_source_markups?.gs1
     if (src && typeof src === 'object') {
-      setAdditionalGs1(normalizeMarkupRows(src as Record<string, Partial<MarkupRow>>))
+      setAdditionalGs1(normalizeGs1MarkupRows(src as Record<string, Partial<MarkupRow>>))
     }
     if (typeof kuwaitConfig.usd_to_kwd_rate === 'number' && Number.isFinite(kuwaitConfig.usd_to_kwd_rate)) {
       setUsdToKwdRate(String(kuwaitConfig.usd_to_kwd_rate))
@@ -578,7 +591,8 @@ export default function AdminPrices() {
       ? 'goldapi.io'
       : 'getMetalSellAndBuyPrices'
 
-  const fmt = (n: number) => (typeof n === 'number' && !Number.isNaN(n) ? n.toFixed(4) : '—')
+  const fmt = (n: number | null | undefined) =>
+    typeof n === 'number' && !Number.isNaN(n) ? n.toFixed(4) : '—'
 
   return (
     <div className="min-h-screen py-8">
@@ -696,33 +710,119 @@ export default function AdminPrices() {
                 }
                 const ounceUsd =
                   typeof r.goldOuncePrice === 'number' ? toUsdOunce(r.goldOuncePrice) : null
+                const ounceBaseKwd =
+                  typeof ounceUsd === 'number' && Number.isFinite(ounceUsd)
+                    ? ounceUsd * usdToKwdSafe
+                    : null
+                const ounceAdds =
+                  previewSource === 'gs1' ? additionalGs1[OUNCE_MARKUP_KEY] : undefined
+                const ounceBuyAdd = parseFloat(ounceAdds?.buyAdd ?? '0')
+                const ounceSellAdd = parseFloat(ounceAdds?.sellAdd ?? '0')
+                const ounceClubBuyAdd = parseFloat(ounceAdds?.clubBuyAdd ?? '0')
+                const ounceClubSellAdd = parseFloat(ounceAdds?.clubSellAdd ?? '0')
+                const ounceBuyTotal =
+                  ounceBaseKwd != null
+                    ? ounceBaseKwd + (Number.isNaN(ounceBuyAdd) ? 0 : ounceBuyAdd)
+                    : null
+                const ounceSellTotal =
+                  ounceBaseKwd != null
+                    ? ounceBaseKwd + (Number.isNaN(ounceSellAdd) ? 0 : ounceSellAdd)
+                    : null
+                const ounceBuyTotalClub =
+                  ounceBuyTotal != null
+                    ? ounceBuyTotal + (Number.isNaN(ounceClubBuyAdd) ? 0 : ounceClubBuyAdd)
+                    : null
+                const ounceSellTotalClub =
+                  ounceSellTotal != null
+                    ? ounceSellTotal + (Number.isNaN(ounceClubSellAdd) ? 0 : ounceClubSellAdd)
+                    : null
                 return (
                   <>
                     <div className="gold-card overflow-hidden relative">
                       <div className="absolute inset-0 bg-gradient-to-br from-gold-500/10 via-transparent to-gold-600/5 pointer-events-none" />
-                      <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 py-2">
+                      <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 py-2">
                         <div>
                           <p className="text-[25px] font-bold text-black uppercase tracking-wider mb-1">
                             Gold ounce Price
                           </p>
                           <p className="text-xs text-stone-600">every {r.updateIntervalInSeconds}s</p>
                         </div>
-                        <div className="text-left sm:text-right">
-                          <p
-                            className="text-4xl sm:text-5xl font-bold gold-gradient-text-on-light tabular-nums leading-none"
-                            style={{ fontVariantNumeric: 'tabular-nums' }}
-                          >
-                            ${typeof ounceUsd === 'number' && Number.isFinite(ounceUsd)
-                              ? ounceUsd.toLocaleString(undefined, {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })
-                              : '—'}
-                          </p>
-                          <p className="text-stone-700 text-sm font-medium mt-2">USD / troy ounce</p>
+                        <div className="flex flex-col sm:flex-row gap-6 sm:gap-10">
+                          <div className="text-left sm:text-right">
+                            <p
+                              className="text-4xl sm:text-5xl font-bold gold-gradient-text-on-light tabular-nums leading-none"
+                              style={{ fontVariantNumeric: 'tabular-nums' }}
+                            >
+                              ${typeof ounceUsd === 'number' && Number.isFinite(ounceUsd)
+                                ? ounceUsd.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })
+                                : '—'}
+                            </p>
+                            <p className="text-stone-700 text-sm font-medium mt-2">USD / troy ounce</p>
+                          </div>
+                          {previewSource === 'gs1' && ounceSellTotal != null && (
+                            <div className="text-left sm:text-right border-s-0 sm:border-s border-black/10 sm:ps-10">
+                              <p className="text-[10px] uppercase text-stone-600 font-bold mb-1">KWD / troy ounce</p>
+                              <p className="text-3xl sm:text-4xl font-bold text-black tabular-nums leading-none">
+                                {fmt(ounceSellTotal)}
+                              </p>
+                              <p className="text-[11px] text-stone-600 mt-2">
+                                buy {fmt(ounceBuyTotal)} · base {fmt(ounceBaseKwd ?? 0)}
+                                {!Number.isNaN(ounceSellAdd) && ounceSellAdd !== 0 && (
+                                  <span className="text-amber-800 font-semibold"> + {ounceSellAdd.toFixed(3)} sell</span>
+                                )}
+                              </p>
+                              <p className="text-[11px] text-lime-900 mt-1 font-medium">
+                                Club sell {fmt(ounceSellTotalClub)} · buy {fmt(ounceBuyTotalClub)}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
+
+                    {previewSource === 'gs1' && (
+                      <div className="rounded-xl border-2 border-amber-500/30 bg-amber-50/80 p-4">
+                        <h3 className="text-sm font-bold text-black mb-1">
+                          Global ounce — additional (KWD/oz)
+                        </h3>
+                        <p className="text-xs text-stone-700 mb-4 font-medium">
+                          Converted spot = USD/oz × USD→KWD. Add fixed KWD per troy ounce on top.
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl">
+                          {(['sellAdd', 'buyAdd', 'clubSellAdd', 'clubBuyAdd'] as const).map((field) => {
+                            const labels: Record<typeof field, string> = {
+                              sellAdd: '+ on sell',
+                              buyAdd: '+ on buy',
+                              clubSellAdd: '+ on sell (club)',
+                              clubBuyAdd: '+ on buy (club)',
+                            }
+                            return (
+                              <div key={field}>
+                                <label className="text-[10px] font-semibold text-stone-700">{labels[field]}</label>
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  value={additionalGs1[OUNCE_MARKUP_KEY]?.[field] ?? '0'}
+                                  onChange={(e) =>
+                                    setAdditionalGs1((prev) => ({
+                                      ...prev,
+                                      [OUNCE_MARKUP_KEY]: {
+                                        ...(prev[OUNCE_MARKUP_KEY] ?? emptyMarkupRow()),
+                                        [field]: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-2 py-1.5 mt-0.5 bg-white border-2 border-black/15 rounded text-black text-sm"
+                                />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <h3 className="text-sm font-bold text-black mb-2">Sell / Buy KWD/g — live totals</h3>

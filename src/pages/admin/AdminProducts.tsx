@@ -56,6 +56,7 @@ export default function AdminProducts() {
   const [editingBarcodeValue, setEditingBarcodeValue] = useState<string>('')
   const [editingBarcodeImageUrl, setEditingBarcodeImageUrl] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [skuPreview, setSkuPreview] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Client-side pagination for products table
@@ -77,6 +78,7 @@ export default function AdminProducts() {
     making_charge_amount: '0',
     description_ar: '',
     description_en: '',
+    brand: 'Gold Standard',
     status: 'active',
     is_featured: false,
     initial_stock_quantity: '0',
@@ -138,6 +140,28 @@ export default function AdminProducts() {
   const carats = useMemo(() => asResults<CaratOpt>(caratsData), [caratsData])
   const branchOptions = useMemo(() => asResults<BranchOpt>(branchesData), [branchesData])
 
+  const activeCategoryId = form.subcategory_id || form.parent_category_id
+
+  useEffect(() => {
+    if (editingSlug || !activeCategoryId || !dialogOpen) {
+      setSkuPreview('')
+      return
+    }
+    let active = true
+    productsApi
+      .previewProductSku(activeCategoryId)
+      .then((res) => {
+        const sku = (res as { sku?: string })?.sku
+        if (active && sku) setSkuPreview(sku)
+      })
+      .catch(() => {
+        if (active) setSkuPreview('')
+      })
+    return () => {
+      active = false
+    }
+  }, [activeCategoryId, dialogOpen, editingSlug])
+
   function resetForm() {
     setForm({
       sku: '',
@@ -156,6 +180,7 @@ export default function AdminProducts() {
       description_en: '',
       status: 'active',
       is_featured: false,
+      brand: 'Gold Standard',
       initial_stock_quantity: '0',
       initial_stock_branch_id: '',
     })
@@ -206,6 +231,7 @@ export default function AdminProducts() {
         making_charge_amount: String(detail.making_charge_amount ?? '0'),
         description_ar: String(detail.description_ar ?? ''),
         description_en: String(detail.description_en ?? ''),
+        brand: String(detail.brand ?? 'Gold Standard'),
         status: String(detail.status ?? 'active'),
         is_featured: Boolean(detail.is_featured),
         initial_stock_quantity: String(detail.initial_stock_quantity ?? '0'),
@@ -247,7 +273,7 @@ export default function AdminProducts() {
 
       const initialQty = Math.max(0, Math.floor(Number(form.initial_stock_quantity) || 0))
       const payload: Parameters<typeof productsApi.createProduct>[0] = {
-        sku: form.sku.trim(),
+        sku: form.sku.trim() || undefined,
         name_ar: form.name_ar.trim(),
         name_en: form.name_en.trim(),
         slug: form.slug.trim() || undefined,
@@ -259,6 +285,7 @@ export default function AdminProducts() {
         making_charge_amount: making,
         description_ar: form.description_ar.trim(),
         description_en: form.description_en.trim(),
+        brand: form.brand.trim() || 'Gold Standard',
         status: form.status,
         is_featured: form.is_featured,
       }
@@ -273,7 +300,8 @@ export default function AdminProducts() {
         throw new Error('Select a category (and subcategory if needed), metal type, and carat')
 
       if (editingSlug) {
-        await productsApi.updateProduct(editingSlug, payload)
+        const { sku: _sku, ...patch } = payload
+        await productsApi.updateProduct(editingSlug, patch)
         if (imageFile && editingId) {
           await productsApi.createProductImage(editingId, imageFile, true)
         }
@@ -370,13 +398,23 @@ export default function AdminProducts() {
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs font-semibold text-black/80">SKU *</label>
+                  <label className="text-xs font-semibold text-black/80">SKU</label>
                   <input
                     className={inputClass}
                     value={form.sku}
-                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                    placeholder={editingSlug ? form.sku : skuPreview || 'Auto GS-BULL-0001'}
+                    onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })}
                     disabled={!!editingSlug}
                   />
+                  {!editingSlug ? (
+                    <p className="mt-1 text-[11px] text-stone-600">
+                      {skuPreview
+                        ? `Next auto SKU: ${skuPreview} — leave blank to use it.`
+                        : 'Select a category to preview the next SKU.'}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-stone-600">SKU is fixed after creation.</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-black/80">Serial number</label>
@@ -390,6 +428,15 @@ export default function AdminProducts() {
                     }
                   />
                 </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-black/80">Brand</label>
+                <input
+                  className={inputClass}
+                  value={form.brand}
+                  onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                  placeholder="Gold Standard"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-black/80">Barcode</label>

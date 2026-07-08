@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Printer } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi } from '../../services/api'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 
 const CURRENCY = 'KWD'
 const fmt = (n: number) => Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
@@ -170,7 +171,7 @@ export default function AdminFinancialReports() {
                       <td className="py-2 text-right font-medium text-lime-800">{fmt(pl.gross_profit ?? 0)} {pl.currency ?? CURRENCY}</td>
                       <td className="py-2 text-right text-sm text-lime-800">{fmtPct(pl.gross_margin ?? 0)}</td>
                     </tr>
-                    {(pl.buyback_cost ?? 0) !== 0 && (
+                    {(TRADING_AND_VIRTUAL_WALLET_ENABLED && (pl.buyback_cost ?? 0) !== 0) && (
                       <tr>
                         <td className="py-1 text-stone-800">Buyback cost (trading)</td>
                         <td className="py-1 text-right">{fmtCost(pl.buyback_cost!)}</td>

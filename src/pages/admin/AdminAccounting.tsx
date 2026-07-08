@@ -5,12 +5,15 @@ import { useQuery } from '@tanstack/react-query'
 import { BookOpen, FileText, ShoppingBag, Receipt, ShoppingCart, Scale } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi } from '../../services/api'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 
 const linkKeys: { to: string; labelKey: string; icon: typeof BookOpen; key: 'accounts' | 'journal' | 'sales' | 'buybacks' | 'purchases' | 'expenses' | 'reports' }[] = [
   { to: '/admin/accounting/accounts', labelKey: 'admin.chartOfAccounts', icon: BookOpen, key: 'accounts' },
   { to: '/admin/accounting/journal', labelKey: 'admin.journalEntries', icon: FileText, key: 'journal' },
   { to: '/admin/orders', labelKey: 'admin.salesOrders', icon: ShoppingCart, key: 'sales' },
-  { to: '/admin/trading/buybacks', labelKey: 'admin.tradingBuybacks', icon: Scale, key: 'buybacks' },
+  ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
+    ? [{ to: '/admin/trading/buybacks', labelKey: 'admin.tradingBuybacks', icon: Scale, key: 'buybacks' as const }]
+    : []),
   { to: '/admin/accounting/purchases', labelKey: 'admin.purchases', icon: ShoppingBag, key: 'purchases' },
   { to: '/admin/accounting/expenses', labelKey: 'admin.expenses', icon: Receipt, key: 'expenses' },
   // { to: '/admin/accounting/reports', labelKey: 'admin.financialReports', icon: BarChart3, key: 'reports' },

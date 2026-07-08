@@ -17,6 +17,10 @@ import {
   Database,
   Wallet,
 } from 'lucide-react'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from '@/featureFlags'
+import { useAuth } from '@/contexts/AuthContext'
+
+const CATALOG_MANAGER_ROLES = new Set(['admin', 'general_manager', 'branch_manager'])
 
 const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDashboard }[] = [
   { path: '/admin', labelKey: 'admin.dashboard', icon: LayoutDashboard },
@@ -24,12 +28,18 @@ const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDas
   { path: '/admin/categories', labelKey: 'admin.categories', icon: FolderTree },
   { path: '/admin/orders', labelKey: 'admin.orders', icon: ShoppingCart },
   { path: '/admin/checkout-payment', labelKey: 'admin.checkoutPaymentNav', icon: Wallet },
-  { path: '/admin/trading/buybacks', labelKey: 'admin.tradingBuybacks', icon: Scale },
-  { path: '/admin/trading/virtual-gold', labelKey: 'admin.tradingVirtualGold', icon: Crown },
+  ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
+    ? [
+        { path: '/admin/trading/buybacks', labelKey: 'admin.tradingBuybacks', icon: Scale },
+        { path: '/admin/trading/virtual-gold', labelKey: 'admin.tradingVirtualGold', icon: Crown },
+      ]
+    : []),
   { path: '/admin/inventory', labelKey: 'admin.inventory', icon: Warehouse },
   { path: '/admin/prices', labelKey: 'admin.prices', icon: Tag },
   { path: '/admin/scrapped-data', labelKey: 'admin.scrappedData', icon: Database },
-  { path: '/admin/bank-requests', labelKey: 'admin.bankRequestsNav', icon: CreditCard },
+  ...(BANK_CHANGE_REQUESTS_ENABLED
+    ? [{ path: '/admin/bank-requests', labelKey: 'admin.bankRequestsNav', icon: CreditCard }]
+    : []),
   { path: '/admin/customers', labelKey: 'admin.customers', icon: Users },
   { path: '/admin/reports', labelKey: 'admin.reports', icon: BarChart3 },
   { path: '/admin/accounting', labelKey: 'admin.accounting', icon: Calculator },
@@ -40,10 +50,19 @@ const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDas
 export default function AdminNav() {
   const { t } = useTranslation()
   const location = useLocation()
+  const { user } = useAuth()
+  const canManageCatalog = Boolean(user?.role && CATALOG_MANAGER_ROLES.has(user.role))
+
+  const visibleSections = adminSectionKeys.filter((section) => {
+    if (section.path === '/admin/products' || section.path === '/admin/categories') {
+      return canManageCatalog
+    }
+    return true
+  })
 
   return (
     <nav className="flex flex-wrap gap-2 mb-6">
-      {adminSectionKeys.map(({ path, labelKey, icon: Icon }) => {
+      {visibleSections.map(({ path, labelKey, icon: Icon }) => {
         const isActive = location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path))
         return (
           <Link

@@ -4,6 +4,7 @@ import { TrendingUp, Download, Calendar, DollarSign, ShoppingBag, Users, Eye, Fi
 import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { accountingApi, adminApi, ordersApi } from '../../services/api'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { downloadCsv } from '../../utils/reportExport'
 
 type SaleRow = {
@@ -382,7 +383,7 @@ export default function AdminReports() {
       ['COGS', pl.cost_of_goods_sold ?? 0],
       ['Purchases', pl.purchases ?? 0],
       ['Gross profit', pl.gross_profit ?? 0],
-      ['Buybacks', pl.buyback_cost ?? 0],
+      ...(TRADING_AND_VIRTUAL_WALLET_ENABLED ? [['Buybacks', pl.buyback_cost ?? 0] as [string, number]] : []),
       ['Operating expenses', pl.operating_expenses ?? 0],
       ['Net profit', pl.net_profit ?? 0],
     ])
@@ -813,7 +814,7 @@ export default function AdminReports() {
                   ['COGS', pl.cost_of_goods_sold],
                   ['Purchases', pl.purchases],
                   ['Gross profit', pl.gross_profit, pl.gross_margin],
-                  ['Buyback cost', pl.buyback_cost],
+                  ...(TRADING_AND_VIRTUAL_WALLET_ENABLED ? [['Buyback cost', pl.buyback_cost] as const] : []),
                   ['Operating expenses', pl.operating_expenses],
                   ['Net profit', pl.net_profit, pl.net_margin],
                 ].map(([label, val, pct]) => (

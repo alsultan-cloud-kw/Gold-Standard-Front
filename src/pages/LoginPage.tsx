@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { safeAppNextPath } from '../utils/safeNextPath'
+import { resolvePostAuthPath } from '../utils/authRedirect'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
@@ -26,7 +27,7 @@ export default function LoginPage() {
     turnstileRef.current?.reset()
   }, [])
 
-  const { login } = useAuth()
+  const { login, user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const nextPath = safeAppNextPath(searchParams.get('next'))
@@ -43,22 +44,23 @@ export default function LoginPage() {
 
     setIsLoading(true)
 
+    if (isAuthenticated) {
+      navigate(resolvePostAuthPath(user, nextPath))
+      return
+    }
+
     try {
       const credentials =
         loginMethod === 'email'
           ? { email: formData.email, password: formData.password }
           : { phone_number: formData.phone_number, password: formData.password }
 
-      await login({
+      const loggedInUser = await login({
         ...credentials,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
       toast.success(t('auth.loginSuccess'))
-      if (nextPath) {
-        navigate(nextPath)
-      } else {
-        navigate('/')
-      }
+      navigate(resolvePostAuthPath(loggedInUser, nextPath))
     } catch (err: unknown) {
       clearTurnstile()
       const res = (err as { response?: { status?: number; data?: { error?: string; admin_email?: string } } })

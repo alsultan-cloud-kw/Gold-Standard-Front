@@ -84,19 +84,20 @@ export default function GoldPriceTicker() {
       ? (res as { usd_to_kwd_rate?: number }).usd_to_kwd_rate!
       : null
   const usdToKwdRate = usdToKwdRateFromConfig ?? usdToKwdRateFromRates
-  const goldOunceKwdApi = numOrNull(res?.goldOuncePrice)
   const toUsdOunce = (raw: number | null): number | null => {
     if (raw == null || !Number.isFinite(raw)) return null
-    // Some sources already provide USD/oz; avoid converting those again.
     if (raw >= 1500) return raw
     if (typeof usdToKwdRate === 'number' && usdToKwdRate > 0) return raw / usdToKwdRate
     return null
   }
-  const goldOunceUsd =
-    toUsdOunce(goldOunceKwdApi)
-  const buy24Total = numOrNull(carats.find((c) => String(c.key).toUpperCase().replace(/\s/g, '') === '24K')?.buyTotal)
+  const goldOunceUsd = toUsdOunce(numOrNull(res?.goldOuncePrice))
   const goldOunceKwd =
-    buy24Total != null && Number.isFinite(buy24Total) ? buy24Total * TROY_OZ_GRAMS : null
+    numOrNull(res?.goldOunce?.sellTotal) ??
+    numOrNull(res?.goldOunce?.buyTotal) ??
+    (() => {
+      const buy24Total = numOrNull(carats.find((c) => String(c.key).toUpperCase().replace(/\s/g, '') === '24K')?.buyTotal)
+      return buy24Total != null && Number.isFinite(buy24Total) ? buy24Total * TROY_OZ_GRAMS : null
+    })()
 
   const localeForNums = i18n.language?.startsWith('ar') ? 'ar-KW' : undefined
 

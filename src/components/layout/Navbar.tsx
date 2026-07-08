@@ -26,6 +26,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { RegionFlagImg } from '@/components/RegionFlagImg'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
+import { isStaffRole } from '@/utils/authRedirect'
 
 export default function Navbar() {
   const { t, i18n } = useTranslation()
@@ -42,7 +44,9 @@ export default function Navbar() {
     { nameKey: 'nav.products', href: '/products' },
     { nameKey: 'nav.prices', href: '/prices' },
     { nameKey: 'nav.news', href: '/news' },
-    { nameKey: 'nav.tradeGold', href: '/trade-gold' },
+    ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
+      ? [{ nameKey: 'nav.tradeGold', href: '/trade-gold' }]
+      : []),
     // { nameKey: 'nav.sellGold', href: '/sell-gold' },
     // { nameKey: 'nav.branches', href: '/branches' },
     { nameKey: 'nav.about', href: '/about' },
@@ -238,7 +242,7 @@ export default function Navbar() {
                     <User className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
                     {t('nav.dashboard')}
                   </DropdownMenuItem>
-                  {user?.role === 'admin' && (
+                  {isStaffRole(user?.role) && (
                     <DropdownMenuItem 
                       onClick={() => navigate('/admin')}
                       className="text-slate-700 hover:text-gold-600 hover:bg-gold-500/10 cursor-pointer"

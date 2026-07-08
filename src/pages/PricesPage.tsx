@@ -66,6 +66,10 @@ export default function PricesPage() {
   }
   const ounceUsdValue =
     typeof res?.goldOuncePrice === 'number' ? toUsdOunce(res.goldOuncePrice) : null
+  const ounceKwdSell =
+    res?.goldOunce?.sellTotal ?? res?.goldOunce?.sell ?? null
+  const ounceKwdBuy =
+    res?.goldOunce?.buyTotal ?? res?.goldOunce?.buy ?? null
   const carats = res?.carats ?? []
   const silver = res?.silver ?? null
   const platinum = res?.platinum ?? null
@@ -283,23 +287,38 @@ export default function PricesPage() {
                       </p>
                     )}
                   </div>
-                  <div className="text-start sm:text-end">
-                    <div className="inline-flex items-center gap-2 sm:justify-end">
-                      <TileTrendIcon dir={ounceTrendDir} />
-                      <p
-                        className="text-4xl sm:text-5xl font-bold text-black tabular-nums leading-none"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        ${Number(ounceUsdValue).toLocaleString(
-                          i18n.language?.startsWith('ar') ? 'ar-KW' : 'en-US',
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }
-                        )}
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-10">
+                    <div className="text-start sm:text-end">
+                      <div className="inline-flex items-center gap-2 sm:justify-end">
+                        <TileTrendIcon dir={ounceTrendDir} />
+                        <p
+                          className="text-4xl sm:text-5xl font-bold text-black tabular-nums leading-none"
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          ${Number(ounceUsdValue).toLocaleString(
+                            i18n.language?.startsWith('ar') ? 'ar-KW' : 'en-US',
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-black/60 text-sm mt-2">{t('pricesPage.perTroyOunceUsd')}</p>
                     </div>
-                    <p className="text-black/60 text-sm mt-2">{t('pricesPage.perTroyOunce')}</p>
+                    {ounceKwdSell != null && (
+                      <div className="text-start sm:text-end sm:border-s border-black/10 sm:ps-10">
+                        <p className="text-3xl sm:text-4xl font-bold text-black tabular-nums leading-none">
+                          {fmtTotal(ounceKwdSell)}
+                        </p>
+                        <p className="text-black/60 text-sm mt-2">{t('pricesPage.perTroyOunceKwd')}</p>
+                        {ounceKwdBuy != null && (
+                          <p className="text-xs text-black/50 mt-1">
+                            {t('pricesPage.ounceBuyKwd', { price: fmtTotal(ounceKwdBuy) })}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

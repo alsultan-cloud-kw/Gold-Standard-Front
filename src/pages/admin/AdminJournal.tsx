@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi } from '../../services/api'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { toast } from 'sonner'
 
 export default function AdminJournal() {
@@ -81,8 +82,10 @@ export default function AdminJournal() {
                     ? { to: '/admin/orders', label: `${t('admin.sale')} ${entry.source_sale_reference || entry.source_sale_id}` }
                     : entry.source_purchase_id
                     ? { to: '/admin/accounting/purchases', label: `${t('admin.purchase')} ${entry.source_purchase_reference || entry.source_purchase_id}` }
-                    : entry.source_buyback_id
+                    : entry.source_buyback_id && TRADING_AND_VIRTUAL_WALLET_ENABLED
                     ? { to: '/admin/trading/buybacks', label: `${t('admin.buyback')} ${entry.source_buyback_reference || entry.source_buyback_id}` }
+                    : entry.source_buyback_id
+                    ? { to: '', label: `${t('admin.buyback')} ${entry.source_buyback_reference || entry.source_buyback_id}` }
                     : null
                   return (
                   <tr key={entry.id} className="border-b border-stone-100">
@@ -91,10 +94,14 @@ export default function AdminJournal() {
                     <td className="py-3 px-4 text-stone-800">{entry.entry_type_display || entry.entry_type}</td>
                     <td className="py-3 px-4 text-stone-800">
                       {sourceLink ? (
+                        sourceLink.to ? (
                         <Link to={sourceLink.to} className="inline-flex items-center gap-1 text-lime-800 hover:text-lime-800">
                           {sourceLink.label}
                           <ExternalLink className="w-3 h-3" />
                         </Link>
+                        ) : (
+                          <span className="text-stone-700">{sourceLink.label}</span>
+                        )
                       ) : '—'}
                     </td>
                     <td className="py-3 px-4 text-stone-800 max-w-xs truncate">{entry.description_en || '—'}</td>

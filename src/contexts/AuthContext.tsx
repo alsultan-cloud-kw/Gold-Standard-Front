@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { authApi } from '../services/api'
 import type { User, CustomerProfile } from '../types'
-import { isStorefrontRole } from '../constants/storefrontRoles'
 
 interface AuthContextType {
   user: User | null
@@ -13,9 +12,9 @@ interface AuthContextType {
     phone_number?: string
     password: string
     turnstile_token?: string
-  }) => Promise<void>
-  loginWithClerk: (clerkSessionToken: string) => Promise<void>
-  register: (data: unknown) => Promise<void>
+  }) => Promise<User>
+  loginWithClerk: (clerkSessionToken: string) => Promise<User>
+  register: (data: unknown) => Promise<User>
   logout: () => void
   updateUser: (data: unknown) => Promise<void>
 }
@@ -41,15 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userData = await authApi.getMe()
       setUser(userData as User)
-      
-      // Fetch profile if customer
-      if (isStorefrontRole((userData as User).role)) {
-        // Fetch profile when needed (storefront roles share CustomerProfile)
-      }
     } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status
       console.error('Failed to fetch user:', error)
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
+      if (status === 401 || status === 403) {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        setUser(null)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -61,34 +59,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string
     turnstile_token?: string
   }) => {
-    try {
-      const response = await authApi.login(credentials)
-      localStorage.setItem('access_token', response.access)
-      localStorage.setItem('refresh_token', response.refresh)
-      setUser(response.user as User)
-    } catch (error) {
-      console.error('Login failed:', error)
-      throw error
-    }
+    const response = await authApi.login(credentials)
+    localStorage.setItem('access_token', response.access)
+    localStorage.setItem('refresh_token', response.refresh)
+    const nextUser = response.user as User
+    setUser(nextUser)
+    setIsLoading(false)
+    return nextUser
   }
 
   const loginWithClerk = async (clerkSessionToken: string) => {
     const response = await authApi.clerkLogin(clerkSessionToken)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
-    setUser(response.user as User)
+    const nextUser = response.user as User
+    setUser(nextUser)
+    setIsLoading(false)
+    return nextUser
   }
 
   const register = async (data: unknown) => {
-    try {
-      const response = await authApi.register(data)
-      localStorage.setItem('access_token', response.access)
-      localStorage.setItem('refresh_token', response.refresh)
-      setUser(response.user as User)
-    } catch (error) {
-      console.error('Registration failed:', error)
-      throw error
-    }
+    const response = await authApi.register(data)
+    localStorage.setItem('access_token', response.access)
+    localStorage.setItem('refresh_token', response.refresh)
+    const nextUser = response.user as User
+    setUser(nextUser)
+    setIsLoading(false)
+    return nextUser
   }
 
   const logout = () => {

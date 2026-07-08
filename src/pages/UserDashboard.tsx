@@ -31,6 +31,17 @@ import {
   type BankChangeRequestRow,
 } from '../services/api'
 import { buildWalletTransactionsDocxBlob } from '../utils/walletTransactionsWordExport'
+import {
+  TRADING_AND_VIRTUAL_WALLET_ENABLED,
+  BANK_CHANGE_REQUESTS_ENABLED,
+  isTradingDashboardTab,
+} from '../featureFlags'
+
+function isDisabledDashboardTab(tab: string): boolean {
+  if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && isTradingDashboardTab(tab)) return true
+  if (!BANK_CHANGE_REQUESTS_ENABLED && tab === 'bank_account') return true
+  return false
+}
 
 const KNET_TRADE_GOLD_DEPOSIT_DESC = 'KNET wallet deposit — Gold trading'
 
@@ -57,7 +68,10 @@ const DASHBOARD_TABS = new Set([
 function readDashboardTabFromUrl(): string {
   try {
     const tab = new URLSearchParams(window.location.search).get('tab')
-    if (tab && DASHBOARD_TABS.has(tab)) return tab
+    if (tab && DASHBOARD_TABS.has(tab)) {
+      if (isDisabledDashboardTab(tab)) return 'profile'
+      return tab
+    }
   } catch {
     // Ignore invalid query params.
   }
@@ -73,7 +87,13 @@ export default function UserDashboard() {
   useEffect(() => {
     try {
       const tab = new URLSearchParams(location.search).get('tab')
-      if (tab && DASHBOARD_TABS.has(tab)) setActiveTab(tab)
+      if (tab && DASHBOARD_TABS.has(tab)) {
+        if (isDisabledDashboardTab(tab)) {
+          setActiveTab('profile')
+        } else {
+          setActiveTab(tab)
+        }
+      }
     } catch {
       // Ignore invalid query params.
     }
@@ -82,11 +102,17 @@ export default function UserDashboard() {
   const tabs = [
     { id: 'profile', name: t('userDashboard.tabs.profile'), icon: User },
     { id: 'orders', name: t('userDashboard.tabs.orders'), icon: ShoppingBag },
-    { id: 'locked_gold', name: t('userDashboard.tabs.lockedGold'), icon: Scale },
-    { id: 'trade_gold', name: 'Trade gold', icon: Crown },
+    ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
+      ? [
+          { id: 'locked_gold', name: t('userDashboard.tabs.lockedGold'), icon: Scale },
+          { id: 'trade_gold', name: 'Trade gold', icon: Crown },
+          { id: 'transactions', name: t('userDashboard.tabs.transactions'), icon: CreditCard },
+        ]
+      : []),
     { id: 'club', name: t('userDashboard.tabs.club'), icon: Users },
-    { id: 'transactions', name: t('userDashboard.tabs.transactions'), icon: CreditCard },
-    { id: 'bank_account', name: t('userDashboard.tabs.bankAccount'), icon: CreditCard },
+    ...(BANK_CHANGE_REQUESTS_ENABLED
+      ? [{ id: 'bank_account', name: t('userDashboard.tabs.bankAccount'), icon: CreditCard }]
+      : []),
     // { id: 'wishlist', name: t('userDashboard.tabs.wishlist'), icon: Heart },
     { id: 'addresses', name: t('userDashboard.tabs.addresses'), icon: MapPin },
     // { id: 'payments', name: 'Payment Methods', icon: CreditCard },
@@ -153,11 +179,11 @@ export default function UserDashboard() {
           <div className="lg:col-span-3">
             {activeTab === 'profile' && <ProfileTab />}
             {activeTab === 'orders' && <OrdersTab />}
-            {activeTab === 'locked_gold' && <LockedGoldTab />}
-            {activeTab === 'trade_gold' && <TradeGoldTab />}
+            {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'locked_gold' && <LockedGoldTab />}
+            {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'trade_gold' && <TradeGoldTab />}
             {activeTab === 'club' && <ClubTab />}
-            {activeTab === 'transactions' && <TransactionsTab />}
-            {activeTab === 'bank_account' && <BankAccountTab />}
+            {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'transactions' && <TransactionsTab />}
+            {BANK_CHANGE_REQUESTS_ENABLED && activeTab === 'bank_account' && <BankAccountTab />}
             {activeTab === 'addresses' && <AddressesTab />}
             {/* Placeholder tabs (can be implemented later) */}
             {/* {activeTab === 'wishlist' && <WishlistTab />} */}

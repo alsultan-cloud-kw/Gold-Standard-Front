@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Wallet } from 'lucide-react'
 import AdminNav from '../../components/admin/AdminNav'
+import { CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { ordersApi } from '../../services/api'
 import { toast } from 'sonner'
 
@@ -63,8 +64,9 @@ export default function AdminCheckoutPayment() {
                 const fd = new FormData(form)
                 const shippingRaw = Number(fd.get('shipping_charge_kwd') ?? 0)
                 saveMutation.mutate({
-                  enable_credit_card: fd.get('enable_credit_card') === 'on',
-                  enable_cash_on_delivery: fd.get('enable_cash_on_delivery') === 'on',
+                  enable_credit_card: CHECKOUT_CREDIT_CARD_ENABLED && fd.get('enable_credit_card') === 'on',
+                  enable_cash_on_delivery:
+                    CHECKOUT_COD_ENABLED || fd.get('enable_cash_on_delivery') === 'on',
                   shipping_charge_kwd:
                     Number.isFinite(shippingRaw) && shippingRaw >= 0
                       ? Math.round(shippingRaw * 1000) / 1000
@@ -72,8 +74,13 @@ export default function AdminCheckoutPayment() {
                 })
               }}
             >
-              <p className="text-sm text-black/75">{t('admin.checkoutPayment.alwaysOnHint')}</p>
+              <p className="text-sm text-black/75">
+                {CHECKOUT_CREDIT_CARD_ENABLED
+                  ? t('admin.checkoutPayment.alwaysOnHint')
+                  : t('admin.checkoutPayment.knetCodOnlyHint')}
+              </p>
 
+              {CHECKOUT_CREDIT_CARD_ENABLED ? (
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -86,17 +93,23 @@ export default function AdminCheckoutPayment() {
                   <span className="text-xs text-stone-600">{t('admin.checkoutPayment.creditCardHint')}</span>
                 </span>
               </label>
+              ) : null}
 
-              <label className="flex items-start gap-3 cursor-pointer">
+              <label className={`flex items-start gap-3 ${CHECKOUT_COD_ENABLED ? 'opacity-70' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
                   name="enable_cash_on_delivery"
-                  defaultChecked={data.enable_cash_on_delivery}
+                  defaultChecked={CHECKOUT_COD_ENABLED || data.enable_cash_on_delivery}
+                  disabled={CHECKOUT_COD_ENABLED}
                   className="mt-1 rounded border-lime-300/50 text-amber-600 focus:ring-amber-500"
                 />
                 <span>
                   <span className="font-medium text-black block">{t('admin.checkoutPayment.cod')}</span>
-                  <span className="text-xs text-stone-600">{t('admin.checkoutPayment.codHint')}</span>
+                  <span className="text-xs text-stone-600">
+                    {CHECKOUT_COD_ENABLED
+                      ? t('admin.checkoutPayment.codAlwaysOnHint')
+                      : t('admin.checkoutPayment.codHint')}
+                  </span>
                 </span>
               </label>
 

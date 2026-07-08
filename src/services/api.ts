@@ -113,6 +113,9 @@ export const authApi = {
   register: (data: unknown) =>
     apiService.post<{ user: unknown; refresh: string; access: string }>('/accounts/users/register/', data),
 
+  getKycQuestions: () =>
+    apiService.get<{ questions: unknown[] }>('/accounts/kyc-questions/'),
+
   logout: (refreshToken: string) =>
     apiService.post('/accounts/users/logout/', { refresh: refreshToken }),
 
@@ -137,7 +140,45 @@ export const authApi = {
 }
 
 // Products API
+export type ProductAuthenticityProduct = {
+  name_ar: string
+  name_en: string
+  slug: string
+  sku: string
+  serial_number: string | null
+  category_ar: string | null
+  category_en: string | null
+  brand_ar: string | null
+  brand_en: string | null
+  metal_type_ar: string | null
+  metal_type_en: string | null
+  carat_label_ar: string | null
+  carat_label_en: string | null
+  carat_value: number | null
+  weight_grams: string | number
+  primary_image_url: string | null
+  image_urls: string[]
+  product_page_url: string
+  registered_year: number
+  qr_value: string
+  verification_url: string
+}
+
+export type ProductAuthenticityResponse = {
+  verified: boolean
+  status: 'verified' | 'inactive' | 'not_found' | string
+  verified_at: string
+  message_ar: string
+  message_en: string
+  product: ProductAuthenticityProduct | null
+}
+
 export const productsApi = {
+  verifyAuthenticity: (code: string) =>
+    apiService.get<ProductAuthenticityResponse>('/products/products/authenticity/', {
+      params: { code },
+    }),
+
   getProducts: (params?: unknown) =>
     apiService.get('/products/products/', { params }),
 
@@ -271,7 +312,7 @@ export const productsApi = {
   },
 
   createProduct: (data: {
-    sku: string
+    sku?: string
     name_ar: string
     name_en: string
     slug?: string
@@ -283,6 +324,7 @@ export const productsApi = {
     making_charge_amount?: number
     description_ar?: string
     description_en?: string
+    brand?: string
     status?: string
     is_featured?: boolean
     /** Starting on-hand units at `initial_stock_branch_id` (or default branch). Create only. */
@@ -291,6 +333,14 @@ export const productsApi = {
   }) => {
     const token = localStorage.getItem('access_token')
     return apiService.post<unknown>('/products/products/', data, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+  },
+
+  previewProductSku: (categoryId: string) => {
+    const token = localStorage.getItem('access_token')
+    return apiService.get<{ sku: string }>('/products/products/preview-sku/', {
+      params: { category_id: categoryId },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
   },
@@ -1066,6 +1116,8 @@ export type DaralsabaekPublicRatesResponse = {
   succeeded: boolean
   message?: string
   goldOuncePrice?: number
+  usd_to_kwd_rate?: number
+  goldOunce?: DaralsabaekPublicMetalSpot | null
   updateIntervalInSeconds?: number
   carats: DaralsabaekPublicCarat[]
   /** Live silver KWD/g + markup (same shape as a carat row). */

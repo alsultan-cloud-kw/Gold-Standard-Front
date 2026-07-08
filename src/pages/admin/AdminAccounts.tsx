@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi, goldTradingApi } from '../../services/api'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const OPENING_BALANCE_KEY = 'admin_bank_opening_balance_kwd'
@@ -65,6 +66,7 @@ export default function AdminAccounts() {
   } = useQuery({
     queryKey: ['goldTradingAdminSummary'],
     queryFn: () => goldTradingApi.getAdminSummary() as Promise<TradingAdminSummary>,
+    enabled: TRADING_AND_VIRTUAL_WALLET_ENABLED,
   })
   const tradingReserveRows = tradingAdminSummary?.trading_reserve_by_carat ?? []
 
@@ -231,6 +233,7 @@ export default function AdminAccounts() {
               </div>
             )} */}
 
+            {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
             <div id="gold-trading-pool" className="gold-card mb-8 scroll-mt-24">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                 <div>
@@ -293,6 +296,7 @@ export default function AdminAccounts() {
                 </div>
               )}
             </div>
+            ) : null}
 
             {/* Bank balance: admin opening, purchases debited, sales credited (for selected date range) */}
             <div id="trial-balance" className="gold-card mb-8 scroll-mt-24">

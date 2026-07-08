@@ -11,6 +11,7 @@ import Footer from './components/layout/Footer'
 import HomePage from './pages/HomePage'
 import ProductsPage from './pages/ProductsPage'
 import ProductDetailPage from './pages/ProductDetailPage'
+import ProductAuthenticityPage from './pages/ProductAuthenticityPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import KnetReceiptPage from './pages/KnetReceiptPage'
@@ -60,12 +61,14 @@ import TradeGoldPage from './pages/TradeGoldPage'
 import AdminClubs from './pages/admin/AdminClubs'
 import JoinClubPage from './pages/JoinClubPage'
 import FloatingPriceReminder from './components/reminders/FloatingPriceReminder'
+import MarketingVisitTracker from './components/analytics/MarketingVisitTracker'
 
 // Context
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 
-import { ProtectedRoute, StaffRoute } from './components/routing/ProtectedRoute'
+import { ProtectedRoute, StaffRoute, CatalogManagerRoute, GuestOnlyRoute } from './components/routing/ProtectedRoute'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from './featureFlags'
 
 // Create Query Client
 const queryClient = new QueryClient({
@@ -84,6 +87,7 @@ function App() {
           <ClerkAuthBridge />
           <CartProvider>
           <Router>
+            <MarketingVisitTracker />
             <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
               <Navbar />
@@ -93,14 +97,17 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/products" element={<ProductsPage />} />
                   <Route path="/products/:slug" element={<ProductDetailPage />} />
+                  <Route path="/verify" element={<ProductAuthenticityPage />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/payment-receipt/:saleId" element={<KnetReceiptPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
+                  <Route element={<GuestOnlyRoute />}>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  </Route>
                   <Route path="/sso-callback" element={<SsoCallbackPage />} />
                   <Route path="/join-club" element={<JoinClubPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route
                     path="/dashboard"
                     element={
@@ -119,22 +126,35 @@ function App() {
                   <Route path="/terms" element={<Navigate to="/terms-and-privacy" replace />} />
                   <Route path="/privacy" element={<Navigate to="/terms-and-privacy" replace />} />
                   <Route path="/data-deletion" element={<DataDeletionPage />} />
-                  <Route path="/sell-gold" element={<SellGoldPage />} />
-                  <Route path="/trade-gold" element={<TradeGoldPage />} />
+                  {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                    <>
+                      <Route path="/sell-gold" element={<SellGoldPage />} />
+                      <Route path="/trade-gold" element={<TradeGoldPage />} />
+                    </>
+                  ) : null}
 
                   {/* Admin routes: staff roles only (see StaffRoute) */}
                   <Route element={<StaffRoute />}>
                     <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/products" element={<AdminProducts />} />
-                    <Route path="/admin/categories" element={<AdminCategories />} />
+                    <Route element={<CatalogManagerRoute />}>
+                      <Route path="/admin/products" element={<AdminProducts />} />
+                      <Route path="/admin/categories" element={<AdminCategories />} />
+                    </Route>
                     <Route path="/admin/orders" element={<AdminOrders />} />
                     <Route path="/admin/checkout-payment" element={<AdminCheckoutPayment />} />
-                    <Route path="/admin/trading/buybacks" element={<AdminTradingBuybacks />} />
-                    <Route path="/admin/trading/virtual-gold" element={<AdminTradingVirtualGold />} />
+                    {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                      <>
+                        <Route path="/admin/trading/buybacks" element={<AdminTradingBuybacks />} />
+                        <Route path="/admin/trading/virtual-gold" element={<AdminTradingVirtualGold />} />
+                        <Route path="/admin/accounting/wallet" element={<AdminWallet />} />
+                      </>
+                    ) : null}
                     <Route path="/admin/inventory" element={<AdminInventory />} />
                     <Route path="/admin/prices" element={<AdminPrices />} />
                     <Route path="/admin/scrapped-data" element={<AdminScrappedData />} />
-                    <Route path="/admin/bank-requests" element={<AdminBankChangeRequests />} />
+                    {BANK_CHANGE_REQUESTS_ENABLED ? (
+                      <Route path="/admin/bank-requests" element={<AdminBankChangeRequests />} />
+                    ) : null}
                     <Route path="/admin/customers" element={<AdminCustomers />} />
                     <Route path="/admin/customers/:userId" element={<AdminCustomerDetailPage />} />
                     <Route path="/admin/reports" element={<AdminReports />} />
@@ -144,7 +164,6 @@ function App() {
                     <Route path="/admin/accounting/purchases" element={<AdminPurchases />} />
                     <Route path="/admin/accounting/expenses" element={<AdminExpenses />} />
                     <Route path="/admin/accounting/reports" element={<AdminFinancialReports />} />
-                    <Route path="/admin/accounting/wallet" element={<AdminWallet />} />
                     <Route path="/admin/invoices" element={<AdminInvoices />} />
                     <Route path="/admin/invoices/templates" element={<AdminInvoiceTemplates />} />
                     <Route path="/admin/invoices/terms" element={<AdminInvoiceTerms />} />

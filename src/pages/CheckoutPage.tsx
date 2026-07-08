@@ -15,6 +15,7 @@ import {
 import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
 import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery } from '@tanstack/react-query'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
@@ -156,6 +157,7 @@ export default function CheckoutPage() {
   const { data: walletData } = useQuery({
     queryKey: ['myWallet'],
     queryFn: () => walletApi.getMyWallet(),
+    enabled: TRADING_AND_VIRTUAL_WALLET_ENABLED,
   })
 
   const { data: checkoutProfileData } = useQuery({
@@ -189,18 +191,33 @@ export default function CheckoutPage() {
   )
 
   useEffect(() => {
+    if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && deliveryType === 'locked') {
+      setDeliveryType('physical')
+    }
+  }, [deliveryType])
+
+  useEffect(() => {
     if (paymentMethod === 'wallet' && walletBalance < checkoutTotalDue - 1e-9) {
       setPaymentMethod('knet')
     }
   }, [paymentMethod, walletBalance, checkoutTotalDue])
 
   const paymentMethodOptions = useMemo((): CheckoutPayRow[] => {
-    const cfg = payCfg ?? { knet: true, wallet: true, credit_card: false, cash: false }
+    const cfg = payCfg ?? {
+      knet: true,
+      wallet: TRADING_AND_VIRTUAL_WALLET_ENABLED,
+      credit_card: false,
+      cash: CHECKOUT_COD_ENABLED,
+    }
     const rows: CheckoutPayRow[] = []
     if (cfg.knet) rows.push({ id: 'knet', nameKey: 'checkoutPage.payKnet', icon: CreditCard, disabled: false })
-    if (cfg.credit_card) rows.push({ id: 'card', nameKey: 'checkoutPage.payCard', icon: CreditCard, disabled: false })
-    if (cfg.cash) rows.push({ id: 'cod', nameKey: 'checkoutPage.payCod', icon: Truck, disabled: false })
-    if (cfg.wallet) {
+    if (CHECKOUT_CREDIT_CARD_ENABLED && cfg.credit_card) {
+      rows.push({ id: 'card', nameKey: 'checkoutPage.payCard', icon: CreditCard, disabled: false })
+    }
+    if (CHECKOUT_COD_ENABLED && cfg.cash) {
+      rows.push({ id: 'cod', nameKey: 'checkoutPage.payCod', icon: Truck, disabled: false })
+    }
+    if (TRADING_AND_VIRTUAL_WALLET_ENABLED && cfg.wallet) {
       rows.push({
         id: 'wallet',
         nameKey: null,
@@ -746,6 +763,7 @@ export default function CheckoutPage() {
                       <Truck className="w-4 h-4 text-gold-400" />
                       <span className="text-gold-100">{t('checkoutPage.deliveryPhysical')}</span>
                     </label>
+                    {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
@@ -757,8 +775,9 @@ export default function CheckoutPage() {
                       <Lock className="w-4 h-4 text-gold-400" />
                       <span className="text-gold-100">{t('checkoutPage.deliveryVault')}</span>
                     </label>
+                    ) : null}
                   </div>
-                  {deliveryType === 'locked' && (
+                  {TRADING_AND_VIRTUAL_WALLET_ENABLED && deliveryType === 'locked' && (
                     <p className="text-xs text-gold-100/60 mt-2">{t('checkoutPage.deliveryVaultHint')}</p>
                   )}
                 </div>
