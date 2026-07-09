@@ -445,7 +445,7 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
       <div className="border-b border-black/5 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="page-shell py-6 sm:py-8">
           {category ? (
             <nav className="mb-3 text-sm text-[#64748B]" aria-label={t('common.breadcrumb')}>
               <Link to="/products" className="font-medium text-[#3F6F00] hover:underline">
@@ -543,7 +543,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="page-shell py-6 sm:py-8">
         {/* Toolbar */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">

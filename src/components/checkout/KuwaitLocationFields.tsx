@@ -23,7 +23,8 @@ type KuwaitLocationFieldsProps = {
   city: string
   onGovernorateChange: (value: string) => void
   onCityChange: (value: string) => void
-  inputClassName: string
+  /** Match surrounding form: checkout uses light fields; dashboard uses dark gold-card inputs */
+  variant?: 'light' | 'dark'
   governorateFirst?: boolean
 }
 
@@ -32,7 +33,7 @@ export function KuwaitLocationFields({
   city,
   onGovernorateChange,
   onCityChange,
-  inputClassName,
+  variant = 'light',
   governorateFirst = true,
 }: KuwaitLocationFieldsProps) {
   const { t, i18n } = useTranslation()
@@ -55,14 +56,30 @@ export function KuwaitLocationFields({
   }
 
   const triggerClass = cn(
-    'h-auto min-h-[3rem] w-full justify-between gap-2 px-4 py-3 text-start text-sm font-medium shadow-none',
-    'rounded-lg border border-gold-500/30 bg-charcoal-800 text-gold-100',
-    'hover:border-[#85E307]/50 hover:bg-charcoal-800',
-    'focus:outline-none focus-visible:border-[#85E307] focus-visible:ring-2 focus-visible:ring-[#85E307]/25',
-    'data-[placeholder]:text-gold-100/45 data-[state=open]:border-[#85E307]/60',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-    '[&_svg]:text-[#85E307] [&_svg]:opacity-90',
-    inputClassName,
+    'h-auto min-h-[3rem] w-full justify-between gap-2 px-4 py-3 text-start text-sm font-medium shadow-none rounded-xl',
+    'focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60',
+    '[&_svg]:shrink-0 [&_svg]:opacity-90',
+    '[&_[data-slot=select-value]]:line-clamp-1',
+    variant === 'light'
+      ? [
+          'border border-[#85E307]/35 bg-white text-[#0B0F19]',
+          'hover:border-[#85E307]/60',
+          'focus-visible:border-[#85E307] focus-visible:ring-[#85E307]/20',
+          'data-[placeholder]:text-[#64748B]',
+          '[&_[data-slot=select-value]]:text-[#0B0F19]',
+          '[&_[data-slot=select-value][data-placeholder]]:text-[#64748B]',
+          'disabled:bg-[#F4F4F5] disabled:text-[#64748B]',
+          '[&_svg]:text-[#3F6F00]',
+        ]
+      : [
+          'border border-gold-500/30 bg-charcoal-800 text-gold-100',
+          'hover:border-[#85E307]/50',
+          'focus-visible:border-[#85E307] focus-visible:ring-[#85E307]/25',
+          'data-[placeholder]:text-gold-100/60',
+          '[&_[data-slot=select-value]]:text-gold-100',
+          '[&_[data-slot=select-value][data-placeholder]]:text-gold-100/60',
+          '[&_svg]:text-[#85E307]',
+        ],
   )
 
   const contentClass = cn(

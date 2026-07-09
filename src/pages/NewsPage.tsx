@@ -74,7 +74,7 @@ export default function NewsPage() {
 
   return (
     <div className="min-h-screen py-8 bg-gradient-to-b from-lime-50/60 via-white to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-shell py-8 sm:py-10">
         <div className="mb-8">
           <Link
             to="/"

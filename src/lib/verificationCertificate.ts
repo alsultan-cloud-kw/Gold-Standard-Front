@@ -43,7 +43,7 @@ export function buildVerificationCertificateHtml(
   <meta charset="utf-8" />
   <title>${esc(title)}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #111827; }
+    body { font-family: 'The Year of The Camel', Arial, sans-serif; margin: 0; background: #f8fafc; color: #111827; }
     .page { max-width: 760px; margin: 24px auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; }
     .head { background: linear-gradient(135deg, #3F6F00, #85E307); color: #0B0F19; padding: 24px; }
     .badge { display:inline-block; padding:6px 12px; border-radius:999px; background:${verified ? '#ecfccb' : '#fef3c7'}; color:${verified ? '#3F6F00' : '#92400e'}; font-weight:700; font-size:12px; }

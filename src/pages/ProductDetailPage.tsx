@@ -45,7 +45,7 @@ export default function ProductDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="animate-pulse">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="aspect-square bg-gold-500/10 rounded-lg" />
@@ -113,7 +113,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-shell py-8 sm:py-10">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm gold-gradient-text-on-light mb-6 mt-4">
           <Link to="/" className="hover:gold-gradient-text-on-light">
@@ -127,7 +127,7 @@ export default function ProductDetailPage() {
           <span className="text-gold-100">{productName}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14 xl:gap-16">
           {/* Image Gallery */}
           <div>
             <div className="relative aspect-square rounded-lg overflow-hidden bg-charcoal-800 mb-4">

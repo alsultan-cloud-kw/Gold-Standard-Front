@@ -95,7 +95,7 @@ export default function HomePage() {
         </div>
 
         <div className="home-section-inner relative z-10">
-          <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-start">
+          <div className="max-w-none lg:max-w-5xl xl:max-w-6xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#3F6F00]/15 bg-[#ECFCCB] px-3 py-1.5">
               <span className="h-2 w-2 rounded-full bg-[#3F6F00]" />
               <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3F6F00] sm:text-xs">
@@ -103,16 +103,16 @@ export default function HomePage() {
               </span>
             </div>
 
-            <h1 className="mb-4 text-3xl font-bold leading-[1.08] tracking-tight text-[#0B0F19] sm:text-4xl md:text-5xl lg:text-[2.75rem]">
+            <h1 className="store-display-title mb-4 text-[#0B0F19]">
               <span className="block">{t('home.heroHeadlineLead')}</span>
               <span className="block gold-gradient-text-on-light">{t('home.heroHeadlineAccent')}</span>
             </h1>
 
-            <p className="mx-auto mb-7 max-w-xl text-sm leading-relaxed text-[#64748B] sm:text-base lg:mx-0">
+            <p className="mb-7 max-w-2xl text-sm leading-relaxed text-[#64748B] sm:text-base lg:text-lg">
               {t('home.heroSubtext')}
             </p>
 
-            <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-start">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 to="/products"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B0F19] px-5 py-3 font-semibold text-white shadow-md transition-colors hover:bg-[#1F2937]"

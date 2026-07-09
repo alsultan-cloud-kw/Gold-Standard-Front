@@ -1,5 +1,5 @@
 @import "flag-icons/css/flag-icons.min.css";
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700&display=swap');
+@import "./assets/fonts/year-of-the-camel/fonts.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -52,6 +52,12 @@
     --theme-on-dark: #ECFCCB;
     --charcoal-primary: #0B0F19;
     --charcoal-light: #1F2937;
+    /* Fluid page layout — full width on large screens, comfortable gutters on mobile */
+    --page-gutter: clamp(1rem, 2.5vw, 2.5rem);
+    --page-max: min(120rem, calc(100% - 2 * var(--page-gutter)));
+    --page-max-content: var(--page-max);
+    --page-max-reading: min(48rem, calc(100% - 2 * var(--page-gutter)));
+    --page-max-form: min(32rem, calc(100% - 2 * var(--page-gutter)));
   }
 }
 
@@ -69,17 +75,12 @@
   body {
     background-color: var(--site-bg);
     @apply text-slate-900 antialiased;
-    font-family: 'Montserrat', 'Tajawal', sans-serif;
+    font-family: 'The Year of The Camel', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Montserrat', 'Tajawal', sans-serif;
-    font-weight: 600;
-  }
-  
-  /* Arabic text support */
-  [lang="ar"] {
-    font-family: 'Tajawal', 'Montserrat', sans-serif;
+    font-family: 'The Year of The Camel', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-weight: 700;
   }
 }
 
@@ -191,8 +192,77 @@
   }
 
   .home-section-inner {
-    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    width: 100%;
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
     container-type: inline-size;
+  }
+
+  /* Shared storefront page width — use instead of ad-hoc max-w-* + mx-auto */
+  .page-shell {
+    width: 100%;
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
+  }
+
+  .page-shell--content {
+    max-width: var(--page-max-content);
+  }
+
+  .page-shell--reading {
+    max-width: var(--page-max-reading);
+  }
+
+  .page-shell--form {
+    max-width: var(--page-max-form);
+  }
+
+  /** Cart / checkout — items + sticky summary on large screens */
+  .commerce-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  @media (min-width: 1024px) {
+    .commerce-layout {
+      grid-template-columns: minmax(0, 1fr) min(22rem, 32%);
+      align-items: start;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .commerce-layout {
+      grid-template-columns: minmax(0, 1fr) min(26rem, 30%);
+      gap: 2.75rem;
+    }
+  }
+
+  .commerce-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    .commerce-sidebar {
+      position: sticky;
+      top: 6.5rem;
+    }
+  }
+
+  .store-display-title {
+    font-size: clamp(1.75rem, 1.2vw + 1.25rem, 3rem);
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .store-section-title {
+    font-size: clamp(1.125rem, 0.4vw + 1rem, 1.5rem);
+    font-weight: 700;
   }
 
   .home-feature-card {

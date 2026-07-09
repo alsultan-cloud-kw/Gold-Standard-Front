@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { MapPin, Phone, Mail, Clock, Instagram } from 'lucide-react'
 import logo from '../../assets/logo.png'
 
-const INSTAGRAM_URL = 'https://instagram.com/goldstandardkw'
+import { GS_INSTAGRAM } from '@/constants/social'
 
 function AndroidIcon({ className }: { className?: string }) {
   return (
@@ -51,7 +51,7 @@ export default function Footer() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#85E307]/50 to-transparent" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+      <div className="page-shell relative py-14 sm:py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-10">
           {/* Brand + social + apps */}
           <div className="space-y-6 lg:col-span-5">
@@ -69,11 +69,11 @@ export default function Footer() {
                 {t('footer.followUs')}
               </p>
               <a
-                href={INSTAGRAM_URL}
+                href={GS_INSTAGRAM.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:border-[#85E307]/40 hover:bg-white/[0.07]"
-                aria-label="Instagram @goldstandardkw"
+                aria-label={`Instagram ${GS_INSTAGRAM.handle}`}
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af] text-white shadow-md">
                   <Instagram className="h-5 w-5" strokeWidth={1.75} />
@@ -226,7 +226,7 @@ export default function Footer() {
       </div>
 
       <div className="relative border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
+        <div className="page-shell flex flex-col items-center justify-between gap-3 py-5 sm:flex-row">
           <p className="text-xs text-white/40">
             © {currentYear} Gold Standard. {t('footer.allRightsReserved')}
           </p>

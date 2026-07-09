@@ -578,7 +578,7 @@ export default function AdminReports() {
   <meta charset="utf-8" />
   <title>Sales Activity Report - ${dateRange === 'all' ? 'All time' : `${dateWindow.start} to ${dateWindow.end}`}</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#fff; color:#111; }
+    body { font-family: 'The Year of The Camel', Arial, sans-serif; background:#fff; color:#111; }
     .page { width: 1000px; margin: 12px auto; border: 1px solid #777; padding: 10px; }
     h1 { font-size: 22px; margin: 4px 0 2px; }
     .sub { font-size: 12px; margin-bottom: 8px; }

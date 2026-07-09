@@ -48,11 +48,11 @@ export default function BranchesPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_100%_0%,rgba(133,227,7,0.1),transparent_55%)]" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="relative page-shell py-12 sm:py-16">
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('branchesPage.kicker')}
           </p>
-          <h1 className="max-w-2xl text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl">
+          <h1 className="store-display-title max-w-3xl text-[#0B0F19]">
             {t('branchesPage.title')}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[#64748B]">
@@ -75,7 +75,7 @@ export default function BranchesPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <div className="page-shell py-10 sm:py-14">
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (

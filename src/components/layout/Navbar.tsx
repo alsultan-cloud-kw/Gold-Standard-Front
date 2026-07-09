@@ -74,7 +74,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200">
       {/* Top Bar */}
       <div className="bg-gold-500/10 border-b border-gold-500/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="flex items-center justify-between h-8 text-xs">
             <div className="flex items-center gap-4 gold-gradient-text-on-light">
               <a href={`tel:${GS_CONTACT.phoneTel}`} className="flex items-center gap-1 hover:underline">
@@ -112,7 +112,7 @@ export default function Navbar() {
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-shell">
         <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
@@ -297,7 +297,7 @@ export default function Navbar() {
       {/* Search Bar */}
       {isSearchOpen && (
         <div className="border-t border-stone-200 bg-white/95 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="page-shell py-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
               <input
@@ -313,7 +313,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="lg:hidden border-t border-stone-200 bg-white/95 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="page-shell py-4">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 link.nameKey === 'nav.prices' ? (

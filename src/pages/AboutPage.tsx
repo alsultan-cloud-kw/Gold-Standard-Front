@@ -35,11 +35,11 @@ export default function AboutPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        <div className="relative page-shell py-12 sm:py-16 lg:py-20">
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('aboutPage.kicker')}
           </p>
-          <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl lg:text-5xl">
+          <h1 className="store-display-title max-w-4xl text-[#0B0F19]">
             {t('aboutPage.title')}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#64748B] sm:text-lg">
@@ -66,7 +66,7 @@ export default function AboutPage() {
 
       {/* What we do */}
       <section className="border-b border-black/5 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="page-shell py-12 sm:py-16">
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
             <div className="lg:col-span-5">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
@@ -112,7 +112,7 @@ export default function AboutPage() {
 
       {/* Pillars */}
       <section className="bg-[#F9F9FA]">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="page-shell py-12 sm:py-16">
           <div className="mb-8 max-w-2xl">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
               {t('aboutPage.valuesKicker')}
@@ -153,7 +153,7 @@ export default function AboutPage() {
 
       {/* Mission / Vision */}
       <section className="border-t border-black/5 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="page-shell py-12 sm:py-16">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] p-7 text-white sm:p-8">
               <div className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-[#85E307]/15 blur-3xl" />
@@ -185,7 +185,7 @@ export default function AboutPage() {
 
       {/* Bottom CTA */}
       <section className="pb-14 sm:pb-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] px-6 py-10 sm:px-10 sm:py-12">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(133,227,7,0.16),transparent_55%)]" />
             <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

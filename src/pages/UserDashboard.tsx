@@ -122,7 +122,7 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-shell py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 mt-4">
@@ -891,7 +891,7 @@ function AddressesTab() {
             city={city}
             onGovernorateChange={setGovernorate}
             onCityChange={setCity}
-            inputClassName={inputClass}
+            variant="dark"
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

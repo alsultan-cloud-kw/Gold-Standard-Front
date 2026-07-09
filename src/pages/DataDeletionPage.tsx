@@ -19,7 +19,7 @@ export default function DataDeletionPage() {
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
       <section className="border-b border-black/5 bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="page-shell page-shell--reading py-12 sm:py-16">
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('dataDeletionPage.kicker')}
           </p>
@@ -33,7 +33,7 @@ export default function DataDeletionPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <div className="page-shell page-shell--reading py-10 sm:py-12">
         <div className="space-y-4">
           {sections.map((id, index) => (
             <section

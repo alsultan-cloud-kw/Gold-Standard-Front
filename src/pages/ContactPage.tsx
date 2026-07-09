@@ -13,8 +13,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { GS_CONTACT } from '@/constants/contact'
-
-const INSTAGRAM_URL = 'https://instagram.com/goldstandardkw'
+import { GS_INSTAGRAM } from '@/constants/social'
 
 const fieldClass =
   'w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-4 py-3 text-sm font-medium text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25'
@@ -104,7 +103,7 @@ export default function ContactPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_0%_0%,rgba(133,227,7,0.1),transparent_55%)]" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="page-shell relative py-12 sm:py-16">
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('contactPage.kicker')}
           </p>
@@ -117,7 +116,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <div className="page-shell py-10 sm:py-14">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Sidebar info */}
           <aside className="space-y-4 lg:col-span-4">
@@ -172,7 +171,7 @@ export default function ContactPage() {
             })}
 
             <a
-              href={INSTAGRAM_URL}
+              href={GS_INSTAGRAM.url}
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#85E307]/40"
@@ -185,7 +184,7 @@ export default function ContactPage() {
                   {t('contactPage.social')}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[#0B0F19] group-hover:text-[#3F6F00]">
-                  @goldstandardkw
+                  {GS_INSTAGRAM.handle}
                 </p>
               </div>
             </a>

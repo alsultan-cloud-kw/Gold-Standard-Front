@@ -106,7 +106,7 @@ export default function GoldPriceTicker() {
   if (isLoading) {
     return (
       <div className="relative bg-[#070604] border-b border-amber-500/25">
-        <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 sm:px-6 lg:px-8 py-3.5 min-h-[3.25rem]">
+        <div className="page-shell flex items-center gap-4 py-3.5 min-h-[3.25rem]">
           <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
           <div className="flex flex-1 gap-6 overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -124,7 +124,7 @@ export default function GoldPriceTicker() {
   if (tickerItems.length === 0) {
     return (
       <div className="relative bg-[#070604] border-b border-amber-500/25 text-amber-100/80 text-base">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 sm:px-6 lg:px-8 py-3.5">
+        <div className="page-shell flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-3.5">
           {hasOunceRow ? (
             <div
               className={`flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3 gap-y-0.5 text-amber-100/95 ${
@@ -226,7 +226,7 @@ export default function GoldPriceTicker() {
 
   return (
     <div className="group relative bg-[#070604] border-b border-amber-500/25 text-amber-100">
-      <div className="max-w-7xl mx-auto flex items-stretch min-h-[3.25rem]">
+      <div className="page-shell flex items-stretch min-h-[3.25rem]">
         <div className="flex shrink-0 items-center gap-2 px-3 sm:ps-6 lg:ps-8 border-e border-amber-500/20 py-3">
           <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
           <span className="text-sm sm:text-base font-semibold text-amber-200/90 tracking-wide uppercase whitespace-nowrap max-[380px]:sr-only">

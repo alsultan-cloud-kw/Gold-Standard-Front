@@ -167,7 +167,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen py-16">
-      <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-shell page-shell--form py-16">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold gold-gradient-text mb-2">{t('auth.createAccountTitle')}</h1>
           <p className="text-gold-100/60">{t('auth.registerSubtitle')}</p>

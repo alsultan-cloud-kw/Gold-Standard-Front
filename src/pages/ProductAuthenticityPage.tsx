@@ -120,7 +120,7 @@ export default function ProductAuthenticityPage() {
   if (!code) {
     return (
       <div className="min-h-[70vh] bg-gradient-to-b from-lime-50/60 via-white to-white py-10 sm:py-14" dir={rtl ? 'rtl' : 'ltr'}>
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <div className="page-shell page-shell--reading py-8 sm:py-10">
           <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
             <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-amber-500" />
             <h1 className="text-xl font-bold text-stone-900">{t('authenticity.missingCodeTitle')}</h1>
@@ -159,7 +159,7 @@ export default function ProductAuthenticityPage() {
   if (isError || payload?.status === 'not_found' || status === 'error') {
     return (
       <div className="min-h-[70vh] bg-gradient-to-b from-lime-50/60 via-white to-white py-10 sm:py-14" dir={rtl ? 'rtl' : 'ltr'}>
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <div className="page-shell page-shell--reading py-8 sm:py-10">
           <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
             <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-red-500" />
             <h1 className="text-xl font-bold text-stone-900">{t('authenticity.notFoundTitle')}</h1>

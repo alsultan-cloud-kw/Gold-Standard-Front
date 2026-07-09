@@ -29,6 +29,7 @@ import {
   cartLineClubMemberSavings,
   cartLineStandardTotal,
 } from '../utils/clubCartPricing'
+import { productImageSrc } from '../utils/productImage'
 
 type CheckoutProfileAddress = {
   address_line1?: string | null
@@ -135,7 +136,7 @@ type PlaceOrderErrorPayload = {
 }
 
 const checkoutFieldClass =
-  'w-full rounded-xl border border-[#85E307]/35 bg-white px-4 py-3 text-sm text-[#0B0F19] placeholder:text-[#94A3B8] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/20'
+  'w-full rounded-xl border border-[#85E307]/35 bg-white px-4 py-3 text-sm text-[#0B0F19] placeholder:text-[#64748B] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/20'
 const checkoutPanelClass =
   'rounded-2xl border border-black/10 bg-white p-5 shadow-sm sm:p-6'
 const checkoutPrimaryBtnClass =
@@ -693,16 +694,16 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="mb-2 text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+      <div className="page-shell py-8 sm:py-10">
+        <h1 className="store-display-title mb-2 text-[#0B0F19]">
           {t('checkoutPage.title')}
         </h1>
-        <p className="mb-6 text-sm text-[#64748B]">{t('checkoutPage.trustNote')}</p>
+        <p className="mb-6 text-sm text-[#64748B] sm:text-base">{t('checkoutPage.trustNote')}</p>
 
         <CheckoutStepIndicator labels={stepLabels} step={step} />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
+        <div className="commerce-layout mt-8">
+          <div className="min-w-0 space-y-6">
             {step === 1 && (
               <div className={checkoutPanelClass}>
                 <h2 className="mb-5 text-lg font-bold text-[#0B0F19]">{t('checkoutPage.shippingInfo')}</h2>
@@ -743,7 +744,7 @@ export default function CheckoutPage() {
                     city={city}
                     onGovernorateChange={setGovernorate}
                     onCityChange={setCity}
-                    inputClassName={checkoutFieldClass}
+                    variant="light"
                   />
                   <input
                     placeholder={t('checkoutPage.postalPh')}
@@ -889,6 +890,7 @@ export default function CheckoutPage() {
                   {cart.items.map((item) => {
                     const lineList = cartLineStandardTotal(item)
                     const lineSave = cartLineClubMemberSavings(item)
+                    const imageSrc = productImageSrc(item.product)
                     const productName =
                       isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
                     return (
@@ -896,7 +898,15 @@ export default function CheckoutPage() {
                         key={item.id}
                         className="flex items-center gap-4 rounded-xl border border-black/10 bg-[#F9F9FA] p-4"
                       >
-                        <div className="h-14 w-14 shrink-0 rounded-lg bg-[#E5E7EB]" />
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#E5E7EB] sm:h-16 sm:w-16">
+                          {imageSrc ? (
+                            <img
+                              src={imageSrc}
+                              alt={productName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : null}
+                        </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-[#0B0F19]">{productName}</p>
                           <p className="text-sm text-[#64748B]">
@@ -1022,7 +1032,7 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          <aside className="lg:col-span-1">
+          <aside className="commerce-sidebar">
             <div className="sticky top-24 space-y-4">
               <div className="rounded-2xl border border-black/10 bg-[#F5F5F5] p-5 shadow-sm">
                 <h2 className="mb-4 font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.orderSummary')}</h2>

@@ -29,14 +29,16 @@ type Props = {
   fitToken?: number
 }
 
+/** Light storefront chart palette — matches site canvas (#F9F9FA / white). */
+const PAPER = '#FFFFFF'
 const INK = '#0B0F19'
-const GRID = 'rgba(255,255,255,0.06)'
-const TEXT = 'rgba(236,252,203,0.72)'
-const CROSS = 'rgba(133,227,7,0.55)'
-const LIME = '#85E307'
-const LIME_DIM = 'rgba(133,227,7,0.18)'
-const ROSE = '#F43F5E'
-const ROSE_DIM = 'rgba(244,63,94,0.16)'
+const GRID = 'rgba(15, 23, 42, 0.08)'
+const TEXT = '#64748B'
+const CROSS = 'rgba(63, 111, 0, 0.45)'
+const LIME = '#3F6F00'
+const LIME_DIM = 'rgba(133, 227, 7, 0.28)'
+const ROSE = '#DC2626'
+const ROSE_DIM = 'rgba(220, 38, 38, 0.18)'
 
 function toLineData(points: LinePoint[]): LineData[] {
   return points.map((p) => ({ time: p.time as Time, value: p.value }))
@@ -76,14 +78,11 @@ export function AdvancedMetalChart({
     const el = containerRef.current
     if (!el) return
 
-    const isRtl = locale.startsWith('ar')
     const options: DeepPartial<ChartOptions> = {
       layout: {
-        background: { type: ColorType.Solid, color: INK },
+        background: { type: ColorType.Solid, color: PAPER },
         textColor: TEXT,
-        fontFamily: isRtl
-          ? "'Tajawal', 'Montserrat', sans-serif"
-          : "'Montserrat', 'Tajawal', sans-serif",
+        fontFamily: "'The Year of The Camel', system-ui, sans-serif",
         fontSize: 12,
       },
       grid: {
@@ -96,13 +95,13 @@ export function AdvancedMetalChart({
           color: CROSS,
           width: 1,
           style: LineStyle.Dashed,
-          labelBackgroundColor: '#1F2937',
+          labelBackgroundColor: INK,
         },
         horzLine: {
           color: CROSS,
           width: 1,
           style: LineStyle.Dashed,
-          labelBackgroundColor: '#1F2937',
+          labelBackgroundColor: INK,
         },
       },
       rightPriceScale: {
@@ -187,11 +186,11 @@ export function AdvancedMetalChart({
       const s = chart.addAreaSeries({
         lineColor: positive ? LIME : ROSE,
         topColor: positive ? LIME_DIM : ROSE_DIM,
-        bottomColor: 'rgba(11,15,25,0)',
+        bottomColor: 'rgba(255,255,255,0)',
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 5,
-        crosshairMarkerBorderColor: INK,
+        crosshairMarkerBorderColor: PAPER,
         crosshairMarkerBackgroundColor: positive ? LIME : ROSE,
       })
       seriesRef.current = s
@@ -202,11 +201,11 @@ export function AdvancedMetalChart({
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 5,
-        crosshairMarkerBorderColor: INK,
+        crosshairMarkerBorderColor: PAPER,
         crosshairMarkerBackgroundColor: positive ? LIME : ROSE,
         lastValueVisible: true,
         priceLineVisible: true,
-        priceLineColor: positive ? 'rgba(133,227,7,0.45)' : 'rgba(244,63,94,0.45)',
+        priceLineColor: positive ? 'rgba(63,111,0,0.35)' : 'rgba(220,38,38,0.35)',
         priceLineWidth: 1,
         priceLineStyle: LineStyle.Dashed,
       })
@@ -216,7 +215,6 @@ export function AdvancedMetalChart({
     chart.timeScale().fitContent()
   }, [chartReady, mode])
 
-  // Live data updates without recreating the series.
   useEffect(() => {
     const series = seriesRef.current
     if (!series) return
@@ -235,7 +233,7 @@ export function AdvancedMetalChart({
       ;(series as ISeriesApi<'Line'>).applyOptions({
         color: positive ? LIME : ROSE,
         crosshairMarkerBackgroundColor: positive ? LIME : ROSE,
-        priceLineColor: positive ? 'rgba(133,227,7,0.45)' : 'rgba(244,63,94,0.45)',
+        priceLineColor: positive ? 'rgba(63,111,0,0.35)' : 'rgba(220,38,38,0.35)',
       })
     }
   }, [mode, line, candles, positive, chartReady])
@@ -248,7 +246,7 @@ export function AdvancedMetalChart({
   return (
     <div
       ref={containerRef}
-      className="metal-chart-canvas w-full overflow-hidden rounded-xl"
+      className="metal-chart-canvas w-full overflow-hidden rounded-xl bg-white"
       style={{ height }}
       role="img"
       aria-label="Metal price chart"

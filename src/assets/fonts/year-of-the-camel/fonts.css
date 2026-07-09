@@ -1,0 +1,59 @@
+/**
+ * The Year of The Camel — brand typeface (EN + AR).
+ * Weights: Thin 100 · ExtraLight 200 · Light 300 · Regular 400 · Medium 500 · Bold 700 · ExtraBold 800
+ */
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-Thin.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-ExtraLight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Year of The Camel';
+  src: url('./TheYearofTheCamel-ExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}

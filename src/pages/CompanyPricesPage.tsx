@@ -62,7 +62,7 @@ export default function CompanyPricesPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_50%_at_0%_0%,rgba(133,227,7,0.16),transparent_55%)]" />
         </div>
 
-        <div className="relative mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+        <div className="page-shell relative py-10 sm:py-12 lg:py-14">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
@@ -126,7 +126,7 @@ export default function CompanyPricesPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="page-shell py-8 sm:py-10">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-20 text-[#64748B]">
             <RefreshCw className="h-5 w-5 animate-spin" />
