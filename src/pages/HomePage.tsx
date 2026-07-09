@@ -8,8 +8,6 @@ import {
   Truck,
   Award,
   ShoppingCart,
-  Coins,
-  LineChart,
   Activity,
   ChevronDown,
 } from 'lucide-react'
@@ -84,153 +82,77 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F9F9FA]">
       {/* Live gold prices ticker — above hero; marquee direction follows language (LTR/RTL) */}
       <GoldPriceTicker />
 
-      {/* Hero — lime storefront theme, high-contrast copy */}
-      <section className="relative min-h-0 flex flex-col justify-center overflow-hidden border-b border-lime-900/10 py-10 sm:py-12 lg:py-14">
+      {/* Hero — matches mobile app: lime badge, headline accent, shop + live prices CTAs */}
+      <section className="relative min-h-0 flex flex-col justify-center overflow-hidden border-b border-black/5 bg-[#F9F9FA] py-12 sm:py-14 lg:py-16">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-br from-lime-100 via-white to-amber-50" />
-          <div
-            className="absolute inset-0 opacity-[0.12]"
-            style={{
-              backgroundImage: `linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.18) 1px, transparent 1px)`,
-              backgroundSize: '48px 48px',
-            }}
-          />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_15%_0%,rgba(190,246,112,0.55),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_100%,rgba(234,179,8,0.18),transparent_50%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/40 via-white to-[#F9F9FA]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_0%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         </div>
-
-        <div className="absolute top-24 start-[-10%] w-[28rem] h-[28rem] rounded-full bg-lime-400/25 blur-3xl" />
-        <div className="absolute bottom-8 end-[-5%] w-[36rem] h-[36rem] rounded-full bg-amber-300/20 blur-3xl" />
 
         <div
           className={`relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
-            {/* Copy + CTAs */}
-            <div className="lg:col-span-6 text-center lg:text-start">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-300 border border-black/15 mb-6 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-lime-600 animate-pulse shadow-[0_0_8px_rgba(22,101,52,0.5)]" />
-                <span className="text-xs sm:text-sm font-bold text-black tracking-wide uppercase">
-                  {t('home.liveGoldPrices')}
-                </span>
-              </div>
+          <div className="max-w-3xl text-center lg:text-start mx-auto lg:mx-0">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ECFCCB] border border-[#3F6F00]/15 mb-6">
+              <span className="w-2 h-2 rounded-full bg-[#3F6F00] animate-pulse" />
+              <span className="text-[10px] sm:text-xs font-semibold text-[#3F6F00] tracking-[0.12em] uppercase">
+                {t('home.heroLiveKuwaitBadge')}
+              </span>
+            </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.02] mb-5 tracking-tight">
-                <span className="block gold-gradient-text-on-light drop-shadow-sm">
-                  {t('home.heroBrandLine')}
-                </span>
-              </h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-bold leading-[1.08] mb-5 tracking-tight text-[#0B0F19]">
+              <span className="block">{t('home.heroHeadlineLead')}</span>
+              <span className="block gold-gradient-text-on-light">{t('home.heroHeadlineAccent')}</span>
+            </h1>
 
-              <p className="text-base sm:text-lg text-black font-semibold max-w-xl mx-auto lg:mx-0 mb-3 leading-snug">
-                {t('home.heroKicker')}
-              </p>
-              <p className="text-sm sm:text-base text-stone-800 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
-                {t('home.heroIntro')}
-              </p>
+            <p className="text-sm sm:text-base text-[#64748B] max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+              {t('home.heroSubtext')}
+            </p>
 
-              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-3">
-                <Link
-                  to="/products"
-                  className="gold-button inline-flex items-center justify-center gap-2 shadow-lg shadow-lime-900/20"
-                >
-                  {t('home.heroCtaBullion')}
-                  <ArrowRight className="w-5 h-5 rtl:rotate-180 shrink-0" />
-                </Link>
-                {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-3">
+              <Link
+                to="/products"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold text-white bg-[#0B0F19] hover:bg-[#1F2937] transition-colors shadow-md"
+              >
+                {t('home.heroBrowseShop')}
+                <ArrowRight className="w-5 h-5 rtl:rotate-180 shrink-0" />
+              </Link>
+              {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                 <Link
                   to="/trade-gold"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold text-black bg-white border-2 border-black/80 hover:bg-yellow-300 hover:border-black transition-all shadow-sm"
+                  className="gold-button inline-flex items-center justify-center gap-2 shadow-lg shadow-lime-900/20"
                 >
                   {t('nav.tradeGold')}
-                  <LineChart className="w-4 h-4 shrink-0" />
                 </Link>
-                ) : null}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold text-black border-2 border-black/25 bg-lime-200/80 hover:bg-lime-300 hover:border-black/40 transition-all"
-                    >
-                      {t('nav.prices')}
-                      <Activity className="w-4 h-4 shrink-0" />
-                      <ChevronDown className="w-4 h-4 shrink-0" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="min-w-[200px] bg-white border-gold-500/30">
-                    <DropdownMenuItem asChild>
-                      <Link to="/prices">{t('nav.customerPrices')}</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/company-prices">{t('nav.companyPrices')}</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-
-            {/* Feature stack — coins & bars / trade / rates */}
-            <div className="lg:col-span-6 relative mx-auto w-full max-w-md lg:max-w-none h-[20rem] sm:h-[24rem] lg:h-[34rem]">
-              <div className="absolute inset-0 rounded-3xl border border-black/10 bg-white/50 backdrop-blur-sm shadow-inner" />
-
-              <div className="absolute top-2 start-4 end-4 sm:start-6 sm:end-auto sm:w-[88%] p-4 rounded-2xl product-card-lime shadow-lg rotate-[-2deg] hover:rotate-0 transition-transform duration-300 border border-black/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-black/10 flex items-center justify-center shrink-0 ring-1 ring-black/10">
-                    <Coins className="w-5 h-5 text-black" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-black">{t('home.heroCardBullionTitle')}</p>
-                    <p className="text-xs text-black/75 mt-1 leading-relaxed">{t('home.heroCardBullionDesc')}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute top-[38%] end-2 start-8 sm:end-6 sm:start-auto sm:w-[85%] p-4 rounded-2xl product-card-lime shadow-lg rotate-[2deg] hover:rotate-0 transition-transform duration-300 border border-black/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-yellow-300 flex items-center justify-center shrink-0 ring-1 ring-black/10">
-                    <LineChart className="w-5 h-5 text-black" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-black">{t('home.heroCardTradeTitle')}</p>
-                    <p className="text-xs text-black/75 mt-1 leading-relaxed">{t('home.heroCardTradeDesc')}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-4 start-4 end-4 p-4 rounded-2xl bg-yellow-300 border-2 border-black/20 shadow-lg">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shrink-0 ring-1 ring-black/10">
-                    <Activity className="w-5 h-5 text-black" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-black">{t('home.heroCardRatesTitle')}</p>
-                    <p className="text-xs text-black/80 mt-1 leading-relaxed">{t('home.heroCardRatesDesc')}</p>
-                  </div>
-                </div>
-              </div>
+              ) : null}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold text-[#0B0F19] border border-black/10 bg-[#F4F4F5] hover:bg-[#ECFCCB]/60 transition-all"
+                  >
+                    {t('home.heroLivePrices')}
+                    <Activity className="w-4 h-4 shrink-0" />
+                    <ChevronDown className="w-4 h-4 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="min-w-[200px] bg-white border-gold-500/30">
+                  <DropdownMenuItem asChild>
+                    <Link to="/prices">{t('nav.customerPrices')}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/company-prices">{t('nav.companyPrices')}</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-
-          {/* <div className="mt-14 pt-10 border-t border-amber-500/15 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {[
-              { value: '15+', labelKey: 'home.yearsExperience' },
-              { value: '50K+', labelKey: 'home.happyCustomers' },
-              { value: '100%', labelKey: 'home.certifiedGold' },
-              { value: '5', labelKey: 'home.branchesCount' },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold gold-gradient-text mb-1 tabular-nums">
-                  {stat.value}
-                </div>
-                <div className="text-xs sm:text-sm text-stone-400 font-medium">{t(stat.labelKey)}</div>
-              </div>
-            ))}
-          </div> */}
         </div>
       </section>
 
@@ -413,28 +335,28 @@ export default function HomePage() {
       {/* Testimonials */}
       {/* <Testimonials /> */}
 
-      {/* CTA — lime storefront, black + yellow accent copy */}
+      {/* CTA — lime storefront, shop-focused */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-2xl overflow-hidden border-2 border-black/10 shadow-xl shadow-lime-900/15">
-            <div className="absolute inset-0 bg-gradient-to-br from-lime-300 via-lime-400 to-amber-300" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.5),transparent_55%)]" />
+          <div className="relative rounded-2xl overflow-hidden border border-[#85E307]/25 shadow-xl shadow-lime-900/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#ECFCCB] via-[#85E307]/90 to-[#3F6F00]/80" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.45),transparent_55%)]" />
             <div className="relative px-8 py-16 md:px-16 md:py-20 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-black mb-4 drop-shadow-sm">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#0B0F19] mb-4">
                 {t('home.readyToTrade')}
               </h2>
-              <p className="text-black/80 max-w-xl mx-auto mb-8 leading-relaxed font-medium">
+              <p className="text-[#0B0F19]/75 max-w-xl mx-auto mb-8 leading-relaxed font-medium">
                 {t('home.readyToTradeDesc')}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/register" className="gold-button shadow-lg border-2 border-black/10">
+                <Link to="/register" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-white bg-[#0B0F19] hover:bg-[#1F2937] transition-colors shadow-md">
                   {t('home.createAccount')}
                 </Link>
                 <Link
-                  to="/contact"
-                  className="px-6 py-3 rounded-lg font-semibold text-black bg-yellow-300 border-2 border-black/80 hover:bg-yellow-200 transition-all shadow-sm"
+                  to="/products"
+                  className="px-6 py-3 rounded-lg font-semibold text-[#0B0F19] bg-white border border-black/10 hover:bg-[#F4F4F5] transition-all shadow-sm"
                 >
-                  {t('home.contactSales')}
+                  {t('home.heroBrowseShop')}
                 </Link>
               </div>
             </div>
