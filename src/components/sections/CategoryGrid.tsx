@@ -1,376 +1,85 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, Circle, Link2, Watch, Gem, Crown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react'
-import { getApiBaseUrl } from '@/lib/apiBase'
-import { productsApi } from '../../services/api'
-import type { Category } from '../../types'
+import { productsApi } from '@/services/api'
+import type { Category } from '@/types'
+import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
+import { VaultCategoryTile } from '@/components/home/VaultCategoryTile'
 
-const categoryIcons: Record<string, React.ElementType> = {
-  rings: Circle,
-  necklaces: Link2,
-  watches: Watch,
-  gems: Gem,
-  bracelets: Crown,
-  bars: BarChart3,
+type CategoryResponse = {
+  count: number
+  next: string | null
+  previous: string | null
+  results: Category[]
 }
 
-type SubItem = { id: string; slug: string; name_en: string; name_ar?: string; cat: Category }
-
-function normalizeSubcategories(category: Category): SubItem[] {
-  const raw = category.subcategories
-  if (!Array.isArray(raw) || raw.length === 0) return []
-  return raw
-    .map((sub) => {
-      if (!sub || typeof sub !== 'object') return null
-      const s = sub as Category
-      if (!s.slug) return null
-      return {
-        id: String(s.id ?? s.slug),
-        slug: s.slug,
-        name_en: s.name_en || s.slug,
-        name_ar: s.name_ar,
-        cat: s,
-      }
-    })
-    .filter(Boolean) as SubItem[]
-}
-
-function categoryImageSrc(category: Category): string | null {
-  const c = category as Category & { image_url?: string }
-  if (c.image_url) return c.image_url
-  if (!category.image) return null
-  if (category.image.startsWith('http')) return category.image
-  const apiBase = getApiBaseUrl()
-  const origin = apiBase.replace(/\/api\/?$/, '')
-  const path = category.image.startsWith('/') ? category.image : `/${category.image}`
-  return `${origin}${path}`
-}
-
-/** One row: four tiles fill the width; extra subcategories scroll horizontally with snap + arrows. */
-const SUBS_VISIBLE_ROW = 4
-
-function SubcategoryGrid({
-  subs,
-  categoryIcons,
-  activeIcon,
-  lang,
-}: {
-  subs: SubItem[]
-  categoryIcons: Record<string, React.ElementType>
-  activeIcon: React.ElementType
-  lang: string
-}) {
-  const { t } = useTranslation()
-  const rowRef = useRef<HTMLDivElement>(null)
-
-  const scrollSubRow = useCallback((forward: boolean) => {
-    const el = rowRef.current
-    if (!el) return
-    const w = el.clientWidth
-    const mult = forward ? 1 : -1
-    const rtl = typeof document !== 'undefined' && document.documentElement.dir === 'rtl'
-    el.scrollBy({ left: mult * w * 0.92 * (rtl ? -1 : 1), behavior: 'smooth' })
-  }, [])
-
-  const needsScroll = subs.length > SUBS_VISIBLE_ROW
-  const tileWidthClass = needsScroll
-    ? 'w-[max(6.75rem,calc((100%-1.5rem)/4))] sm:w-[calc((100%-1.5rem)/4)] flex-none'
-    : 'min-w-0 flex-1 basis-0 max-w-none'
-
+function CategoryGridSkeleton() {
   return (
-    <div className="relative">
-      {needsScroll && (
-        <>
-          <button
-            type="button"
-            onClick={() => scrollSubRow(false)}
-            className="absolute left-0 top-1/2 z-20 hidden sm:flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-800 shadow-lg hover:bg-stone-50 transition-colors"
-            aria-label={t('home.scrollSubcategoriesPrev')}
-          >
-            <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollSubRow(true)}
-            className="absolute right-0 top-1/2 z-20 hidden sm:flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-800 shadow-lg hover:bg-stone-50 transition-colors"
-            aria-label={t('home.scrollSubcategoriesNext')}
-          >
-            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-          </button>
-        </>
-      )}
-
-      {needsScroll && (
-        <>
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white via-white/90 to-transparent sm:w-12"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white via-white/90 to-transparent sm:w-12"
-            aria-hidden
-          />
-        </>
-      )}
-
-      <div
-        ref={rowRef}
-        className={`flex w-full flex-nowrap gap-2 py-1 pl-0.5 pr-0.5 [scrollbar-width:thin] [scrollbar-color:rgba(251,191,36,0.5)_rgba(255,255,255,0.06)] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-amber-500/40 ${
-          needsScroll
-            ? 'overflow-x-auto scroll-smooth snap-x snap-mandatory sm:pl-11 sm:pr-11'
-            : 'overflow-x-hidden justify-stretch'
-        }`}
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        {subs.map((item) => {
-          const img = categoryImageSrc(item.cat)
-          const SubIcon = categoryIcons[item.slug] || activeIcon
-          const label =
-            lang === 'ar' && (item.name_ar || item.cat.name_ar)
-              ? item.name_ar || item.cat.name_ar
-              : item.name_en
-          return (
-            <Link
-              key={item.id}
-              to={`/products?category=${encodeURIComponent(item.slug)}`}
-              className={`group product-card-lime flex min-h-[118px] sm:min-h-[128px] snap-start flex-col items-center gap-2 !p-2.5 shadow-md transition-all duration-300 hover:-translate-y-0.5 ${tileWidthClass}`}
-            >
-              <span className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl bg-white/70 ring-1 ring-black/10">
-                {img ? (
-                  <img
-                    src={img}
-                    alt=""
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center">
-                    <SubIcon className="h-7 w-7 text-black/35" />
-                  </span>
-                )}
-              </span>
-              <span className="w-full text-center text-[10px] sm:text-xs font-semibold leading-snug text-black line-clamp-2">
-                {label}
-              </span>
-              <span className="text-black/70 group-hover:text-black">
-                <ArrowRight className="mx-auto h-3 w-3 rtl:rotate-180" />
-              </span>
-            </Link>
-          )
-        })}
+    <section className="home-section">
+      <div className="home-section-inner">
+        <div className="mb-8 space-y-3">
+          <div className="h-3 w-28 animate-pulse rounded bg-[#E2E8F0]" />
+          <div className="h-8 w-48 animate-pulse rounded-lg bg-[#E2E8F0]" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square animate-pulse rounded-2xl bg-gradient-to-br from-[#E2E8F0] to-[#F1F5F9]"
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
 export default function CategoryGrid() {
   const { t, i18n } = useTranslation()
-  const [page, setPage] = useState(1)
-  const [activeSlug, setActiveSlug] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['categories', page],
-    queryFn: () => productsApi.getCategories({ page, page_size: 48 }),
+    queryKey: ['categories-home'],
+    queryFn: () => productsApi.getCategories({ page: 1, page_size: 100 }),
+    staleTime: 5 * 60_000,
   })
 
-  type CategoryResponse = {
-    count: number
-    next: string | null
-    previous: string | null
-    results: Category[]
-  }
-
-  const resp = data as CategoryResponse | undefined
-
   const roots = useMemo(() => {
-    const list = (resp?.results || []).filter((c) => !c.parent)
+    const list = ((data as CategoryResponse | undefined)?.results ?? []).filter((c) => !c.parent)
     return [...list].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-  }, [resp?.results])
-
-  useEffect(() => {
-    setActiveSlug((prev) => {
-      if (prev && roots.some((c) => c.slug === prev)) return prev
-      return roots[0]?.slug ?? null
-    })
-  }, [roots])
-
-  const active = roots.find((c) => c.slug === activeSlug) ?? roots[0]
-  const subs = active ? normalizeSubcategories(active) : []
-
-  const hasNext = !!resp?.next
-  const hasPrev = !!resp?.previous
-  const showPageNav = hasNext || hasPrev
-
-  const rootLabel = (cat: Category) =>
-    i18n.language === 'ar' && cat.name_ar ? cat.name_ar : cat.name_en
+  }, [data])
 
   if (isLoading) {
-    return (
-      <section className="py-20 md:py-28 bg-gradient-to-b from-lime-100/90 via-white to-amber-50/40 border-y border-lime-900/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-8 w-48 bg-stone-200/80 rounded-lg mx-auto mb-3 animate-pulse" />
-          <div className="h-3 w-64 bg-stone-200/50 rounded-lg mx-auto mb-10 animate-pulse" />
-          <div className="h-80 rounded-[2rem] bg-stone-200/50 animate-pulse" />
-        </div>
-      </section>
-    )
+    return <CategoryGridSkeleton />
   }
 
   if (!roots.length) {
     return null
   }
 
-  const activeImg = active ? categoryImageSrc(active) : null
-  const ActiveIcon = active ? categoryIcons[active.slug] || Gem : Gem
+  const rootLabel = (cat: Category) => {
+    const name = i18n.language === 'ar' && cat.name_ar ? cat.name_ar : cat.name_en
+    return name.trim().toUpperCase()
+  }
 
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden border-y border-lime-900/10 bg-gradient-to-b from-lime-100 via-white to-amber-50/50">
-      <div
-        className="absolute inset-0 opacity-50 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 100% 60% at 100% 0%, rgba(190, 242, 100, 0.55), transparent 55%), radial-gradient(ellipse 80% 50% at 0% 100%, rgba(253, 224, 71, 0.22), transparent 50%)',
-        }}
-      />
-      <div className="absolute top-24 left-[8%] w-px h-32 bg-gradient-to-b from-gold-700/35 to-transparent hidden lg:block" />
-      <div className="absolute bottom-32 right-[12%] w-px h-24 bg-gradient-to-t from-gold-700/30 to-transparent hidden lg:block" />
+    <section className="home-section" aria-labelledby="home-categories-heading">
+      <div className="home-section-inner @container">
+        <HomeSectionHeader
+          kicker={t('home.vaultCollections')}
+          title={t('home.categories')}
+          subtitle={t('home.categoriesSub')}
+          linkTo="/products"
+          linkLabel={t('home.viewAll')}
+        />
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="text-center mb-8 md:mb-10 max-w-lg mx-auto">
-          <p className="text-[10px] md:text-[11px] font-bold tracking-[0.3em] uppercase text-yellow-950 mb-2">
-            {t('home.browseByCategory')}
-          </p>
-          <h2 className="text-2xl md:text-3xl font-bold text-black tracking-tight leading-tight">
-            {t('home.categories')}
-          </h2>
-        </header>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-8 md:mb-10">
-          {roots.map((cat) => {
-            const isOn = active?.slug === cat.slug
-            const thumb = categoryImageSrc(cat)
-            const Icon = categoryIcons[cat.slug] || Gem
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveSlug(cat.slug)}
-                aria-pressed={isOn}
-                className={`group flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full border transition-all duration-300 ${
-                  isOn
-                    ? 'border-gold-700/55 bg-white shadow-[0_8px_30px_-8px_rgba(79,142,0,0.35)] ring-2 ring-gold-500/30 scale-[1.02]'
-                    : 'border-gold-800/20 bg-white/70 hover:bg-white hover:border-gold-600/45 hover:shadow-md'
-                }`}
-              >
-                <span
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full overflow-hidden border transition-colors ${
-                    isOn ? 'border-gold-500/60 bg-gold-100' : 'border-gold-800/15 bg-gold-50 group-hover:border-gold-300'
-                  }`}
-                >
-                  {thumb ? (
-                    <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  ) : (
-                    <Icon className="h-5 w-5 text-gold-800/70" />
-                  )}
-                </span>
-                <span
-                  className={`text-sm font-semibold tracking-tight ${
-                    isOn ? 'text-gold-900' : 'text-stone-800'
-                  }`}
-                >
-                  {rootLabel(cat)}
-                </span>
-              </button>
-            )
-          })}
+        <div
+          id="home-categories-heading"
+          className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 @lg:grid-cols-3 @3xl:grid-cols-4"
+        >
+          {roots.map((cat) => (
+            <VaultCategoryTile key={cat.id} category={cat} label={rootLabel(cat)} />
+          ))}
         </div>
-
-        {active && (
-          <div
-            key={active.slug}
-            className="relative overflow-hidden rounded-[1.75rem] md:rounded-[2rem] border-2 border-black/10 shadow-[0_25px_70px_-18px_rgba(22,101,52,0.25)] animate-category-spotlight bg-gradient-to-br from-lime-200 via-lime-300 to-amber-200"
-          >
-            {activeImg ? (
-              <div
-                className="absolute inset-0 opacity-20 bg-cover bg-center scale-105 blur-[1px]"
-                style={{ backgroundImage: `url(${activeImg})` }}
-              />
-            ) : null}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-lime-50/80 to-amber-50/70" />
-
-            <div className="relative grid lg:grid-cols-12 gap-0">
-              <div className="lg:col-span-4 xl:col-span-4 p-6 md:p-8 lg:p-10 flex flex-col justify-between min-h-[200px] lg:min-h-[280px] border-b lg:border-b-0 lg:border-r border-black/10 bg-white/60 backdrop-blur-sm">
-                <div>
-                  <p className="text-yellow-950 text-[10px] font-bold tracking-[0.2em] uppercase mb-2">
-                    {t('home.collectionLabel')}
-                  </p>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-black tracking-tight leading-tight mb-4">
-                    {rootLabel(active)}
-                  </h3>
-                </div>
-                <Link
-                  to={`/products?category=${encodeURIComponent(active.slug)}`}
-                  className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-yellow-300 shadow-lg hover:bg-zinc-900 transition-colors border border-black"
-                >
-                  {t('home.viewAll')}
-                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                </Link>
-              </div>
-
-              <div className="lg:col-span-8 xl:col-span-8 p-5 md:p-8 lg:p-10 bg-white/40 backdrop-blur-[2px]">
-                {subs.length > 0 && (
-                  <p className="text-black text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
-                    {t('home.subcategoriesLabel')}
-                  </p>
-                )}
-
-                {subs.length > 0 ? (
-                  <SubcategoryGrid
-                    subs={subs}
-                    categoryIcons={categoryIcons}
-                    activeIcon={ActiveIcon}
-                    lang={i18n.language}
-                  />
-                ) : (
-                  <div className="rounded-2xl border-2 border-black/10 bg-white/90 p-6 text-center shadow-sm">
-                    <Link
-                      to={`/products?category=${encodeURIComponent(active.slug)}`}
-                      className="inline-flex items-center gap-2 text-sm font-bold text-black hover:text-lime-800"
-                    >
-                      {t('home.viewAll')}
-                      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showPageNav && (
-          <nav className="mt-10 flex flex-wrap justify-center gap-3" aria-label="Category pages">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={!hasPrev}
-              className="inline-flex items-center gap-2 rounded-full border border-gold-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 shadow-sm hover:border-gold-600/50 disabled:opacity-35 disabled:pointer-events-none"
-            >
-              <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={() => hasNext && setPage((p) => p + 1)}
-              disabled={!hasNext}
-              className="inline-flex items-center gap-2 rounded-full border border-gold-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 shadow-sm hover:border-gold-600/50 disabled:opacity-35 disabled:pointer-events-none"
-            >
-              Next
-              <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-            </button>
-          </nav>
-        )}
       </div>
     </section>
   )

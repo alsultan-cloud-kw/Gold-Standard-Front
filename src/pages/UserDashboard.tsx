@@ -36,6 +36,7 @@ import {
   BANK_CHANGE_REQUESTS_ENABLED,
   isTradingDashboardTab,
 } from '../featureFlags'
+import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 
 function isDisabledDashboardTab(tab: string): boolean {
   if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && isTradingDashboardTab(tab)) return true
@@ -885,28 +886,13 @@ function AddressesTab() {
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.city')}</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              autoComplete="address-level2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">
-              {t('userDashboard.addresses.governorate')}
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={governorate}
-              onChange={(e) => setGovernorate(e.target.value)}
-              autoComplete="address-level1"
-            />
-          </div>
+          <KuwaitLocationFields
+            governorate={governorate}
+            city={city}
+            onGovernorateChange={setGovernorate}
+            onCityChange={setCity}
+            inputClassName={inputClass}
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

@@ -15,6 +15,7 @@ import {
 import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
 import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
+import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery } from '@tanstack/react-query'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
@@ -721,17 +722,12 @@ export default function CheckoutPage() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
-                  <input
-                    placeholder={t('checkoutPage.cityPh')}
-                    className="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                  />
-                  <input
-                    placeholder={t('checkoutPage.governoratePh')}
-                    className="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
-                    value={governorate}
-                    onChange={(e) => setGovernorate(e.target.value)}
+                  <KuwaitLocationFields
+                    governorate={governorate}
+                    city={city}
+                    onGovernorateChange={setGovernorate}
+                    onCityChange={setCity}
+                    inputClassName="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
                   />
                   <input
                     placeholder={t('checkoutPage.postalPh')}
