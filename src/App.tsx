@@ -27,7 +27,8 @@ import ContactPage from './pages/ContactPage'
 import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
 import CompanyPricesPage from './pages/CompanyPricesPage'
-import NewsPage from './pages/NewsPage'
+// News temporarily hidden — re-enable with nav.news + HomeNewsSection
+// import NewsPage from './pages/NewsPage'
 import TermsOfServiceAndPrivacyPolicyPage from './pages/TermsOfServiceAndPrivacyPolicyPage'
 import DataDeletionPage from './pages/DataDeletionPage'
 
@@ -68,6 +69,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 
 import { ProtectedRoute, StaffRoute, CatalogManagerRoute, GuestOnlyRoute } from './components/routing/ProtectedRoute'
+import ScrollToTop from './components/routing/ScrollToTop'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from './featureFlags'
 
 // Create Query Client
@@ -87,6 +89,7 @@ function App() {
           <ClerkAuthBridge />
           <CartProvider>
           <Router>
+            <ScrollToTop />
             <MarketingVisitTracker />
             <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
@@ -121,7 +124,9 @@ function App() {
                   <Route path="/branches" element={<BranchesPage />} />
                   <Route path="/prices" element={<PricesPage />} />
                   <Route path="/company-prices" element={<CompanyPricesPage />} />
+                  {/* News temporarily hidden
                   <Route path="/news" element={<NewsPage />} />
+                  */}
                   <Route path="/terms-and-privacy" element={<TermsOfServiceAndPrivacyPolicyPage />} />
                   <Route path="/terms" element={<Navigate to="/terms-and-privacy" replace />} />
                   <Route path="/privacy" element={<Navigate to="/terms-and-privacy" replace />} />
@@ -173,13 +178,27 @@ function App() {
               </main>
               <Footer />
               <FloatingPriceReminder />
-              <Toaster 
-                position="top-right" 
+              <Toaster
+                position="top-center"
+                richColors
+                closeButton
+                gap={10}
+                offset={16}
                 toastOptions={{
+                  className: 'gs-toast',
                   style: {
-                    background: '#1F2937',
-                    color: '#F4E4BC',
-                    border: '1px solid rgba(212, 175, 55, 0.3)',
+                    background: '#0B0F19',
+                    color: '#F8FAFC',
+                    border: '1px solid rgba(133, 227, 7, 0.35)',
+                    borderRadius: '14px',
+                    boxShadow: '0 12px 40px rgba(11, 15, 25, 0.28)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                  },
+                  classNames: {
+                    description: 'gs-toast-desc',
+                    success: 'gs-toast-success',
+                    error: 'gs-toast-error',
                   },
                 }}
               />

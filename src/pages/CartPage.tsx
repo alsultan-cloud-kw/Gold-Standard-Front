@@ -8,6 +8,7 @@ import {
   Loader2,
   Tag,
   Crown,
+  Lock,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useCart } from '../contexts/CartContext'
@@ -18,6 +19,7 @@ import {
   cartLineClubMemberSavings,
   cartLineStandardTotal,
 } from '../utils/clubCartPricing'
+import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
 
 export default function CartPage() {
   const { t, i18n } = useTranslation()
@@ -31,16 +33,26 @@ export default function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen py-16 bg-siteBg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="w-24 h-24 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center mx-auto mb-6">
-            <ShoppingCart className="w-12 h-12 text-amber-800" />
+      <div className="min-h-screen bg-[#F9F9FA]">
+        <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center sm:py-28">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#F4F4F5] text-[#64748B]">
+            <ShoppingCart className="h-9 w-9" strokeWidth={1.75} />
           </div>
-          <h1 className="text-2xl font-bold text-stone-900 mb-4">{t('cartPage.emptyTitle')}</h1>
-          <p className="text-stone-600 mb-8 max-w-md mx-auto">{t('cartPage.emptyDesc')}</p>
-          <Link to="/products" className="gold-button inline-flex items-center gap-2">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+            {t('cartPage.kicker')}
+          </p>
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+            {t('cartPage.emptyTitle')}
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-[#64748B] sm:text-base">
+            {t('cartPage.emptyDesc')}
+          </p>
+          <Link
+            to="/products"
+            className="mt-8 inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-2xl border border-[#3F6F00] bg-[#85E307] px-8 text-base font-bold text-[#3F6F00] shadow-[0_14px_28px_-14px_rgba(133,227,7,0.55)] transition hover:bg-[#9AEF2A]"
+          >
             {t('cartPage.continueShopping')}
-            <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+            <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </Link>
         </div>
       </div>
@@ -48,222 +60,229 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 bg-siteBg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-8">{t('cartPage.pageTitle')}</h1>
+    <div className="min-h-screen bg-[#F9F9FA]">
+      <div className="border-b border-black/5 bg-white">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+            {t('cartPage.kicker')}
+          </p>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+              {t('cartPage.pageTitle')}
+            </h1>
+            <p className="text-sm text-[#64748B]">
+              {t('cartPage.itemsCount', { count: cart.item_count })}
+            </p>
+          </div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            {cart.items.map((item) => {
-              const imageSrc = productImageSrc(item.product)
-              const lineListTotal = cartLineStandardTotal(item)
-              const lineMemberSave = cartLineClubMemberSavings(item)
-              const productName =
-                isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
-              const caratLabel =
-                isAr && item.product.carat?.display_name_ar
-                  ? item.product.carat.display_name_ar
-                  : item.product.carat?.display_name_en
-              return (
-                <div
-                  key={item.id}
-                  className="gold-card-light flex flex-col sm:flex-row gap-4 border-amber-900/10"
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="space-y-3">
+          {cart.items.map((item) => {
+            const imageSrc = productImageSrc(item.product)
+            const lineListTotal = cartLineStandardTotal(item)
+            const lineMemberSave = cartLineClubMemberSavings(item)
+            const productName =
+              isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
+            const caratLabel =
+              isAr && item.product.carat?.display_name_ar
+                ? item.product.carat.display_name_ar
+                : item.product.carat?.display_name_en
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:flex-row sm:p-5"
+              >
+                <Link
+                  to={`/products/${item.product.slug}`}
+                  className="h-36 w-full shrink-0 overflow-hidden rounded-xl bg-[#F4F4F5] sm:h-[5.75rem] sm:w-[5.75rem]"
                 >
-                  <div className="w-full sm:w-24 h-48 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-stone-100 ring-1 ring-amber-900/10">
-                    {imageSrc ? (
-                      <img
-                        src={imageSrc}
-                        alt={productName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-stone-400 text-sm">
-                        {t('cartPage.noImage')}
-                      </div>
-                    )}
+                  {imageSrc ? (
+                    <img src={imageSrc} alt={productName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm text-[#94A3B8]">
+                      {t('cartPage.noImage')}
+                    </div>
+                  )}
+                </Link>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        to={`/products/${item.product.slug}`}
+                        className="font-serif text-base font-bold text-[#0B0F19] transition-colors hover:text-[#3F6F00] sm:text-lg"
+                      >
+                        {productName}
+                      </Link>
+                      <p className="mt-1 text-sm text-[#64748B]">
+                        {caratLabel} · {item.product.weight_grams}
+                        {t('common.gramsAbbr')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.id)}
+                      className="rounded-lg p-2 text-[#94A3B8] transition-colors hover:bg-red-50 hover:text-red-600"
+                      aria-label={t('cartPage.removeItem')}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <Link
-                          to={`/products/${item.product.slug}`}
-                          className="text-lg font-semibold text-stone-900 hover:text-amber-800 transition-colors line-clamp-2"
-                        >
-                          {productName}
-                        </Link>
-                        <p className="text-sm text-stone-600 mt-1">
-                          {caratLabel} • {item.product.weight_grams}g
-                        </p>
-                      </div>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="inline-flex items-center rounded-full bg-[#F0F0F0] p-1">
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                        aria-label={t('cartPage.removeItem')}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white"
+                        aria-label={t('cartPage.decreaseQty')}
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-10 text-center text-sm font-bold tabular-nums text-[#0B0F19]">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white"
+                        aria-label={t('cartPage.increaseQty')}
+                      >
+                        <Plus className="h-4 w-4" />
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 flex-wrap gap-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-9 h-9 rounded-lg bg-stone-100 border border-amber-900/15 text-stone-800 hover:bg-amber-50 flex items-center justify-center"
-                          aria-label={t('cartPage.decreaseQty')}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="w-10 text-center font-semibold text-stone-900 tabular-nums">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-9 h-9 rounded-lg bg-stone-100 border border-amber-900/15 text-stone-800 hover:bg-amber-50 flex items-center justify-center"
-                          aria-label={t('cartPage.increaseQty')}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="text-end space-y-0.5">
-                        {lineMemberSave > 0 ? (
-                          <>
-                            <p className="text-xs text-stone-500 line-through tabular-nums">
-                              {formatOrderKwd(lineListTotal)} KWD
-                              <span className="text-stone-400 font-normal not-italic">
-                                {' '}
-                                {t('cartPage.listSuffix')}
-                              </span>
-                            </p>
-                            <p className="flex items-center justify-end gap-1 text-xs font-semibold text-emerald-800">
-                              <Crown className="w-3.5 h-3.5 shrink-0" aria-hidden />
-                              {t('cartPage.memberPrice')}
-                            </p>
-                            <p className="text-lg font-bold text-amber-900 tabular-nums">
-                              {formatOrderKwd(item.total_price)} KWD
-                            </p>
-                            <p className="text-xs text-emerald-700 tabular-nums">
-                              {t('cartPage.saveVsList', { amount: formatOrderKwd(lineMemberSave) })}
-                            </p>
-                          </>
-                        ) : (
-                          <span className="text-lg font-bold text-amber-900 tabular-nums">
-                            {formatOrderKwd(item.total_price)} KWD
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-
-            <button
-              type="button"
-              onClick={clearCart}
-              className="text-sm font-medium text-red-700 hover:text-red-800 flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              {t('cartPage.clearCart')}
-            </button>
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="gold-card-light sticky top-24 border-amber-900/10">
-              <h2 className="text-xl font-bold text-stone-900 mb-6">{t('cartPage.orderSummary')}</h2>
-
-              <div className="space-y-3 mb-6 text-stone-700">
-                {clubSavings > 0 ? (
-                  <>
-                    <div className="flex items-center justify-between gap-2">
-                      <span>{t('cartPage.standardListTotal', { count: cart.item_count })}</span>
-                      <span className="font-medium tabular-nums flex items-center gap-1">
-                        {summary.previewLoading && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700 shrink-0" aria-hidden />
-                        )}
-                        {formatOrderKwd(displaySubtotal)} KWD
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-emerald-800 gap-2">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <Crown className="w-3.5 h-3.5 shrink-0 text-emerald-700" aria-hidden />
-                        {t('cartPage.clubMemberSavings')}
-                      </span>
-                      <span className="tabular-nums font-semibold">−{formatOrderKwd(clubSavings)} KWD</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-amber-900/10">
-                      <span className="font-medium text-stone-900">{t('cartPage.yourPriceMember')}</span>
-                      <span className="font-semibold tabular-nums text-stone-900">
-                        {formatOrderKwd(displayTotalAfterClub)} KWD
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-between gap-2">
-                    <span>{t('cartPage.subtotal', { count: cart.item_count })}</span>
-                    <span className="font-medium tabular-nums flex items-center gap-1">
-                      {summary.previewLoading && (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700 shrink-0" aria-hidden />
+                    <div className="text-end">
+                      {lineMemberSave > 0 ? (
+                        <>
+                          <p className="text-xs text-[#94A3B8] line-through tabular-nums">
+                            {formatOrderKwd(lineListTotal)} {t('common.kwd')}
+                          </p>
+                          <p className="flex items-center justify-end gap-1 text-xs font-semibold text-[#059669]">
+                            <Crown className="h-3.5 w-3.5" aria-hidden />
+                            {t('cartPage.memberPrice')}
+                          </p>
+                          <p className="text-lg font-bold tabular-nums text-[#85E307]">
+                            {formatOrderKwd(item.total_price)} {t('common.kwd')}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-lg font-bold tabular-nums text-[#85E307]">
+                          {formatOrderKwd(item.total_price)} {t('common.kwd')}
+                        </p>
                       )}
-                      {formatOrderKwd(displayTotalAfterClub)} KWD
-                    </span>
-                  </div>
-                )}
-                {summary.discountAmount > 0 && (
-                  <div className="rounded-lg bg-emerald-50 border border-emerald-200/80 px-3 py-2 space-y-1">
-                    <div className="flex items-center justify-between text-emerald-900">
-                      <span className="flex items-center gap-1.5 text-sm font-medium">
-                        <Tag className="w-3.5 h-3.5 shrink-0" />
-                        {summary.offerTitle ? summary.offerTitle : t('cartPage.offerFallback')}
-                      </span>
-                      <span className="tabular-nums font-semibold">
-                        −{formatOrderKwd(summary.discountAmount)} KWD
-                      </span>
                     </div>
-                    <p className="text-xs text-emerald-800/80">{t('cartPage.offerPreviewHint')}</p>
                   </div>
-                )}
-                {summary.useServerPreview && summary.discountAmount <= 0 && !summary.previewLoading && (
-                  <div className="flex items-center justify-between text-stone-500 text-sm">
-                    <span>{t('cartPage.promotionalOffer')}</span>
-                    <span className="tabular-nums">—</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span>{t('cartPage.tax')}</span>
-                  <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} KWD</span>
                 </div>
               </div>
+            )
+          })}
+        </div>
 
-              <div className="border-t border-amber-900/15 pt-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold text-stone-900">{t('cartPage.total')}</span>
-                  <span className="text-2xl font-bold text-amber-900 tabular-nums">
-                    {formatOrderKwd(displayFinalTotal)} KWD
+        <button
+          type="button"
+          onClick={clearCart}
+          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-red-700 transition-colors hover:text-red-800"
+        >
+          <Trash2 className="h-4 w-4" />
+          {t('cartPage.clearCart')}
+        </button>
+
+        <div className="mt-6 rounded-2xl border border-black/10 bg-[#F5F5F5] p-5 sm:p-[1.125rem]">
+          <h2 className="mb-4 font-serif text-lg font-bold text-[#0B0F19]">
+            {t('cartPage.orderSummary')}
+          </h2>
+
+          <div className="space-y-2.5 text-sm">
+            {clubSavings > 0 ? (
+              <>
+                <div className="flex items-center justify-between gap-2 text-[#64748B]">
+                  <span>{t('cartPage.standardListTotal', { count: cart.item_count })}</span>
+                  <span className="inline-flex items-center gap-1 font-medium tabular-nums text-[#0B0F19]">
+                    {summary.previewLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3F6F00]" aria-hidden />
+                    ) : null}
+                    {formatOrderKwd(displaySubtotal)} {t('common.kwd')}
                   </span>
                 </div>
+                <div className="flex items-center justify-between gap-2 text-[#059669]">
+                  <span className="inline-flex items-center gap-1.5 font-medium">
+                    <Crown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    {t('cartPage.clubMemberSavings')}
+                  </span>
+                  <span className="font-semibold tabular-nums">
+                    −{formatOrderKwd(clubSavings)} {t('common.kwd')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-black/5 pt-2.5 font-medium text-[#0B0F19]">
+                  <span>{t('cartPage.yourPriceMember')}</span>
+                  <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between gap-2 text-[#64748B]">
+                <span>{t('cartPage.subtotal', { count: cart.item_count })}</span>
+                <span className="inline-flex items-center gap-1 font-medium tabular-nums text-[#0B0F19]">
+                  {summary.previewLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3F6F00]" aria-hidden />
+                  ) : null}
+                  {formatOrderKwd(displayTotalAfterClub)} {t('common.kwd')}
+                </span>
               </div>
+            )}
 
-              <Link
-                to="/checkout"
-                className="gold-button w-full flex items-center justify-center gap-2 mb-4"
-              >
-                {t('cartPage.proceedCheckout')}
-                <ArrowRight className="w-5 h-5 rtl:rotate-180" />
-              </Link>
+            {summary.discountAmount > 0 ? (
+              <div className="flex items-center justify-between gap-2 text-[#059669]">
+                <span className="inline-flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5 shrink-0" />
+                  {summary.offerTitle ? summary.offerTitle : t('cartPage.offerFallback')}
+                </span>
+                <span className="font-semibold tabular-nums">
+                  −{formatOrderKwd(summary.discountAmount)} {t('common.kwd')}
+                </span>
+              </div>
+            ) : null}
 
-              <Link
-                to="/products"
-                className="w-full px-6 py-3 rounded-lg font-semibold text-amber-900 border-2 border-amber-800/30 bg-white hover:bg-amber-50 transition-all text-center block"
-              >
-                {t('cartPage.continueShopping')}
-              </Link>
+            <div className="flex items-center justify-between gap-2 text-[#64748B]">
+              <span>{t('cartPage.shipping')}</span>
+              <span className="inline-flex rounded-full border border-[#3F6F00] bg-[#85E307] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0B0F19]">
+                {t('cartPage.shippingFree')}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 text-[#64748B]">
+              <span>{t('cartPage.tax')}</span>
+              <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} {t('common.kwd')}</span>
             </div>
           </div>
+
+          <div className="mt-4 border-t border-black/10 pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.total')}</span>
+              <span className="font-serif text-2xl font-bold tabular-nums text-[#0B0F19]">
+                {formatOrderKwd(displayFinalTotal)} {t('common.kwd')}
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-[#64748B]">{t('cartPage.livePriceNote')}</p>
+          </div>
         </div>
+
+        <Link
+          to="/checkout"
+          className="mt-5 flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-2xl border border-[#3F6F00] bg-[#85E307] text-base font-bold text-[#3F6F00] shadow-[0_14px_28px_-14px_rgba(133,227,7,0.55)] transition hover:bg-[#9AEF2A]"
+        >
+          {t('cartPage.proceedCheckout')}
+          <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+        </Link>
+
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-[#64748B]">
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>{t('cartPage.secureCheckoutNote')}</span>
+        </div>
+
+        <CheckoutTrustBadges variant="panel" className="mt-5" />
       </div>
     </div>
   )

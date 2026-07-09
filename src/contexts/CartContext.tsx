@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
 import { toast } from 'sonner'
+import i18n from '../i18n'
 import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi } from '../services/api'
 
@@ -20,6 +21,28 @@ const defaultCart: Cart = {
   tax_amount: 0,
   total_amount: 0,
   item_count: 0,
+}
+
+function productDisplayName(product: Product): string {
+  const isAr = i18n.language?.startsWith('ar')
+  if (isAr && product.name_ar?.trim()) return product.name_ar.trim()
+  return product.name_en?.trim() || product.name_ar?.trim() || i18n.t('common.productFallback')
+}
+
+function cartToastSuccess(title: string, description?: string, id?: string) {
+  toast.success(title, {
+    id,
+    description,
+    duration: 2800,
+  })
+}
+
+function cartToastInfo(title: string, description?: string, id?: string) {
+  toast.message(title, {
+    id,
+    description,
+    duration: 2800,
+  })
 }
 
 /** Recompute cart totals from items (pure — safe to call before React render). */
@@ -51,7 +74,6 @@ function readCartFromStorage(): Cart {
     if (!raw) return defaultCart
     const parsed = JSON.parse(raw) as Partial<Cart>
     if (!parsed || !Array.isArray(parsed.items)) return defaultCart
-    // Recompute totals so stored cart stays consistent even if schema changed slightly
     return calculateCartTotals(parsed.items as CartItem[])
   } catch {
     return defaultCart
@@ -79,8 +101,6 @@ function clubUnitPrice(product: Product): number {
 }
 
 function unitPriceForMembership(product: Product, clubPricingEnabled: boolean): number {
-  // Backend already role-gates live_total_price_club (head/member only).
-  // If club value is present, prefer it immediately even before local membership sync settles.
   if (product.live_total_price_club != null && Number.isFinite(Number(product.live_total_price_club))) {
     return clubUnitPrice(product)
   }
@@ -96,7 +116,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const lastRepriceStartedAtRef = useRef(0)
   const REPRICE_MIN_GAP_MS = 2500
 
-  // Persist whenever cart changes (initial state already restored from storage above)
   useEffect(() => {
     try {
       localStorage.setItem('cart', JSON.stringify(cart))
@@ -113,8 +132,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     clubPricingEnabledRef.current = clubPricingEnabled
   }, [clubPricingEnabled])
 
-  // When membership role flips (head/member <-> non-member), immediately reprice
-  // existing cart lines from already-loaded product fields so UI updates instantly.
   useEffect(() => {
     setCart((prevCart) => {
       if (!prevCart.items.length) return prevCart
@@ -133,8 +150,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
   }, [clubPricingEnabled])
 
-  // Reprice cart items from live product API rates every 15 seconds.
-  // This keeps cart/checkout aligned with live product prices.
   useEffect(() => {
     let cancelled = false
 
@@ -208,7 +223,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Run once immediately, then every 15s.
     void repriceFromLiveRates()
     const id = window.setInterval(() => {
       void repriceFromLiveRates()
@@ -220,7 +234,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Keep club eligibility fresh even when cart is empty.
   useEffect(() => {
     let cancelled = false
     const syncMembership = async () => {
@@ -250,26 +263,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = (product: Product, quantity: number = 1) => {
     // Toast must run after setCart, not inside the updater: React 18 Strict Mode
     // double-invokes state updaters in dev, which duplicated sonner toasts.
-    let toastMessage: string | null = null
+    let toastKind: 'added' | 'increased' | null = null
+    let toastQty = quantity
     setCart((prevCart) => {
-      const existingItem = prevCart.items.find(
-        (item) => item.product.id === product.id
-      )
+      const existingItem = prevCart.items.find((item) => item.product.id === product.id)
 
       let newItems: CartItem[]
 
       if (existingItem) {
+        const nextQty = existingItem.quantity + quantity
+        toastQty = nextQty
+        toastKind = 'increased'
         newItems = prevCart.items.map((item) =>
           item.product.id === product.id
             ? {
                 ...item,
-                quantity: item.quantity + quantity,
-                total_price: (item.quantity + quantity) * item.unit_price,
+                quantity: nextQty,
+                total_price: nextQty * item.unit_price,
               }
-            : item
+            : item,
         )
-        toastMessage = `Updated quantity for ${product.name_en}`
       } else {
+        toastKind = 'added'
         const unit = unitPriceForMembership(product, clubPricingEnabled)
         const newItem: CartItem = {
           id: `${product.id}-${Date.now()}`,
@@ -279,30 +294,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
           total_price: quantity * unit,
         }
         newItems = [...prevCart.items, newItem]
-        toastMessage = `Added ${product.name_en} to cart`
       }
 
       return calculateCartTotals(newItems)
     })
-    if (toastMessage) {
-      toast.success(toastMessage, {
-        id: `cart-add-${product.id}`,
-      })
+
+    const name = productDisplayName(product)
+    if (toastKind === 'added') {
+      cartToastSuccess(
+        i18n.t('cart.toasts.added'),
+        i18n.t('cart.toasts.addedDesc', { name }),
+        `cart-add-${product.id}`,
+      )
+    } else if (toastKind === 'increased') {
+      cartToastSuccess(
+        i18n.t('cart.toasts.qtyIncreased'),
+        i18n.t('cart.toasts.qtyIncreasedDesc', { name, qty: toastQty }),
+        `cart-qty-${product.id}`,
+      )
     }
   }
 
   const removeFromCart = (itemId: string) => {
-    let removedLabel: string | null = null
+    let removedProduct: Product | null = null
     setCart((prevCart) => {
       const item = prevCart.items.find((i) => i.id === itemId)
-      if (item) {
-        removedLabel = item.product.name_en
-      }
+      if (item) removedProduct = item.product
       const newItems = prevCart.items.filter((item) => item.id !== itemId)
       return calculateCartTotals(newItems)
     })
-    if (removedLabel) {
-      toast.info(`Removed ${removedLabel} from cart`, { id: `cart-remove-${itemId}` })
+    if (removedProduct) {
+      cartToastInfo(
+        i18n.t('cart.toasts.removed'),
+        i18n.t('cart.toasts.removedDesc', { name: productDisplayName(removedProduct) }),
+        `cart-remove-${itemId}`,
+      )
     }
   }
 
@@ -312,7 +338,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    let toastPayload: { name: string; qty: number; direction: 'up' | 'down' } | null = null
     setCart((prevCart) => {
+      const target = prevCart.items.find((item) => item.id === itemId)
+      if (!target) return prevCart
+
+      const prevQty = target.quantity
+      if (prevQty === quantity) return prevCart
+
+      toastPayload = {
+        name: productDisplayName(target.product),
+        qty: quantity,
+        direction: quantity > prevQty ? 'up' : 'down',
+      }
+
       const newItems = prevCart.items.map((item) =>
         item.id === itemId
           ? {
@@ -320,16 +359,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
               quantity,
               total_price: quantity * item.unit_price,
             }
-          : item
+          : item,
       )
       return calculateCartTotals(newItems)
     })
+
+    if (toastPayload) {
+      const { name, qty, direction } = toastPayload
+      if (direction === 'up') {
+        cartToastSuccess(
+          i18n.t('cart.toasts.qtyIncreased'),
+          i18n.t('cart.toasts.qtyIncreasedDesc', { name, qty }),
+          `cart-qty-${itemId}`,
+        )
+      } else {
+        cartToastInfo(
+          i18n.t('cart.toasts.qtyDecreased'),
+          i18n.t('cart.toasts.qtyDecreasedDesc', { name, qty }),
+          `cart-qty-${itemId}`,
+        )
+      }
+    }
   }
 
   const clearCart = () => {
     setCart(defaultCart)
     localStorage.removeItem('cart')
-    toast.info('Cart cleared', { id: 'cart-cleared' })
+    cartToastInfo(i18n.t('cart.toasts.cleared'), i18n.t('cart.toasts.clearedDesc'), 'cart-cleared')
   }
 
   const getCartTotal = () => cart.total_amount

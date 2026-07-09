@@ -18,13 +18,17 @@
     "liveGoldPrices": "Live Gold Prices Available",
     "phone": "Phone",
     "location": "Al-Mubarakiya Street, Kuwait City, Kuwait",
-    "customerPrices": "Customer Prices",
-    "companyPrices": "Company Prices"
+    "customerPrices": "Customer prices",
+    "companyPrices": "Company prices"
   },
   "legal": {
     "combined": {
-      "pageTitle": "Terms and Conditions",
-      "subtitle": "Gold Standard Jewellers and Precious Metals Company"
+      "kicker": "Legal",
+      "pageTitle": "Terms & privacy",
+      "subtitle": "Terms and conditions and privacy policy for Gold Standard Jewellers and Precious Metals Company (Kuwait).",
+      "contactHint": "Questions about these terms?",
+      "dataDeletionLink": "Data deletion instructions",
+      "contactLink": "Contact us"
     }
   },
   "joinClub": {
@@ -55,29 +59,41 @@
     "aboutUs": "About Us",
     "ourBranches": "Our Branches",
     "careers": "Careers",
-    "newsUpdates": "News & Updates",
-    "contactUs": "Contact Us",
+    "newsUpdates": "News",
+    "contactUs": "Contact",
     "faqs": "FAQs",
-    "shippingInfo": "Shipping Info",
+    "shippingInfo": "Shipping",
     "returnPolicy": "Terms and Conditions & Privacy Policy",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
-    "termsAndPrivacy": "Terms & Conditions",
+    "termsAndPrivacy": "Terms & Privacy",
     "dataDeletion": "Data Deletion",
     "company": "Company",
-    "customerService": "Customer Service",
+    "customerService": "Help",
     "legal": "Legal",
-    "tagline": "Your trusted partner for certified gold coins, bars, and jewelry in Kuwait — transparent live pricing and secure checkout.",
+    "shop": "Shop",
+    "prices": "Live prices",
+    "products": "Products",
+    "tagline": "Certified gold coins, bars, and jewelry in Kuwait — live KWD pricing and secure checkout.",
+    "followUs": "Follow us",
+    "instagramHandle": "@goldstandardkw",
+    "getTheApp": "Get the app",
+    "appComingSoon": "Coming soon",
+    "androidApp": "Android",
+    "iosApp": "iOS",
+    "hoursLabel": "Store hours",
+    "hoursWeekday": "Sat–Thu · 9:00 AM – 9:00 PM",
+    "hoursFriday": "Fri · 2:00 PM – 9:00 PM",
     "allRightsReserved": "All rights reserved."
   },
   "home": {
     "liveGoldPrices": "Live Gold Prices Available",
     "shopNow": "Shop Now",
     "viewPrices": "View Prices",
-    "certifiedQuality": "Certified Quality",
-    "certifiedQualityDesc": "All our gold and jewelry products are certified for purity and authenticity.",
-    "livePrices": "Live Gold Prices",
-    "livePricesDesc": "Get real-time gold prices updated every 30 minutes from market sources.",
+    "certifiedQuality": "Certified purity",
+    "certifiedQualityDesc": "Every coin, bar, and piece is checked for purity and authenticity before it reaches you.",
+    "livePrices": "Live market rates",
+    "livePricesDesc": "Follow buy and sell prices in KWD as the market moves — clear numbers, no guesswork.",
     "metalTickerLabel": "Live gold rates",
     "metalTickerAria": "Live gold buy and sell rates per gram in Kuwaiti dinar, by karat",
     "tickerBuy": "Buy",
@@ -86,29 +102,29 @@
     "tickerOunceUsd": "USD",
     "tickerOunceKwd": "KWD",
     "tickerOunceKwdHint": "USD/oz × rate + admin additions (KWD/oz)",
-    "secureDelivery": "Secure Delivery",
-    "secureDeliveryDesc": "Insured shipping with real-time tracking for all orders.",
-    "bestRates": "Best Rates",
-    "bestRatesDesc": "Competitive prices with transparent making charges.",
+    "secureDelivery": "Insured delivery",
+    "secureDeliveryDesc": "Orders ship insured across Kuwait with tracking you can follow from checkout to door.",
+    "bestRates": "Transparent pricing",
+    "bestRatesDesc": "Competitive rates with making charges shown clearly — so you always know what you pay.",
     "newArrivals": "New Arrivals",
     "newArrivalsSub": "Check out our latest additions",
-    "clubFormationPill": "Club member benefits",
-    "clubFormationTitle": "Join a customer club for better rates",
-    "clubFormationDesc": "Admin controls club eligibility. When you have an active membership, checkout applies the club member product pricing automatically.",
-    "clubFormationBenefit1": "Club member pricing",
-    "clubFormationBenefit1Desc": "Special buy rates for members are applied during checkout and cart totals.",
-    "clubFormationBenefit2": "Club offers are inherited",
-    "clubFormationBenefit2Desc": "New members inherit the club head's active offers (discounts) for seamless buying.",
-    "clubFormationBenefit3": "Admin-set eligibility rule",
-    "clubFormationBenefit3Desc": "Based on completed orders, the admin can require a minimum threshold to create a club. Joining via invite does not use that threshold.",
-    "clubFormationCta": "Open My Club",
-    "clubFormationCtaHint": "Use the invite link from your club head.",
-    "clubFormationCardTitle": "How club pricing works",
-    "clubFormationCardDesc": "Club member checkout adds club extras on top of the live URL rates, then applies the best available customer offer.",
-    "clubFormationExampleCarat": "Good buy for 21K members",
-    "clubFormationExampleCarat22": "Improved rate for 22K members",
-    "clubFormationExampleCarat18": "Special pricing for 18K members",
-    "clubFormationDeliveryHint": "Instantly reflected at checkout.",
+    "clubFormationPill": "Member clubs",
+    "clubFormationTitle": "Better rates when you shop with your club",
+    "clubFormationDesc": "Join a customer club and unlock member buy rates at checkout. Your club head shares active offers with every member.",
+    "clubFormationBenefit1": "Member buy rates",
+    "clubFormationBenefit1Desc": "Club pricing applies automatically in your cart and at checkout — no codes to remember.",
+    "clubFormationBenefit2": "Shared club offers",
+    "clubFormationBenefit2Desc": "New members inherit the club head’s active discounts, so everyone shops on the same deals.",
+    "clubFormationBenefit3": "Invite-based membership",
+    "clubFormationBenefit3Desc": "Ask your club head for an invite link. Eligibility to create a club is set by Gold Standard.",
+    "clubFormationCta": "Open my club",
+    "clubFormationCtaHint": "Have an invite? Open your club from the dashboard.",
+    "clubFormationCardTitle": "What members see at checkout",
+    "clubFormationCardDesc": "Live market rates, plus your club’s member extras, then the best offer available — applied in one clear total.",
+    "clubFormationExampleCarat": "Member buy rate for 21K",
+    "clubFormationExampleCarat22": "Member buy rate for 22K",
+    "clubFormationExampleCarat18": "Member buy rate for 18K",
+    "clubFormationDeliveryHint": "Applied instantly when you pay.",
     "addToCart": "Add to cart",
     "viewAll": "View all",
     "categories": "Categories",
@@ -148,17 +164,48 @@
     "happyCustomers": "Happy Customers",
     "certifiedGold": "Certified Gold",
     "branchesCount": "Branches",
-    "whyChooseUs": "Why Choose Us",
-    "whyChooseUsDesc": "We combine traditional craftsmanship with modern transparency to give you the best gold shopping experience in Kuwait.",
+    "whyChooseUs": "Why Gold Standard",
+    "whyChooseUsDesc": "Live prices, certified pieces, and secure delivery — built for how Kuwait shops gold today.",
+    "whyKicker": "Trust",
     "featuredCollection": "Featured Collection",
     "ourBranches": "Our Branches",
     "ourBranchesDesc": "Visit any of our branches across Kuwait for personalized service",
     "viewAllBranches": "View All Branches",
-    "readyToTrade": "Ready to shop gold?",
-    "readyToTradeDesc": "Create an account to track live prices, set alerts, and enjoy member benefits on coins, bars, and jewelry.",
-    "createAccount": "Create Account",
+    "readyToTrade": "Start shopping gold with confidence",
+    "readyToTradeDesc": "Create a free account to follow live rates, save alerts, and unlock member benefits on coins, bars, and jewelry.",
+    "readyKicker": "Get started",
+    "createAccount": "Create account",
     "contactSales": "Contact Sales",
     "noImage": "No Image",
+    "chart": {
+      "metalsAria": "Select metal for the price chart",
+      "metalGold": "Gold",
+      "metalSilver": "Silver",
+      "metalPlatinum": "Platinum",
+      "metalPalladium": "Palladium",
+      "liveBadge": "Live",
+      "unitLabel": "Chart · {{unit}}",
+      "updateCountdown": "Prices update in {{seconds}}s",
+      "refreshing": "· refreshing",
+      "modeAria": "Chart display mode",
+      "modeCandles": "Candles",
+      "modeLine": "Line",
+      "modeArea": "Area",
+      "fitView": "Fit chart to data",
+      "hint": "10 mins and 1 hour show minute-by-minute moves. 1 day and 1 week use larger candles for readability. Pinch, scroll, and drag to explore.",
+      "emptyTitle": "Building live history…",
+      "emptyBody": "Snapshots are collecting. The chart will fill as soon as the next ticks arrive.",
+      "featureZoom": "Scroll zoom",
+      "featurePan": "Drag to pan",
+      "featureCrosshair": "Crosshair readout",
+      "featureModes": "Candles · Line · Area",
+      "range": {
+        "live": "10 Mins",
+        "1h": "1 Hour",
+        "1d": "1 Day",
+        "1w": "1 Week"
+      }
+    },
     "newsSection": {
       "title": "Market news",
       "subtitle": "Headlines from our news desk (live feed).",
@@ -197,7 +244,20 @@
     "search": "Search",
     "language": "Language",
     "english": "English",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "kwd": "KWD",
+    "kwdPerGram": "KWD/g",
+    "gramsAbbr": "g",
+    "yes": "Yes",
+    "no": "No",
+    "select": "Select…",
+    "signingIn": "Signing you in…",
+    "completingSignIn": "Completing sign-in…",
+    "productFallback": "Product",
+    "breadcrumb": "Breadcrumb",
+    "logoAlt": "Gold & Jewelry Trading Co. logo",
+    "instagram": "Instagram",
+    "dismissSignInPrompt": "Dismiss sign-in prompt"
   },
   "priceReminder": {
     "ariaLabel": "Remind me",
@@ -234,6 +294,8 @@
     "pageSubtitle": "Buy/sell virtual gold instantly. Enter either grams or KWD; the other value is quoted using live rates.",
     "buyGold": "I Want to Buy Gold",
     "sellGold": "I Want to Sell Gold",
+    "customerBuyRate": "Customer buy rate (you pay)",
+    "customerSellRate": "Customer sell rate (you receive)",
     "carat": "Carat",
     "inputMode": "Input mode",
     "byGrams": "By grams",
@@ -354,12 +416,16 @@
     }
   },
   "pricesPage": {
-    "title": "Gold prices",
+    "kicker": "Live market",
+    "title": "Live gold prices",
+    "subtitle": "Buy and sell rates in KWD per gram, refreshed from the market. Enter a weight to see totals instantly.",
+    "trustedSource": "Trusted source",
+    "trustedSourceHint": "Live spot via GoldAPI.io · gold, silver, platinum, palladium",
     "refresh": "Refresh",
     "loading": "Loading prices…",
     "errorUnavailable": "Prices are temporarily unavailable. Please try again later.",
     "loadFailed": "Could not load live rates.",
-    "ounceTitle": "Gold ounce Price",
+    "ounceTitle": "Gold / troy ounce",
     "updateEvery": "Source updates every {{seconds}}s",
     "perTroyOunce": "USD / troy ounce",
     "perTroyOunceUsd": "USD / troy ounce",
@@ -376,11 +442,21 @@
     "spreadTotal": "Spread {{value}} KWD",
     "spreadPerGram": "Spread {{value}} KWD/g",
     "perGramAbbr": "(KWD/g)",
-    "disclaimer": "Indicative rates only. Final price at checkout may vary."
+    "disclaimer": "Indicative rates for reference. Final price at checkout may vary with live market and product making charges.",
+    "preciousTitle": "Silver · Platinum · Palladium",
+    "silverKilo": "Silver kilo reference: {{price}} KWD/kg (from feed)"
+  },
+  "companyPricesPage": {
+    "kicker": "Desk board",
+    "subtitle": "Large sell rates per karat for counter and company use — refreshed from the live market feed.",
+    "boardTitle": "Sell rates by karat",
+    "karatLabel": "Karat",
+    "disclaimer": "Company board rates are indicative. Confirm the live sell price before quoting a customer."
   },
   "productsPage": {
     "allProducts": "All products",
     "allProductsTitle": "All Products",
+    "kicker": "Shop",
     "categoryProducts": "Category Products",
     "productsFound": "{{count}} products found",
     "subcategoryHint": "Includes products in all subcategories below, or narrow by subcategory.",
@@ -388,13 +464,42 @@
     "parentCategoryFallback": "parent category",
     "filters": "Filters",
     "filtersHeading": "Filters",
+    "filtersSheetDesc": "Narrow by category, karat, metal, and price.",
     "categories": "Categories",
     "allCategories": "All Categories",
-    "goldCarat": "Gold Carat",
-    "priceRange": "Price Range",
+    "goldCarat": "Gold karat",
+    "metalType": "Metal",
+    "metal": {
+      "gold": "Gold",
+      "silver": "Silver",
+      "platinum": "Platinum",
+      "palladium": "Palladium"
+    },
+    "priceRange": "Price range (KWD)",
+    "priceRangeHint": "Filter by unit price in Kuwaiti dinar.",
     "minPlaceholder": "Min",
     "maxPlaceholder": "Max",
+    "kwd": "KWD",
+    "clearAll": "Clear all",
+    "clearSearch": "Clear search",
+    "activeFiltersCount": "{{count}} active",
+    "searchPlaceholder": "Search products…",
+    "searchChip": "Search",
+    "sortBy": "Sort by",
+    "sort": {
+      "featured": "Featured",
+      "newest": "Newest",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low",
+      "weightAsc": "Weight: light to heavy",
+      "weightDesc": "Weight: heavy to light"
+    },
+    "viewMode": "View mode",
+    "gridView": "Grid",
+    "listView": "List",
+    "showResults": "Show {{count}} results",
     "noMatchFilters": "No products match these filters.",
+    "noMatchHint": "Try clearing filters or searching a different term.",
     "noImage": "No Image",
     "addToCart": "Add to cart",
     "priceTrendUp": "Price up {{percent}}% vs reference snapshot",
@@ -461,10 +566,12 @@
     "calculatePriceFailed": "Failed to calculate price"
   },
   "cartPage": {
+    "kicker": "Cart",
     "emptyTitle": "Your cart is empty",
-    "emptyDesc": "Browse our collection and add items to your cart",
+    "emptyDesc": "Browse certified coins, bars, and jewelry — then add pieces here to checkout securely.",
     "continueShopping": "Continue shopping",
     "pageTitle": "Shopping cart",
+    "itemsCount": "{{count}} items",
     "noImage": "No image",
     "removeItem": "Remove item",
     "decreaseQty": "Decrease quantity",
@@ -483,7 +590,74 @@
     "promotionalOffer": "Promotional offer",
     "tax": "Tax",
     "total": "Total",
-    "proceedCheckout": "Proceed to checkout"
+    "livePriceNote": "Line prices follow live product rates and may update before you pay.",
+    "proceedCheckout": "Proceed to checkout",
+    "shipping": "Shipping",
+    "shippingFree": "Complimentary",
+    "secureCheckoutNote": "Secure checkout — KNET and SSL-encrypted payments in Kuwait"
+  },
+  "branchesPage": {
+    "kicker": "Locations",
+    "title": "Our branches",
+    "subtitle": "Visit a Gold Standard location in Kuwait for in-person service, or shop online with live KWD pricing and insured delivery.",
+    "loadError": "Could not load branches. Please try again later.",
+    "emptyTitle": "Branch list unavailable",
+    "emptyBody": "We could not load store locations right now. Contact us and we will help you find the nearest showroom.",
+    "mainBadge": "Main",
+    "type": {
+      "main": "Main branch",
+      "showroom": "Showroom",
+      "warehouse": "Warehouse",
+      "kiosk": "Kiosk"
+    },
+    "hoursWeekday": "Sat–Thu · {{open}} – {{close}}",
+    "hoursFriday": "Fri · {{open}} – {{close}}",
+    "fridayClosed": "Friday · closed or limited hours — call ahead",
+    "getDirections": "Get directions",
+    "ctaKicker": "Need help?",
+    "ctaTitle": "Questions before you visit?",
+    "ctaBody": "Message our team or browse the shop online — same live rates and certified products.",
+    "contactUs": "Contact us",
+    "shopOnline": "Shop online"
+  },
+  "dataDeletionPage": {
+    "kicker": "Privacy",
+    "title": "Data deletion instructions",
+    "effective": "Effective date: April 8, 2026",
+    "intro": "You can request deletion of your Gold Standard account data, including related communication records we control.",
+    "emailSubject": "Data Deletion Request",
+    "how": {
+      "title": "How to request deletion",
+      "body": "Email {{email}} with the subject line “Data Deletion Request”.\n\nInclude your full name, registered email and/or phone number, and any details needed to verify account ownership."
+    },
+    "verify": {
+      "title": "Verification",
+      "body": "For security, we may ask for additional verification before processing deletion. If we cannot verify ownership, we may not complete the request."
+    },
+    "timeline": {
+      "title": "Timeline",
+      "body": "After verification, we process deletion within a reasonable period — typically within 30 days — unless a longer retention period is required by law."
+    },
+    "deleted": {
+      "title": "What gets deleted",
+      "body": "• Account profile details maintained in this application\n• Non-essential communication records linked to your account\n• Other personal data that is not legally required to be retained"
+    },
+    "retained": {
+      "title": "What may be retained",
+      "body": "We may retain certain records where required for legal, tax, accounting, security, fraud prevention, dispute resolution, or regulatory compliance."
+    },
+    "meta": {
+      "title": "Meta and WhatsApp data",
+      "body": "If your request relates to WhatsApp or Meta platform data, we process deletion for data controlled by our application. Data controlled directly by Meta may also be subject to Meta’s own deletion processes."
+    },
+    "contact": {
+      "title": "Contact",
+      "body": "For all deletion-related requests, contact {{email}}."
+    },
+    "ctaTitle": "Ready to submit a request?",
+    "ctaBody": "Open your email app with a pre-filled subject, or review our terms first.",
+    "emailUs": "Email deletion request",
+    "viewTerms": "Terms & privacy"
   },
   "checkoutPage": {
     "loginRequired": "Please log in to place an order",
@@ -560,6 +734,10 @@
     "shipping": "Shipping",
     "shippingFree": "Free",
     "secureCheckout": "Secure checkout",
+    "trustTitle": "Trusted payments",
+    "trustKnetAlt": "KNET — Kuwait national electronic payment",
+    "trustSslAlt": "Secure SSL encryption",
+    "trustNote": "Online card payments are processed through KNET. Your connection is encrypted for checkout and receipt confirmation.",
     "stockOnlyLeftForSku": "Only {{available}} left in stock for SKU {{sku}}.",
     "stockInsufficientRequested": "Insufficient stock. Requested {{requested}}, available {{available}}."
   },
@@ -582,41 +760,112 @@
     "amount": "Amount",
     "dateTime": "Date and time",
     "status": "Result / status",
+    "orderStatus": "Order status",
+    "authCode": "Authorization code",
     "unavailable": "Unavailable"
   },
   "contactPage": {
-    "title": "Contact Us",
-    "subtitle": "Have questions? We would love to hear from you. Send us a message and we will respond as soon as possible.",
+    "kicker": "Support",
+    "title": "Contact Gold Standard",
+    "subtitle": "Questions about products, prices, orders, or club membership? Reach us by phone, email, or the form below — we reply during store hours.",
     "address": "Address",
     "phone": "Phone",
     "email": "Email",
-    "hours": "Working Hours",
+    "hours": "Store hours",
     "addressLine": "Al-Mubarakiya Street, Kuwait City, Kuwait",
     "phoneLine": "+965 9853 8538",
     "emailLine": "info@goldstandardkw.com",
-    "hoursLine": "Sat-Thu: 9AM-9PM, Fri: 2PM-9PM",
-    "formTitle": "Send us a Message",
-    "name": "Name",
+    "hoursLine": "Sat–Thu · 9:00 AM – 9:00 PM · Fri · 2:00 PM – 9:00 PM",
+    "social": "Instagram",
+    "visitKicker": "In person",
+    "visitBody": "Prefer to visit? See our branches for locations and directions across Kuwait.",
+    "viewBranches": "View branches",
+    "formTitle": "Send a message",
+    "formHint": "Opens your email app with your message ready to send to our team.",
+    "name": "Full name",
     "emailLabel": "Email",
     "phoneLabel": "Phone",
+    "optional": "optional",
     "subject": "Subject",
     "message": "Message",
-    "sendMessage": "Send Message",
-    "toastSuccess": "Message sent successfully! We will get back to you soon."
+    "defaultSubject": "Gold Standard inquiry",
+    "privacyNote": "We use your details only to reply to this inquiry.",
+    "sendMessage": "Send message",
+    "sending": "Opening email…",
+    "toastSuccess": "Email draft ready",
+    "toastSuccessDesc": "Finish sending from your mail app. We’ll get back to you soon."
   },
   "aboutPage": {
-    "title": "About Us",
-    "hero": "Gold Standard has been Kuwait's trusted partner for gold and jewelry since 2008. We combine traditional values with modern technology to provide the best shopping experience.",
+    "kicker": "Gold Standard",
+    "title": "About us",
+    "hero": "Gold Standard is a Kuwait gold and jewelry house for certified coins, bars, and jewelry — with live KWD pricing, secure checkout, and clear making charges.",
+    "ctaShop": "Browse the shop",
+    "ctaContact": "Contact us",
+    "storyKicker": "What we offer",
+    "storyTitle": "Gold shopping built for Kuwait today",
+    "storyBody": "We bring traditional bullion and jewelry craft together with a modern storefront: follow live rates, shop online, and get insured delivery across Kuwait — with the same focus on purity and fair pricing in every order.",
+    "focus": {
+      "coins": {
+        "title": "Coins, bars & jewelry",
+        "description": "Certified pieces with clear karat, weight, and authenticity you can verify."
+      },
+      "prices": {
+        "title": "Live KWD rates",
+        "description": "Buy and sell prices updated from the market so you always see transparent numbers."
+      },
+      "clubs": {
+        "title": "Member clubs",
+        "description": "Invite-based clubs unlock member buy rates and shared offers at checkout."
+      }
+    },
+    "valuesKicker": "How we work",
+    "valuesTitle": "What you can count on",
+    "valuesIntro": "Four principles guide every product page, price, and delivery.",
+    "missionKicker": "Mission",
+    "missionTitle": "Our mission",
+    "missionBody": "Make buying gold in Kuwait simple and trustworthy — live prices, certified products, and secure delivery, without hidden fees.",
+    "visionKicker": "Vision",
+    "visionTitle": "Our vision",
+    "visionBody": "Be Kuwait’s most trusted place to shop gold online and in person — clear rates, quality pieces, and service that respects how people buy bullion and jewelry today.",
+    "ctaKicker": "Next step",
+    "ctaTitle": "See live prices or visit a branch",
+    "ctaBody": "Check today’s rates in KWD, or find a Gold Standard location near you.",
+    "ctaPrices": "Live prices",
+    "ctaBranches": "Our branches",
     "statYears": "Years of Experience",
     "statBranches": "Branches",
     "statCustomers": "Happy Customers",
     "statCertified": "Certified Products",
-    "storyTitle": "Our Story",
-    "valuesTitle": "Our Values",
-    "missionTitle": "Our Mission",
-    "missionBody": "To provide a transparent, secure, and innovative platform for gold and jewelry trading in Kuwait, making precious metals accessible to everyone while maintaining the highest standards of quality and customer service.",
-    "visionTitle": "Our Vision",
-    "visionBody": "To become the leading gold trading platform in the Middle East, recognized for our innovation, transparency, and commitment to customer satisfaction, while preserving the rich tradition of gold craftsmanship.",
+    "v": {
+      "transparency": {
+        "title": "Transparent pricing",
+        "description": "Live rates and making charges shown clearly — so you know what you pay before checkout."
+      },
+      "quality": {
+        "title": "Certified purity",
+        "description": "Coins, bars, and jewelry checked for karat and authenticity before they reach you."
+      },
+      "service": {
+        "title": "Customer care",
+        "description": "Support for orders, clubs, and product questions during store hours."
+      },
+      "delivery": {
+        "title": "Insured delivery",
+        "description": "Orders ship insured across Kuwait with tracking from payment to door."
+      },
+      "trust": {
+        "title": "Trust & Transparency",
+        "description": "We believe in complete transparency in our pricing and operations."
+      },
+      "customer": {
+        "title": "Customer First",
+        "description": "Our customers are at the heart of everything we do."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "We continuously evolve to provide the best trading experience."
+      }
+    },
     "m": {
       "founded": {
         "year": "",
@@ -642,24 +891,6 @@
         "year": "",
         "title": "Innovation",
         "description": "Introduced AI-powered price forecasting"
-      }
-    },
-    "v": {
-      "trust": {
-        "title": "Trust & Transparency",
-        "description": "We believe in complete transparency in our pricing and operations."
-      },
-      "quality": {
-        "title": "Quality Excellence",
-        "description": "Every product meets the highest standards of quality and purity."
-      },
-      "customer": {
-        "title": "Customer First",
-        "description": "Our customers are at the heart of everything we do."
-      },
-      "innovation": {
-        "title": "Innovation",
-        "description": "We continuously evolve to provide the best trading experience."
       }
     }
   },
@@ -696,6 +927,7 @@
     "invalidCredentials": "Invalid credentials. Please try again.",
     "captchaRequired": "Please complete the security check.",
     "captchaFailed": "Security verification failed. Please try again.",
+    "lastUsed": "Last used",
     "accountInactive": "Your account is inactive. Please contact the administrator.",
     "accountInactiveWithAdmin": "Your account is inactive. Please contact the administrator. Admin email: {{email}}",
     "createAccountTitle": "Create Account",
@@ -726,13 +958,60 @@
     "createAccountCta": "Create Account",
     "passwordsMismatch": "Passwords do not match",
     "registerSuccess": "Account created successfully!",
-    "registerFailed": "Failed to create account. Please try again."
+    "registerFailed": "Failed to create account. Please try again.",
+    "kyc": {
+      "sectionTitle": "Verification questions"
+    },
+    "forgotPasswordPage": {
+      "title": "Forgot password",
+      "subtitleRequest": "We’ll send a code to reset your password",
+      "subtitleOtp": "Enter the code we sent you",
+      "subtitlePassword": "Choose a new password",
+      "emailTab": "Email",
+      "phoneTab": "Phone",
+      "sendCode": "Send code",
+      "otpLabel": "6-digit code",
+      "otpHint": "Check your inbox (and spam folder) for the 6-digit code.",
+      "verifyCode": "Verify code",
+      "useDifferent": "Use a different email or phone",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "placeholderPassword": "At least 8 characters",
+      "placeholderConfirm": "Repeat password",
+      "resetCta": "Reset password",
+      "backToSignIn": "Back to sign in",
+      "toasts": {
+        "resetSent": "If this user account exists, a reset code has been sent.",
+        "emailSendFailed": "Email could not be sent. Try again later.",
+        "requestFailed": "Request failed. Try again later.",
+        "enterOtp": "Enter the 6-digit code.",
+        "codeVerified": "Code verified. Set your new password.",
+        "invalidCode": "Invalid or expired code.",
+        "sessionExpired": "Session expired. Start again.",
+        "passwordsMismatch": "Passwords do not match.",
+        "passwordTooShort": "Password must be at least 8 characters.",
+        "resetSuccess": "Password reset. You can sign in now.",
+        "resetFailed": "Could not reset password. Try again."
+      }
+    }
   },
   "cart": {
     "cart": "Cart",
     "empty": "Your cart is empty",
     "checkout": "Checkout",
-    "total": "Total"
+    "total": "Total",
+    "toasts": {
+      "added": "Added to cart",
+      "addedDesc": "{{name}}",
+      "qtyIncreased": "Quantity increased",
+      "qtyIncreasedDesc": "{{name}} · now {{qty}}",
+      "qtyDecreased": "Quantity decreased",
+      "qtyDecreasedDesc": "{{name}} · now {{qty}}",
+      "removed": "Removed from cart",
+      "removedDesc": "{{name}}",
+      "cleared": "Cart cleared",
+      "clearedDesc": "All items were removed."
+    }
   },
   "product": {
     "products": "Products",
@@ -1030,12 +1309,41 @@
       "profile": "Profile",
       "orders": "My Orders",
       "lockedGold": "Locked gold",
+      "tradeGold": "Trade gold",
       "club": "My club",
       "transactions": "Transactions",
       "bankAccount": "Bank account",
       "wishlist": "Wishlist",
       "addresses": "Addresses",
       "notifications": "Notifications"
+    },
+    "notificationsPanel": {
+      "intro": "Price reminders you set on the Prices page.",
+      "setReminders": "Set reminders",
+      "noActive": "No active reminder set.",
+      "triggeredTitle": "Triggered reminders",
+      "noTriggered": "No triggered reminders yet.",
+      "statusActive": "Active",
+      "statusTriggered": "Triggered",
+      "metalSilver": "Silver",
+      "metalPlatinum": "Platinum",
+      "metalGold": "Gold",
+      "metalGoldCarat": "{{carat}}K gold",
+      "deltaActive": "Rate changes by {{delta}} KWD/g from your set baseline.",
+      "deltaTriggered": "Rate moved by {{delta}} KWD/g from your set baseline.",
+      "above": "rate increases above {{target}} KWD/g",
+      "below": "rate decreases below {{target}} KWD/g",
+      "triggeredByBuy": "Triggered by buy price.",
+      "triggeredBySell": "Triggered by sell price.",
+      "delivery": "Delivery: {{status}}"
+    },
+    "tradeGoldPanel": {
+      "title": "Trade gold",
+      "subtitle": "Buy or sell virtual gold instantly by grams or KWD using your wallet balance.",
+      "loadingPositions": "Loading positions…",
+      "totalVirtualGrams": "Your total virtual grams",
+      "unrealizedPL": "Unrealized P/L",
+      "openTradingPage": "Open trading page"
     },
     "club": {
       "title": "My club",

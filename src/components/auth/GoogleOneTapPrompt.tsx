@@ -175,7 +175,7 @@ export default function GoogleOneTapPrompt() {
             type="button"
             onClick={dismissFallback}
             className="absolute end-2.5 top-2.5 rounded-full p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
-            aria-label="Dismiss sign-in prompt"
+            aria-label={t('common.dismissSignInPrompt')}
           >
             <X className="h-4 w-4" />
           </button>

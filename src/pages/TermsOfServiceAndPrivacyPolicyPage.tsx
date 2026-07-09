@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getCombinedLegalClauses } from '../content/legalDocs'
+import { GS_CONTACT } from '@/constants/contact'
 
 export default function TermsOfServiceAndPrivacyPolicyPage() {
   const { t, i18n } = useTranslation()
@@ -7,40 +9,65 @@ export default function TermsOfServiceAndPrivacyPolicyPage() {
   const clauses = getCombinedLegalClauses(i18n.language)
 
   return (
-    <div
-      className="min-h-screen py-10 sm:py-14 bg-gradient-to-b from-lime-50/50 via-white to-white"
-      dir={isRtl ? 'rtl' : 'ltr'}
-    >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="product-card-lime mb-8 sm:mb-10 text-center sm:text-start rounded-2xl border-2 border-black/10 shadow-sm">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black leading-tight">
+    <div className="min-h-screen bg-[#F9F9FA]" dir={isRtl ? 'rtl' : 'ltr'}>
+      <section className="border-b border-black/5 bg-white">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+            {t('legal.combined.kicker')}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl">
             {t('legal.combined.pageTitle')}
           </h1>
-          <p className="mt-2 text-sm sm:text-base font-semibold text-black/80 max-w-2xl mx-auto sm:mx-0">
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-[#64748B]">
             {t('legal.combined.subtitle')}
           </p>
-        </header>
+          <p className="mt-4 text-sm text-[#64748B]">
+            {t('legal.combined.contactHint')}{' '}
+            <a
+              href={`mailto:${GS_CONTACT.email}`}
+              className="font-semibold text-[#3F6F00] hover:underline"
+            >
+              {GS_CONTACT.email}
+            </a>
+          </p>
+        </div>
+      </section>
 
-        <ol className="list-none space-y-4 sm:space-y-5 m-0 p-0">
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+        <ol className="m-0 list-none space-y-3 p-0">
           {clauses.map((clause, index) => (
-            <li key={index} className="flex gap-3 sm:gap-4 items-start">
-              <span
-                className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 border-lime-500/90 bg-black text-xs sm:text-sm font-bold text-lime-300 shadow-sm"
-                aria-hidden
-              >
-                {index + 1}
-              </span>
-              <div className="gold-card flex-1 rounded-2xl border-2 border-black/10 shadow-sm min-w-0">
+            <li
+              key={index}
+              className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
+            >
+              <div className="mb-2 flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B0F19] font-mono text-xs font-bold text-[#85E307]">
+                  {index + 1}
+                </span>
                 {clause.title ? (
-                  <h2 className="text-base sm:text-lg font-bold text-black mb-2 leading-snug">{clause.title}</h2>
+                  <h2 className="pt-1 text-base font-bold leading-snug text-[#0B0F19] sm:text-lg">
+                    {clause.title}
+                  </h2>
                 ) : null}
-                <p className="text-sm sm:text-[15px] text-stone-800 leading-[1.75] font-medium whitespace-pre-line m-0">
-                  {clause.text}
-                </p>
               </div>
+              <p className="m-0 whitespace-pre-line ps-11 text-sm leading-[1.75] text-[#475569]">
+                {clause.text}
+              </p>
             </li>
           ))}
         </ol>
+
+        <div className="mt-8 flex flex-wrap gap-4 border-t border-black/10 pt-6 text-sm">
+          <Link
+            to="/data-deletion"
+            className="font-semibold text-[#3F6F00] hover:underline"
+          >
+            {t('legal.combined.dataDeletionLink')}
+          </Link>
+          <Link to="/contact" className="font-semibold text-[#3F6F00] hover:underline">
+            {t('legal.combined.contactLink')}
+          </Link>
+        </div>
       </div>
     </div>
   )

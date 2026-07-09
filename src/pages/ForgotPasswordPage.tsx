@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowRight, KeyRound } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { authApi } from '../services/api'
 
 type Step = 'request' | 'otp' | 'password'
-const GENERIC_RESET_SENT_MESSAGE = 'If this user account exists, a reset code has been sent.'
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const [step, setStep] = useState<Step>('request')
   const [method, setMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
@@ -31,21 +32,21 @@ export default function ForgotPasswordPage() {
           ? { email: email.trim(), phone_number: '' }
           : { email: '', phone_number: phoneNumber.trim() }
       await authApi.forgotPassword(payload)
-      toast.success(GENERIC_RESET_SENT_MESSAGE)
+      toast.success(t('auth.forgotPasswordPage.toasts.resetSent'))
       setStep('otp')
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string }; status?: number } })?.response?.data
       const status = (err as { response?: { status?: number } })?.response?.status
       const normalizedErr = String(data?.error || '').toLowerCase()
       if (status === 404 || normalizedErr.includes('user not found')) {
-        toast.success(GENERIC_RESET_SENT_MESSAGE)
+        toast.success(t('auth.forgotPasswordPage.toasts.resetSent'))
         setStep('otp')
       } else if (data?.error) {
         toast.error(data.error)
       } else if (status === 503) {
-        toast.error('Email could not be sent. Try again later.')
+        toast.error(t('auth.forgotPasswordPage.toasts.emailSendFailed'))
       } else {
-        toast.error('Request failed. Try again later.')
+        toast.error(t('auth.forgotPasswordPage.toasts.requestFailed'))
       }
     } finally {
       setIsLoading(false)
@@ -55,7 +56,7 @@ export default function ForgotPasswordPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     if (otpCode.trim().length !== 6) {
-      toast.error('Enter the 6-digit code.')
+      toast.error(t('auth.forgotPasswordPage.toasts.enterOtp'))
       return
     }
     setIsLoading(true)
@@ -65,10 +66,10 @@ export default function ForgotPasswordPage() {
         purpose: 'password_reset',
       })
       setUserId(res.user_id)
-      toast.success('Code verified. Set your new password.')
+      toast.success(t('auth.forgotPasswordPage.toasts.codeVerified'))
       setStep('password')
     } catch {
-      toast.error('Invalid or expired code.')
+      toast.error(t('auth.forgotPasswordPage.toasts.invalidCode'))
     } finally {
       setIsLoading(false)
     }
@@ -77,40 +78,45 @@ export default function ForgotPasswordPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userId) {
-      toast.error('Session expired. Start again.')
+      toast.error(t('auth.forgotPasswordPage.toasts.sessionExpired'))
       setStep('request')
       return
     }
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match.')
+      toast.error(t('auth.forgotPasswordPage.toasts.passwordsMismatch'))
       return
     }
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters.')
+      toast.error(t('auth.forgotPasswordPage.toasts.passwordTooShort'))
       return
     }
     setIsLoading(true)
     try {
       await authApi.resetPassword({ user_id: userId, new_password: newPassword })
-      toast.success('Password reset. You can sign in now.')
+      toast.success(t('auth.forgotPasswordPage.toasts.resetSuccess'))
       navigate('/login')
     } catch {
-      toast.error('Could not reset password. Try again.')
+      toast.error(t('auth.forgotPasswordPage.toasts.resetFailed'))
     } finally {
       setIsLoading(false)
     }
   }
 
+  const subtitle =
+    step === 'request'
+      ? t('auth.forgotPasswordPage.subtitleRequest')
+      : step === 'otp'
+        ? t('auth.forgotPasswordPage.subtitleOtp')
+        : t('auth.forgotPasswordPage.subtitlePassword')
+
   return (
     <div className="min-h-screen py-16">
       <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold gold-gradient-text mb-2">Forgot password</h1>
-          <p className="text-gold-100/60">
-            {step === 'request' && 'We’ll send a code to reset your password'}
-            {step === 'otp' && 'Enter the code we sent you'}
-            {step === 'password' && 'Choose a new password'}
-          </p>
+          <h1 className="text-3xl font-bold gold-gradient-text mb-2">
+            {t('auth.forgotPasswordPage.title')}
+          </h1>
+          <p className="text-gold-100/60">{subtitle}</p>
         </div>
 
         <div className="gold-card">
@@ -126,50 +132,42 @@ export default function ForgotPasswordPage() {
                       : 'bg-charcoal-800 text-gold-100/60'
                   }`}
                 >
-                  <Mail className="w-4 h-4 inline mr-2" />
-                  Email
+                  <Mail className="w-4 h-4 inline mr-2 rtl:ml-2 rtl:mr-0" />
+                  {t('auth.forgotPasswordPage.emailTab')}
                 </button>
-                {/* <button
-                  type="button"
-                  onClick={() => setMethod('phone')}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    method === 'phone'
-                      ? 'bg-gold-500 text-charcoal-950'
-                      : 'bg-charcoal-800 text-gold-100/60'
-                  }`}
-                >
-                  <Phone className="w-4 h-4 inline mr-2" />
-                  Phone
-                </button> */}
               </div>
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
                 {method === 'email' ? (
                   <div>
-                    <label className="block text-sm font-medium text-gold-100 mb-2">Email</label>
+                    <label className="block text-sm font-medium text-gold-100 mb-2">
+                      {t('auth.email')}
+                    </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60 rtl:left-auto rtl:right-3" />
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
+                        placeholder={t('auth.placeholderEmail')}
+                        className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500 rtl:pl-4 rtl:pr-10"
                         required
                       />
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-sm font-medium text-gold-100 mb-2">Phone number</label>
+                    <label className="block text-sm font-medium text-gold-100 mb-2">
+                      {t('auth.phoneNumber')}
+                    </label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60 rtl:left-auto rtl:right-3" />
                       <input
                         type="tel"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="+965 9853 8538"
-                        className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
+                        placeholder={t('auth.placeholderPhone')}
+                        className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500 rtl:pl-4 rtl:pr-10"
                         required
                       />
                     </div>
@@ -185,8 +183,8 @@ export default function ForgotPasswordPage() {
                     <div className="w-5 h-5 border-2 border-charcoal-950 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      Send code
-                      <ArrowRight className="w-5 h-5" />
+                      {t('auth.forgotPasswordPage.sendCode')}
+                      <ArrowRight className="w-5 h-5 rtl:rotate-180" />
                     </>
                   )}
                 </button>
@@ -197,9 +195,11 @@ export default function ForgotPasswordPage() {
           {step === 'otp' && (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">6-digit code</label>
+                <label className="block text-sm font-medium text-gold-100 mb-2">
+                  {t('auth.forgotPasswordPage.otpLabel')}
+                </label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60 rtl:left-auto rtl:right-3" />
                   <input
                     type="text"
                     inputMode="numeric"
@@ -208,12 +208,12 @@ export default function ForgotPasswordPage() {
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                     placeholder="000000"
-                    className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500 tracking-widest"
+                    className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500 tracking-widest rtl:pl-4 rtl:pr-10"
                     required
                   />
                 </div>
                 <p className="text-xs text-gold-100/50 mt-2">
-                  Check your inbox (and spam folder) for the 6-digit code.
+                  {t('auth.forgotPasswordPage.otpHint')}
                 </p>
               </div>
 
@@ -226,8 +226,8 @@ export default function ForgotPasswordPage() {
                   <div className="w-5 h-5 border-2 border-charcoal-950 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    Verify code
-                    <ArrowRight className="w-5 h-5" />
+                    {t('auth.forgotPasswordPage.verifyCode')}
+                    <ArrowRight className="w-5 h-5 rtl:rotate-180" />
                   </>
                 )}
               </button>
@@ -237,7 +237,7 @@ export default function ForgotPasswordPage() {
                 onClick={() => setStep('request')}
                 className="w-full py-2 text-sm text-gold-400 hover:text-gold-300"
               >
-                Use a different email or phone
+                {t('auth.forgotPasswordPage.useDifferent')}
               </button>
             </form>
           )}
@@ -245,37 +245,41 @@ export default function ForgotPasswordPage() {
           {step === 'password' && (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">New password</label>
+                <label className="block text-sm font-medium text-gold-100 mb-2">
+                  {t('auth.forgotPasswordPage.newPassword')}
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60 rtl:left-auto rtl:right-3" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                    className="w-full pl-10 pr-12 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
+                    placeholder={t('auth.forgotPasswordPage.placeholderPassword')}
+                    className="w-full pl-10 pr-12 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500 rtl:pl-12 rtl:pr-10"
                     required
                     minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400/60 hover:text-gold-400"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400/60 hover:text-gold-400 rtl:right-auto rtl:left-3"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">Confirm password</label>
+                <label className="block text-sm font-medium text-gold-100 mb-2">
+                  {t('auth.forgotPasswordPage.confirmPassword')}
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60 rtl:left-auto rtl:right-3" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat password"
-                    className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
+                    placeholder={t('auth.forgotPasswordPage.placeholderConfirm')}
+                    className="w-full pl-10 pr-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500 rtl:pl-4 rtl:pr-10"
                     required
                     minLength={8}
                   />
@@ -291,8 +295,8 @@ export default function ForgotPasswordPage() {
                   <div className="w-5 h-5 border-2 border-charcoal-950 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    Reset password
-                    <ArrowRight className="w-5 h-5" />
+                    {t('auth.forgotPasswordPage.resetCta')}
+                    <ArrowRight className="w-5 h-5 rtl:rotate-180" />
                   </>
                 )}
               </button>
@@ -301,7 +305,7 @@ export default function ForgotPasswordPage() {
 
           <div className="mt-6 text-center">
             <Link to="/login" className="text-sm text-gold-400 hover:text-gold-300 font-medium">
-              Back to sign in
+              {t('auth.forgotPasswordPage.backToSignIn')}
             </Link>
           </div>
         </div>

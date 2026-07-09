@@ -1,18 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, CreditCard, Download, Loader2, XCircle } from 'lucide-react'
+import { Loader2, XCircle } from 'lucide-react'
 import { invoicesApi, ordersApi } from '@/services/api'
 import type { KnetReceiptDetails } from '@/types'
-
-function normalizeResult(value?: string | null) {
-  return (value || '').replace(/\+/g, ' ').trim().toUpperCase()
-}
-
-function isCaptured(receipt: KnetReceiptDetails | null) {
-  const result = normalizeResult(receipt?.result)
-  return receipt?.payment_status === 'paid' || ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(result)
-}
+import { KnetReceiptPanel } from '@/components/checkout/KnetReceiptPanel'
 
 export default function KnetReceiptPage() {
   const { t } = useTranslation()
@@ -30,39 +22,31 @@ export default function KnetReceiptPage() {
     }
     let cancelled = false
     setLoading(true)
-    ordersApi.getKnetReceipt(saleId)
-      .then((data) => {
+
+    const load = async () => {
+      try {
+        try {
+          await ordersApi.verifyKnetPayment(saleId)
+        } catch {
+          /* still load latest receipt snapshot */
+        }
+        const data = await ordersApi.getKnetReceipt(saleId)
         if (!cancelled) {
           setReceipt(data)
           setError(null)
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setError(t('knetReceipt.loadError'))
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+
+    void load()
     return () => {
       cancelled = true
     }
   }, [saleId, t])
-
-  const captured = isCaptured(receipt)
-  const fields = useMemo(() => {
-    if (!receipt) return []
-    return [
-      [t('knetReceipt.merchant'), receipt.merchant_name],
-      [t('knetReceipt.orderNumber'), receipt.invoice_number],
-      [t('knetReceipt.paymentId'), receipt.payment_id || t('knetReceipt.unavailable')],
-      [t('knetReceipt.transactionId'), receipt.transaction_id || t('knetReceipt.unavailable')],
-      [t('knetReceipt.trackId'), receipt.track_id || t('knetReceipt.unavailable')],
-      [t('knetReceipt.referenceId'), receipt.reference_id || t('knetReceipt.unavailable')],
-      [t('knetReceipt.amount'), `${receipt.amount} ${receipt.currency}`],
-      [t('knetReceipt.dateTime'), `${receipt.transaction_datetime} (${receipt.transaction_timezone})`],
-      [t('knetReceipt.status'), receipt.result || receipt.payment_status],
-    ]
-  }, [receipt, t])
 
   const downloadInvoice = async () => {
     if (!saleId) return
@@ -84,10 +68,11 @@ export default function KnetReceiptPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-16">
+      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
         <div className="text-center">
-          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-amber-600" />
-          <p className="text-sm text-stone-600">{t('knetReceipt.loading')}</p>
+          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[#3F6F00]" />
+          <p className="text-sm font-medium text-[#0B0F19]">{t('checkoutPage.knetVerifyingTitle')}</p>
+          <p className="mt-1 text-xs text-[#64748B]">{t('checkoutPage.knetVerifyingBody')}</p>
         </div>
       </div>
     )
@@ -95,12 +80,15 @@ export default function KnetReceiptPage() {
 
   if (error || !receipt) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-16">
-        <div className="max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-lg">
-          <XCircle className="mx-auto mb-4 h-10 w-10 text-red-500" />
-          <h1 className="mb-2 text-xl font-semibold text-stone-950">{t('knetReceipt.errorTitle')}</h1>
-          <p className="text-sm text-stone-600">{error || t('knetReceipt.loadError')}</p>
-          <Link to="/checkout" className="gold-button mt-6 inline-flex">
+      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
+        <div className="max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+          <XCircle className="mx-auto mb-4 h-10 w-10 text-[#DC2626]" />
+          <h1 className="mb-2 text-xl font-semibold text-[#0B0F19]">{t('knetReceipt.errorTitle')}</h1>
+          <p className="text-sm text-[#64748B]">{error || t('knetReceipt.loadError')}</p>
+          <Link
+            to="/checkout"
+            className="mt-6 inline-flex rounded-xl bg-[#85E307] px-6 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AEF2A]"
+          >
             {t('checkoutPage.knetTryAgain')}
           </Link>
         </div>
@@ -109,55 +97,13 @@ export default function KnetReceiptPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-12">
+    <div className="min-h-screen bg-[#F9F9FA] px-4 py-10 sm:py-12">
       <div className="mx-auto max-w-2xl">
-        <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-xl">
-          <div className={`px-8 py-8 text-center ${captured ? 'bg-emerald-50' : 'bg-red-50'}`}>
-            <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${captured ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
-              {captured ? <Check className="h-8 w-8" /> : <XCircle className="h-8 w-8" />}
-            </div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
-              {t('knetReceipt.badge')}
-            </p>
-            <h1 className="text-2xl font-bold text-stone-950">
-              {captured ? t('knetReceipt.capturedTitle') : t('knetReceipt.notCapturedTitle')}
-            </h1>
-            <p className="mt-2 text-sm text-stone-600">{t('knetReceipt.subtitle')}</p>
-          </div>
-
-          <div className="px-6 py-6 sm:px-8">
-            <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-stone-900">
-              <CreditCard className="h-4 w-4 text-amber-600" />
-              {t('knetReceipt.paymentDetails')}
-            </div>
-            <div className="divide-y divide-stone-100 rounded-2xl border border-stone-200">
-              {fields.map(([label, value]) => (
-                <div key={label} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-stone-500">{label}</span>
-                  <span className="break-all text-sm font-semibold text-stone-950 sm:text-end">{value}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => void downloadInvoice()}
-                disabled={downloading}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-600 px-5 py-2.5 font-semibold text-amber-800 transition hover:bg-amber-50 disabled:opacity-60"
-              >
-                {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                {t('checkoutPage.downloadInvoice')}
-              </button>
-              <Link to="/dashboard" className="inline-flex flex-1 items-center justify-center rounded-xl bg-stone-950 px-5 py-2.5 font-semibold text-white transition hover:bg-stone-800">
-                {t('checkoutPage.viewMyOrders')}
-              </Link>
-              <Link to="/products" className="inline-flex flex-1 items-center justify-center rounded-xl border border-stone-300 px-5 py-2.5 font-semibold text-stone-700 transition hover:bg-stone-50">
-                {t('cartPage.continueShopping')}
-              </Link>
-            </div>
-          </div>
-        </div>
+        <KnetReceiptPanel
+          receipt={receipt}
+          downloading={downloading}
+          onDownloadInvoice={() => void downloadInvoice()}
+        />
       </div>
     </div>
   )

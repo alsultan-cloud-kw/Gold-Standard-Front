@@ -9,10 +9,14 @@ import { resolvePostAuthPath } from '../utils/authRedirect'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
+import { getLastAuthMethod, setLastAuthMethod } from '@/lib/lastAuthMethod'
 
 export default function LoginPage() {
   const { t } = useTranslation()
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
+  const lastAuthMethod = getLastAuthMethod()
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>(
+    lastAuthMethod === 'phone' ? 'phone' : 'email',
+  )
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -59,6 +63,7 @@ export default function LoginPage() {
         ...credentials,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
+      setLastAuthMethod(loginMethod)
       toast.success(t('auth.loginSuccess'))
       navigate(resolvePostAuthPath(loggedInUser, nextPath))
     } catch (err: unknown) {
@@ -103,30 +108,44 @@ export default function LoginPage() {
           </div>
 
           <div className="flex gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => setLoginMethod('email')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                loginMethod === 'email'
-                  ? 'bg-gold-500 text-charcoal-950'
-                  : 'bg-charcoal-800 text-gold-100/60'
-              }`}
-            >
-              <Mail className="w-4 h-4 inline me-2" />
-              {t('auth.email')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginMethod('phone')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                loginMethod === 'phone'
-                  ? 'bg-gold-500 text-charcoal-950'
-                  : 'bg-charcoal-800 text-gold-100/60'
-              }`}
-            >
-              <Phone className="w-4 h-4 inline me-2" />
-              {t('auth.phone')}
-            </button>
+            <div className="relative flex-1">
+              {lastAuthMethod === 'email' && (
+                <span className="pointer-events-none absolute -top-2.5 start-3 z-10 rounded-full border border-gold-500/40 bg-gold-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-charcoal-950 shadow-sm">
+                  {t('auth.lastUsed')}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setLoginMethod('email')}
+                className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                  loginMethod === 'email'
+                    ? 'bg-gold-500 text-charcoal-950'
+                    : 'bg-charcoal-800 text-gold-100/60'
+                }`}
+              >
+                <Mail className="w-4 h-4 inline me-2" />
+                {t('auth.email')}
+              </button>
+            </div>
+            <div className="relative flex-1">
+              {lastAuthMethod === 'phone' && (
+                <span className="pointer-events-none absolute -top-2.5 start-3 z-10 rounded-full border border-gold-500/40 bg-gold-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-charcoal-950 shadow-sm">
+                  {t('auth.lastUsed')}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setLoginMethod('phone')}
+                className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                  loginMethod === 'phone'
+                    ? 'bg-gold-500 text-charcoal-950'
+                    : 'bg-charcoal-800 text-gold-100/60'
+                }`}
+              >
+                <Phone className="w-4 h-4 inline me-2" />
+                {t('auth.phone')}
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

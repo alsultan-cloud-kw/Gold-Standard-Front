@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   CreditCard,
   Truck,
-  ChevronRight,
   Lock,
   Check,
   Loader2,
@@ -16,6 +15,12 @@ import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
 import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
+import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
+import { isTurnstileConfigured } from '@/lib/turnstile'
+import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
+import { CheckoutStepIndicator } from '@/components/checkout/CheckoutStepIndicator'
+import knetBadge from '@/assets/trust/knet-badge.png'
+import { cn } from '@/lib/utils'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery } from '@tanstack/react-query'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
@@ -129,6 +134,15 @@ type PlaceOrderErrorPayload = {
   requested_quantity?: unknown
 }
 
+const checkoutFieldClass =
+  'w-full rounded-xl border border-[#85E307]/35 bg-white px-4 py-3 text-sm text-[#0B0F19] placeholder:text-[#94A3B8] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/20'
+const checkoutPanelClass =
+  'rounded-2xl border border-black/10 bg-white p-5 shadow-sm sm:p-6'
+const checkoutPrimaryBtnClass =
+  'inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-xl bg-[#85E307] px-6 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AEF2A] disabled:cursor-not-allowed disabled:opacity-50'
+const checkoutSecondaryBtnClass =
+  'inline-flex min-h-[3rem] flex-1 items-center justify-center rounded-xl border border-black/10 bg-[#F4F4F5] px-6 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#ECFCCB]/40 disabled:opacity-50'
+
 export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
@@ -141,6 +155,12 @@ export default function CheckoutPage() {
   const [lastOrder, setLastOrder] = useState<SaleResponse | null>(null)
   const [knetReturnPhase, setKnetReturnPhase] = useState<KnetReturnPhase>('idle')
   const [knetReturnReason, setKnetReturnReason] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const clearTurnstile = useCallback(() => {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }, [])
   const { cart, clearCart } = useCart()
   const summary = useOrderSummaryDisplay(cart)
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =
@@ -397,6 +417,11 @@ export default function CheckoutPage() {
     }
     if (cart.items.length === 0) return
 
+    if (isTurnstileConfigured && !turnstileToken) {
+      toast.error(t('auth.captchaRequired'))
+      return
+    }
+
     const items = cart.items.map((item) => ({
       product_id: item.product.id,
       quantity: item.quantity,
@@ -427,6 +452,7 @@ export default function CheckoutPage() {
         customer_phone: phone || undefined,
         customer_email: customerEmail,
         notes,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })) as SaleResponse
 
       if (paymentMethod === 'knet' && data.payment_url) {
@@ -452,10 +478,15 @@ export default function CheckoutPage() {
           : t('checkoutPage.orderPlaced')
       )
     } catch (e: unknown) {
+      clearTurnstile()
       const err = e as { response?: { data?: unknown } }
       const data = err?.response?.data
       if (data && typeof data === 'object') {
-        const d = data as PlaceOrderErrorPayload
+        const d = data as PlaceOrderErrorPayload & { error?: unknown }
+        if (d.error === 'captcha_failed') {
+          toast.error(t('auth.captchaFailed'))
+          return
+        }
         const sku = typeof d.product_sku === 'string' ? d.product_sku : null
         const availableRaw =
           typeof d.available_quantity === 'number'
@@ -538,13 +569,13 @@ export default function CheckoutPage() {
 
   if (knetReturnPhase === 'verifying') {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16 px-4">
-        <div className="max-w-md w-full text-center rounded-2xl border border-amber-200/60 bg-white/80 backdrop-blur-sm shadow-lg p-10">
-          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-6">
-            <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-white px-4 py-16">
+        <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#ECFCCB]">
+            <Loader2 className="h-8 w-8 animate-spin text-[#3F6F00]" />
           </div>
-          <h1 className="text-xl font-semibold text-stone-900 mb-2">{t('checkoutPage.knetVerifyingTitle')}</h1>
-          <p className="text-stone-600 text-sm leading-relaxed">{t('checkoutPage.knetVerifyingBody')}</p>
+          <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('checkoutPage.knetVerifyingTitle')}</h1>
+          <p className="text-sm leading-relaxed text-[#64748B]">{t('checkoutPage.knetVerifyingBody')}</p>
         </div>
       </div>
     )
@@ -552,21 +583,24 @@ export default function CheckoutPage() {
 
   if (knetReturnPhase === 'failed') {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16 px-4">
-        <div className="max-w-lg w-full text-center rounded-2xl border border-red-200/70 bg-white shadow-lg p-10">
-          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
-            <CreditCard className="w-8 h-8 text-red-500" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
+        <div className="w-full max-w-lg rounded-2xl border border-red-200/70 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(220,38,38,0.1)]">
+            <CreditCard className="h-8 w-8 text-[#DC2626]" />
           </div>
-          <h1 className="text-xl font-semibold text-stone-900 mb-2">{t('checkoutPage.knetFailedTitle')}</h1>
-          <p className="text-stone-600 text-sm mb-6">{t('checkoutPage.knetFailedBody')}</p>
+          <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('checkoutPage.knetFailedTitle')}</h1>
+          <p className="mb-6 text-sm text-[#64748B]">{t('checkoutPage.knetFailedBody')}</p>
           {knetReturnReason && (
-            <p className="text-xs text-stone-400 font-mono mb-6">{knetReturnReason}</p>
+            <p className="mb-6 font-mono text-xs text-[#94A3B8]">{knetReturnReason}</p>
           )}
           <div className="flex flex-wrap justify-center gap-3">
-            <button type="button" onClick={() => setKnetReturnPhase('idle')} className="gold-button px-6">
+            <button type="button" onClick={() => setKnetReturnPhase('idle')} className={checkoutPrimaryBtnClass}>
               {t('checkoutPage.knetTryAgain')}
             </button>
-            <Link to="/cart" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50">
+            <Link
+              to="/cart"
+              className="inline-flex min-h-[3rem] items-center justify-center rounded-xl border border-black/10 px-6 py-3 text-sm font-semibold text-[#64748B] transition hover:bg-[#F9F9FA]"
+            >
               {t('checkoutPage.backToCart')}
             </Link>
           </div>
@@ -578,54 +612,57 @@ export default function CheckoutPage() {
   if ((cart.items.length === 0 && lastOrder) || knetReturnPhase === 'success') {
     const order = lastOrder
     return (
-      <div className="min-h-screen py-16 px-4">
-        <div className="max-w-lg mx-auto">
-          <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/80 to-white shadow-lg overflow-hidden">
-            <div className="px-8 pt-10 pb-6 text-center">
-              <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5 ring-4 ring-emerald-50">
-                <Check className="w-10 h-10 text-emerald-600" strokeWidth={2.5} />
+      <div className="min-h-screen bg-[#F9F9FA] px-4 py-12">
+        <div className="mx-auto max-w-lg">
+          <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+            <div className="border-b border-[#059669]/20 bg-[rgba(5,150,105,0.1)] px-8 py-10 text-center">
+              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(5,150,105,0.15)] ring-4 ring-[rgba(5,150,105,0.08)]">
+                <Check className="h-10 w-10 text-[#059669]" strokeWidth={2.5} />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700 mb-2">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#64748B]">
                 {t('checkoutPage.paymentSuccessBadge')}
               </p>
-              <h1 className="text-2xl font-bold text-stone-900 mb-2">{t('checkoutPage.orderConfirmed')}</h1>
-              <p className="text-stone-600 text-sm">{t('checkoutPage.knetSuccessSubtitle')}</p>
+              <h1 className="text-2xl font-bold text-[#0B0F19]">{t('checkoutPage.orderConfirmed')}</h1>
+              <p className="mt-2 text-sm text-[#64748B]">{t('checkoutPage.knetSuccessSubtitle')}</p>
             </div>
-            <div className="mx-8 mb-8 rounded-xl border border-stone-200/80 bg-white/90 divide-y divide-stone-100 text-sm">
+            <div className="divide-y divide-black/5 bg-[#F9F9FA] text-sm">
               {order?.invoice_number && (
                 <div className="flex justify-between gap-4 px-5 py-3.5">
-                  <span className="text-stone-500">{t('checkoutPage.confirmInvoice')}</span>
-                  <span className="font-mono font-medium text-stone-900">{order.invoice_number}</span>
+                  <span className="text-[#64748B]">{t('checkoutPage.confirmInvoice')}</span>
+                  <span className="font-mono font-semibold text-[#0B0F19]">{order.invoice_number}</span>
                 </div>
               )}
               {order?.total_amount != null && (
                 <div className="flex justify-between gap-4 px-5 py-3.5">
-                  <span className="text-stone-500">{t('checkoutPage.confirmAmount')}</span>
-                  <span className="font-semibold text-stone-900">{formatKwd(order.total_amount)}</span>
+                  <span className="text-[#64748B]">{t('checkoutPage.confirmAmount')}</span>
+                  <span className="font-bold tabular-nums text-[#0B0F19]">{formatKwd(order.total_amount)} {t('common.kwd')}</span>
                 </div>
               )}
               <div className="flex justify-between gap-4 px-5 py-3.5">
-                <span className="text-stone-500">{t('checkoutPage.confirmPayment')}</span>
-                <span className="inline-flex items-center gap-1.5 font-medium text-stone-900">
-                  <CreditCard className="w-4 h-4 text-amber-600" />
+                <span className="text-[#64748B]">{t('checkoutPage.confirmPayment')}</span>
+                <span className="inline-flex items-center gap-2 font-semibold text-[#0B0F19]">
+                  <img src={knetBadge} alt="" className="h-6 w-auto rounded object-contain" />
                   {t('checkoutPage.payKnet')}
                 </span>
               </div>
             </div>
-            <div className="px-8 pb-10 flex flex-col sm:flex-row justify-center gap-3">
+            <div className="flex flex-col gap-3 px-6 py-6 sm:flex-row sm:px-8">
               <button
                 type="button"
                 onClick={handleDownloadInvoice}
                 disabled={downloadingInvoice || !order?.id}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-amber-600 text-amber-800 hover:bg-amber-50 font-medium disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#3F6F00] bg-[#ECFCCB]/40 px-5 py-3 text-sm font-semibold text-[#0B0F19] transition hover:bg-[#ECFCCB]/70 disabled:opacity-50"
               >
-                {downloadingInvoice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {downloadingInvoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {t('checkoutPage.downloadInvoice')}
               </button>
-              <Link to="/dashboard" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-stone-900 text-white hover:bg-stone-800 font-medium">
+              <Link to="/dashboard" className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
                 {t('checkoutPage.viewMyOrders')}
               </Link>
-              <Link to="/products" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50 font-medium">
+              <Link
+                to="/products"
+                className="inline-flex flex-1 items-center justify-center rounded-xl border border-black/10 px-5 py-3 text-sm font-semibold text-[#64748B] transition hover:bg-[#F9F9FA]"
+              >
                 {t('cartPage.continueShopping')}
               </Link>
             </div>
@@ -637,10 +674,10 @@ export default function CheckoutPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-2xl font-bold text-gold-100 mb-4">{t('cartPage.emptyTitle')}</h1>
-          <Link to="/products" className="gold-button inline-flex items-center gap-2">
+      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
+        <div className="text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[#0B0F19]">{t('cartPage.emptyTitle')}</h1>
+          <Link to="/products" className={checkoutPrimaryBtnClass}>
             {t('checkoutPage.browseProducts')}
           </Link>
         </div>
@@ -648,77 +685,56 @@ export default function CheckoutPage() {
     )
   }
 
+  const stepLabels = [
+    t('checkoutPage.stepShipping'),
+    t('checkoutPage.stepPayment'),
+    t('checkoutPage.stepReview'),
+  ] as const
+
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-8 mt-4">{t('checkoutPage.title')}</h1>
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <h1 className="mb-2 text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+          {t('checkoutPage.title')}
+        </h1>
+        <p className="mb-6 text-sm text-[#64748B]">{t('checkoutPage.trustNote')}</p>
 
-        <div className="flex items-center gap-4 mb-8">
-          {(
-            [
-              t('checkoutPage.stepShipping'),
-              t('checkoutPage.stepPayment'),
-              t('checkoutPage.stepReview'),
-            ] as const
-          ).map((s, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step > i + 1
-                    ? 'bg-green-500 text-white'
-                    : step === i + 1
-                      ? 'bg-gold-500 text-charcoal-950'
-                      : 'bg-charcoal-800 text-gold-100/40'
-                }`}
-              >
-                {step > i + 1 ? <Check className="w-4 h-4" /> : i + 1}
-              </div>
-              <span
-                className={`text-sm ${step === i + 1 ? 'gold-gradient-text-on-light' : 'gold-gradient-text-on-light'}`}
-              >
-                {s}
-              </span>
-              {i < 2 && (
-                <ChevronRight className="w-4 h-4 gold-gradient-text-on-light rtl:rotate-180 shrink-0" />
-              )}
-            </div>
-          ))}
-        </div>
+        <CheckoutStepIndicator labels={stepLabels} step={step} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
             {step === 1 && (
-              <div className="gold-card">
-                <h2 className="text-xl font-bold text-gold-100 mb-6">{t('checkoutPage.shippingInfo')}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={checkoutPanelClass}>
+                <h2 className="mb-5 text-lg font-bold text-[#0B0F19]">{t('checkoutPage.shippingInfo')}</h2>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <input
                     placeholder={t('checkoutPage.firstNamePh')}
-                    className="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    className={checkoutFieldClass}
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                   />
                   <input
                     placeholder={t('checkoutPage.lastNamePh')}
-                    className="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    className={checkoutFieldClass}
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                   />
                   <input
                     placeholder={t('checkoutPage.emailPh')}
                     type="email"
-                    className="md:col-span-2 px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    className={cn(checkoutFieldClass, 'md:col-span-2')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                   <input
                     placeholder={t('checkoutPage.phonePh')}
-                    className="md:col-span-2 px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    className={cn(checkoutFieldClass, 'md:col-span-2')}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
                   <input
                     placeholder={t('checkoutPage.addressPh')}
-                    className="md:col-span-2 px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    className={cn(checkoutFieldClass, 'md:col-span-2')}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
@@ -727,103 +743,139 @@ export default function CheckoutPage() {
                     city={city}
                     onGovernorateChange={setGovernorate}
                     onCityChange={setCity}
-                    inputClassName="px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    inputClassName={checkoutFieldClass}
                   />
                   <input
                     placeholder={t('checkoutPage.postalPh')}
-                    className="md:col-span-2 px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                    className={cn(checkoutFieldClass, 'md:col-span-2')}
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                   />
                 </div>
-                <button onClick={() => setStep(2)} className="gold-button mt-6 w-full">
+                <button type="button" onClick={() => setStep(2)} className={cn(checkoutPrimaryBtnClass, 'mt-6')}>
                   {t('checkoutPage.continuePayment')}
                 </button>
               </div>
             )}
 
             {step === 2 && (
-              <div className="gold-card">
-                <h2 className="text-xl font-bold text-gold-100 mb-6">{t('checkoutPage.paymentMethod')}</h2>
-                <div className="mb-6">
-                  <p className="text-sm font-medium text-gold-100/80 mb-2">{t('checkoutPage.delivery')}</p>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
+              <div className="space-y-6">
+                <div className={checkoutPanelClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]">
+                      <Truck className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-bold text-[#0B0F19]">{t('checkoutPage.delivery')}</h2>
+                      <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.deliveryPhysical')}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <label
+                      className={cn(
+                        'flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition',
+                        deliveryType === 'physical'
+                          ? 'border-[#3F6F00] bg-[rgba(133,227,7,0.14)]'
+                          : 'border-black/10 bg-[#F9F9FA]',
+                      )}
+                    >
                       <input
                         type="radio"
                         name="delivery"
                         checked={deliveryType === 'physical'}
                         onChange={() => setDeliveryType('physical')}
-                        className="text-gold-500"
+                        className="accent-[#85E307]"
                       />
-                      <Truck className="w-4 h-4 text-gold-400" />
-                      <span className="text-gold-100">{t('checkoutPage.deliveryPhysical')}</span>
+                      <Truck className="h-5 w-5 text-[#3F6F00]" />
+                      <span className="text-sm font-semibold text-[#0B0F19]">{t('checkoutPage.deliveryPhysical')}</span>
                     </label>
                     {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="delivery"
-                        checked={deliveryType === 'locked'}
-                        onChange={() => setDeliveryType('locked')}
-                        className="text-gold-500"
-                      />
-                      <Lock className="w-4 h-4 text-gold-400" />
-                      <span className="text-gold-100">{t('checkoutPage.deliveryVault')}</span>
-                    </label>
+                      <label
+                        className={cn(
+                          'flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition',
+                          deliveryType === 'locked'
+                            ? 'border-[#3F6F00] bg-[rgba(133,227,7,0.14)]'
+                            : 'border-black/10 bg-[#F9F9FA]',
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="delivery"
+                          checked={deliveryType === 'locked'}
+                          onChange={() => setDeliveryType('locked')}
+                          className="accent-[#85E307]"
+                        />
+                        <Lock className="h-5 w-5 text-[#3F6F00]" />
+                        <span className="text-sm font-semibold text-[#0B0F19]">{t('checkoutPage.deliveryVault')}</span>
+                      </label>
                     ) : null}
                   </div>
-                  {TRADING_AND_VIRTUAL_WALLET_ENABLED && deliveryType === 'locked' && (
-                    <p className="text-xs text-gold-100/60 mt-2">{t('checkoutPage.deliveryVaultHint')}</p>
-                  )}
                 </div>
-                <div className="space-y-3 mb-6">
-                  {paymentMethodOptions.map((method) => (
-                    <label
-                      key={method.id}
-                      className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
-                        method.disabled
-                          ? 'border-gold-500/15 bg-charcoal-800/50 cursor-not-allowed opacity-60'
-                          : `cursor-pointer ${
-                              paymentMethod === method.id
-                                ? 'border-gold-500 bg-gold-500/10'
-                                : 'border-gold-500/30 bg-charcoal-800'
-                            }`
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="payment"
-                        value={method.id}
-                        checked={paymentMethod === method.id}
-                        disabled={method.disabled}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="text-gold-500 disabled:opacity-40"
-                      />
-                      <method.icon className="w-6 h-6 text-gold-400" />
-                      <span className="text-gold-100">
-                        {method.nameKey != null
-                          ? t(method.nameKey)
-                          : t('checkoutPage.payWallet', { balance: walletBalance.toFixed(3) })}
-                        {method.id === 'wallet' && method.disabled && (
-                          <span className="block text-xs text-gold-100/50 mt-1">
-                            {t('checkoutPage.walletInsufficient', {
-                              total: formatOrderKwd(checkoutTotalDue),
-                            })}
-                          </span>
+
+                <div className={checkoutPanelClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB]">
+                      <img src={knetBadge} alt="" className="h-6 w-auto object-contain" />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-bold text-[#0B0F19]">{t('checkoutPage.paymentMethod')}</h2>
+                      <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.trustNote')}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {paymentMethodOptions.map((method) => (
+                      <label
+                        key={method.id}
+                        className={cn(
+                          'flex items-center gap-4 rounded-xl border p-4 transition',
+                          method.disabled
+                            ? 'cursor-not-allowed border-black/10 bg-[#F9F9FA] opacity-55'
+                            : 'cursor-pointer',
+                          !method.disabled &&
+                            paymentMethod === method.id &&
+                            'border-[#3F6F00] bg-[rgba(133,227,7,0.14)]',
+                          !method.disabled &&
+                            paymentMethod !== method.id &&
+                            'border-black/10 bg-[#F9F9FA] hover:border-[#85E307]/40',
                         )}
-                      </span>
-                    </label>
-                  ))}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={method.id}
+                          checked={paymentMethod === method.id}
+                          disabled={method.disabled}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="accent-[#85E307] disabled:opacity-40"
+                        />
+                        {method.id === 'knet' ? (
+                          <img src={knetBadge} alt="" className="h-8 w-auto rounded object-contain" />
+                        ) : (
+                          <method.icon className="h-6 w-6 text-[#3F6F00]" />
+                        )}
+                        <span className="text-sm font-semibold text-[#0B0F19]">
+                          {method.nameKey != null
+                            ? t(method.nameKey)
+                            : t('checkoutPage.payWallet', { balance: walletBalance.toFixed(3) })}
+                          {method.id === 'wallet' && method.disabled && (
+                            <span className="mt-1 block text-xs font-normal text-[#64748B]">
+                              {t('checkoutPage.walletInsufficient', {
+                                total: formatOrderKwd(checkoutTotalDue),
+                              })}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <CheckoutTrustBadges variant="compact" className="mt-5" />
                 </div>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="flex-1 px-6 py-3 border border-gold-500/50 text-gold-100 rounded-lg"
-                  >
+
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setStep(1)} className={checkoutSecondaryBtnClass}>
                     {t('checkoutPage.back')}
                   </button>
-                  <button onClick={() => setStep(3)} className="flex-1 gold-button">
+                  <button type="button" onClick={() => setStep(3)} className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
                     {t('checkoutPage.reviewOrder')}
                   </button>
                 </div>
@@ -831,9 +883,9 @@ export default function CheckoutPage() {
             )}
 
             {step === 3 && (
-              <div className="gold-card">
-                <h2 className="text-xl font-bold text-gold-100 mb-6">{t('checkoutPage.reviewOrder')}</h2>
-                <div className="space-y-4 mb-6">
+              <div className={checkoutPanelClass}>
+                <h2 className="mb-5 text-lg font-bold text-[#0B0F19]">{t('checkoutPage.reviewOrder')}</h2>
+                <div className="mb-5 space-y-3">
                   {cart.items.map((item) => {
                     const lineList = cartLineStandardTotal(item)
                     const lineSave = cartLineClubMemberSavings(item)
@@ -842,35 +894,28 @@ export default function CheckoutPage() {
                     return (
                       <div
                         key={item.id}
-                        className="flex items-center gap-4 p-4 bg-charcoal-800 rounded-lg"
+                        className="flex items-center gap-4 rounded-xl border border-black/10 bg-[#F9F9FA] p-4"
                       >
-                        <div className="w-16 h-16 rounded bg-charcoal-700" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gold-100">{productName}</p>
-                          <p className="text-sm text-gold-100/60">
+                        <div className="h-14 w-14 shrink-0 rounded-lg bg-[#E5E7EB]" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-[#0B0F19]">{productName}</p>
+                          <p className="text-sm text-[#64748B]">
                             {t('checkoutPage.qty', { count: item.quantity })}
                           </p>
                         </div>
-                        <div className="text-end shrink-0 space-y-0.5">
+                        <div className="text-end">
                           {lineSave > 0 ? (
                             <>
-                              <p className="text-xs text-gold-100/45 line-through tabular-nums">
-                                {formatOrderKwd(lineList)} KWD
+                              <p className="text-xs text-[#94A3B8] line-through tabular-nums">
+                                {formatOrderKwd(lineList)} {t('common.kwd')}
                               </p>
-                              <p className="flex items-center justify-end gap-1 text-xs font-semibold text-emerald-400/90">
-                                <Crown className="w-3 h-3" aria-hidden />
-                                {t('checkoutPage.memberShort')}
-                              </p>
-                              <p className="text-gold-400 font-semibold tabular-nums">
-                                {formatOrderKwd(item.total_price)} KWD
-                              </p>
-                              <p className="text-xs text-emerald-400/80 tabular-nums">
-                                {t('checkoutPage.saveKwd', { amount: formatOrderKwd(lineSave) })}
+                              <p className="font-bold tabular-nums text-[#0B0F19]">
+                                {formatOrderKwd(item.total_price)} {t('common.kwd')}
                               </p>
                             </>
                           ) : (
-                            <p className="text-gold-400 font-semibold tabular-nums">
-                              {formatOrderKwd(item.total_price)} KWD
+                            <p className="font-bold tabular-nums text-[#0B0F19]">
+                              {formatOrderKwd(item.total_price)} {t('common.kwd')}
                             </p>
                           )}
                         </div>
@@ -879,95 +924,93 @@ export default function CheckoutPage() {
                   })}
                 </div>
 
-                <div className="mb-6 rounded-lg border border-gold-500/25 bg-charcoal-800/80 p-4 space-y-2">
-                  <p className="text-sm font-semibold text-gold-100/90 mb-2">{t('checkoutPage.orderTotals')}</p>
+                <div className="mb-5 rounded-xl border border-[#85E307]/25 bg-[#ECFCCB]/35 p-4 space-y-2 text-sm">
+                  <p className="mb-2 font-bold text-[#0B0F19]">{t('checkoutPage.orderTotals')}</p>
                   {clubSavings > 0 ? (
                     <>
-                      <div className="flex justify-between text-gold-100/70 text-sm">
-                        <span className="flex items-center gap-2">
-                          {t('checkoutPage.standardListTotal')}
-                          {summary.previewLoading && (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gold-400" aria-hidden />
-                          )}
-                        </span>
-                        <span className="tabular-nums">{formatOrderKwd(displaySubtotal)} KWD</span>
+                      <div className="flex justify-between text-[#64748B]">
+                        <span>{t('checkoutPage.standardListTotal')}</span>
+                        <span className="tabular-nums">{formatOrderKwd(displaySubtotal)} {t('common.kwd')}</span>
                       </div>
-                      <div className="flex justify-between text-sm text-emerald-400/95">
-                        <span className="flex items-center gap-1.5">
-                          <Crown className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                      <div className="flex justify-between text-[#059669]">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Crown className="h-3.5 w-3.5" />
                           {t('cartPage.clubMemberSavings')}
                         </span>
-                        <span className="tabular-nums">−{formatOrderKwd(clubSavings)} KWD</span>
+                        <span className="tabular-nums">−{formatOrderKwd(clubSavings)} {t('common.kwd')}</span>
                       </div>
-                      <div className="flex justify-between text-gold-100 text-sm font-medium pt-1 border-t border-gold-500/15">
+                      <div className="flex justify-between border-t border-black/5 pt-2 font-medium text-[#0B0F19]">
                         <span>{t('checkoutPage.yourPriceMember')}</span>
-                        <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} KWD</span>
+                        <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
                       </div>
                     </>
                   ) : (
-                    <div className="flex justify-between text-gold-100/70 text-sm">
-                      <span className="flex items-center gap-2">
-                        {t('checkoutPage.subtotal')}
-                        {summary.previewLoading && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gold-400" aria-hidden />
-                        )}
-                      </span>
-                      <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} KWD</span>
+                    <div className="flex justify-between text-[#64748B]">
+                      <span>{t('checkoutPage.subtotal')}</span>
+                      <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
                     </div>
                   )}
                   {summary.discountAmount > 0 && (
-                    <div className="flex justify-between text-sm text-emerald-400/95">
-                      <span className="flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5 shrink-0" />
+                    <div className="flex justify-between text-[#059669]">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5" />
                         {summary.offerTitle ?? t('cartPage.promotionalOffer')}
                       </span>
-                      <span className="tabular-nums">−{formatOrderKwd(summary.discountAmount)} KWD</span>
+                      <span className="tabular-nums">−{formatOrderKwd(summary.discountAmount)} {t('common.kwd')}</span>
                     </div>
                   )}
-                  {summary.discountAmount <= 0 && (
-                    <div className="flex justify-between text-sm text-gold-100/60">
-                      <span>{t('cartPage.promotionalOffer')}</span>
-                      <span className="tabular-nums">—</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-gold-100/70 text-sm">
+                  <div className="flex justify-between text-[#64748B]">
                     <span>{t('checkoutPage.shipping')}</span>
-                    <span className="tabular-nums">
+                    <span>
                       {checkoutShippingCharge > 0
-                        ? `${formatOrderKwd(checkoutShippingCharge)} KWD`
+                        ? `${formatOrderKwd(checkoutShippingCharge)} ${t('common.kwd')}`
                         : t('checkoutPage.shippingFree')}
                     </span>
                   </div>
-                  <div className="flex justify-between text-gold-100/70 text-sm">
+                  <div className="flex justify-between text-[#64748B]">
                     <span>{t('cartPage.tax')}</span>
-                    <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} KWD</span>
+                    <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} {t('common.kwd')}</span>
                   </div>
-                  <div className="border-t border-gold-500/20 pt-2 flex justify-between font-bold text-gold-100">
+                  <div className="flex justify-between border-t border-black/10 pt-3 text-base font-bold text-[#0B0F19]">
                     <span>{t('checkoutPage.totalDue')}</span>
-                    <span className="gold-gradient-text tabular-nums">{formatOrderKwd(checkoutTotalDue)} KWD</span>
+                    <span className="tabular-nums">{formatOrderKwd(checkoutTotalDue)} {t('common.kwd')}</span>
                   </div>
                 </div>
 
                 {walletTooLow && (
-                  <p className="text-amber-400/90 text-sm mb-4">{t('checkoutPage.walletTooLow')}</p>
+                  <p className="mb-4 text-sm text-amber-700">{t('checkoutPage.walletTooLow')}</p>
                 )}
 
-                <div className="flex gap-4">
+                {isTurnstileConfigured && (
+                  <div className="mb-4">
+                    <TurnstileWidget
+                      ref={turnstileRef}
+                      theme="light"
+                      onToken={setTurnstileToken}
+                      onExpire={clearTurnstile}
+                      onError={clearTurnstile}
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={() => setStep(2)}
                     disabled={submitting}
-                    className="flex-1 px-6 py-3 border border-gold-500/50 text-gold-100 rounded-lg disabled:opacity-50"
+                    className={checkoutSecondaryBtnClass}
                   >
                     {t('checkoutPage.back')}
                   </button>
                   <button
+                    type="button"
                     onClick={() => void handlePlaceOrder()}
-                    disabled={submitting || walletTooLow}
-                    className="flex-1 gold-button flex items-center justify-center gap-2 disabled:opacity-50"
+                    disabled={submitting || walletTooLow || (isTurnstileConfigured && !turnstileToken)}
+                    className={cn(checkoutPrimaryBtnClass, 'flex-1')}
                   >
                     {submitting ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin" />
                         {t('checkoutPage.placing')}
                       </>
                     ) : (
@@ -979,86 +1022,67 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="gold-card sticky top-24">
-              <h2 className="text-xl font-bold text-gold-100 mb-6">{t('cartPage.orderSummary')}</h2>
-              <div className="space-y-3 mb-6">
-                {clubSavings > 0 ? (
-                  <>
-                    <div className="flex justify-between text-gold-100/60 gap-2 text-sm">
-                      <span className="flex items-center gap-2">
-                        {t('checkoutPage.standardListTotal')}
-                        {summary.previewLoading && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gold-400 shrink-0" aria-hidden />
-                        )}
-                      </span>
-                      <span className="tabular-nums shrink-0">{formatOrderKwd(displaySubtotal)} KWD</span>
+          <aside className="lg:col-span-1">
+            <div className="sticky top-24 space-y-4">
+              <div className="rounded-2xl border border-black/10 bg-[#F5F5F5] p-5 shadow-sm">
+                <h2 className="mb-4 font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.orderSummary')}</h2>
+                <div className="space-y-2.5 text-sm">
+                  {clubSavings > 0 ? (
+                    <>
+                      <div className="flex justify-between gap-2 text-[#64748B]">
+                        <span>{t('checkoutPage.standardListTotal')}</span>
+                        <span className="tabular-nums text-[#0B0F19]">{formatOrderKwd(displaySubtotal)} {t('common.kwd')}</span>
+                      </div>
+                      <div className="flex justify-between gap-2 text-[#059669]">
+                        <span>{t('checkoutPage.memberRateSavings')}</span>
+                        <span className="tabular-nums">−{formatOrderKwd(clubSavings)} {t('common.kwd')}</span>
+                      </div>
+                      <div className="flex justify-between gap-2 border-t border-black/5 pt-2 font-medium text-[#0B0F19]">
+                        <span>{t('checkoutPage.yourPrice')}</span>
+                        <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between gap-2 text-[#64748B]">
+                      <span>{t('checkoutPage.subtotal')}</span>
+                      <span className="tabular-nums text-[#0B0F19]">{formatOrderKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
                     </div>
-                    <div className="flex justify-between text-emerald-400/90 text-sm gap-2">
-                      <span className="flex items-center gap-1.5 min-w-0">
-                        <Crown className="w-3.5 h-3.5 shrink-0" aria-hidden />
-                        {t('checkoutPage.memberRateSavings')}
-                      </span>
-                      <span className="tabular-nums shrink-0">−{formatOrderKwd(clubSavings)} KWD</span>
+                  )}
+                  {summary.discountAmount > 0 && (
+                    <div className="flex justify-between gap-2 text-[#059669]">
+                      <span>{summary.offerTitle ?? t('cartPage.promotionalOffer')}</span>
+                      <span className="tabular-nums">−{formatOrderKwd(summary.discountAmount)} {t('common.kwd')}</span>
                     </div>
-                    <div className="flex justify-between text-gold-100 text-sm font-medium gap-2 border-t border-gold-500/15 pt-2">
-                      <span>{t('checkoutPage.yourPrice')}</span>
-                      <span className="tabular-nums shrink-0">{formatOrderKwd(displayTotalAfterClub)} KWD</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex justify-between text-gold-100/60 gap-2">
-                    <span className="flex items-center gap-2">
-                      {t('checkoutPage.subtotal')}
-                      {summary.previewLoading && (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-gold-400 shrink-0" aria-hidden />
-                      )}
+                  )}
+                  <div className="flex justify-between text-[#64748B]">
+                    <span>{t('checkoutPage.shipping')}</span>
+                    <span>
+                      {checkoutShippingCharge > 0
+                        ? `${formatOrderKwd(checkoutShippingCharge)} ${t('common.kwd')}`
+                        : t('checkoutPage.shippingFree')}
                     </span>
-                    <span className="tabular-nums">{formatOrderKwd(displayTotalAfterClub)} KWD</span>
                   </div>
-                )}
-                {summary.discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-400/90 text-sm gap-2">
-                    <span className="flex items-center gap-1.5 min-w-0">
-                      <Tag className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{summary.offerTitle ?? t('cartPage.promotionalOffer')}</span>
+                  <div className="flex justify-between text-[#64748B]">
+                    <span>{t('cartPage.tax')}</span>
+                    <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} {t('common.kwd')}</span>
+                  </div>
+                </div>
+                <div className="mt-4 border-t border-black/10 pt-4">
+                  <div className="flex justify-between gap-2">
+                    <span className="font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.total')}</span>
+                    <span className="font-serif text-2xl font-bold tabular-nums text-[#0B0F19]">
+                      {formatOrderKwd(checkoutTotalDue)} {t('common.kwd')}
                     </span>
-                    <span className="tabular-nums shrink-0">−{formatOrderKwd(summary.discountAmount)} KWD</span>
                   </div>
-                )}
-                {summary.discountAmount <= 0 && (
-                  <div className="flex justify-between text-gold-100/60 text-sm gap-2">
-                    <span>{t('cartPage.promotionalOffer')}</span>
-                    <span className="tabular-nums shrink-0">—</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-gold-100/60">
-                  <span>{t('checkoutPage.shipping')}</span>
-                  <span className="tabular-nums">
-                    {checkoutShippingCharge > 0
-                      ? `${formatOrderKwd(checkoutShippingCharge)} KWD`
-                      : t('checkoutPage.shippingFree')}
-                  </span>
                 </div>
-                <div className="flex justify-between text-gold-100/60">
-                  <span>{t('cartPage.tax')}</span>
-                  <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} KWD</span>
+                <div className="mt-4 flex items-center gap-2 text-xs text-[#64748B]">
+                  <Lock className="h-4 w-4 shrink-0 text-[#3F6F00]" />
+                  {t('checkoutPage.secureCheckout')}
                 </div>
               </div>
-              <div className="border-t border-gold-500/20 pt-4">
-                <div className="flex justify-between text-lg font-bold gap-2">
-                  <span className="text-gold-100">{t('cartPage.total')}</span>
-                  <span className="gold-gradient-text tabular-nums">
-                    {formatOrderKwd(checkoutTotalDue)} KWD
-                  </span>
-                </div>
-              </div>
-              <div className="mt-6 flex items-center gap-2 text-sm text-gold-100/60">
-                <Lock className="w-4 h-4 shrink-0" />
-                {t('checkoutPage.secureCheckout')}
-              </div>
+              <CheckoutTrustBadges />
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

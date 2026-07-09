@@ -38,6 +38,7 @@ import KycRegistrationFields, { type KycQuestion } from '../components/auth/KycR
 import AmlOpenSanctionsNotice from '../components/auth/AmlOpenSanctionsNotice'
 import { authApi } from '../services/api'
 import { isTurnstileConfigured } from '@/lib/turnstile'
+import { setLastAuthMethod } from '@/lib/lastAuthMethod'
 
 const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
   customer: 'auth.roleCustomer',
@@ -145,6 +146,7 @@ export default function RegisterPage() {
         registration_source: 'website',
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
+      setLastAuthMethod(formData.email ? 'email' : 'phone')
       toast.success(t('auth.registerSuccess'))
       navigate(resolvePostAuthPath(registeredUser, nextPath))
     } catch (error) {

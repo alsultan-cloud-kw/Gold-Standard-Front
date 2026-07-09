@@ -210,12 +210,12 @@ export default function TradeGoldPage() {
   const knetPresets = [10, 25, 50, 100] as const
   const rateLabel =
     side === 'buy'
-      ? t('tradeGold.customerBuyRate', { defaultValue: 'Customer buy rate (you pay)' })
-      : t('tradeGold.customerSellRate', { defaultValue: 'Customer sell rate (you receive)' })
+      ? t('tradeGold.customerBuyRate')
+      : t('tradeGold.customerSellRate')
   const confirmRateLabel =
     confirmSide === 'buy'
-      ? t('tradeGold.customerBuyRate', { defaultValue: 'Customer buy rate (you pay)' })
-      : t('tradeGold.customerSellRate', { defaultValue: 'Customer sell rate (you receive)' })
+      ? t('tradeGold.customerBuyRate')
+      : t('tradeGold.customerSellRate')
 
   if (!isAuthenticated) {
     return (

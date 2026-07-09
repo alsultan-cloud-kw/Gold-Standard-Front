@@ -1,23 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, RefreshCw } from 'lucide-react'
+import { RefreshCw, ArrowRight, Building2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '../services/api'
+import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
+import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
 
-type TrendDir = 'up' | 'down' | null
+function fmt(n: number | null | undefined) {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
+}
 
+/**
+ * Company / wholesale-style board — sell rates per karat, large type for desk use.
+ */
 export default function CompanyPricesPage() {
   const { t, i18n } = useTranslation()
-  const [blinkOn, setBlinkOn] = useState(true)
+  const isAr = i18n.language?.startsWith('ar')
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setBlinkOn((prev) => !prev)
-    }, 420)
-    return () => window.clearInterval(id)
-  }, [])
-
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['daralsabaekPublicRates'],
     queryFn: adminApi.getDaralsabaekPublicRates,
     refetchInterval: 20_000,
@@ -27,249 +28,168 @@ export default function CompanyPricesPage() {
   const res = data as DaralsabaekPublicRatesResponse | undefined
   const carats = res?.carats ?? []
 
-  const fmt = (n: number | null | undefined) =>
-    typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
-
   const ounceUsdValue =
     typeof res?.goldOuncePrice === 'number' ? Number(res.goldOuncePrice) : null
 
-  const normalizeTrendKey = (rawKey: string) => {
-    const m = String(rawKey || '').match(/(\d{1,2})\s*K/i)
-    if (!m) return rawKey
-    return m[1]
-  }
+  const trendEntries = useMemo(
+    () =>
+      carats.map((c) => ({
+        key: normalizeTrendKey(c.key),
+        rate: typeof c.sellTotal === 'number' ? c.sellTotal : null,
+      })),
+    [carats],
+  )
 
-  // Keep trend state aligned with the customer Prices page
-  // so direction arrows are immediately active on both pages.
-  const RATE_SNAPSHOT_STORAGE_KEY = 'daralsabaek_rate_snapshot_v1'
-  const RATE_DIRECTION_STORAGE_KEY = 'daralsabaek_rate_direction_v1'
-  const prevRatesRef = useRef<Record<string, number>>({})
-  const [trendByKey, setTrendByKey] = useState<Record<string, TrendDir>>({})
+  const entriesKey = useMemo(
+    () => trendEntries.map((e) => `${e.key}:${e.rate ?? ''}`).join('|'),
+    [trendEntries],
+  )
 
-  useEffect(() => {
-    try {
-      const rawPrev = window.localStorage.getItem(RATE_SNAPSHOT_STORAGE_KEY)
-      const rawDir = window.localStorage.getItem(RATE_DIRECTION_STORAGE_KEY)
-      if (rawPrev) {
-        const parsedPrev = JSON.parse(rawPrev) as Record<string, number | { buy?: number | null }>
-        if (parsedPrev && typeof parsedPrev === 'object') {
-          const normalized: Record<string, number> = {}
-          for (const [k, v] of Object.entries(parsedPrev)) {
-            if (typeof v === 'number' && Number.isFinite(v)) normalized[k] = v
-            else if (
-              v &&
-              typeof v === 'object' &&
-              typeof v.buy === 'number' &&
-              Number.isFinite(v.buy)
-            ) {
-              normalized[k] = v.buy
-            }
-          }
-          prevRatesRef.current = normalized
-        }
-      }
-      if (rawDir) {
-        const parsedDir = JSON.parse(rawDir) as Record<string, TrendDir | { buy?: TrendDir; sell?: TrendDir }>
-        if (parsedDir && typeof parsedDir === 'object') {
-          const normalized: Record<string, TrendDir> = {}
-          for (const [k, v] of Object.entries(parsedDir)) {
-            if (v === 'up' || v === 'down') normalized[k] = v
-            else if (v && typeof v === 'object') normalized[k] = v.sell ?? v.buy ?? null
-            else normalized[k] = null
-          }
-          setTrendByKey(normalized)
-        }
-      }
-    } catch {
-      // Ignore local storage parse/read issues.
-    }
-  }, [])
+  const { resolveDir } = usePublicRateTrends(!!res?.succeeded, trendEntries, entriesKey)
 
-  useEffect(() => {
-    if (!res?.succeeded) return
-
-    const entries = carats.map((c) => ({
-      key: normalizeTrendKey(c.key),
-      rate: typeof c.sellTotal === 'number' ? c.sellTotal : null,
-    }))
-
-    setTrendByKey((prevTrend) => {
-      const nextTrend: Record<string, TrendDir> = { ...prevTrend }
-      for (const item of entries) {
-        const prevRate = prevRatesRef.current[item.key]
-        let dir: TrendDir = prevTrend[item.key] ?? null
-        if (item.rate != null && prevRate != null) {
-          if (item.rate > prevRate) dir = 'up'
-          else if (item.rate < prevRate) dir = 'down'
-        }
-        nextTrend[item.key] = dir
-      }
-
-      try {
-        const persisted: Record<string, 'up' | 'down'> = {}
-        for (const [k, v] of Object.entries(nextTrend)) {
-          if (v === 'up' || v === 'down') persisted[k] = v
-        }
-        window.localStorage.setItem(RATE_DIRECTION_STORAGE_KEY, JSON.stringify(persisted))
-      } catch {
-        // Ignore local storage write issues.
-      }
-
-      return nextTrend
-    })
-
-    const nextPrev: Record<string, number> = { ...prevRatesRef.current }
-    for (const item of entries) {
-      if (item.rate != null) nextPrev[item.key] = item.rate
-    }
-    prevRatesRef.current = nextPrev
-
-    try {
-      window.localStorage.setItem(RATE_SNAPSHOT_STORAGE_KEY, JSON.stringify(nextPrev))
-    } catch {
-      // Ignore local storage write issues.
-    }
-  }, [res?.succeeded, carats])
-
-  const TileTrendIcon = ({ dir }: { dir: TrendDir }) => {
-    const iconCls = 'w-[1.125rem] h-[1.125rem] sm:w-5 sm:h-5 shrink-0 stroke-[2.75]'
-    const activeBlinkClass = blinkOn ? 'opacity-100' : 'opacity-0'
-    const upClass =
-      dir === 'up'
-        ? `${iconCls} text-emerald-700 drop-shadow-[0_0_6px_rgba(5,150,105,0.5)] transition-opacity duration-100 ${activeBlinkClass}`
-        : `${iconCls} text-black/35`
-    const downClass =
-      dir === 'down'
-        ? `${iconCls} text-red-600 drop-shadow-[0_0_6px_rgba(220,38,38,0.45)] transition-opacity duration-100 ${activeBlinkClass}`
-        : `${iconCls} text-black/35`
-
-    return (
-      <span className="inline-flex items-center leading-none" aria-hidden>
-        <span className="inline-flex">
-          <ArrowUp className={upClass} />
-        </span>
-        <span className="inline-flex">
-          <ArrowDown className={downClass} />
-        </span>
-      </span>
-    )
-  }
-
-  const resolveTileDir = (key: string): TrendDir => trendByKey[normalizeTrendKey(key)] ?? null
-  const ounceTrendDir: TrendDir = (() => {
+  const ounceTrendDir = (() => {
     const ounceCarat = carats.find((c) => normalizeTrendKey(c.key) === '24')
-    return ounceCarat ? resolveTileDir(ounceCarat.key) : null
+    return ounceCarat ? resolveDir(ounceCarat.key) : null
   })()
 
+  const locale = isAr ? 'ar-KW' : 'en-US'
+  const showBoard = !isLoading && res?.succeeded && carats.length > 0
+
   return (
-    <div className="min-h-screen py-12 bg-white">
-      <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-bold gold-gradient-text-on-light mb-2 mt-4">
-              {t('nav.companyPrices')}
-            </h1>
-          </div>
-          {/* <button
-            type="button"
-            onClick={() => refetch()}
-            className="flex items-center gap-2 text-base font-semibold text-stone-700 hover:text-black"
-          >
-            <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
-            {t('pricesPage.refresh')}
-          </button> */}
+    <div className="min-h-screen bg-[#F9F9FA]">
+      <section className="relative overflow-hidden border-b border-black/5 bg-[#0B0F19] text-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_50%_at_0%_0%,rgba(133,227,7,0.16),transparent_55%)]" />
         </div>
 
-        {isLoading && (
-          <div className="rounded-xl border border-stone-200 bg-zinc-50 flex items-center justify-center gap-2 py-16 text-stone-600">
-            <RefreshCw className="w-5 h-5 animate-spin" />
-            {t('pricesPage.loading')}
-          </div>
-        )}
+        <div className="relative mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
+                <Building2 className="h-3.5 w-3.5" />
+                {t('companyPricesPage.kicker')}
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-[2.75rem]">
+                {t('nav.companyPrices')}
+              </h1>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
+                {t('companyPricesPage.subtitle')}
+              </p>
+            </div>
 
-        {isError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 text-red-900 py-8 text-center text-sm">
-            {t('pricesPage.errorUnavailable')}
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('pricesPage.refresh')}
+              </button>
+              <Link
+                to="/prices"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#85E307]/35 bg-[#85E307]/15 px-4 py-2.5 text-sm font-semibold text-[#ECFCCB] transition hover:bg-[#85E307]/25"
+              >
+                {t('nav.customerPrices')}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Link>
+            </div>
           </div>
-        )}
 
-        {!isLoading && !isError && res && !res.succeeded && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-950 py-8 text-center text-sm">
-            {t('pricesPage.loadFailed')}
-          </div>
-        )}
-
-        {!isLoading && res?.succeeded && carats.length > 0 && (
-          <div className="space-y-10">
-            {ounceUsdValue != null && (
-              <div className="product-card-lime overflow-hidden relative">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 py-2">
-                  <div>
-                    <p className="text-[30px] font-bold text-black uppercase tracking-wider mb-1">
-                      {t('pricesPage.ounceTitle')}
+          {showBoard && ounceUsdValue != null ? (
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#85E307]">
+                    {t('pricesPage.ounceTitle')}
+                  </p>
+                  {res.updateIntervalInSeconds != null ? (
+                    <p className="text-xs text-white/40">
+                      {t('pricesPage.updateEvery', { seconds: res.updateIntervalInSeconds })}
                     </p>
-                    {res.updateIntervalInSeconds != null && (
-                      <p className="text-sm text-black/55">
-                        {t('pricesPage.updateEvery', { seconds: res.updateIntervalInSeconds })}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-start sm:text-end">
-                    <div className="inline-flex items-center gap-2 sm:justify-end">
-                      <TileTrendIcon dir={ounceTrendDir} />
-                      <p
-                        className="text-5xl sm:text-6xl font-bold text-black tabular-nums leading-none"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        ${Number(ounceUsdValue).toLocaleString(
-                          i18n.language?.startsWith('ar') ? 'ar-KW' : 'en-US',
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }
-                        )}
-                      </p>
-                    </div>
-                    <p className="text-black/60 text-base mt-2">{t('pricesPage.perTroyOunce')}</p>
-                  </div>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-3">
+                  <PriceTrendBadge dir={ounceTrendDir} variant="dark" size="md" />
+                  <p className="text-4xl font-bold tabular-nums tracking-tight sm:text-5xl lg:text-6xl">
+                    $
+                    {Number(ounceUsdValue).toLocaleString(locale, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
                 </div>
               </div>
-            )}
+              <p className="mt-2 text-sm text-white/45">{t('pricesPage.perTroyOunce')}</p>
+            </div>
+          ) : null}
+        </div>
+      </section>
 
+      <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-20 text-[#64748B]">
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            {t('pricesPage.loading')}
+          </div>
+        ) : null}
+
+        {isError ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 py-10 text-center text-sm text-red-900">
+            {t('pricesPage.errorUnavailable')}
+          </div>
+        ) : null}
+
+        {!isLoading && !isError && res && !res.succeeded ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 py-10 text-center text-sm text-amber-950">
+            {t('pricesPage.loadFailed')}
+          </div>
+        ) : null}
+
+        {showBoard ? (
+          <div className="space-y-8">
             <div>
-              <h2 className="text-lg font-semibold text-stone-800 mb-5 uppercase tracking-wider">
-                {t('nav.companyPrices')}
+              <h2 className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F6F00]">
+                {t('companyPricesPage.boardTitle')}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {carats.map((c) => {
                   const sellTotal = c.sellTotal != null ? c.sellTotal : null
-                  const tileDir = resolveTileDir(c.key)
+                  const tileDir = resolveDir(c.key)
 
                   return (
-                    <div key={c.key} className="product-card-lime py-2">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-lg bg-black/10 flex items-center justify-center border border-black/10">
-                          <TileTrendIcon dir={tileDir} />
+                    <article
+                      key={c.key}
+                      className="relative overflow-hidden rounded-2xl border border-black/10 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:p-7"
+                    >
+                      <div className="pointer-events-none absolute -end-8 -top-8 h-28 w-28 rounded-full bg-[#ECFCCB]/50 blur-2xl" />
+                      <div className="relative mb-6 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#94A3B8]">
+                            {t('companyPricesPage.karatLabel')}
+                          </p>
+                          <h3 className="mt-1 font-mono text-3xl font-bold tabular-nums text-[#0B0F19] sm:text-4xl">
+                            {c.key}
+                          </h3>
                         </div>
-                        <h3 className="text-2xl font-bold text-black">{c.key}</h3>
+                        <PriceTrendBadge dir={tileDir} variant="light" size="md" />
                       </div>
 
-                      <p className="text-sm uppercase text-black/55 mb-2 font-medium">
-                        {t('pricesPage.sell')} {t('pricesPage.perGramAbbr')}
+                      <p className="relative text-[11px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
+                        {t('pricesPage.sell')} · {t('common.kwdPerGram')}
                       </p>
-                      <p className="text-5xl sm:text-6xl font-extrabold text-black tabular-nums leading-tight">
+                      <p className="relative mt-2 text-4xl font-extrabold tabular-nums leading-none tracking-tight text-[#0B0F19] sm:text-5xl lg:text-[3.25rem]">
                         {fmt(sellTotal)}
-                        <span className="text-xl font-semibold text-black/65"> KWD/g</span>
                       </p>
-                    </div>
+                    </article>
                   )
                 })}
               </div>
             </div>
 
-            <p className="text-xs gold-gradient-text-on-light text-center">{t('pricesPage.disclaimer')}</p>
+            <p className="text-center text-xs text-[#64748B]">{t('companyPricesPage.disclaimer')}</p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )

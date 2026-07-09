@@ -8,6 +8,7 @@ import {
   getClerkUnavailableMessage,
   type ClerkOAuthProvider,
 } from '@/lib/clerkOAuth'
+import { getLastAuthMethod, setLastAuthMethod } from '@/lib/lastAuthMethod'
 
 type SocialSignInButtonProps = {
   provider: ClerkOAuthProvider
@@ -59,6 +60,7 @@ export default function SocialSignInButton({
   const { t } = useTranslation()
   const { loaded, client } = useClerk()
   const [busy, setBusy] = useState(false)
+  const isLastUsed = getLastAuthMethod() === provider
 
   const labelKey =
     provider === 'apple' ? 'auth.continueWithApple' : 'auth.continueWithGoogle'
@@ -83,6 +85,7 @@ export default function SocialSignInButton({
         redirectUrlComplete,
       }
 
+      setLastAuthMethod(provider)
       if (mode === 'sign-up') {
         await client.signUp.authenticateWithRedirect(params)
       } else {
@@ -96,14 +99,23 @@ export default function SocialSignInButton({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => void handleClick()}
-      disabled={busy || disabled}
-      className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border border-gold-500/30 bg-white text-charcoal-900 text-sm font-semibold hover:bg-stone-50 disabled:opacity-50 transition-colors"
-    >
-      <ProviderIcon provider={provider} />
-      {busy ? t('auth.oauthSigningIn') : t(labelKey)}
-    </button>
+    <div className="relative">
+      {isLastUsed && (
+        <span className="pointer-events-none absolute -top-2.5 start-4 z-10 rounded-full border border-gold-500/40 bg-gold-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-charcoal-950 shadow-sm">
+          {t('auth.lastUsed')}
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={() => void handleClick()}
+        disabled={busy || disabled}
+        className={`w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border bg-white text-charcoal-900 text-sm font-semibold hover:bg-stone-50 disabled:opacity-50 transition-colors ${
+          isLastUsed ? 'border-gold-500 ring-1 ring-gold-500/40' : 'border-gold-500/30'
+        }`}
+      >
+        <ProviderIcon provider={provider} />
+        {busy ? t('auth.oauthSigningIn') : t(labelKey)}
+      </button>
+    </div>
   )
 }

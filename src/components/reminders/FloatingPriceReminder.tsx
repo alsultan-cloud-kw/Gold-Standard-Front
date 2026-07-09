@@ -127,7 +127,7 @@ export default function FloatingPriceReminder() {
           <span className="flex-1 min-w-0">
             <span
               className={`block font-semibold text-gold-100 ${
-                open ? 'text-base sm:text-lg' : 'text-sm motion-safe:animate-cart-badge-blink'
+                open ? 'text-base sm:text-lg' : 'text-sm'
               }`}
             >
               {t('priceReminder.title')}

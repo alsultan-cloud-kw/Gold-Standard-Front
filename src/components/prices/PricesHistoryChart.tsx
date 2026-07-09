@@ -1,14 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
-  Line,
-  LineChart as RechartsLineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+  Activity,
+  AreaChart as AreaIcon,
+  CandlestickChart,
+  Check,
+  Crosshair,
+  LineChart as LineIcon,
+  Maximize2,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,22 +19,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '@/services/api'
-import { METAL_SYMBOL_BY_KEY, pricingApi } from '@/services/pricingApi'
+import { METAL_SYMBOL_BY_KEY, pricingApi, type MetalChartPoint } from '@/services/pricingApi'
+import { AdvancedMetalChart, type ChartDisplayMode } from '@/components/prices/AdvancedMetalChart'
+import {
+  buildCandleSeries,
+  buildLineSeries,
+  formatPrice,
+  seriesChange,
+  type ChartRange,
+  type MetalTab,
+} from '@/utils/metalChartSeries'
 
-type MetalTab = 'gold' | 'silver' | 'platinum' | 'palladium'
-type ChartRange = 'live' | '1h' | '1d' | '1w'
-
-type ChartPoint = { t: string; v: number }
-
-const RANGE_OPTIONS: { key: ChartRange; menuLabel: string }[] = [
-  { key: 'live', menuLabel: '10 Mins' },
-  { key: '1h', menuLabel: '1 Hour' },
-  { key: '1d', menuLabel: '1 Day' },
-  { key: '1w', menuLabel: '1 Week' },
-]
-
-function rangeMenuLabel(key: ChartRange): string {
-  return RANGE_OPTIONS.find((o) => o.key === key)?.menuLabel ?? '1 Hour'
+type Props = {
+  rates: DaralsabaekPublicRatesResponse | undefined
 }
 
 function numOrNull(v: unknown): number | null {
@@ -46,138 +46,38 @@ function numOrNull(v: unknown): number | null {
   return null
 }
 
-function rangeBackMs(r: ChartRange): number {
-  switch (r) {
-    case 'live':
-      return 10 * 60 * 1000
-    case '1h':
-      return 60 * 60 * 1000
-    case '1d':
-      return 24 * 60 * 60 * 1000
-    case '1w':
-      return 7 * 24 * 60 * 60 * 1000
-    default:
-      return 24 * 60 * 60 * 1000
-  }
-}
-
-function formatChartTick(d: Date, range: ChartRange) {
-  if (range === '1w') {
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  }
-  if (range === '1d') {
-    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-  }
-  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-}
-
-function bucketMsForRange(range: ChartRange): number {
-  switch (range) {
-    // Short ranges: keep minute-by-minute movement.
-    case 'live':
-    case '1h':
-      return 60_000
-    // Longer ranges: aggregate for readability.
-    case '1d':
-      return 15 * 60_000
-    case '1w':
-      return 60 * 60_000
-    default:
-      return 60_000
-  }
-}
-
-function aggregatePointsByBucket(points: ChartPoint[], range: ChartRange): ChartPoint[] {
-  if (points.length <= 2) return points
-  const bucketMs = bucketMsForRange(range)
-  const grouped = new Map<number, ChartPoint>()
-  for (const p of points) {
-    const ts = new Date(p.t).getTime()
-    if (!Number.isFinite(ts)) continue
-    const bucketStart = Math.floor(ts / bucketMs) * bucketMs
-    // Keep the latest point inside each bucket so chart reflects the most recent value in that interval.
-    const prev = grouped.get(bucketStart)
-    if (!prev || new Date(prev.t).getTime() <= ts) {
-      grouped.set(bucketStart, p)
-    }
-  }
-  return [...grouped.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([, p]) => p)
-}
-
-function normalizeShortRangeToOneMinute(points: ChartPoint[], range: ChartRange): ChartPoint[] {
-  if ((range !== 'live' && range !== '1h') || points.length === 0) return points
-
-  const sorted = [...points]
-    .map((p) => ({ ...p, ms: new Date(p.t).getTime() }))
-    .filter((p) => Number.isFinite(p.ms))
-    .sort((a, b) => a.ms - b.ms)
-
-  if (sorted.length === 0) return points
-
-  const minuteMs = 60_000
-  const startMs = Math.floor(sorted[0].ms / minuteMs) * minuteMs
-  const endMs = Math.floor(sorted[sorted.length - 1].ms / minuteMs) * minuteMs
-
-  let idx = 0
-  let currentV = sorted[0].v
-  const minuteSeries: ChartPoint[] = []
-
-  for (let ts = startMs; ts <= endMs; ts += minuteMs) {
-    while (idx < sorted.length && sorted[idx].ms <= ts) {
-      currentV = sorted[idx].v
-      idx += 1
-    }
-    minuteSeries.push({ t: new Date(ts).toISOString(), v: currentV })
-  }
-
-  return minuteSeries.length > 0 ? minuteSeries : points
-}
-
-function buildChartPoints(
-  historyPoints: ChartPoint[],
-  liveV: number | null,
-  chartRange: ChartRange,
-): ChartPoint[] {
-  let pts = historyPoints.map((p) => ({ ...p, v: p.v }))
-  const nowIso = new Date().toISOString()
-
-  if (liveV != null) {
-    if (pts.length === 0) {
-      const t0 = new Date(Date.now() - rangeBackMs(chartRange)).toISOString()
-      return [
-        { t: t0, v: liveV },
-        { t: nowIso, v: liveV },
-      ]
-    }
-    const last = pts[pts.length - 1]
-    if (Math.abs(last.v - liveV) > 1e-9 || pts.length === 1) {
-      pts = [...pts, { t: nowIso, v: liveV }]
-    } else {
-      pts = [...pts.slice(0, -1), { t: nowIso, v: liveV }]
-    }
-  }
-
-  if (pts.length === 1) {
-    const t0 = new Date(new Date(pts[0].t).getTime() - 60_000).toISOString()
-    pts = [{ t: t0, v: pts[0].v }, pts[0]]
-  }
-
-  return pts
-}
-
-type Props = {
-  rates: DaralsabaekPublicRatesResponse | undefined
-}
+const RANGE_KEYS: ChartRange[] = ['live', '1h', '1d', '1w']
 
 export function PricesHistoryChart({ rates }: Props) {
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language?.startsWith('ar') ? 'ar-KW' : i18n.language || 'en'
   const [metal, setMetal] = useState<MetalTab>('gold')
   const [chartRange, setChartRange] = useState<ChartRange>('1h')
+  const [mode, setMode] = useState<ChartDisplayMode>('candles')
+  const [countdown, setCountdown] = useState(60)
+  const [fitToken, setFitToken] = useState(0)
+  const [chartHeight, setChartHeight] = useState(340)
 
-  // Prefer the unified `/api/prices/history/` endpoint (GoldAPI-backed snapshots).
-  // Fall back to the legacy `/scraping/daralsabaek/price-history/` for gold/silver/platinum if
-  // the new endpoint has no rows yet (Celery beat populates it on the server).
+  useEffect(() => {
+    const sync = () => setChartHeight(window.innerWidth < 640 ? 280 : 340)
+    sync()
+    window.addEventListener('resize', sync)
+    return () => window.removeEventListener('resize', sync)
+  }, [])
+
+  const updateEverySec =
+    typeof rates?.updateIntervalInSeconds === 'number'
+      ? Math.max(1, Math.round(rates.updateIntervalInSeconds))
+      : 60
+
+  useEffect(() => {
+    setCountdown(updateEverySec)
+    const id = window.setInterval(() => {
+      setCountdown((c) => (c <= 1 ? updateEverySec : c - 1))
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [updateEverySec, metal, chartRange])
+
   const { data: pricingHistory, isFetching: pricingHistoryFetching } = useQuery({
     queryKey: ['pricingHistory', metal, chartRange],
     queryFn: () =>
@@ -185,6 +85,7 @@ export function PricesHistoryChart({ rates }: Props) {
     enabled: rates?.succeeded === true,
     staleTime: 25_000,
     retry: 1,
+    refetchInterval: 30_000,
   })
   const newHistoryAvailable = (pricingHistory?.points?.length ?? 0) > 0
 
@@ -196,47 +97,35 @@ export function PricesHistoryChart({ rates }: Props) {
   })
   const historyFetching = pricingHistoryFetching || legacyHistoryFetching
 
-  // Normalize both responses into ChartPoint[] for the existing renderer.
-  const historyData = useMemo(() => {
+  const preferOz = metal === 'gold' && (chartRange === 'live' || chartRange === '1h')
+
+  const rawPoints: MetalChartPoint[] = useMemo(() => {
     if (newHistoryAvailable && pricingHistory) {
-      const usePriceField = chartRange === 'live' || chartRange === '1h' || metal !== 'gold'
-      const points: ChartPoint[] = pricingHistory.points
-        .map((p) => ({
-          t: p.t,
-          v:
-            // Gold short-range chart prefers troy-ounce price (USD/oz); other ranges use 24K KWD/g.
-            metal === 'gold'
-              ? Number(p.price ?? p.price_gram_24k ?? 0)
-              : Number(p.price_gram_24k ?? p.price ?? 0),
-        }))
-        .filter((p) => Number.isFinite(p.v))
-      return {
-        metal,
-        range: chartRange,
-        unit:
-          metal === 'gold'
-            ? usePriceField
-              ? 'USD/oz'
-              : 'KWD/g'
-            : 'KWD/g',
-        points,
-      }
+      return pricingHistory.points
     }
-    return legacyHistoryData
-  }, [newHistoryAvailable, pricingHistory, legacyHistoryData, metal, chartRange])
+    const legacy = legacyHistoryData?.points ?? []
+    return legacy.map((p) => ({
+      t: p.t,
+      price: p.v,
+      ask: null,
+      bid: null,
+      open: null,
+      high: null,
+      low: null,
+      price_gram_24k: p.v,
+    }))
+  }, [newHistoryAvailable, pricingHistory, legacyHistoryData])
 
   const carats = rates?.carats ?? []
   const byKey = useMemo(() => new Map(carats.map((c) => [c.key, c])), [carats])
-
   const goldOuncePrice = numOrNull(rates?.goldOuncePrice)
-  const updateEverySec =
-    typeof rates?.updateIntervalInSeconds === 'number' ? Math.max(1, Math.round(rates.updateIntervalInSeconds)) : 3
 
   const chartUnit = useMemo(() => {
-    if (historyData?.unit) return historyData.unit
+    if (pricingHistory?.unit && newHistoryAvailable) return pricingHistory.unit
+    if (legacyHistoryData?.unit) return legacyHistoryData.unit
     if (metal !== 'gold') return 'KWD/g'
-    return goldOuncePrice != null ? 'USD/oz' : 'KWD/g'
-  }, [historyData?.unit, metal, goldOuncePrice])
+    return preferOz || goldOuncePrice != null ? 'USD/oz' : 'KWD/g'
+  }, [pricingHistory?.unit, newHistoryAvailable, legacyHistoryData?.unit, metal, preferOz, goldOuncePrice])
 
   const liveChartV = useMemo(() => {
     if (!rates?.succeeded) return null
@@ -249,145 +138,229 @@ export function PricesHistoryChart({ rates }: Props) {
     return numOrNull(rates.palladium?.buyTotal)
   }, [metal, chartUnit, rates, byKey, goldOuncePrice])
 
-  const chartPoints = useMemo(() => {
-    const hp = (historyData?.points ?? []) as ChartPoint[]
-    const withLive = buildChartPoints(hp, liveChartV, chartRange)
-    const grouped = aggregatePointsByBucket(withLive, chartRange)
-    return normalizeShortRangeToOneMinute(grouped, chartRange)
-  }, [historyData?.points, liveChartV, chartRange])
-
-  const chartRows = useMemo(
-    () =>
-      chartPoints.map((p) => ({
-        t: p.t,
-        v: p.v,
-        label: formatChartTick(new Date(p.t), chartRange),
-      })),
-    [chartPoints, chartRange],
+  const line = useMemo(
+    () => buildLineSeries(rawPoints, metal, chartRange, liveChartV, preferOz || chartUnit === 'USD/oz'),
+    [rawPoints, metal, chartRange, liveChartV, preferOz, chartUnit],
   )
 
-  const shortRangeUsdTicks = useMemo(() => {
-    const shouldUseOneDollarStep =
-      (chartRange === 'live' || chartRange === '1h') && chartUnit === 'USD/oz'
-    if (!shouldUseOneDollarStep || chartRows.length === 0) return null
+  const candles = useMemo(
+    () =>
+      buildCandleSeries(line, chartRange, rawPoints, metal, preferOz || chartUnit === 'USD/oz'),
+    [line, chartRange, rawPoints, metal, preferOz, chartUnit],
+  )
 
-    const values = chartRows.map((r) => r.v).filter((v) => Number.isFinite(v))
-    if (values.length === 0) return null
+  const change = useMemo(() => seriesChange(line), [line])
+  const positive = change == null ? true : change.abs >= 0
+  const lastPrice = line.length ? line[line.length - 1].value : liveChartV
 
-    const minV = Math.min(...values)
-    const maxV = Math.max(...values)
-    const pad = minV === maxV ? 1 : 0
-    const start = Math.floor(minV - pad)
-    const end = Math.ceil(maxV + pad)
+  const metalTabs: { id: MetalTab; labelKey: string }[] = [
+    { id: 'gold', labelKey: 'home.chart.metalGold' },
+    { id: 'silver', labelKey: 'home.chart.metalSilver' },
+    { id: 'platinum', labelKey: 'home.chart.metalPlatinum' },
+    { id: 'palladium', labelKey: 'home.chart.metalPalladium' },
+  ]
 
-    const ticks: number[] = []
-    for (let v = start; v <= end; v += 1) ticks.push(v)
-    return ticks.length > 0 ? ticks : null
-  }, [chartRange, chartUnit, chartRows])
-
-  // GoldAPI.io feed always includes these four metals — show all tabs (not only when API field exists).
-  const METAL_TABS: { id: MetalTab; label: string }[] = [
-    { id: 'gold', label: 'Gold' },
-    { id: 'silver', label: 'Silver' },
-    { id: 'platinum', label: 'Platinum' },
-    { id: 'palladium', label: 'Palladium' },
+  const modeButtons: { id: ChartDisplayMode; icon: typeof CandlestickChart; labelKey: string }[] = [
+    { id: 'candles', icon: CandlestickChart, labelKey: 'home.chart.modeCandles' },
+    { id: 'line', icon: LineIcon, labelKey: 'home.chart.modeLine' },
+    { id: 'area', icon: AreaIcon, labelKey: 'home.chart.modeArea' },
   ]
 
   if (!rates?.succeeded) return null
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        {METAL_TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMetal(id)}
-            className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-colors ${
-              metal === id
-                ? 'bg-lime-500 text-black shadow-sm'
-                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <div className="metal-chart-terminal relative overflow-hidden rounded-2xl border border-white/10 bg-[#0B0F19] shadow-[0_24px_60px_-20px_rgba(11,15,25,0.55)]">
+      {/* Ambient glow */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        aria-hidden
+        style={{
+          background:
+            'radial-gradient(ellipse 70% 50% at 10% 0%, rgba(133,227,7,0.12), transparent 55%), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(133,227,7,0.06), transparent 50%)',
+        }}
+      />
 
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-        <p className="text-sm text-stone-500 flex-1">
-          Prices will be updated in {String(updateEverySec).padStart(2, '0')} sec
-          {historyFetching ? ' · …' : ''}
-        </p>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="text-base font-semibold text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-lime-500/50 rounded px-1 py-0.5 shrink-0 data-[state=open]:opacity-90"
-            type="button"
-          >
-            {rangeMenuLabel(chartRange)} ▼
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="min-w-[10rem] bg-white border border-stone-200 text-stone-900 shadow-lg"
-          >
-            {RANGE_OPTIONS.map((opt) => (
-              <DropdownMenuItem
-                key={opt.key}
-                className="cursor-pointer focus:bg-lime-100 focus:text-black flex items-center justify-between gap-2"
-                onClick={() => setChartRange(opt.key)}
+      <div className="relative p-4 sm:p-6 lg:p-7">
+        {/* Metal tabs */}
+        <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label={t('home.chart.metalsAria')}>
+          {metalTabs.map(({ id, labelKey }) => {
+            const on = metal === id
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => setMetal(id)}
+                className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 ${
+                  on
+                    ? 'bg-[#85E307] text-[#0B0F19] shadow-[0_0_20px_rgba(133,227,7,0.35)]'
+                    : 'bg-white/5 text-[#ECFCCB]/80 hover:bg-white/10 hover:text-white'
+                }`}
               >
-                <span>{opt.menuLabel}</span>
-                {chartRange === opt.key ? <Check className="w-4 h-4 text-lime-700 shrink-0" aria-hidden /> : null}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+                {t(labelKey)}
+              </button>
+            )
+          })}
+        </div>
 
-      <h3 className="text-base font-semibold text-stone-900 mb-1">Chart ({chartUnit})</h3>
-      <p className="text-xs sm:text-sm text-stone-500 leading-relaxed mb-5">
-        10 mins and 1 hour show minute-by-minute changes. 1 day and 1 week are grouped into larger intervals for readability.
-      </p>
+        {/* Price hero + controls */}
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#85E307]/25 bg-[#85E307]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#85E307]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#85E307]" />
+                {t('home.chart.liveBadge')}
+              </span>
+              <span className="text-xs font-medium text-white/45">
+                {t('home.chart.unitLabel', { unit: chartUnit })}
+              </span>
+            </div>
 
-      <div className="w-full h-[260px] sm:h-[280px] -mx-1">
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsLineChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
-            <XAxis
-              dataKey="label"
-              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 12 }}
-              interval="preserveStartEnd"
-              tickLine={false}
-              axisLine={{ stroke: 'rgba(0,0,0,0.08)' }}
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <p className="font-mono text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl">
+                {lastPrice != null ? formatPrice(lastPrice, chartUnit, locale) : '—'}
+              </p>
+              {change ? (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm font-semibold tabular-nums ${
+                    positive
+                      ? 'bg-emerald-500/15 text-emerald-300'
+                      : 'bg-rose-500/15 text-rose-300'
+                  }`}
+                >
+                  {positive ? (
+                    <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+                  ) : (
+                    <TrendingDown className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                  {positive ? '+' : ''}
+                  {change.pct.toFixed(2)}%
+                  <span className="text-white/40">·</span>
+                  {positive ? '+' : ''}
+                  {formatPrice(change.abs, chartUnit, locale)}
+                </span>
+              ) : null}
+            </div>
+
+            <p className="mt-2 flex items-center gap-2 text-xs text-white/45">
+              <Activity className="h-3.5 w-3.5 text-[#85E307]/80" aria-hidden />
+              {t('home.chart.updateCountdown', {
+                seconds: String(countdown).padStart(2, '0'),
+              })}
+              {historyFetching ? (
+                <span className="text-[#85E307]/70">{t('home.chart.refreshing')}</span>
+              ) : null}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Chart mode */}
+            <div
+              className="inline-flex rounded-lg border border-white/10 bg-white/5 p-0.5"
+              role="group"
+              aria-label={t('home.chart.modeAria')}
+            >
+              {modeButtons.map(({ id, icon: Icon, labelKey }) => {
+                const on = mode === id
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    title={t(labelKey)}
+                    aria-pressed={on}
+                    onClick={() => setMode(id)}
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 ${
+                      on
+                        ? 'bg-[#85E307] text-[#0B0F19]'
+                        : 'text-white/60 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" aria-hidden />
+                    <span className="hidden sm:inline">{t(labelKey)}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Range */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/90 outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#85E307]/50"
+                type="button"
+              >
+                {t(`home.chart.range.${chartRange}`)}
+                <span className="text-white/40" aria-hidden>
+                  ▼
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="min-w-[11rem] border border-white/10 bg-[#121826] text-white shadow-xl"
+              >
+                {RANGE_KEYS.map((key) => (
+                  <DropdownMenuItem
+                    key={key}
+                    className="cursor-pointer focus:bg-[#85E307]/20 focus:text-white"
+                    onClick={() => setChartRange(key)}
+                  >
+                    <span className="flex w-full items-center justify-between gap-3">
+                      {t(`home.chart.range.${key}`)}
+                      {chartRange === key ? (
+                        <Check className="h-4 w-4 text-[#85E307]" aria-hidden />
+                      ) : null}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <button
+              type="button"
+              onClick={() => setFitToken((n) => n + 1)}
+              title={t('home.chart.fitView')}
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50"
+            >
+              <Maximize2 className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        </div>
+
+        <p className="mb-4 text-xs leading-relaxed text-white/40 sm:text-sm">
+          {t('home.chart.hint')}
+        </p>
+
+        {/* Chart canvas */}
+        <div className="relative overflow-hidden rounded-xl border border-white/8 bg-[#070A12] ring-1 ring-inset ring-white/5">
+          {line.length < 2 && candles.length < 2 ? (
+            <div className="flex h-[280px] sm:h-[340px] flex-col items-center justify-center gap-2 px-4 text-center">
+              <Crosshair className="h-8 w-8 text-white/25" aria-hidden />
+              <p className="text-sm font-medium text-white/55">{t('home.chart.emptyTitle')}</p>
+              <p className="max-w-sm text-xs text-white/35">{t('home.chart.emptyBody')}</p>
+            </div>
+          ) : (
+            <AdvancedMetalChart
+              mode={mode}
+              line={line}
+              candles={candles}
+              locale={locale}
+              height={chartHeight}
+              positive={positive}
+              fitToken={fitToken}
             />
-            <YAxis
-              tick={{ fill: 'rgba(82, 82, 91, 0.9)', fontSize: 12 }}
-              width={56}
-              tickLine={false}
-              axisLine={{ stroke: 'rgba(0,0,0,0.08)' }}
-              domain={shortRangeUsdTicks ? [shortRangeUsdTicks[0], shortRangeUsdTicks[shortRangeUsdTicks.length - 1]] : ['auto', 'auto']}
-              ticks={shortRangeUsdTicks ?? undefined}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: 8,
-                fontSize: 14,
-                color: '#0a0a0a',
-              }}
-              labelStyle={{ color: '#52525b' }}
-              formatter={(value: number) => [Number(value).toFixed(4), chartUnit]}
-            />
-            <Line
-              type="monotone"
-              dataKey="v"
-              stroke="#65a30d"
-              strokeWidth={2}
-              dot={{ r: 3.5, fill: '#84cc16', stroke: 'rgba(0,0,0,0.12)', strokeWidth: 2 }}
-              activeDot={{ r: 5 }}
-            />
-          </RechartsLineChart>
-        </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Feature strip */}
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-white/35">
+          <span>{t('home.chart.featureZoom')}</span>
+          <span className="text-white/15">·</span>
+          <span>{t('home.chart.featurePan')}</span>
+          <span className="text-white/15">·</span>
+          <span>{t('home.chart.featureCrosshair')}</span>
+          <span className="text-white/15">·</span>
+          <span>{t('home.chart.featureModes')}</span>
+        </div>
       </div>
     </div>
   )

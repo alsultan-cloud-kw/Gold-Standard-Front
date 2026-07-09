@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, RefreshCw, Scale, ShieldCheck } from 'lucide-react'
+import { RefreshCw, Scale, ShieldCheck, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   adminApi,
@@ -10,24 +11,26 @@ import {
 } from '../services/api'
 import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
+import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
+import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
+
+function fmt(n: number | null | undefined) {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
+}
+
+function fmtTotal(n: number | null | undefined) {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(3) : '—'
+}
 
 /**
- * Public gold prices: live URL + admin additional amounts.
- * Customer can enter grams — totals update live (KWD/g × grams).
+ * Customer live prices — buy & sell KWD/g with weight calculator + chart.
  */
 export default function PricesPage() {
   const { t, i18n } = useTranslation()
   const [gramsInput, setGramsInput] = useState('')
-  const [blinkOn, setBlinkOn] = useState(true)
   const grams = parseFloat(gramsInput)
   const gramsValid = Number.isFinite(grams) && grams > 0
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setBlinkOn((prev) => !prev)
-    }, 420)
-    return () => window.clearInterval(id)
-  }, [])
+  const isAr = i18n.language?.startsWith('ar')
 
   const { data, isLoading, isError, refetch, isFetching } = useEnrichedPublicRates(20_000)
   const { data: kuwaitConfigRaw } = useQuery({
@@ -37,17 +40,12 @@ export default function PricesPage() {
     retry: 0,
   })
 
-  const fmt = (n: number | null | undefined) =>
-    typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
-
-  /** Format KWD totals (can be large) */
-  const fmtTotal = (n: number | null | undefined) =>
-    typeof n === 'number' && Number.isFinite(n) ? n.toFixed(3) : '—'
-
   const res = data as DaralsabaekPublicRatesResponse | undefined
   const kuwaitConfig = kuwaitConfigRaw as KuwaitMarketConfigResponse | undefined
   const usdToKwdRateFromConfig =
-    typeof kuwaitConfig?.usd_to_kwd_rate === 'number' && Number.isFinite(kuwaitConfig.usd_to_kwd_rate) && kuwaitConfig.usd_to_kwd_rate > 0
+    typeof kuwaitConfig?.usd_to_kwd_rate === 'number' &&
+    Number.isFinite(kuwaitConfig.usd_to_kwd_rate) &&
+    kuwaitConfig.usd_to_kwd_rate > 0
       ? kuwaitConfig.usd_to_kwd_rate
       : null
   const usdToKwdRateFromRates =
@@ -57,288 +55,205 @@ export default function PricesPage() {
       ? (res as { usd_to_kwd_rate?: number }).usd_to_kwd_rate!
       : null
   const usdToKwdRate = usdToKwdRateFromConfig ?? usdToKwdRateFromRates
+
   const toUsdOunce = (raw: number | null | undefined): number | null => {
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return null
-    // Some sources already provide USD/oz; avoid converting those again.
     if (raw >= 1500) return raw
     if (typeof usdToKwdRate === 'number' && usdToKwdRate > 0) return raw / usdToKwdRate
     return null
   }
+
   const ounceUsdValue =
     typeof res?.goldOuncePrice === 'number' ? toUsdOunce(res.goldOuncePrice) : null
-  const ounceKwdSell =
-    res?.goldOunce?.sellTotal ?? res?.goldOunce?.sell ?? null
-  const ounceKwdBuy =
-    res?.goldOunce?.buyTotal ?? res?.goldOunce?.buy ?? null
+  const ounceKwdSell = res?.goldOunce?.sellTotal ?? res?.goldOunce?.sell ?? null
+  const ounceKwdBuy = res?.goldOunce?.buyTotal ?? res?.goldOunce?.buy ?? null
   const carats = res?.carats ?? []
   const silver = res?.silver ?? null
   const platinum = res?.platinum ?? null
   const palladium = res?.palladium ?? null
-  const preciousRows: Array<{ key: 'Silver' | 'Platinum' | 'Palladium'; data: DaralsabaekPublicMetalSpot | null }> = [
+
+  const preciousRows: Array<{
+    key: 'Silver' | 'Platinum' | 'Palladium'
+    data: DaralsabaekPublicMetalSpot | null
+  }> = [
     { key: 'Silver', data: silver },
     { key: 'Platinum', data: platinum },
     { key: 'Palladium', data: palladium },
   ]
-  /** Always show Silver, Platinum, Palladium cards (GoldAPI.io four-metal feed). */
-  const visiblePrecious = preciousRows
 
-  type TrendDir = 'up' | 'down' | null
-  const normalizeTrendKey = (rawKey: string) => {
-    const m = String(rawKey || '').match(/(\d{1,2})\s*K/i)
-    if (!m) return rawKey
-    return m[1]
-  }
-  // Keep in sync with useProductPriceTrendSincePreviousFetch so all pages
-  // (Home, Products, Prices) show the same direction state.
-  const RATE_SNAPSHOT_STORAGE_KEY = 'daralsabaek_rate_snapshot_v1'
-  const RATE_DIRECTION_STORAGE_KEY = 'daralsabaek_rate_direction_v1'
-  const prevRatesRef = useRef<Record<string, number>>({})
-  const [trendByKey, setTrendByKey] = useState<Record<string, TrendDir>>({})
-
-  useEffect(() => {
-    try {
-      const rawPrev = window.localStorage.getItem(RATE_SNAPSHOT_STORAGE_KEY)
-      const rawDir = window.localStorage.getItem(RATE_DIRECTION_STORAGE_KEY)
-      if (rawPrev) {
-        const parsedPrev = JSON.parse(rawPrev) as Record<string, number | { buy?: number | null }>
-        if (parsedPrev && typeof parsedPrev === 'object') {
-          const normalized: Record<string, number> = {}
-          for (const [k, v] of Object.entries(parsedPrev)) {
-            if (typeof v === 'number' && Number.isFinite(v)) normalized[k] = v
-            else if (v && typeof v === 'object' && typeof v.buy === 'number' && Number.isFinite(v.buy)) normalized[k] = v.buy
-          }
-          prevRatesRef.current = normalized
-        }
+  const trendEntries = useMemo(() => {
+    const rows: Array<{ key: string; rate: number | null }> = carats.map((c) => ({
+      key: normalizeTrendKey(c.key),
+      rate: typeof c.buyTotal === 'number' ? c.buyTotal : null,
+    }))
+    for (const m of [silver, platinum, palladium]) {
+      if (m?.key) {
+        rows.push({
+          key: normalizeTrendKey(m.key),
+          rate: typeof m.buyTotal === 'number' ? m.buyTotal : null,
+        })
       }
-      if (rawDir) {
-        const parsedDir = JSON.parse(rawDir) as Record<string, TrendDir | { buy?: TrendDir; sell?: TrendDir }>
-        if (parsedDir && typeof parsedDir === 'object') {
-          const normalized: Record<string, TrendDir> = {}
-          for (const [k, v] of Object.entries(parsedDir)) {
-            if (v === 'up' || v === 'down') normalized[k] = v
-            else if (v && typeof v === 'object') normalized[k] = v.buy ?? v.sell ?? null
-          }
-          setTrendByKey(normalized)
-        }
-      }
-    } catch {
-      // Ignore local storage parse/read issues.
     }
-  }, [])
+    return rows
+  }, [carats, silver, platinum, palladium])
 
-  useEffect(() => {
-    if (!res?.succeeded) return
+  const entriesKey = useMemo(
+    () => trendEntries.map((e) => `${e.key}:${e.rate ?? ''}`).join('|'),
+    [trendEntries],
+  )
 
-    const entries: Array<{ key: string; rate: number | null }> = [
-      ...carats.map((c) => ({
-        key: normalizeTrendKey(c.key),
-        rate: typeof c.buyTotal === 'number' ? c.buyTotal : null,
-      })),
-      ...(silver?.key
-        ? [{ key: normalizeTrendKey(silver.key), rate: typeof silver.buyTotal === 'number' ? silver.buyTotal : null }]
-        : []),
-      ...(platinum?.key
-        ? [{ key: normalizeTrendKey(platinum.key), rate: typeof platinum.buyTotal === 'number' ? platinum.buyTotal : null }]
-        : []),
-    ]
+  const { resolveDir } = usePublicRateTrends(!!res?.succeeded, trendEntries, entriesKey)
 
-    if (palladium?.key) {
-      entries.push({
-        key: normalizeTrendKey(palladium.key),
-        rate: typeof palladium.buyTotal === 'number' ? palladium.buyTotal : null,
-      })
-    }
-
-    setTrendByKey((prevTrend) => {
-      const nextTrend: Record<string, TrendDir> = { ...prevTrend }
-      for (const item of entries) {
-        const prevRate = prevRatesRef.current[item.key]
-        let dir: TrendDir = prevTrend[item.key] ?? null
-        if (item.rate != null && prevRate != null) {
-          if (item.rate > prevRate) dir = 'up'
-          else if (item.rate < prevRate) dir = 'down'
-        }
-        nextTrend[item.key] = dir
-      }
-      try {
-        const persisted: Record<string, 'up' | 'down'> = {}
-        for (const [k, v] of Object.entries(nextTrend)) {
-          if (v === 'up' || v === 'down') persisted[k] = v
-        }
-        window.localStorage.setItem(RATE_DIRECTION_STORAGE_KEY, JSON.stringify(persisted))
-      } catch {
-        // Ignore local storage write issues.
-      }
-      return nextTrend
-    })
-
-    const nextPrev: Record<string, number> = { ...prevRatesRef.current }
-    for (const item of entries) {
-      if (item.rate != null) nextPrev[item.key] = item.rate
-    }
-    prevRatesRef.current = nextPrev
-
-    try {
-      window.localStorage.setItem(RATE_SNAPSHOT_STORAGE_KEY, JSON.stringify(nextPrev))
-    } catch {
-      // Ignore local storage write issues.
-    }
-  }, [
-    res?.succeeded,
-    carats,
-    silver?.key,
-    silver?.buyTotal,
-    silver?.sellTotal,
-    platinum?.key,
-    platinum?.buyTotal,
-    platinum?.sellTotal,
-    palladium?.key,
-    palladium?.buyTotal,
-    palladium?.sellTotal,
-  ])
-
-  const TileTrendIcon = ({ dir }: { dir: TrendDir }) => {
-    const iconCls = 'w-[1.125rem] h-[1.125rem] sm:w-5 sm:h-5 shrink-0 stroke-[2.75]'
-    const activeBlinkClass = blinkOn ? 'opacity-100' : 'opacity-0'
-    const upClass =
-      dir === 'up'
-        ? `${iconCls} text-emerald-700 drop-shadow-[0_0_6px_rgba(5,150,105,0.5)] transition-opacity duration-100 ${activeBlinkClass}`
-        : `${iconCls} text-black/35`
-    const downClass =
-      dir === 'down'
-        ? `${iconCls} text-red-600 drop-shadow-[0_0_6px_rgba(220,38,38,0.45)] transition-opacity duration-100 ${activeBlinkClass}`
-        : `${iconCls} text-black/35`
-
-    return (
-      <span className="inline-flex items-center leading-none" aria-hidden>
-        <span className="inline-flex">
-          <ArrowUp className={upClass} />
-        </span>
-        <span className="inline-flex">
-          <ArrowDown className={downClass} />
-        </span>
-      </span>
-    )
-  }
-
-  const resolveTileDir = (key: string): TrendDir => trendByKey[normalizeTrendKey(key)] ?? null
-  const ounceTrendDir: TrendDir = (() => {
+  const ounceTrendDir = (() => {
     const ounceCarat = carats.find((c) => normalizeTrendKey(c.key) === '24')
-    return ounceCarat ? resolveTileDir(ounceCarat.key) : null
+    return ounceCarat ? resolveDir(ounceCarat.key) : null
   })()
 
+  const locale = isAr ? 'ar-KW' : 'en-US'
+  const showBoard = !isLoading && res?.succeeded && carats.length > 0
+
   return (
-    <div className="min-h-screen py-10 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-2 mt-4">{t('pricesPage.title')}</h1>
-            <div className="inline-flex items-center gap-2 text-xs text-stone-600">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5">
-                <ShieldCheck className="w-3.5 h-3.5" aria-hidden />
-                <span className="font-semibold">Trusted source</span>
-              </span>
-              <span className="text-stone-500">
-                Live spot from GoldAPI.io · gold, silver, platinum, palladium
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="flex items-center gap-2 text-sm text-stone-700 hover:text-black"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            {t('pricesPage.refresh')}
-          </button>
+    <div className="min-h-screen bg-[#F9F9FA]">
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-black/5 bg-[#0B0F19] text-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_100%_0%,rgba(133,227,7,0.18),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_0%_100%,rgba(133,227,7,0.08),transparent_50%)]" />
         </div>
 
-        {isLoading && (
-          <div className="rounded-xl border border-stone-200 bg-zinc-50 flex items-center justify-center gap-2 py-16 text-stone-600">
-            <RefreshCw className="w-5 h-5 animate-spin" />
+        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
+                {t('pricesPage.kicker')}
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {t('pricesPage.title')}
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-white/65 sm:text-base">
+                {t('pricesPage.subtitle')}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/55">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#85E307]/30 bg-[#85E307]/10 px-2.5 py-1 text-[#ECFCCB]">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#85E307]" aria-hidden />
+                  {t('pricesPage.trustedSource')}
+                </span>
+                <span>{t('pricesPage.trustedSourceHint')}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('pricesPage.refresh')}
+              </button>
+              <Link
+                to="/company-prices"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#85E307]/35 bg-[#85E307]/15 px-4 py-2.5 text-sm font-semibold text-[#ECFCCB] transition hover:bg-[#85E307]/25"
+              >
+                {t('nav.companyPrices')}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Ounce strip */}
+          {showBoard && ounceUsdValue != null ? (
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:col-span-2 lg:col-span-1">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#85E307]">
+                  {t('pricesPage.ounceTitle')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <PriceTrendBadge dir={ounceTrendDir} variant="dark" size="sm" />
+                  <p className="text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
+                    $
+                    {Number(ounceUsdValue).toLocaleString(locale, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
+                <p className="mt-1.5 text-xs text-white/45">{t('pricesPage.perTroyOunceUsd')}</p>
+              </div>
+              {ounceKwdSell != null ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/45">
+                    {t('pricesPage.sell')} · {t('common.kwd')}
+                  </p>
+                  <p className="text-3xl font-bold tabular-nums tracking-tight text-[#85E307] sm:text-4xl">
+                    {fmtTotal(ounceKwdSell)}
+                  </p>
+                  <p className="mt-1.5 text-xs text-white/45">{t('pricesPage.perTroyOunceKwd')}</p>
+                </div>
+              ) : null}
+              {ounceKwdBuy != null ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/45">
+                    {t('pricesPage.buy')} · {t('common.kwd')}
+                  </p>
+                  <p className="text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
+                    {fmtTotal(ounceKwdBuy)}
+                  </p>
+                  <p className="mt-1.5 text-xs text-white/45">
+                    {t('pricesPage.ounceBuyKwd', { price: fmtTotal(ounceKwdBuy) })}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {showBoard && res.updateIntervalInSeconds != null ? (
+            <p className="mt-4 text-xs text-white/40">
+              {t('pricesPage.updateEvery', { seconds: res.updateIntervalInSeconds })}
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-20 text-[#64748B]">
+            <RefreshCw className="h-5 w-5 animate-spin" />
             {t('pricesPage.loading')}
           </div>
-        )}
+        ) : null}
 
-        {isError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 text-red-900 py-8 text-center text-sm">
+        {isError ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 py-10 text-center text-sm text-red-900">
             {t('pricesPage.errorUnavailable')}
           </div>
-        )}
+        ) : null}
 
-        {!isLoading && !isError && res && !res.succeeded && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-950 py-8 text-center text-sm">
+        {!isLoading && !isError && res && !res.succeeded ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 py-10 text-center text-sm text-amber-950">
             {t('pricesPage.loadFailed')}
           </div>
-        )}
+        ) : null}
 
-        {!isLoading && res?.succeeded && carats.length > 0 && (
+        {showBoard ? (
           <div className="space-y-8">
-            {ounceUsdValue != null && (
-              <div className="product-card-lime overflow-hidden relative">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 py-2">
+            {/* Weight calculator */}
+            <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                    <Scale className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
                   <div>
-                    <p className="text-[25px] font-bold text-black uppercase tracking-wider mb-1">
-                      {t('pricesPage.ounceTitle')}
-                    </p>
-                    {res.updateIntervalInSeconds != null && (
-                      <p className="text-xs text-black/55">
-                        {t('pricesPage.updateEvery', { seconds: res.updateIntervalInSeconds })}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-10">
-                    <div className="text-start sm:text-end">
-                      <div className="inline-flex items-center gap-2 sm:justify-end">
-                        <TileTrendIcon dir={ounceTrendDir} />
-                        <p
-                          className="text-4xl sm:text-5xl font-bold text-black tabular-nums leading-none"
-                          style={{ fontVariantNumeric: 'tabular-nums' }}
-                        >
-                          ${Number(ounceUsdValue).toLocaleString(
-                            i18n.language?.startsWith('ar') ? 'ar-KW' : 'en-US',
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}
-                        </p>
-                      </div>
-                      <p className="text-black/60 text-sm mt-2">{t('pricesPage.perTroyOunceUsd')}</p>
-                    </div>
-                    {ounceKwdSell != null && (
-                      <div className="text-start sm:text-end sm:border-s border-black/10 sm:ps-10">
-                        <p className="text-3xl sm:text-4xl font-bold text-black tabular-nums leading-none">
-                          {fmtTotal(ounceKwdSell)}
-                        </p>
-                        <p className="text-black/60 text-sm mt-2">{t('pricesPage.perTroyOunceKwd')}</p>
-                        {ounceKwdBuy != null && (
-                          <p className="text-xs text-black/50 mt-1">
-                            {t('pricesPage.ounceBuyKwd', { price: fmtTotal(ounceKwdBuy) })}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Grams input — drives live totals on each card */}
-            <div className="product-card-lime">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center border border-black/10">
-                    <Scale className="w-5 h-5 text-black" />
-                  </div>
-                  <div>
-                    <label htmlFor="grams-input" className="text-sm font-semibold text-black">
+                    <label htmlFor="grams-input" className="text-sm font-bold text-[#0B0F19]">
                       {t('pricesPage.weightGrams')}
                     </label>
-                    <p className="text-xs text-black/55">{t('pricesPage.weightHint')}</p>
+                    <p className="mt-0.5 text-xs text-[#64748B] sm:text-sm">
+                      {t('pricesPage.weightHint')}
+                    </p>
                   </div>
                 </div>
-                <div className="sm:ms-auto sm:w-48">
+                <div className="sm:w-52">
                   <input
                     id="grams-input"
                     type="number"
@@ -348,229 +263,195 @@ export default function PricesPage() {
                     placeholder={t('pricesPage.gramsPlaceholder')}
                     value={gramsInput}
                     onChange={(e) => setGramsInput(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-stone-300 text-black text-lg font-medium tabular-nums placeholder:text-black/35 focus:outline-none focus:ring-2 focus:ring-lime-600/40"
+                    className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-4 py-3 text-lg font-semibold tabular-nums text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25"
                   />
                 </div>
               </div>
             </div>
 
-            {carats.length > 0 ? (
-            <div>
-              <h2 className="text-sm font-semibold text-stone-800 mb-4 uppercase tracking-wider">
-                {gramsValid
-                  ? t('pricesPage.ratesForWeight', { grams })
-                  : t('pricesPage.buySellPerGram')}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Gold karats */}
+            <section>
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F6F00]">
+                  {gramsValid
+                    ? t('pricesPage.ratesForWeight', { grams })
+                    : t('pricesPage.buySellPerGram')}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {carats.map((c) => {
-                  const buyTotal =
-                    c.buyTotal != null ? c.buyTotal : null
+                  const buyTotal = c.buyTotal != null ? c.buyTotal : null
                   const sellTotal = c.sellTotal != null ? c.sellTotal : null
                   const spread =
                     typeof buyTotal === 'number' && typeof sellTotal === 'number'
                       ? sellTotal - buyTotal
                       : null
-
                   const buyForWeight =
-                    gramsValid && buyTotal != null
-                      ? buyTotal * grams
-                      : null
+                    gramsValid && buyTotal != null ? buyTotal * grams : null
                   const sellForWeight =
                     gramsValid && sellTotal != null ? sellTotal * grams : null
                   const spreadForWeight =
-                    gramsValid &&
-                    buyForWeight != null &&
-                    sellForWeight != null
+                    gramsValid && buyForWeight != null && sellForWeight != null
                       ? sellForWeight - buyForWeight
                       : null
-
-                  const tileDir = resolveTileDir(c.key)
+                  const tileDir = resolveDir(c.key)
 
                   return (
-                    <div key={c.key} className="product-card-lime">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center border border-black/10">
-                          <TileTrendIcon dir={tileDir} />
-                        </div>
-                        <h3 className="text-lg font-bold text-black">{c.key}</h3>
+                    <article
+                      key={c.key}
+                      className="flex flex-col rounded-2xl border border-black/10 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                    >
+                      <div className="mb-4 flex items-center justify-between gap-2">
+                        <h3 className="font-mono text-xl font-bold tabular-nums text-[#0B0F19]">
+                          {c.key}
+                        </h3>
+                        <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
                       </div>
 
-                      {gramsValid && (
-                        <div className="mb-3 rounded-lg bg-white/75 border border-black/10 px-3 py-2">
-                          <p className="text-[10px] uppercase text-black/60 mb-1">
+                      {gramsValid ? (
+                        <div className="mb-4 rounded-xl border border-[#85E307]/25 bg-[#ECFCCB]/40 px-3 py-2.5">
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#3F6F00]">
                             {t('pricesPage.totalForWeight', { grams })}
                           </p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <span className="text-black/50 text-[10px] block">{t('pricesPage.sell')}</span>
-                              <span className="font-bold text-black tabular-nums">
-                                {fmtTotal(sellForWeight)} KWD
+                              <span className="block text-[10px] text-[#64748B]">
+                                {t('pricesPage.sell')}
+                              </span>
+                              <span className="text-sm font-bold tabular-nums text-[#0B0F19]">
+                                {fmtTotal(sellForWeight)}
                               </span>
                             </div>
                             <div>
-                              <span className="text-black/50 text-[10px] block">
+                              <span className="block text-[10px] text-[#64748B]">
                                 {t('pricesPage.buy')}
                               </span>
-                              <span className="font-bold text-black tabular-nums">
-                                {fmtTotal(buyForWeight)} KWD
+                              <span className="text-sm font-bold tabular-nums text-[#0B0F19]">
+                                {fmtTotal(buyForWeight)}
                               </span>
                             </div>
                           </div>
-                          {spreadForWeight != null && Number.isFinite(spreadForWeight) && (
-                            <p className="text-[10px] text-black/50 mt-1">
+                          {spreadForWeight != null && Number.isFinite(spreadForWeight) ? (
+                            <p className="mt-1 text-[10px] text-[#64748B]">
                               {t('pricesPage.spreadTotal', { value: fmtTotal(spreadForWeight) })}
                             </p>
-                          )}
+                          ) : null}
                         </div>
-                      )}
+                      ) : null}
 
-                      <div className="space-y-2">
+                      <div className="mt-auto grid grid-cols-2 gap-3 border-t border-black/5 pt-4">
                         <div>
-                          <p className="text-[10px] uppercase text-black/55">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#64748B]">
                             {t('pricesPage.sell')}
-                            {gramsValid ? ` ${t('pricesPage.perGramAbbr')}` : ''}
                           </p>
-                          <p className="text-xl font-bold text-black tabular-nums">
+                          <p className="mt-0.5 text-xl font-bold tabular-nums text-[#0B0F19]">
                             {fmt(sellTotal)}
-                            {!gramsValid && (
-                              <span className="text-sm font-normal text-black/50">
-                                {' '}
-                                KWD/g
-                              </span>
-                            )}
                           </p>
+                          <p className="text-[10px] text-[#94A3B8]">{t('common.kwdPerGram')}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase text-black/55">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#64748B]">
                             {t('pricesPage.buy')}
-                            {gramsValid ? ` ${t('pricesPage.perGramAbbr')}` : ''}
                           </p>
-                          <p className="text-xl font-bold text-black tabular-nums">
+                          <p className="mt-0.5 text-xl font-bold tabular-nums text-[#0B0F19]">
                             {fmt(buyTotal)}
-                            {!gramsValid && (
-                              <span className="text-sm font-normal text-black/50">
-                                {' '}
-                                KWD/g
-                              </span>
-                            )}
                           </p>
+                          <p className="text-[10px] text-[#94A3B8]">{t('common.kwdPerGram')}</p>
                         </div>
                       </div>
-                      {!gramsValid && spread != null && Number.isFinite(spread) && (
-                        <div className="mt-3 pt-3 border-t border-black/10 text-xs text-black/55">
+                      {!gramsValid && spread != null && Number.isFinite(spread) ? (
+                        <p className="mt-3 text-xs text-[#64748B]">
                           {t('pricesPage.spreadPerGram', { value: fmt(spread) })}
-                        </div>
-                      )}
-                    </div>
+                        </p>
+                      ) : null}
+                    </article>
                   )
                 })}
               </div>
-            </div>
-            ) : null}
+            </section>
 
-            <div>
-                <h2 className="text-sm font-semibold text-stone-800 mb-4 uppercase tracking-wider">
-                  {t('pricesPage.preciousTitle', 'Silver · Platinum · Palladium (KWD/g)')}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {visiblePrecious.map(({ key: label, data: m }) => {
-                    const spot = m ?? { key: label, buyTotal: null, sellTotal: null }
-                    const tileDir = resolveTileDir(spot.key)
-                    const buyTotal = spot.buyTotal != null ? spot.buyTotal : null
-                    const sellTotal = spot.sellTotal != null ? spot.sellTotal : null
-                    const spread =
-                      typeof buyTotal === 'number' && typeof sellTotal === 'number'
-                        ? sellTotal - buyTotal
-                        : null
-                    const buyForWeight =
-                      gramsValid && buyTotal != null ? buyTotal * grams : null
-                    const sellForWeight =
-                      gramsValid && sellTotal != null ? sellTotal * grams : null
-                    const spreadForWeight =
-                      gramsValid && buyForWeight != null && sellForWeight != null
-                        ? sellForWeight - buyForWeight
-                        : null
-                    return (
-                      <div key={spot.key} className="product-card-lime">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center border border-black/10">
-                            <TileTrendIcon dir={tileDir} />
-                          </div>
-                          <h3 className="text-lg font-bold text-black">{label}</h3>
-                        </div>
-                        {gramsValid && (
-                          <div className="mb-3 rounded-lg bg-white/75 border border-black/10 px-3 py-2">
-                            <p className="text-[10px] uppercase text-black/60 mb-1">
-                              {t('pricesPage.totalForWeight', { grams })}
-                            </p>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <span className="text-black/50 text-[10px] block">{t('pricesPage.sell')}</span>
-                                <span className="font-bold text-black tabular-nums">
-                                  {fmtTotal(sellForWeight)} KWD
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-black/50 text-[10px] block">{t('pricesPage.buy')}</span>
-                                <span className="font-bold text-black tabular-nums">
-                                  {fmtTotal(buyForWeight)} KWD
-                                </span>
-                              </div>
-                            </div>
-                            {spreadForWeight != null && Number.isFinite(spreadForWeight) && (
-                              <p className="text-[10px] text-black/50 mt-1">
-                                {t('pricesPage.spreadTotal', { value: fmtTotal(spreadForWeight) })}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          <div>
-                            <p className="text-[10px] uppercase text-black/55">
-                              {t('pricesPage.sell')}
-                              {gramsValid ? ` ${t('pricesPage.perGramAbbr')}` : ''}
-                            </p>
-                            <p className="text-xl font-bold text-black tabular-nums">
-                              {fmt(sellTotal)}
-                              {!gramsValid && (
-                                <span className="text-sm font-normal text-black/50"> KWD/g</span>
-                              )}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] uppercase text-black/55">
-                              {t('pricesPage.buy')}
-                              {gramsValid ? ` ${t('pricesPage.perGramAbbr')}` : ''}
-                            </p>
-                            <p className="text-xl font-bold text-black tabular-nums">
-                              {fmt(buyTotal)}
-                              {!gramsValid && (
-                                <span className="text-sm font-normal text-black/50"> KWD/g</span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        {!gramsValid && spread != null && Number.isFinite(spread) && (
-                          <div className="mt-3 pt-3 border-t border-black/10 text-xs text-black/55">
-                            {t('pricesPage.spreadPerGram', { value: fmt(spread) })}
-                          </div>
-                        )}
+            {/* Precious metals */}
+            <section>
+              <h2 className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F6F00]">
+                {t('pricesPage.preciousTitle')}
+              </h2>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {preciousRows.map(({ key: label, data: m }) => {
+                  const spot = m ?? { key: label, buyTotal: null, sellTotal: null }
+                  const tileDir = resolveDir(spot.key)
+                  const buyTotal = spot.buyTotal != null ? spot.buyTotal : null
+                  const sellTotal = spot.sellTotal != null ? spot.sellTotal : null
+                  const spread =
+                    typeof buyTotal === 'number' && typeof sellTotal === 'number'
+                      ? sellTotal - buyTotal
+                      : null
+                  const buyForWeight =
+                    gramsValid && buyTotal != null ? buyTotal * grams : null
+                  const sellForWeight =
+                    gramsValid && sellTotal != null ? sellTotal * grams : null
+
+                  return (
+                    <article
+                      key={label}
+                      className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm"
+                    >
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-[#0B0F19]">{label}</h3>
+                        <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
                       </div>
-                    )
-                  })}
-                </div>
-                {res?.silverKiloPrice != null && typeof res.silverKiloPrice === 'number' && (
-                  <p className="text-xs text-stone-600 mt-3">
-                    Silver kilo reference: {fmt(res.silverKiloPrice)} KWD/kg (from feed)
-                  </p>
-                )}
+                      {gramsValid ? (
+                        <div className="mb-3 rounded-xl bg-[#F9F9FA] px-3 py-2 text-xs">
+                          <div className="flex justify-between gap-2">
+                            <span>
+                              {t('pricesPage.sell')}:{' '}
+                              <strong className="tabular-nums">{fmtTotal(sellForWeight)}</strong>
+                            </span>
+                            <span>
+                              {t('pricesPage.buy')}:{' '}
+                              <strong className="tabular-nums">{fmtTotal(buyForWeight)}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-[#64748B]">
+                            {t('pricesPage.sell')}
+                          </p>
+                          <p className="text-lg font-bold tabular-nums text-[#0B0F19]">
+                            {fmt(sellTotal)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-[#64748B]">
+                            {t('pricesPage.buy')}
+                          </p>
+                          <p className="text-lg font-bold tabular-nums text-[#0B0F19]">
+                            {fmt(buyTotal)}
+                          </p>
+                        </div>
+                      </div>
+                      {!gramsValid && spread != null && Number.isFinite(spread) ? (
+                        <p className="mt-2 text-xs text-[#64748B]">
+                          {t('pricesPage.spreadPerGram', { value: fmt(spread) })}
+                        </p>
+                      ) : null}
+                    </article>
+                  )
+                })}
               </div>
+              {res?.silverKiloPrice != null && typeof res.silverKiloPrice === 'number' ? (
+                <p className="mt-3 text-xs text-[#64748B]">
+                  {t('pricesPage.silverKilo', { price: fmt(res.silverKiloPrice) })}
+                </p>
+              ) : null}
+            </section>
 
             <PricesHistoryChart rates={res} />
 
-            <p className="text-xs gold-gradient-text-on-light text-center">{t('pricesPage.disclaimer')}</p>
+            <p className="text-center text-xs text-[#64748B]">{t('pricesPage.disclaimer')}</p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )

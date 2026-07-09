@@ -107,12 +107,12 @@ export default function GoldPriceTicker() {
     return (
       <div className="relative bg-[#070604] border-b border-amber-500/25">
         <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 sm:px-6 lg:px-8 py-3.5 min-h-[3.25rem]">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
           <div className="flex flex-1 gap-6 overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse flex items-center gap-2 shrink-0">
-                <div className="w-12 h-3.5 bg-amber-500/15 rounded" />
-                <div className="w-16 h-4 bg-amber-400/10 rounded" />
+              <div key={i} className="flex items-center gap-2 shrink-0">
+                <div className="w-12 h-3.5 bg-amber-500/15 rounded animate-pulse" />
+                <div className="w-16 h-4 bg-amber-400/10 rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -211,7 +211,9 @@ export default function GoldPriceTicker() {
                 {t('home.tickerBuy')}
               </span>
               <span className="text-base sm:text-lg font-bold text-amber-300 tabular-nums">{fmt(buyTotal)}</span>
-              <span className="text-xs sm:text-sm text-amber-100/50 uppercase tracking-wide">KWD/g</span>
+              <span className="text-xs sm:text-sm text-amber-100/50 uppercase tracking-wide">
+                {t('common.kwdPerGram')}
+              </span>
               <PriceChangeIndicator spread={spread} />
             </div>
           </div>
@@ -226,7 +228,7 @@ export default function GoldPriceTicker() {
     <div className="group relative bg-[#070604] border-b border-amber-500/25 text-amber-100">
       <div className="max-w-7xl mx-auto flex items-stretch min-h-[3.25rem]">
         <div className="flex shrink-0 items-center gap-2 px-3 sm:ps-6 lg:ps-8 border-e border-amber-500/20 py-3">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0" />
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
           <span className="text-sm sm:text-base font-semibold text-amber-200/90 tracking-wide uppercase whitespace-nowrap max-[380px]:sr-only">
             {t('home.metalTickerLabel')}
           </span>

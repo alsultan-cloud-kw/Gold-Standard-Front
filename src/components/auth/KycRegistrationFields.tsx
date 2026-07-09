@@ -21,14 +21,14 @@ type Props = {
 };
 
 export default function KycRegistrationFields({ questions, answers, onChange, errors }: Props) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isAr = i18n.language?.startsWith('ar');
 
   if (questions.length === 0) return null;
 
   return (
     <div className="space-y-4 pt-2 border-t border-gold-500/20">
-      <p className="text-sm font-medium text-gold-100">{isAr ? 'أسئلة التحقق' : 'Verification questions'}</p>
+      <p className="text-sm font-medium text-gold-100">{t('auth.kyc.sectionTitle')}</p>
       {questions.map((q) => {
         const label = isAr ? q.label_ar : q.label_en;
         const help = isAr ? q.help_text_ar : q.help_text_en;
@@ -55,8 +55,8 @@ export default function KycRegistrationFields({ questions, answers, onChange, er
                 <div className="flex flex-col sm:flex-row gap-3">
                   {(
                     [
-                      { val: true as const, text: isAr ? 'نعم' : 'Yes' },
-                      { val: false as const, text: isAr ? 'لا' : 'No' },
+                      { val: true as const, text: t('common.yes') },
+                      { val: false as const, text: t('common.no') },
                     ] as const
                   ).map((opt) => {
                     const selected = value === opt.val;
@@ -88,7 +88,7 @@ export default function KycRegistrationFields({ questions, answers, onChange, er
                 onChange={(e) => onChange(q.question_key, e.target.value)}
                 className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
               >
-                <option value="">{isAr ? 'اختر…' : 'Select…'}</option>
+                <option value="">{t('common.select')}</option>
                 {(q.options_json ?? []).map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {isAr ? opt.label_ar : opt.label_en}

@@ -20,7 +20,8 @@ import {
   type ProductFetchTrendMap,
 } from '@/hooks/useProductPriceTrendSincePreviousFetch'
 import GoldPriceTicker from '@/components/sections/GoldPriceTicker'
-import HomeNewsSection from '@/components/sections/HomeNewsSection'
+// News temporarily hidden — re-enable with nav.news + /news route
+// import HomeNewsSection from '@/components/sections/HomeNewsSection'
 import FeaturedProducts from '@/components/sections/FeaturedProducts'
 import CategoryGrid from '@/components/sections/CategoryGrid'
 import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
@@ -96,7 +97,7 @@ export default function HomePage() {
         <div className="home-section-inner relative z-10">
           <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-start">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#3F6F00]/15 bg-[#ECFCCB] px-3 py-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#3F6F00]" />
+              <span className="h-2 w-2 rounded-full bg-[#3F6F00]" />
               <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3F6F00] sm:text-xs">
                 {t('home.heroLiveKuwaitBadge')}
               </span>
@@ -175,24 +176,37 @@ export default function HomePage() {
 
       <CtaSection />
 
+      {/* News temporarily hidden
       <HomeNewsSection />
+      */}
 
       <section className="home-section home-section--white">
         <div className="home-section-inner">
           <HomeSectionHeader
+            kicker={t('home.whyKicker')}
             title={t('home.whyChooseUs')}
             subtitle={t('home.whyChooseUsDesc')}
-            align="center"
+            align="start"
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature) => (
-              <div key={feature.titleKey} className="home-feature-card">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-[#85E307]/25 bg-[#ECFCCB]/60">
-                  <feature.icon className="h-5 w-5 text-[#3F6F00]" />
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 sm:grid-cols-2">
+            {features.map((feature, index) => (
+              <div
+                key={feature.titleKey}
+                className={`bg-white p-6 sm:p-8 ${index === 0 ? 'sm:border-e-0' : ''}`}
+              >
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                    <feature.icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <span className="font-mono text-[11px] font-semibold tabular-nums tracking-wider text-[#94A3B8]">
+                    0{index + 1}
+                  </span>
                 </div>
-                <h3 className="mb-2 text-base font-semibold text-[#0B0F19]">{t(feature.titleKey)}</h3>
-                <p className="text-sm leading-relaxed text-[#64748B]">{t(feature.descKey)}</p>
+                <h3 className="mb-2 text-lg font-semibold tracking-tight text-[#0B0F19]">
+                  {t(feature.titleKey)}
+                </h3>
+                <p className="max-w-sm text-sm leading-relaxed text-[#64748B]">{t(feature.descKey)}</p>
               </div>
             ))}
           </div>
@@ -242,77 +256,96 @@ function NewArrivalsSection({
 function ClubFormationSection() {
   const { t } = useTranslation()
 
+  const benefits = [
+    { title: 'home.clubFormationBenefit1', desc: 'home.clubFormationBenefit1Desc' },
+    { title: 'home.clubFormationBenefit2', desc: 'home.clubFormationBenefit2Desc' },
+    { title: 'home.clubFormationBenefit3', desc: 'home.clubFormationBenefit3Desc' },
+  ]
+
+  const rates = [
+    { k: '21', label: 'home.clubFormationExampleCarat' },
+    { k: '22', label: 'home.clubFormationExampleCarat22' },
+    { k: '18', label: 'home.clubFormationExampleCarat18' },
+  ]
+
   return (
     <section className="home-section home-section--white">
       <div className="home-section-inner">
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
-          <div className="grid grid-cols-1 items-center gap-0 lg:grid-cols-2">
-            <div className="border-b border-black/10 bg-[#F9F9FA] p-6 sm:p-8 lg:border-b-0 lg:border-e">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#85E307]/30 bg-[#ECFCCB] px-3 py-1.5">
-                <Shield className="h-4 w-4 text-[#3F6F00]" />
-                <span className="text-xs font-bold uppercase tracking-wide text-[#3F6F00]">
-                  {t('home.clubFormationPill')}
-                </span>
-              </div>
+        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-12">
+          <div className="lg:col-span-7">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+              {t('home.clubFormationPill')}
+            </p>
+            <h2 className="mb-3 max-w-xl text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl lg:text-[2rem]">
+              {t('home.clubFormationTitle')}
+            </h2>
+            <p className="mb-8 max-w-lg text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('home.clubFormationDesc')}
+            </p>
 
-              <h2 className="mb-3 text-2xl font-bold text-[#0B0F19] sm:text-3xl">
-                {t('home.clubFormationTitle')}
-              </h2>
-              <p className="mb-6 text-sm leading-relaxed text-[#64748B] sm:text-base">
-                {t('home.clubFormationDesc')}
-              </p>
-
-              <div className="space-y-4">
-                {[
-                  { icon: Shield, title: 'home.clubFormationBenefit1', desc: 'home.clubFormationBenefit1Desc' },
-                  { icon: Award, title: 'home.clubFormationBenefit2', desc: 'home.clubFormationBenefit2Desc' },
-                  { icon: TrendingUp, title: 'home.clubFormationBenefit3', desc: 'home.clubFormationBenefit3Desc' },
-                ].map((item) => (
-                  <div key={item.title} className="flex items-start gap-3">
-                    <item.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#3F6F00]" />
-                    <div>
-                      <p className="font-semibold text-[#0B0F19]">{t(item.title)}</p>
-                      <p className="text-sm text-[#64748B]">{t(item.desc)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link
-                  to="/dashboard?tab=club"
-                  className="gold-button inline-flex items-center justify-center gap-2 shadow-md"
+            <ol className="space-y-0 border-t border-black/10">
+              {benefits.map((item, index) => (
+                <li
+                  key={item.title}
+                  className="flex gap-4 border-b border-black/10 py-5 first:pt-5"
                 >
-                  {t('home.clubFormationCta')}
-                  <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                </Link>
-                <p className="text-xs font-medium text-[#64748B]">{t('home.clubFormationCtaHint')}</p>
-              </div>
-            </div>
-
-            <div className="p-6 sm:p-8">
-              <h3 className="mb-2 text-lg font-bold text-[#0B0F19]">{t('home.clubFormationCardTitle')}</h3>
-              <p className="mb-5 text-sm leading-relaxed text-[#64748B]">{t('home.clubFormationCardDesc')}</p>
-
-              <div className="grid grid-cols-1 gap-2.5">
-                {[
-                  { k: '21', label: 'home.clubFormationExampleCarat' },
-                  { k: '22', label: 'home.clubFormationExampleCarat22' },
-                  { k: '18', label: 'home.clubFormationExampleCarat18' },
-                ].map((x) => (
-                  <div
-                    key={x.k}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-[#F9F9FA] px-4 py-3"
-                  >
-                    <span className="text-sm font-bold text-[#0B0F19]">{x.k}K</span>
-                    <span className="text-xs font-medium text-[#64748B]">{t(x.label)}</span>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B0F19] font-mono text-xs font-bold text-[#85E307]">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#0B0F19]">{t(item.title)}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-[#64748B]">{t(item.desc)}</p>
                   </div>
-                ))}
-              </div>
+                </li>
+              ))}
+            </ol>
 
-              <div className="mt-5 flex items-center gap-2 text-xs font-medium text-[#64748B]">
-                <Truck className="h-4 w-4 shrink-0 text-[#3F6F00]" />
-                {t('home.clubFormationDeliveryHint')}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                to="/dashboard?tab=club"
+                className="gold-button inline-flex items-center justify-center gap-2 shadow-md"
+              >
+                {t('home.clubFormationCta')}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Link>
+              <p className="text-xs font-medium text-[#64748B]">{t('home.clubFormationCtaHint')}</p>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5">
+            <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] p-6 text-white shadow-xl shadow-black/20 sm:p-7">
+              <div className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-[#85E307]/15 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-20 -start-10 h-40 w-40 rounded-full bg-[#85E307]/10 blur-3xl" />
+
+              <div className="relative">
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#85E307]">
+                  {t('home.clubFormationPill')}
+                </p>
+                <h3 className="mb-2 text-lg font-bold tracking-tight sm:text-xl">
+                  {t('home.clubFormationCardTitle')}
+                </h3>
+                <p className="mb-6 text-sm leading-relaxed text-white/65">
+                  {t('home.clubFormationCardDesc')}
+                </p>
+
+                <div className="space-y-2">
+                  {rates.map((x) => (
+                    <div
+                      key={x.k}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5"
+                    >
+                      <span className="font-mono text-base font-bold tabular-nums text-[#85E307]">
+                        {x.k}K
+                      </span>
+                      <span className="text-end text-xs font-medium text-white/70">{t(x.label)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="mt-5 flex items-center gap-2 text-xs font-medium text-white/55">
+                  <Truck className="h-3.5 w-3.5 shrink-0 text-[#85E307]" />
+                  {t('home.clubFormationDeliveryHint')}
+                </p>
               </div>
             </div>
           </div>
@@ -328,26 +361,37 @@ function CtaSection() {
   return (
     <section className="home-section">
       <div className="home-section-inner">
-        <div className="relative overflow-hidden rounded-2xl border border-[#85E307]/20 shadow-lg shadow-lime-900/8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#ECFCCB] via-[#85E307]/85 to-[#3F6F00]/75" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
-          <div className="relative px-6 py-12 text-center sm:px-10 sm:py-14 md:px-16 md:py-16">
-            <h2 className="mb-3 text-2xl font-bold text-[#0B0F19] sm:text-3xl md:text-4xl">
-              {t('home.readyToTrade')}
-            </h2>
-            <p className="mx-auto mb-7 max-w-xl text-sm font-medium leading-relaxed text-[#0B0F19]/75 sm:text-base">
-              {t('home.readyToTradeDesc')}
-            </p>
-            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+        <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] px-6 py-12 sm:px-10 sm:py-14 md:px-14 md:py-16">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_100%_0%,rgba(133,227,7,0.18),transparent_55%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_0%_100%,rgba(133,227,7,0.08),transparent_50%)]" />
+            <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#85E307]/40 to-transparent" />
+          </div>
+
+          <div className="relative grid grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:gap-10">
+            <div className="lg:col-span-7">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
+                {t('home.readyKicker')}
+              </p>
+              <h2 className="mb-3 max-w-xl text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
+                {t('home.readyToTrade')}
+              </h2>
+              <p className="max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
+                {t('home.readyToTradeDesc')}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:col-span-5 lg:justify-end">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center rounded-lg bg-[#0B0F19] px-6 py-3 font-semibold text-white shadow-md transition-colors hover:bg-[#1F2937]"
+                className="gold-button inline-flex items-center justify-center gap-2 shadow-lg shadow-lime-900/30"
               >
                 {t('home.createAccount')}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
               <Link
                 to="/products"
-                className="rounded-lg border border-black/10 bg-white px-6 py-3 font-semibold text-[#0B0F19] shadow-sm transition-all hover:bg-[#F4F4F5]"
+                className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
               >
                 {t('home.heroBrowseShop')}
               </Link>

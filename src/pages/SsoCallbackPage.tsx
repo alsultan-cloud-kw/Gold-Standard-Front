@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthenticateWithRedirectCallback } from '@clerk/react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { resolvePostAuthPath } from '../utils/authRedirect'
 import { AuthLoadingFallback } from '../components/routing/ProtectedRoute'
 
 export default function SsoCallbackPage() {
+  const { t } = useTranslation()
   const origin = window.location.origin
   const { isAuthenticated, isLoading, user } = useAuth()
   const navigate = useNavigate()
@@ -18,7 +20,7 @@ export default function SsoCallbackPage() {
   }, [isAuthenticated, isLoading, navigate, searchParams, user])
 
   if (isLoading || (isAuthenticated && user)) {
-    return <AuthLoadingFallback message="Signing you in…" />
+    return <AuthLoadingFallback message={t('common.signingIn')} />
   }
 
   return (
@@ -30,7 +32,7 @@ export default function SsoCallbackPage() {
         signUpFallbackRedirectUrl={`${origin}/`}
       />
       <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-gold-100/70 text-sm">Signing you in…</p>
+      <p className="text-gold-100/70 text-sm">{t('common.signingIn')}</p>
       <div id="clerk-captcha" className="hidden" aria-hidden />
     </div>
   )

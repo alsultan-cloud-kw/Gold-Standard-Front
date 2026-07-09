@@ -1,79 +1,84 @@
+import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Mail, ArrowRight, Shield } from 'lucide-react'
+import { GS_CONTACT } from '@/constants/contact'
+
 export default function DataDeletionPage() {
+  const { t } = useTranslation()
+
+  const sections = [
+    'how',
+    'verify',
+    'timeline',
+    'deleted',
+    'retained',
+    'meta',
+    'contact',
+  ] as const
+
   return (
-    <div className="min-h-screen py-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="gold-card space-y-6">
-          <header className="space-y-2">
-            <h1 className="text-3xl font-bold gold-gradient-text">Data Deletion Instructions</h1>
-            <p className="text-sm text-gold-100/60">
-              Effective date: April 8, 2026
-            </p>
-          </header>
+    <div className="min-h-screen bg-[#F9F9FA]">
+      <section className="border-b border-black/5 bg-white">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+            {t('dataDeletionPage.kicker')}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl">
+            {t('dataDeletionPage.title')}
+          </h1>
+          <p className="mt-3 text-sm text-[#64748B]">{t('dataDeletionPage.effective')}</p>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#64748B]">
+            {t('dataDeletionPage.intro')}
+          </p>
+        </div>
+      </section>
 
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">1. How to Request Data Deletion</h2>
-            <p>
-              To request deletion of your account data, including WhatsApp-related communication records,
-              send an email to <span className="text-gold-300">info@goldstandardkw.com</span> with the
-              subject line <span className="text-gold-300">"Data Deletion Request"</span>.
-            </p>
-            <p>Please include the following in your request:</p>
-            <ul className="list-disc ps-5 space-y-1">
-              <li>your full name,</li>
-              <li>registered email and/or phone number,</li>
-              <li>details needed to verify account ownership.</li>
-            </ul>
-          </section>
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+        <div className="space-y-4">
+          {sections.map((id, index) => (
+            <section
+              key={id}
+              className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
+            >
+              <div className="mb-3 flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0B0F19] font-mono text-xs font-bold text-[#85E307]">
+                  {index + 1}
+                </span>
+                <h2 className="text-base font-bold text-[#0B0F19] sm:text-lg">
+                  {t(`dataDeletionPage.${id}.title`)}
+                </h2>
+              </div>
+              <div className="ps-11 text-sm leading-relaxed text-[#475569] whitespace-pre-line">
+                {t(`dataDeletionPage.${id}.body`, { email: GS_CONTACT.email })}
+              </div>
+            </section>
+          ))}
+        </div>
 
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">2. Verification Process</h2>
-            <p>
-              For security and fraud prevention, we may request additional verification before processing
-              deletion. If we cannot verify ownership, we may not be able to complete the request.
-            </p>
-          </section>
-
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">3. Deletion Timeline</h2>
-            <p>
-              Once verification is complete, we process deletion requests within a reasonable period,
-              typically within 30 days, unless a longer retention period is required by law.
-            </p>
-          </section>
-
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">4. What Gets Deleted</h2>
-            <ul className="list-disc ps-5 space-y-1">
-              <li>account profile details maintained in this application,</li>
-              <li>non-essential communication records linked to your account,</li>
-              <li>other personal data that is not legally required to be retained.</li>
-            </ul>
-          </section>
-
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">5. Data That May Be Retained</h2>
-            <p>
-              We may retain certain records where required for legal, tax, accounting, security,
-              fraud prevention, dispute resolution, or regulatory compliance.
-            </p>
-          </section>
-
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">6. Meta and WhatsApp Data</h2>
-            <p>
-              If your request relates to WhatsApp or Meta platform data, we will process the deletion
-              request for data controlled by our application. Data controlled directly by Meta may also
-              be subject to Meta&apos;s own data management and deletion processes.
-            </p>
-          </section>
-
-          <section className="space-y-2 text-gold-100/85">
-            <h2 className="text-lg font-semibold text-gold-100">7. Contact</h2>
-            <p>
-              For all deletion-related requests, contact:
-              <span className="text-gold-300"> info@goldstandardkw.com</span>
-            </p>
-          </section>
+        <div className="mt-8 flex flex-col gap-3 rounded-2xl bg-[#0B0F19] p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 text-white">
+            <Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#85E307]" />
+            <div>
+              <p className="font-semibold">{t('dataDeletionPage.ctaTitle')}</p>
+              <p className="mt-1 text-sm text-white/65">{t('dataDeletionPage.ctaBody')}</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <a
+              href={`mailto:${GS_CONTACT.email}?subject=${encodeURIComponent(t('dataDeletionPage.emailSubject'))}`}
+              className="gold-button inline-flex items-center justify-center gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              {t('dataDeletionPage.emailUs')}
+            </a>
+            <Link
+              to="/terms-and-privacy"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              {t('dataDeletionPage.viewTerms')}
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

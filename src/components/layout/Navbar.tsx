@@ -43,12 +43,13 @@ export default function Navbar() {
     { nameKey: 'nav.home', href: '/' },
     { nameKey: 'nav.products', href: '/products' },
     { nameKey: 'nav.prices', href: '/prices' },
-    { nameKey: 'nav.news', href: '/news' },
+    // News temporarily hidden — re-enable with HomeNewsSection + /news route
+    // { nameKey: 'nav.news', href: '/news' },
     ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
       ? [{ nameKey: 'nav.tradeGold', href: '/trade-gold' }]
       : []),
     // { nameKey: 'nav.sellGold', href: '/sell-gold' },
-    // { nameKey: 'nav.branches', href: '/branches' },
+    { nameKey: 'nav.branches', href: '/branches' },
     { nameKey: 'nav.about', href: '/about' },
     { nameKey: 'nav.contact', href: '/contact' },
   ]
@@ -98,10 +99,10 @@ export default function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[120px] bg-white border-gold-500/30">
                   <DropdownMenuItem onClick={() => i18n.changeLanguage('en')} className="cursor-pointer">
-                    English
+                    {t('common.english')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => i18n.changeLanguage('ar')} className="cursor-pointer">
-                    العربية
+                    {t('common.arabic')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -118,7 +119,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <img
               src={logo}
-              alt="Gold & Jewelry Trading Co. logo"
+              alt={t('common.logoAlt')}
               className="h-12 w-auto object-contain"
             />
           </Link>
@@ -127,41 +128,53 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               link.nameKey === 'nav.prices' ? (
-                <DropdownMenu key={link.nameKey}>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`inline-flex items-center gap-1 text-sm font-medium transition-colors relative group ${
-                        isPricesActive ? 'text-gold-700' : 'text-slate-800 hover:text-gold-600'
+                <div key={link.nameKey} className="relative group/prices">
+                  <button
+                    type="button"
+                    aria-haspopup="menu"
+                    className={`inline-flex items-center gap-1 text-sm font-medium transition-colors relative ${
+                      isPricesActive ? 'text-gold-700' : 'text-slate-800 group-hover/prices:text-gold-600'
+                    }`}
+                  >
+                    {t('nav.prices')}
+                    <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-hover/prices:rotate-180" />
+                    <span
+                      className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 rtl:right-0 rtl:left-auto ${
+                        isPricesActive ? 'w-full' : 'w-0 group-hover/prices:w-full'
                       }`}
+                    />
+                  </button>
+                  {/* Hover bridge + panel — opens on hover, no click required */}
+                  <div className="pointer-events-none invisible absolute start-1/2 top-full z-50 w-56 -translate-x-1/2 pt-3 opacity-0 transition-all duration-150 group-hover/prices:pointer-events-auto group-hover/prices:visible group-hover/prices:opacity-100 rtl:translate-x-1/2">
+                    <div
+                      role="menu"
+                      className="overflow-hidden rounded-xl border border-black/10 bg-white py-1.5 shadow-lg shadow-black/10"
                     >
-                      {t('nav.prices')}
-                      <ChevronDown className="w-3.5 h-3.5" />
-                      <span
-                        className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 rtl:right-0 rtl:left-auto ${
-                          isPricesActive ? 'w-full' : 'w-0 group-hover:w-full'
-                        }`}
-                      />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="min-w-[200px] bg-white border-gold-500/30">
-                    <DropdownMenuItem asChild>
                       <Link
                         to="/prices"
-                        className={`cursor-pointer ${isPathActive('/prices') ? 'text-gold-700 font-semibold' : ''}`}
+                        role="menuitem"
+                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 ${
+                          isPathActive('/prices')
+                            ? 'font-semibold text-[#3F6F00]'
+                            : 'font-medium text-[#0B0F19]'
+                        }`}
                       >
                         {t('nav.customerPrices')}
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                       <Link
                         to="/company-prices"
-                        className={`cursor-pointer ${isPathActive('/company-prices') ? 'text-gold-700 font-semibold' : ''}`}
+                        role="menuitem"
+                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 ${
+                          isPathActive('/company-prices')
+                            ? 'font-semibold text-[#3F6F00]'
+                            : 'font-medium text-[#0B0F19]'
+                        }`}
                       >
                         {t('nav.companyPrices')}
                       </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <Link
                   key={link.nameKey}
@@ -198,7 +211,7 @@ export default function Navbar() {
             >
               <ShoppingCart className="w-5 h-5" />
               {getItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-0.5 bg-gold-500 text-charcoal-950 text-xs font-bold rounded-full flex items-center justify-center tabular-nums motion-safe:animate-cart-badge-blink">
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-0.5 bg-gold-500 text-charcoal-950 text-xs font-bold rounded-full flex items-center justify-center tabular-nums">
                   {getItemCount()}
                 </span>
               )}

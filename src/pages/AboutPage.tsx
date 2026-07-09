@@ -1,98 +1,221 @@
-import { Award, Users, TrendingUp, Shield } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import {
+  ArrowRight,
+  Award,
+  Shield,
+  TrendingUp,
+  Truck,
+  Users,
+  Scale,
+} from 'lucide-react'
 
-const VALUE_IDS = ['trust', 'quality', 'customer', 'innovation'] as const
-const VALUE_ICONS = {
-  trust: Shield,
-  quality: Award,
-  customer: Users,
-  innovation: TrendingUp,
-} as const
+const PILLARS = [
+  { id: 'transparency', icon: Scale },
+  { id: 'quality', icon: Award },
+  { id: 'service', icon: Users },
+  { id: 'delivery', icon: Truck },
+] as const
+
+const FOCUS = [
+  { id: 'coins', icon: Shield },
+  { id: 'prices', icon: TrendingUp },
+  { id: 'clubs', icon: Users },
+] as const
 
 export default function AboutPage() {
   const { t } = useTranslation()
 
   return (
-    <div className="min-h-screen py-8 bg-gradient-to-b from-lime-50/50 via-white to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Hero */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">{t('aboutPage.title')}</h1>
-          <p className="text-lg text-stone-800 font-medium max-w-3xl mx-auto">{t('aboutPage.hero')}</p>
+    <div className="min-h-screen bg-[#F9F9FA]">
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-black/5 bg-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/40 via-white to-white" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         </div>
 
-        {/* Stats */}
-        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-          {stats.map((stat, index) => (
-            <div key={index} className="product-card-lime text-center">
-              <div className="text-3xl md:text-4xl font-bold text-black mb-2">{stat.value}</div>
-              <div className="text-sm font-semibold text-black/75">{t(stat.labelKey)}</div>
-            </div>
-          ))}
-        </div> */}
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+            {t('aboutPage.kicker')}
+          </p>
+          <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl lg:text-5xl">
+            {t('aboutPage.title')}
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#64748B] sm:text-lg">
+            {t('aboutPage.hero')}
+          </p>
 
-        {/* Our Story */}
-        
-        {/* <div className="mb-16">
-          <h2 className="text-3xl font-bold text-black mb-8 text-center">{t('aboutPage.storyTitle')}</h2>
-          <div className="relative">
-            <div className="absolute left-1/2 -translate-x-1/2 h-full w-0.5 bg-lime-400/70" />
-            <div className="space-y-8">
-              {MILESTONE_IDS.map((id, index) => (
-                <div
-                  key={id}
-                  className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
-                >
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              to="/products"
+              className="gold-button inline-flex items-center justify-center gap-2 shadow-md"
+            >
+              {t('aboutPage.ctaShop')}
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center rounded-lg border border-black/10 bg-white px-6 py-3 font-semibold text-[#0B0F19] transition-colors hover:bg-[#F4F4F5]"
+            >
+              {t('aboutPage.ctaContact')}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* What we do */}
+      <section className="border-b border-black/5 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
+            <div className="lg:col-span-5">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+                {t('aboutPage.storyKicker')}
+              </p>
+              <h2 className="text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+                {t('aboutPage.storyTitle')}
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-[#64748B] sm:text-base">
+                {t('aboutPage.storyBody')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-7">
+              {FOCUS.map((item, index) => {
+                const Icon = item.icon
+                return (
                   <div
-                    className={`w-1/2 ${index % 2 === 0 ? 'pe-8 text-end' : 'ps-8 text-start'}`}
+                    key={item.id}
+                    className="rounded-2xl border border-black/10 bg-[#F9F9FA] p-5"
                   >
-                    <div
-                      className={`product-card-lime inline-block max-w-md ${index % 2 === 0 ? 'text-end' : 'text-start'}`}
-                    >
-                      <span className="text-yellow-950 font-bold text-sm">{t(`aboutPage.m.${id}.year`)}</span>
-                      <h3 className="text-lg font-bold text-black mt-1">{t(`aboutPage.m.${id}.title`)}</h3>
-                      <p className="text-sm text-black/75 mt-1 leading-relaxed">{t(`aboutPage.m.${id}.description`)}</p>
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                        <Icon className="h-5 w-5" strokeWidth={1.75} />
+                      </span>
+                      <span className="font-mono text-[11px] font-semibold tabular-nums text-[#94A3B8]">
+                        0{index + 1}
+                      </span>
                     </div>
+                    <h3 className="mb-1.5 text-base font-semibold text-[#0B0F19]">
+                      {t(`aboutPage.focus.${item.id}.title`)}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-[#64748B]">
+                      {t(`aboutPage.focus.${item.id}.description`)}
+                    </p>
                   </div>
-                  <div className="w-4 h-4 rounded-full bg-yellow-300 border-4 border-black z-10 shrink-0" />
-                  <div className="w-1/2" />
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
-        </div> */}
+        </div>
+      </section>
 
-        {/* Our Values */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-black mb-8 text-center">{t('aboutPage.valuesTitle')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {VALUE_IDS.map((id) => {
-              const Icon = VALUE_ICONS[id]
+      {/* Pillars */}
+      <section className="bg-[#F9F9FA]">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mb-8 max-w-2xl">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+              {t('aboutPage.valuesKicker')}
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+              {t('aboutPage.valuesTitle')}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('aboutPage.valuesIntro')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 sm:grid-cols-2">
+            {PILLARS.map((item, index) => {
+              const Icon = item.icon
               return (
-                <div key={id} className="product-card-lime text-center">
-                  <div className="w-14 h-14 rounded-lg bg-black/10 flex items-center justify-center mx-auto mb-4 border border-black/10">
-                    <Icon className="w-7 h-7 text-black" />
+                <div key={item.id} className="bg-white p-6 sm:p-8">
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                      <Icon className="h-5 w-5" strokeWidth={1.75} />
+                    </span>
+                    <span className="font-mono text-[11px] font-semibold tabular-nums tracking-wider text-[#94A3B8]">
+                      0{index + 1}
+                    </span>
                   </div>
-                  <h3 className="text-lg font-bold text-black mb-2">{t(`aboutPage.v.${id}.title`)}</h3>
-                  <p className="text-sm text-black/75 leading-relaxed">{t(`aboutPage.v.${id}.description`)}</p>
+                  <h3 className="mb-2 text-lg font-semibold tracking-tight text-[#0B0F19]">
+                    {t(`aboutPage.v.${item.id}.title`)}
+                  </h3>
+                  <p className="max-w-md text-sm leading-relaxed text-[#64748B]">
+                    {t(`aboutPage.v.${item.id}.description`)}
+                  </p>
                 </div>
               )
             })}
           </div>
         </div>
+      </section>
 
-        {/* Mission & Vision */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8">
-          <div className="product-card-lime">
-            <h3 className="text-2xl font-bold text-black mb-4">{t('aboutPage.missionTitle')}</h3>
-            <p className="text-black/80 leading-relaxed font-medium">{t('aboutPage.missionBody')}</p>
-          </div>
-          <div className="product-card-lime">
-            <h3 className="text-2xl font-bold text-black mb-4">{t('aboutPage.visionTitle')}</h3>
-            <p className="text-black/80 leading-relaxed font-medium">{t('aboutPage.visionBody')}</p>
+      {/* Mission / Vision */}
+      <section className="border-t border-black/5 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] p-7 text-white sm:p-8">
+              <div className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-[#85E307]/15 blur-3xl" />
+              <p className="relative mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#85E307]">
+                {t('aboutPage.missionKicker')}
+              </p>
+              <h3 className="relative mb-3 text-xl font-bold tracking-tight sm:text-2xl">
+                {t('aboutPage.missionTitle')}
+              </h3>
+              <p className="relative text-sm leading-relaxed text-white/70 sm:text-base">
+                {t('aboutPage.missionBody')}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-black/10 bg-[#F9F9FA] p-7 sm:p-8">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+                {t('aboutPage.visionKicker')}
+              </p>
+              <h3 className="mb-3 text-xl font-bold tracking-tight text-[#0B0F19] sm:text-2xl">
+                {t('aboutPage.visionTitle')}
+              </h3>
+              <p className="text-sm leading-relaxed text-[#64748B] sm:text-base">
+                {t('aboutPage.visionBody')}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="pb-14 sm:pb-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] px-6 py-10 sm:px-10 sm:py-12">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(133,227,7,0.16),transparent_55%)]" />
+            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-xl">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
+                  {t('aboutPage.ctaKicker')}
+                </p>
+                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  {t('aboutPage.ctaTitle')}
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-white/65 sm:text-base">
+                  {t('aboutPage.ctaBody')}
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link to="/prices" className="gold-button inline-flex items-center justify-center gap-2">
+                  {t('aboutPage.ctaPrices')}
+                  <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                </Link>
+                <Link
+                  to="/branches"
+                  className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  {t('aboutPage.ctaBranches')}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

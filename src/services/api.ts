@@ -497,6 +497,7 @@ export const ordersApi = {
     customer_phone?: string
     customer_email?: string
     notes?: string
+    turnstile_token?: string
   }) =>
     apiService.post<unknown>('/accounting/sales/place-order/', data),
 

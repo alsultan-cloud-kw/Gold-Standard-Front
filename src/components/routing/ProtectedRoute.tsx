@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth as useClerkAuth } from '@clerk/react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
 import { isStaffRole, resolvePostAuthPath } from '../../utils/authRedirect'
@@ -17,13 +18,19 @@ function isCatalogManagerRole(role: string | undefined): boolean {
   return !!role && (CATALOG_MANAGER_ROLES as readonly string[]).includes(role)
 }
 
-export function AuthLoadingFallback({ message = 'Loading…' }: { message?: string }) {
+export function AuthLoadingFallback({ message }: { message?: string }) {
+  const { t } = useTranslation()
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
       <div className="w-12 h-12 border-4 border-lime-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm text-gold-100/70">{message}</p>
+      <p className="text-sm text-gold-100/70">{message ?? t('common.loading')}</p>
     </div>
   )
+}
+
+function AuthLoadingFallbackCompleting() {
+  const { t } = useTranslation()
+  return <AuthLoadingFallback message={t('common.completingSignIn')} />
 }
 
 /** Any signed-in user (storefront or staff). */
@@ -57,7 +64,7 @@ export function GuestOnlyRoute() {
   }
 
   if (isSignedIn && !isAuthenticated) {
-    return <AuthLoadingFallback message="Completing sign-in…" />
+    return <AuthLoadingFallbackCompleting />
   }
 
   if (isAuthenticated) {

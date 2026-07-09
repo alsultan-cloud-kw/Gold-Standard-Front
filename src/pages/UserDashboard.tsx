@@ -106,7 +106,7 @@ export default function UserDashboard() {
     ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
       ? [
           { id: 'locked_gold', name: t('userDashboard.tabs.lockedGold'), icon: Scale },
-          { id: 'trade_gold', name: 'Trade gold', icon: Crown },
+          { id: 'trade_gold', name: t('userDashboard.tabs.tradeGold'), icon: Crown },
           { id: 'transactions', name: t('userDashboard.tabs.transactions'), icon: CreditCard },
         ]
       : []),
@@ -1234,7 +1234,9 @@ function LockedGoldTab() {
   return (
     <div className="space-y-4 mt-4">
       {/* <div className="flex items-center justify-between mt-4">
-        <h2 className="text-xl font-bold gold-gradient-text-on-light">Locked gold</h2>
+        <h2 className="text-xl font-bold gold-gradient-text-on-light">
+          {t('userDashboard.tabs.lockedGold')}
+        </h2>
         {list.length > 0 && (
           <Link
             to="/sell-gold"
@@ -2299,17 +2301,21 @@ function NotificationsTab() {
         {t('userDashboard.tabs.notifications')}
       </h2>
       <p className="text-sm gold-gradient-text-on-light mb-1">
-        Price reminders you set on the Prices page.
+        {t('userDashboard.notificationsPanel.intro')}
       </p>
 
       {isLoading ? (
-        <p className="text-black-100/60 text-center py-8">Loading...</p>
+        <p className="text-black-100/60 text-center py-8">{t('common.loading')}</p>
       ) : (
         <div className="space-y-6">
           <div>
-            <h3 className="text-base font-semibold text-black-100 mb-2">Set reminders</h3>
+            <h3 className="text-base font-semibold text-black-100 mb-2">
+              {t('userDashboard.notificationsPanel.setReminders')}
+            </h3>
             {active.length === 0 ? (
-              <p className="text-black-100/60 text-center py-6">No active reminder set.</p>
+              <p className="text-black-100/60 text-center py-6">
+                {t('userDashboard.notificationsPanel.noActive')}
+              </p>
             ) : (
               <div className="space-y-3">
                 {active.map((a) => {
@@ -2317,23 +2323,31 @@ function NotificationsTab() {
                   const metal = (a.spot_metal || 'gold').toLowerCase()
                   const metalLine =
                     metal === 'silver'
-                      ? 'Silver'
+                      ? t('userDashboard.notificationsPanel.metalSilver')
                       : metal === 'platinum'
-                        ? 'Platinum'
+                        ? t('userDashboard.notificationsPanel.metalPlatinum')
                         : Number.isFinite(goldCaratNum)
-                          ? `${goldCaratNum}K gold`
-                          : a.spot_metal_display || 'Gold'
+                          ? t('userDashboard.notificationsPanel.metalGoldCarat', {
+                              carat: goldCaratNum,
+                            })
+                          : a.spot_metal_display || t('userDashboard.notificationsPanel.metalGold')
                   const sideLabel = a.price_side_display ?? a.price_side ?? '—'
                   const target = a.target_price != null ? Number(a.target_price) : NaN
                   const d = a.created_at ? new Date(a.created_at) : null
                   const deltaVal = a.delta_value != null ? Number(a.delta_value) : NaN
                   const thresholdText =
                     a.reminder_mode === 'delta'
-                      ? `Rate changes by ${Number.isFinite(deltaVal) ? deltaVal.toFixed(3) : '—'} KWD/g from your set baseline.`
+                      ? t('userDashboard.notificationsPanel.deltaActive', {
+                          delta: Number.isFinite(deltaVal) ? deltaVal.toFixed(3) : '—',
+                        })
                       : a.condition === 'above'
-                        ? `rate increases above ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                        ? t('userDashboard.notificationsPanel.above', {
+                            target: Number.isFinite(target) ? target.toFixed(3) : '—',
+                          })
                         : a.condition === 'below'
-                          ? `rate decreases below ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                          ? t('userDashboard.notificationsPanel.below', {
+                              target: Number.isFinite(target) ? target.toFixed(3) : '—',
+                            })
                           : ''
                   return (
                     <div key={a.id} className="gold-card p-4 border border-lime-500/30">
@@ -2342,7 +2356,9 @@ function NotificationsTab() {
                           <div className="text-sm text-black-100/70">
                             {metalLine} • {sideLabel}
                           </div>
-                          <div className="text-black-100 font-semibold mt-1">Active</div>
+                          <div className="text-black-100 font-semibold mt-1">
+                            {t('userDashboard.notificationsPanel.statusActive')}
+                          </div>
                           {thresholdText && (
                             <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
                           )}
@@ -2367,9 +2383,13 @@ function NotificationsTab() {
           </div>
 
           <div>
-            <h3 className="text-base font-semibold text-black-100 mb-2">Triggered reminders</h3>
+            <h3 className="text-base font-semibold text-black-100 mb-2">
+              {t('userDashboard.notificationsPanel.triggeredTitle')}
+            </h3>
             {triggered.length === 0 ? (
-              <p className="text-black-100/60 text-center py-6">No triggered reminders yet.</p>
+              <p className="text-black-100/60 text-center py-6">
+                {t('userDashboard.notificationsPanel.noTriggered')}
+              </p>
             ) : (
               <div className="space-y-3">
                 {triggered.map((a) => {
@@ -2377,12 +2397,14 @@ function NotificationsTab() {
             const metal = (a.spot_metal || 'gold').toLowerCase()
             const metalLine =
               metal === 'silver'
-                ? 'Silver'
+                ? t('userDashboard.notificationsPanel.metalSilver')
                 : metal === 'platinum'
-                  ? 'Platinum'
+                  ? t('userDashboard.notificationsPanel.metalPlatinum')
                   : Number.isFinite(goldCaratNum)
-                    ? `${goldCaratNum}K gold`
-                    : a.spot_metal_display || 'Gold'
+                    ? t('userDashboard.notificationsPanel.metalGoldCarat', {
+                        carat: goldCaratNum,
+                      })
+                    : a.spot_metal_display || t('userDashboard.notificationsPanel.metalGold')
             const sideLabel = a.price_side_display ?? a.price_side ?? '—'
             const target = a.target_price != null ? Number(a.target_price) : NaN
             const d = a.triggered_at ? new Date(a.triggered_at) : null
@@ -2391,18 +2413,24 @@ function NotificationsTab() {
             const triggeredSide = String(a.triggered_context?.side || '').toLowerCase()
             const sideTriggeredText =
               triggeredSide === 'buy'
-                ? 'Triggered by buy price.'
+                ? t('userDashboard.notificationsPanel.triggeredByBuy')
                 : triggeredSide === 'sell'
-                  ? 'Triggered by sell price.'
+                  ? t('userDashboard.notificationsPanel.triggeredBySell')
                   : ''
 
             const thresholdText =
               a.reminder_mode === 'delta'
-                ? `Rate moved by ${Number.isFinite(deltaVal) ? deltaVal.toFixed(3) : '—'} KWD/g from your set baseline.`
+                ? t('userDashboard.notificationsPanel.deltaTriggered', {
+                    delta: Number.isFinite(deltaVal) ? deltaVal.toFixed(3) : '—',
+                  })
                 : a.condition === 'above'
-                  ? `rate increases above ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                  ? t('userDashboard.notificationsPanel.above', {
+                      target: Number.isFinite(target) ? target.toFixed(3) : '—',
+                    })
                   : a.condition === 'below'
-                    ? `rate decreases below ${Number.isFinite(target) ? target.toFixed(3) : '—'} KWD/g`
+                    ? t('userDashboard.notificationsPanel.below', {
+                        target: Number.isFinite(target) ? target.toFixed(3) : '—',
+                      })
                     : ''
 
             return (
@@ -2417,7 +2445,9 @@ function NotificationsTab() {
                     <div className="text-sm text-black-100/70">
                       {metalLine} • {sideLabel}
                     </div>
-                    <div className="text-black-100 font-semibold mt-1">Triggered</div>
+                    <div className="text-black-100 font-semibold mt-1">
+                      {t('userDashboard.notificationsPanel.statusTriggered')}
+                    </div>
                     {thresholdText && (
                       <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
                     )}
@@ -2425,7 +2455,9 @@ function NotificationsTab() {
                       <div className="text-xs text-black-100/60 mt-1">{sideTriggeredText}</div>
                     )}
                     <div className="text-xs text-black-100/60 mt-2">
-                      Delivery: {a.notification_status ?? 'pending'}
+                      {t('userDashboard.notificationsPanel.delivery', {
+                        status: a.notification_status ?? 'pending',
+                      })}
                     </div>
                     {a.last_notification_error ? (
                       <div className="text-xs text-red-700/90 mt-1 break-words">
@@ -2506,14 +2538,16 @@ function TradeGoldTab() {
 
   return (
     <div className="gold-card mt-4 p-6 space-y-4">
-      <h2 className="text-xl font-bold gold-gradient-text-on-light">Trade gold</h2>
-      <p className="text-sm text-stone-600">
-        Buy or sell virtual gold instantly by grams or KWD using your wallet balance.
-      </p>
+      <h2 className="text-xl font-bold gold-gradient-text-on-light">
+        {t('userDashboard.tradeGoldPanel.title')}
+      </h2>
+      <p className="text-sm text-stone-600">{t('userDashboard.tradeGoldPanel.subtitle')}</p>
 
       <div className="rounded-lg bg-charcoal-800/60 border border-gold-500/20 p-3">
         <p className="text-xs text-gold-100/60">{t('tradeGold.walletBalance')}</p>
-        <p className="text-xl font-bold text-gold-200">{walletBalance.toFixed(3)} KWD</p>
+        <p className="text-xl font-bold text-gold-200">
+          {walletBalance.toFixed(3)} {t('common.kwd')}
+        </p>
       </div>
 
       <div className="rounded-lg border border-amber-500/30 bg-charcoal-800/50 p-4 space-y-3">
@@ -2535,7 +2569,7 @@ function TradeGoldTab() {
               onClick={() => setDepositAmount(String(v))}
               className="px-2.5 py-1 rounded-md text-xs font-medium border border-amber-500/35 text-black-100/90 hover:bg-amber-500/15 transition-colors"
             >
-              {v} KWD
+              {v} {t('common.kwd')}
             </button>
           ))}
         </div>
@@ -2563,16 +2597,24 @@ function TradeGoldTab() {
       </div>
 
       {isLoading ? (
-        <p className="text-gold-100/60 text-sm">Loading positions…</p>
+        <p className="text-gold-100/60 text-sm">{t('userDashboard.tradeGoldPanel.loadingPositions')}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-lg bg-charcoal-800/60 border border-gold-500/20 p-3">
-            <p className="text-xs text-gold-100/60">Your total virtual grams</p>
-            <p className="text-2xl font-bold text-gold-200">{totalGrams.toFixed(3)} g</p>
+            <p className="text-xs text-gold-100/60">
+              {t('userDashboard.tradeGoldPanel.totalVirtualGrams')}
+            </p>
+            <p className="text-2xl font-bold text-gold-200">
+              {totalGrams.toFixed(3)} {t('common.gramsAbbr')}
+            </p>
           </div>
           <div className="rounded-lg bg-charcoal-800/60 border border-gold-500/20 p-3">
-            <p className="text-xs text-gold-100/60">Unrealized P/L</p>
-            <p className={`text-2xl font-bold ${plClass}`}>{totalUnrealized.toFixed(3)} KWD</p>
+            <p className="text-xs text-gold-100/60">
+              {t('userDashboard.tradeGoldPanel.unrealizedPL')}
+            </p>
+            <p className={`text-2xl font-bold ${plClass}`}>
+              {totalUnrealized.toFixed(3)} {t('common.kwd')}
+            </p>
           </div>
         </div>
       )}
@@ -2581,7 +2623,7 @@ function TradeGoldTab() {
         to="/trade-gold"
         className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-gold-500 text-black font-semibold hover:bg-gold-400"
       >
-        Open trading page
+        {t('userDashboard.tradeGoldPanel.openTradingPage')}
       </Link>
     </div>
   )
