@@ -8,6 +8,7 @@ import {
   type DaralsabaekPublicRatesResponse,
   type KuwaitMarketConfigResponse,
 } from '../../services/api'
+import { formatLatinNumber } from '@/utils/formatLatinNumber'
 
 /** Troy ounce mass in grams (same factor as bullion industry). */
 const TROY_OZ_GRAMS = 31.1034768
@@ -99,8 +100,6 @@ export default function GoldPriceTicker() {
       return buy24Total != null && Number.isFinite(buy24Total) ? buy24Total * TROY_OZ_GRAMS : null
     })()
 
-  const localeForNums = i18n.language?.startsWith('ar') ? 'ar-KW' : undefined
-
   const hasOunceRow = goldOunceUsd != null || goldOunceKwd != null
 
   if (isLoading) {
@@ -139,7 +138,7 @@ export default function GoldPriceTicker() {
                   <span className="text-amber-100/60 uppercase me-1">{t('home.tickerOunceUsd')}</span>
                   <span className={`font-bold text-amber-200 ${isArabic ? 'text-base sm:text-lg' : ''}`}>
                     $
-                    {goldOunceUsd.toLocaleString(localeForNums, {
+                    {formatLatinNumber(goldOunceUsd, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -154,7 +153,7 @@ export default function GoldPriceTicker() {
                 >
                   <span className="text-amber-100/60 uppercase me-1">{t('home.tickerOunceKwd')}</span>
                   <span className={`font-bold text-emerald-300/95 ${isArabic ? 'text-base sm:text-lg' : ''}`}>
-                    {goldOunceKwd.toLocaleString(localeForNums, {
+                    {formatLatinNumber(goldOunceKwd, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -249,7 +248,7 @@ export default function GoldPriceTicker() {
                 <span className="text-amber-100/55 uppercase me-1">{t('home.tickerOunceUsd')}</span>
                 <span className={`font-bold text-amber-200 ${isArabic ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
                   $
-                  {goldOunceUsd.toLocaleString(localeForNums, {
+                  {formatLatinNumber(goldOunceUsd, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -260,7 +259,7 @@ export default function GoldPriceTicker() {
               <span className="tabular-nums whitespace-nowrap" dir="ltr">
                 <span className="text-amber-100/55 uppercase me-1">{t('home.tickerOunceKwd')}</span>
                 <span className={`font-bold text-emerald-300/95 ${isArabic ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
-                  {goldOunceKwd.toLocaleString(localeForNums, {
+                  {formatLatinNumber(goldOunceKwd, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}

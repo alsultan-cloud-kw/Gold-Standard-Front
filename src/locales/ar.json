@@ -199,6 +199,14 @@
       "featurePan": "سحب للتنقل",
       "featureCrosshair": "مؤشر تقاطع",
       "featureModes": "شموع · خط · مساحة",
+      "rangeAria": "الفترة الزمنية للمخطط",
+      "asOf": "اعتباراً من {{time}}",
+      "disclaimer": "أسعار استرشادية فقط",
+      "open": "الافتتاح",
+      "high": "الأعلى",
+      "low": "الأدنى",
+      "prevClose": "إغلاق سابق",
+      "chartAttribution": "مخططات TradingView",
       "range": {
         "live": "١٠ دقائق",
         "1h": "ساعة",
@@ -561,6 +569,8 @@
     "addToCart": "أضف إلى السلة",
     "buyNow": "اشترِ الآن",
     "quantity": "الكمية",
+    "outOfStock": "غير متوفر",
+    "outOfStockHint": "هذا المنتج غير متاح حالياً. يمكنك العودة لاحقاً أو تصفح منتجات مشابهة.",
     "continueShopping": "متابعة التسوق",
     "certified": "معتمد",
     "calculatePriceFailed": "تعذر حساب السعر"
@@ -1010,8 +1020,18 @@
       "removed": "أُزيل من السلة",
       "removedDesc": "{{name}}",
       "cleared": "تم تفريغ السلة",
-      "clearedDesc": "تمت إزالة جميع المنتجات."
+      "clearedDesc": "تمت إزالة جميع المنتجات.",
+      "outOfStock": "غير متوفر",
+      "outOfStockDesc": "{{name}} غير متاح للشراء حالياً.",
+      "maxAvailable": "المتوفر {{count}} فقط",
+      "maxAvailableDesc": "{{name}} — تم ضبط الكمية حسب المخزون المتاح."
     }
+  },
+  "stock": {
+    "outOfStock": "غير متوفر",
+    "lowStock": "متبقي {{count}} فقط",
+    "unavailableHint": "هذا المنتج غير متاح للشراء حالياً.",
+    "cartBlocked": "أزل المنتجات غير المتوفرة لمتابعة الدفع."
   },
   "product": {
     "products": "المنتجات",

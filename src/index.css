@@ -77,6 +77,12 @@
     @apply text-slate-900 antialiased;
     font-family: 'The Year of The Camel', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
+
+  /* Arabic UI: medium weight reads clearer than Regular at small sizes */
+  html[dir='rtl'] body {
+    font-weight: 500;
+    line-height: 1.65;
+  }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'The Year of The Camel', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -331,6 +337,10 @@
     touch-action: pan-x;
   }
 
+  .metal-chart-canvas a#tv-attr-logo {
+    display: none !important;
+  }
+
   /* Price tag on light cards */
   .price-tag-light {
     @apply inline-flex items-center px-4 py-2 rounded-lg font-semibold;
@@ -540,4 +550,167 @@
 
 .gs-toast-success [data-icon] {
   color: #85e307 !important;
+}
+
+/**
+ * Arabic / RTL readability — larger type, stronger weight, better contrast site-wide.
+ * Applied via html[dir="rtl"] from i18n (applyLanguageToDocument).
+ */
+html[dir='rtl'] {
+  font-size: 106.25%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  --muted-foreground: 215 16% 34%;
+}
+
+html[dir='rtl'] .font-normal {
+  font-weight: 500;
+}
+
+html[dir='rtl'] .font-medium {
+  font-weight: 600;
+}
+
+html[dir='rtl'] .text-xs {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+html[dir='rtl'] .text-sm {
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+html[dir='rtl'] .text-base {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+html[dir='rtl'] .text-lg {
+  font-size: 1.1875rem;
+  line-height: 1.55;
+}
+
+html[dir='rtl'] .text-xl {
+  font-size: 1.3125rem;
+}
+
+/* Micro labels (prices cards, badges) — never below ~13px in Arabic */
+html[dir='rtl'] .text-\[10px\] {
+  font-size: 0.8125rem !important;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+html[dir='rtl'] .text-\[11px\] {
+  font-size: 0.875rem !important;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+/* Wide letter-spacing hurts Arabic script */
+html[dir='rtl'] .uppercase {
+  text-transform: none;
+  letter-spacing: 0.02em !important;
+}
+
+html[dir='rtl'] [class*='tracking-'] {
+  letter-spacing: 0.03em !important;
+}
+
+/* Muted copy — darker for legibility */
+html[dir='rtl'] .text-\[#64748B\],
+html[dir='rtl'] .text-\[#94A3B8\],
+html[dir='rtl'] .text-muted-foreground {
+  color: #475569 !important;
+}
+
+html[dir='rtl'] .gold-card .text-gold-100\/60,
+html[dir='rtl'] .gold-card .text-gold-100\/50,
+html[dir='rtl'] .gold-card .text-gold-100\/40,
+html[dir='rtl'] .gold-card .text-gold-100\/35 {
+  color: rgb(71 85 105) !important;
+}
+
+html[dir='rtl'] h1,
+html[dir='rtl'] h2,
+html[dir='rtl'] h3,
+html[dir='rtl'] h4 {
+  font-weight: 800;
+}
+
+html[dir='rtl'] .gs-toast [data-description],
+html[dir='rtl'] .gs-toast-desc {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+}
+
+/* Thin/light weights are hard to read in Arabic at small sizes */
+html[dir='rtl'] .font-thin {
+  font-weight: 400;
+}
+
+html[dir='rtl'] .font-light {
+  font-weight: 500;
+}
+
+html[dir='rtl'] .font-semibold {
+  font-weight: 700;
+}
+
+html[dir='rtl'] .font-bold {
+  font-weight: 800;
+}
+
+/* Faint copy on dark hero/footer panels */
+html[dir='rtl'] .text-white\/40 {
+  color: rgb(255 255 255 / 0.72) !important;
+}
+
+html[dir='rtl'] .text-white\/45 {
+  color: rgb(255 255 255 / 0.76) !important;
+}
+
+html[dir='rtl'] .text-white\/50 {
+  color: rgb(255 255 255 / 0.8) !important;
+}
+
+html[dir='rtl'] .text-white\/55 {
+  color: rgb(255 255 255 / 0.84) !important;
+}
+
+html[dir='rtl'] .text-white\/60 {
+  color: rgb(255 255 255 / 0.87) !important;
+}
+
+html[dir='rtl'] .text-white\/65 {
+  color: rgb(255 255 255 / 0.9) !important;
+}
+
+html[dir='rtl'] .text-white\/70 {
+  color: rgb(255 255 255 / 0.92) !important;
+}
+
+/* Price reminder / gold panels */
+html[dir='rtl'] .text-gold-200\/50,
+html[dir='rtl'] .text-gold-200\/55,
+html[dir='rtl'] .text-gold-200\/60 {
+  color: rgb(254 243 199 / 0.88) !important;
+  font-weight: 600;
+}
+
+html[dir='rtl'] .text-gold-100\/80 {
+  font-weight: 600;
+}
+
+/* Very light slate helpers */
+html[dir='rtl'] .text-\[#CBD5E1\] {
+  color: #64748b !important;
+}
+
+/* Interactive labels (metal tabs, filters) */
+html[dir='rtl'] button.text-sm,
+html[dir='rtl'] a.text-sm {
+  font-size: 0.9375rem;
+  font-weight: 700;
 }

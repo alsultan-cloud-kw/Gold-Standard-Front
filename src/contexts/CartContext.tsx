@@ -3,6 +3,11 @@ import { toast } from 'sonner'
 import i18n from '../i18n'
 import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi } from '../services/api'
+import {
+  clampPurchaseQuantity,
+  isProductOutOfStock,
+  productAvailableQuantity,
+} from '@/utils/productStock'
 
 interface CartContextType {
   cart: Cart
@@ -261,19 +266,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    if (isProductOutOfStock(product)) {
+      cartToastInfo(
+        i18n.t('cart.toasts.outOfStock'),
+        i18n.t('cart.toasts.outOfStockDesc', { name: productDisplayName(product) }),
+        `cart-oos-${product.id}`,
+      )
+      return
+    }
+
     // Toast must run after setCart, not inside the updater: React 18 Strict Mode
     // double-invokes state updaters in dev, which duplicated sonner toasts.
-    let toastKind: 'added' | 'increased' | null = null
+    let toastKind: 'added' | 'increased' | 'capped' | null = null
     let toastQty = quantity
     setCart((prevCart) => {
       const existingItem = prevCart.items.find((item) => item.product.id === product.id)
+      const existingQty = existingItem?.quantity ?? 0
+      const nextQty = clampPurchaseQuantity(product, existingQty + quantity, 0)
+
+      if (nextQty <= 0) {
+        return prevCart
+      }
+
+      if (existingQty + quantity > nextQty) {
+        toastKind = 'capped'
+        toastQty = nextQty
+      }
 
       let newItems: CartItem[]
 
       if (existingItem) {
-        const nextQty = existingItem.quantity + quantity
-        toastQty = nextQty
-        toastKind = 'increased'
+        if (existingQty === nextQty) {
+          return prevCart
+        }
+        if (toastKind !== 'capped') {
+          toastQty = nextQty
+          toastKind = 'increased'
+        }
         newItems = prevCart.items.map((item) =>
           item.product.id === product.id
             ? {
@@ -284,14 +313,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : item,
         )
       } else {
-        toastKind = 'added'
+        toastKind = toastKind === 'capped' ? 'capped' : 'added'
         const unit = unitPriceForMembership(product, clubPricingEnabled)
         const newItem: CartItem = {
           id: `${product.id}-${Date.now()}`,
           product,
-          quantity,
+          quantity: nextQty,
           unit_price: unit,
-          total_price: quantity * unit,
+          total_price: nextQty * unit,
         }
         newItems = [...prevCart.items, newItem]
       }
@@ -311,6 +340,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         i18n.t('cart.toasts.qtyIncreased'),
         i18n.t('cart.toasts.qtyIncreasedDesc', { name, qty: toastQty }),
         `cart-qty-${product.id}`,
+      )
+    } else if (toastKind === 'capped') {
+      cartToastInfo(
+        i18n.t('cart.toasts.maxAvailable'),
+        i18n.t('cart.toasts.maxAvailableDesc', { name, count: productAvailableQuantity(product) }),
+        `cart-cap-${product.id}`,
       )
     }
   }
@@ -338,26 +373,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    let toastPayload: { name: string; qty: number; direction: 'up' | 'down' } | null = null
+    let toastPayload: { name: string; qty: number; direction: 'up' | 'down' | 'capped' } | null = null
     setCart((prevCart) => {
       const target = prevCart.items.find((item) => item.id === itemId)
       if (!target) return prevCart
 
       const prevQty = target.quantity
-      if (prevQty === quantity) return prevCart
+      const cappedQty = clampPurchaseQuantity(target.product, quantity, 0)
+      if (cappedQty <= 0) {
+        return prevCart
+      }
+
+      if (prevQty === cappedQty) {
+        if (quantity > prevQty) {
+          toastPayload = {
+            name: productDisplayName(target.product),
+            qty: cappedQty,
+            direction: 'capped',
+          }
+        }
+        return prevCart
+      }
 
       toastPayload = {
         name: productDisplayName(target.product),
-        qty: quantity,
+        qty: cappedQty,
         direction: quantity > prevQty ? 'up' : 'down',
+      }
+      if (quantity > prevQty && cappedQty < quantity) {
+        toastPayload.direction = 'capped'
       }
 
       const newItems = prevCart.items.map((item) =>
         item.id === itemId
           ? {
               ...item,
-              quantity,
-              total_price: quantity * item.unit_price,
+              quantity: cappedQty,
+              total_price: cappedQty * item.unit_price,
             }
           : item,
       )
@@ -372,11 +424,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
           i18n.t('cart.toasts.qtyIncreasedDesc', { name, qty }),
           `cart-qty-${itemId}`,
         )
-      } else {
+      } else if (direction === 'down') {
         cartToastInfo(
           i18n.t('cart.toasts.qtyDecreased'),
           i18n.t('cart.toasts.qtyDecreasedDesc', { name, qty }),
           `cart-qty-${itemId}`,
+        )
+      } else if (direction === 'capped') {
+        cartToastInfo(
+          i18n.t('cart.toasts.maxAvailable'),
+          i18n.t('cart.toasts.maxAvailableDesc', { name, count: qty }),
+          `cart-cap-${itemId}`,
         )
       }
     }

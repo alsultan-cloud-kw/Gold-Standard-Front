@@ -8,6 +8,8 @@ import ProductPriceTrendArrow from '@/components/ProductPriceTrendArrow'
 import { productImageSrc } from '@/utils/productImage'
 import { productUnitPrice, formatKwd } from '@/utils/productPrice'
 import type { ProductFetchTrendMap } from '@/hooks/useProductPriceTrendSincePreviousFetch'
+import { ProductStockBadge, ProductStockOverlay } from '@/components/products/ProductStockBadge'
+import { isProductOutOfStock } from '@/utils/productStock'
 
 type Props = {
   product: Product
@@ -39,14 +41,15 @@ function HomeProductCardInner({
   const ft = fetchTrends?.[product.id]
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
+  const outOfStock = isProductOutOfStock(product)
 
   return (
-    <article className="home-product-card group flex min-w-0 flex-col">
+    <article className={`home-product-card group flex min-w-0 flex-col ${outOfStock ? 'opacity-95' : ''}`}>
       <Link to={`/products/${product.slug}`} className="block min-w-0 flex-1">
         <div
           className={`relative mb-3 overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/10 ${
             compact ? 'aspect-square' : 'aspect-[4/3]'
-          }`}
+          } ${outOfStock ? 'grayscale-[0.35]' : ''}`}
         >
           {imageSrc ? (
             <img
@@ -62,7 +65,10 @@ function HomeProductCardInner({
             </div>
           )}
 
+          <ProductStockOverlay product={product} />
+
           <div className="absolute top-2 left-2 rtl:left-auto rtl:right-2 flex flex-col gap-1">
+            <ProductStockBadge product={product} />
             {!compact && product.is_featured ? (
               <span className="rounded-md bg-[#0B0F19]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                 {t('home.featuredBadge', { defaultValue: 'Featured' })}
@@ -75,7 +81,7 @@ function HomeProductCardInner({
             ) : null}
           </div>
 
-          {!compact && showAddButton ? (
+          {!compact && showAddButton && !outOfStock ? (
             <button
               type="button"
               onClick={(e) => {
@@ -122,10 +128,11 @@ function HomeProductCardInner({
         <button
           type="button"
           onClick={() => addToCart(product)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0B0F19] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1F2937]"
+          disabled={outOfStock}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0B0F19] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
         >
           <ShoppingCart className="h-4 w-4 shrink-0" />
-          {t('home.addToCart')}
+          {outOfStock ? t('stock.outOfStock') : t('home.addToCart')}
         </button>
       ) : null}
     </article>

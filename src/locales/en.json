@@ -199,6 +199,14 @@
       "featurePan": "Drag to pan",
       "featureCrosshair": "Crosshair readout",
       "featureModes": "Candles · Line · Area",
+      "rangeAria": "Chart time range",
+      "asOf": "As of {{time}}",
+      "disclaimer": "Indicative prices only",
+      "open": "Open",
+      "high": "High",
+      "low": "Low",
+      "prevClose": "Prev close",
+      "chartAttribution": "Charts by TradingView",
       "range": {
         "live": "10 Mins",
         "1h": "1 Hour",
@@ -561,6 +569,8 @@
     "addToCart": "Add to Cart",
     "buyNow": "Buy Now",
     "quantity": "Quantity",
+    "outOfStock": "Out of stock",
+    "outOfStockHint": "This item is currently unavailable. Check back soon or browse similar products.",
     "continueShopping": "Continue shopping",
     "certified": "Certified",
     "calculatePriceFailed": "Failed to calculate price"
@@ -1010,8 +1020,18 @@
       "removed": "Removed from cart",
       "removedDesc": "{{name}}",
       "cleared": "Cart cleared",
-      "clearedDesc": "All items were removed."
+      "clearedDesc": "All items were removed.",
+      "outOfStock": "Out of stock",
+      "outOfStockDesc": "{{name}} is not available right now.",
+      "maxAvailable": "Only {{count}} available",
+      "maxAvailableDesc": "{{name}} — adjusted to available stock."
     }
+  },
+  "stock": {
+    "outOfStock": "Out of stock",
+    "lowStock": "Only {{count}} left",
+    "unavailableHint": "This item is not available for purchase right now.",
+    "cartBlocked": "Remove out-of-stock items to continue checkout."
   },
   "product": {
     "products": "Products",

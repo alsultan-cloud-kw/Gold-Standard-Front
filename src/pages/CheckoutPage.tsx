@@ -30,6 +30,11 @@ import {
   cartLineStandardTotal,
 } from '../utils/clubCartPricing'
 import { productImageSrc } from '../utils/productImage'
+import { ProductStockBadge } from '@/components/products/ProductStockBadge'
+import {
+  isProductOutOfStock,
+  productAvailableQuantity,
+} from '@/utils/productStock'
 
 type CheckoutProfileAddress = {
   address_line1?: string | null
@@ -168,6 +173,14 @@ export default function CheckoutPage() {
     useMemo(() => cartClubPricingBreakdown(cart.items), [cart.items])
   const displayTotalAfterClub = chargedSubtotal
   const displayFinalTotal = Math.max(0, displayTotalAfterClub - summary.discountAmount + summary.taxAmount)
+  const hasUnavailableItems = useMemo(
+    () =>
+      cart.items.some(
+        (item) =>
+          isProductOutOfStock(item.product) || item.quantity > productAvailableQuantity(item.product),
+      ),
+    [cart.items],
+  )
 
   // Wallet balance (for showing and enabling wallet payment)
   const { data: payCfg } = useQuery({
@@ -417,6 +430,10 @@ export default function CheckoutPage() {
       return
     }
     if (cart.items.length === 0) return
+    if (hasUnavailableItems) {
+      toast.error(t('stock.cartBlocked'))
+      return
+    }
 
     if (isTurnstileConfigured && !turnstileToken) {
       toast.error(t('auth.captchaRequired'))
@@ -886,6 +903,11 @@ export default function CheckoutPage() {
             {step === 3 && (
               <div className={checkoutPanelClass}>
                 <h2 className="mb-5 text-lg font-bold text-[#0B0F19]">{t('checkoutPage.reviewOrder')}</h2>
+                {hasUnavailableItems && (
+                  <div className="mb-4 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-medium text-[#B91C1C]">
+                    {t('stock.cartBlocked')}
+                  </div>
+                )}
                 <div className="mb-5 space-y-3">
                   {cart.items.map((item) => {
                     const lineList = cartLineStandardTotal(item)
@@ -893,12 +915,19 @@ export default function CheckoutPage() {
                     const imageSrc = productImageSrc(item.product)
                     const productName =
                       isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
+                    const itemOutOfStock = isProductOutOfStock(item.product)
                     return (
                       <div
                         key={item.id}
-                        className="flex items-center gap-4 rounded-xl border border-black/10 bg-[#F9F9FA] p-4"
+                        className={`flex items-center gap-4 rounded-xl border p-4 ${
+                          itemOutOfStock
+                            ? 'border-[#FCA5A5] bg-[#FFFBFB]'
+                            : 'border-black/10 bg-[#F9F9FA]'
+                        }`}
                       >
-                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#E5E7EB] sm:h-16 sm:w-16">
+                        <div
+                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#E5E7EB] sm:h-16 sm:w-16 ${itemOutOfStock ? 'grayscale-[0.35]' : ''}`}
+                        >
                           {imageSrc ? (
                             <img
                               src={imageSrc}
@@ -908,6 +937,9 @@ export default function CheckoutPage() {
                           ) : null}
                         </div>
                         <div className="min-w-0 flex-1">
+                          <div className="mb-1.5">
+                            <ProductStockBadge product={item.product} />
+                          </div>
                           <p className="font-semibold text-[#0B0F19]">{productName}</p>
                           <p className="text-sm text-[#64748B]">
                             {t('checkoutPage.qty', { count: item.quantity })}
@@ -990,6 +1022,9 @@ export default function CheckoutPage() {
                 {walletTooLow && (
                   <p className="mb-4 text-sm text-amber-700">{t('checkoutPage.walletTooLow')}</p>
                 )}
+                {hasUnavailableItems && (
+                  <p className="mb-4 text-sm font-medium text-[#B91C1C]">{t('stock.cartBlocked')}</p>
+                )}
 
                 {isTurnstileConfigured && (
                   <div className="mb-4">
@@ -1015,7 +1050,12 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => void handlePlaceOrder()}
-                    disabled={submitting || walletTooLow || (isTurnstileConfigured && !turnstileToken)}
+                    disabled={
+                      submitting ||
+                      walletTooLow ||
+                      hasUnavailableItems ||
+                      (isTurnstileConfigured && !turnstileToken)
+                    }
                     className={cn(checkoutPrimaryBtnClass, 'flex-1')}
                   >
                     {submitting ? (

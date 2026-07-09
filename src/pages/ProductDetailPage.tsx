@@ -13,12 +13,19 @@ import {
   productUnitPrice,
   liveSellPricePerGramForProduct,
   impliedListSellPerGramFromSnapshot,
+  formatKwd,
 } from '../utils/productPrice'
+import { formatLatinNumber } from '@/utils/formatLatinNumber'
+import { ProductStockBadge, ProductStockOverlay } from '@/components/products/ProductStockBadge'
+import {
+  clampPurchaseQuantity,
+  isProductOutOfStock,
+  productAvailableQuantity,
+} from '@/utils/productStock'
 
 export default function ProductDetailPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
-  const priceLocale = isAr ? 'ar-KW' : undefined
   const { slug } = useParams<{ slug: string }>()
   const [selectedImage, setSelectedImage] = useState(0)
   const [showBarcodeZoom, setShowBarcodeZoom] = useState(false)
@@ -35,12 +42,6 @@ export default function ProductDetailPage() {
     [product]
   )
   const detailFetchTrends = useProductPriceTrendSincePreviousFetch(trendProducts)
-
-  const handleAddToCart = () => {
-    if (product) {
-      addToCart(product as any, selectedQuantity)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -79,6 +80,14 @@ export default function ProductDetailPage() {
   const images = p.images?.length > 0 ? p.images : [{ image: null }]
   const detailTrend = detailFetchTrends[p.id]
   const productUrl = typeof window !== 'undefined' ? window.location.href : ''
+  const outOfStock = isProductOutOfStock(p)
+  const availableQty = productAvailableQuantity(p)
+  const maxSelectableQty = Math.max(1, availableQty || 1)
+
+  const handleAddToCart = () => {
+    if (outOfStock) return
+    addToCart(p as any, clampPurchaseQuantity(p, selectedQuantity))
+  }
 
   const handleShare = async () => {
     if (!productUrl) return
@@ -130,7 +139,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14 xl:gap-16">
           {/* Image Gallery */}
           <div>
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-charcoal-800 mb-4">
+            <div className={`relative aspect-square rounded-lg overflow-hidden bg-charcoal-800 mb-4 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
               {images[selectedImage]?.image ? (
                 <img
                   src={images[selectedImage].image}
@@ -142,6 +151,7 @@ export default function ProductDetailPage() {
                   {t('productDetail.noImage')}
                 </div>
               )}
+              <ProductStockOverlay product={p} />
             </div>
             {images.length > 1 && (
               <div className="flex gap-2">
@@ -181,6 +191,9 @@ export default function ProductDetailPage() {
           <div>
             <div className="flex items-start justify-between mb-4">
               <div>
+                <div className="mb-3">
+                  <ProductStockBadge product={p} size="md" />
+                </div>
                 <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-2">{productName}</h1>
                 {/* <p className="gold-gradient-text-on-light">SKU: {p.sku}</p> */}
               </div>
@@ -210,7 +223,7 @@ export default function ProductDetailPage() {
                   percentOverride={detailTrend?.percent ?? null}
                 />
                 <span className="text-3xl font-bold text-black">
-                  {productUnitPrice(p).toLocaleString(priceLocale)} KWD
+                  {formatKwd(productUnitPrice(p))} KWD
                 </span>
                 {p.live_total_price != null && (
                   <span className="text-xs text-black/70 font-normal">{t('productDetail.liveRate')}</span>
@@ -221,7 +234,7 @@ export default function ProductDetailPage() {
                   <p dir="auto" className="tabular-nums">
                     <span className="text-black-200/55">{t('pricesPage.sell')}</span>{' '}
                     <span className="font-semibold text-gold-100">
-                      {sellPerGramDisplay.toLocaleString(priceLocale, {
+                      {formatLatinNumber(sellPerGramDisplay, {
                         minimumFractionDigits: 4,
                         maximumFractionDigits: 4,
                       })}
@@ -334,6 +347,13 @@ export default function ProductDetailPage() {
             </div> */}
 
             {/* Actions */}
+            {outOfStock ? (
+              <div className="mb-5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+                <p className="font-semibold">{t('productDetail.outOfStock')}</p>
+                <p className="mt-1 text-[#991B1B]/90">{t('productDetail.outOfStockHint')}</p>
+              </div>
+            ) : null}
+
             <div className="mb-5">
               <p className="text-xs text-gold-100/70 mb-2">{t('productDetail.quantity')}</p>
               <div className="flex flex-wrap items-center gap-4">
@@ -341,7 +361,8 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
-                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80"
+                    disabled={outOfStock}
+                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80 disabled:opacity-40"
                     aria-label={t('cartPage.decreaseQty')}
                   >
                     <Minus className="w-4 h-4" />
@@ -349,18 +370,27 @@ export default function ProductDetailPage() {
                   <input
                     type="number"
                     min={1}
+                    max={outOfStock ? 1 : maxSelectableQty}
                     step={1}
                     value={selectedQuantity}
+                    disabled={outOfStock}
                     onChange={(e) => {
                       const next = Number.parseInt(e.target.value, 10)
-                      setSelectedQuantity(Number.isFinite(next) && next > 0 ? next : 1)
+                      setSelectedQuantity(
+                        outOfStock ? 1 : clampPurchaseQuantity(p, Number.isFinite(next) ? next : 1),
+                      )
                     }}
-                    className="w-16 bg-transparent text-center text-lime-950 font-semibold py-2 border-x border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-16 bg-transparent text-center text-lime-950 font-semibold py-2 border-x border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-40"
                   />
                   <button
                     type="button"
-                    onClick={() => setSelectedQuantity((q) => q + 1)}
-                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80"
+                    onClick={() =>
+                      setSelectedQuantity((q) =>
+                        outOfStock ? 1 : clampPurchaseQuantity(p, q + 1),
+                      )
+                    }
+                    disabled={outOfStock || selectedQuantity >= maxSelectableQty}
+                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80 disabled:opacity-40"
                     aria-label={t('cartPage.increaseQty')}
                   >
                     <Plus className="w-4 h-4" />
@@ -378,14 +408,19 @@ export default function ProductDetailPage() {
             <div className="flex gap-4 mb-3">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 gold-button flex items-center justify-center gap-2"
+                disabled={outOfStock}
+                className="flex-1 gold-button flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ShoppingCart className="w-5 h-5" />
-                {t('productDetail.addToCart')}
+                {outOfStock ? t('productDetail.outOfStock') : t('productDetail.addToCart')}
               </button>
               <Link
                 to="/checkout"
-                className="flex-1 px-6 py-3 rounded-lg font-medium gold-gradient-text-on-light border border-gold-500/50 hover:bg-gold-500/10 transition-all text-center"
+                className={`flex-1 px-6 py-3 rounded-lg font-medium gold-gradient-text-on-light border border-gold-500/50 transition-all text-center ${
+                  outOfStock ? 'pointer-events-none opacity-50' : 'hover:bg-gold-500/10'
+                }`}
+                aria-disabled={outOfStock}
+                tabIndex={outOfStock ? -1 : undefined}
               >
                 {t('productDetail.buyNow')}
               </Link>

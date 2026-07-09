@@ -168,6 +168,10 @@ export interface Product {
   price_trend?: 'up' | 'down' | 'same' | null
   price_trend_percent?: number | null
   status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued'
+  /** Checkout-branch available units (storefront API). */
+  available_quantity?: number
+  stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock'
+  in_stock?: boolean
   is_featured: boolean
   /** Present on list API; use with image_url for thumbnails. */
   primary_image?: ProductImage | null

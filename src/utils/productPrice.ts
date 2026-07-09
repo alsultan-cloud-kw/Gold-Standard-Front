@@ -2,6 +2,7 @@
  * Prefer live_total_price (URL + markup buy rate × weight + making charge)
  * when API provides it; otherwise fall back to current_price snapshot.
  */
+import { PRICE_NUMBER_LOCALE } from './formatLatinNumber'
 export function productUnitPrice(product: {
   live_total_price?: number | null
   live_total_price_club?: number | null
@@ -20,7 +21,7 @@ export function productUnitPrice(product: {
 
 export function formatKwd(n: number | null | undefined): string {
   if (n == null || Number.isNaN(Number(n))) return '—'
-  return Number(n).toLocaleString(undefined, { maximumFractionDigits: 3 })
+  return Number(n).toLocaleString(PRICE_NUMBER_LOCALE, { maximumFractionDigits: 3 })
 }
 
 /**

@@ -20,6 +20,11 @@ import {
   cartLineStandardTotal,
 } from '../utils/clubCartPricing'
 import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
+import { ProductStockBadge } from '@/components/products/ProductStockBadge'
+import {
+  isProductOutOfStock,
+  productAvailableQuantity,
+} from '@/utils/productStock'
 
 function OrderSummaryCard({
   cart,
@@ -131,6 +136,10 @@ export default function CartPage() {
     cartClubPricingBreakdown(cart.items)
   const displayTotalAfterClub = chargedSubtotal
   const displayFinalTotal = Math.max(0, displayTotalAfterClub - summary.discountAmount + summary.taxAmount)
+  const hasUnavailableItems = cart.items.some(
+    (item) =>
+      isProductOutOfStock(item.product) || item.quantity > productAvailableQuantity(item.product),
+  )
 
   if (cart.items.length === 0) {
     return (
@@ -187,14 +196,18 @@ export default function CartPage() {
                 isAr && item.product.carat?.display_name_ar
                   ? item.product.carat.display_name_ar
                   : item.product.carat?.display_name_en
+              const itemOutOfStock = isProductOutOfStock(item.product)
+              const itemMaxQty = productAvailableQuantity(item.product)
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:p-5 lg:p-6"
+                  className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:p-5 lg:p-6 ${
+                    itemOutOfStock ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-black/10'
+                  }`}
                 >
                   <Link
                     to={`/products/${item.product.slug}`}
-                    className="h-40 w-full shrink-0 overflow-hidden rounded-xl bg-[#F4F4F5] sm:h-28 sm:w-28 lg:h-32 lg:w-32"
+                    className={`relative h-40 w-full shrink-0 overflow-hidden rounded-xl bg-[#F4F4F5] sm:h-28 sm:w-28 lg:h-32 lg:w-32 ${itemOutOfStock ? 'grayscale-[0.35]' : ''}`}
                   >
                     {imageSrc ? (
                       <img src={imageSrc} alt={productName} className="h-full w-full object-cover" />
@@ -208,6 +221,9 @@ export default function CartPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
+                        <div className="mb-2">
+                          <ProductStockBadge product={item.product} />
+                        </div>
                         <Link
                           to={`/products/${item.product.slug}`}
                           className="text-base font-bold text-[#0B0F19] transition-colors hover:text-[#3F6F00] sm:text-lg lg:text-xl"
@@ -245,7 +261,8 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="flex h-10 w-10 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white"
+                          disabled={itemOutOfStock || item.quantity >= itemMaxQty}
+                          className="flex h-10 w-10 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
                           aria-label={t('cartPage.increaseQty')}
                         >
                           <Plus className="h-4 w-4" />
@@ -300,9 +317,14 @@ export default function CartPage() {
 
             <Link
               to="/checkout"
-              className="flex min-h-[3.5rem] w-full items-center justify-center gap-2 rounded-2xl border border-[#3F6F00] bg-[#85E307] text-base font-bold text-[#3F6F00] shadow-[0_14px_28px_-14px_rgba(133,227,7,0.55)] transition hover:bg-[#9AEF2A] sm:text-lg"
+              aria-disabled={hasUnavailableItems}
+              className={`flex min-h-[3.5rem] w-full items-center justify-center gap-2 rounded-2xl border text-base font-bold shadow-[0_14px_28px_-14px_rgba(133,227,7,0.55)] transition sm:text-lg ${
+                hasUnavailableItems
+                  ? 'pointer-events-none cursor-not-allowed border-[#CBD5E1] bg-[#E2E8F0] text-[#64748B]'
+                  : 'border-[#3F6F00] bg-[#85E307] text-[#3F6F00] hover:bg-[#9AEF2A]'
+              }`}
             >
-              {t('cartPage.proceedCheckout')}
+              {hasUnavailableItems ? t('stock.cartBlocked') : t('cartPage.proceedCheckout')}
               <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Link>
 

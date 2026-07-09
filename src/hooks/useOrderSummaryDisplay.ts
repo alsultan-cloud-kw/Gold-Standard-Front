@@ -2,10 +2,11 @@ import { useMemo } from 'react'
 import type { Cart } from '../types'
 import { parseCheckoutMoney } from '../utils/checkoutPreview'
 import { useCheckoutOfferPreview } from './useCheckoutOfferPreview'
+import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
 
 /** Format KWD amounts for order summaries (matches dashboard-style precision). */
 export function formatOrderKwd(n: number): string {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+  return n.toLocaleString(PRICE_NUMBER_LOCALE, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
 }
 
 /**

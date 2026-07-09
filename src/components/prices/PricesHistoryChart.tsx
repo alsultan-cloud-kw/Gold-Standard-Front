@@ -5,30 +5,29 @@ import {
   Activity,
   AreaChart as AreaIcon,
   CandlestickChart,
-  Check,
   Crosshair,
   LineChart as LineIcon,
   Maximize2,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '@/services/api'
 import { METAL_SYMBOL_BY_KEY, pricingApi, type MetalChartPoint } from '@/services/pricingApi'
 import { AdvancedMetalChart, type ChartDisplayMode } from '@/components/prices/AdvancedMetalChart'
 import {
   buildCandleSeries,
   buildLineSeries,
+  formatChartAsOf,
+  formatChartTimeRange,
   formatPrice,
+  prevCloseFromSnapshot,
   seriesChange,
+  seriesOhlcStats,
+  snapshotOhlcForUnit,
   type ChartRange,
   type MetalTab,
 } from '@/utils/metalChartSeries'
+import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
 
 type Props = {
   rates: DaralsabaekPublicRatesResponse | undefined
@@ -48,9 +47,18 @@ function numOrNull(v: unknown): number | null {
 
 const RANGE_KEYS: ChartRange[] = ['live', '1h', '1d', '1w']
 
+function StatCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-medium text-[#64748B]">{label}</dt>
+      <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#0B0F19]">{value}</dd>
+    </div>
+  )
+}
+
 export function PricesHistoryChart({ rates }: Props) {
   const { t, i18n } = useTranslation()
-  const locale = i18n.language?.startsWith('ar') ? 'ar-KW' : i18n.language || 'en'
+  const locale = i18n.language?.startsWith('ar') ? 'ar-KW' : PRICE_NUMBER_LOCALE
   const [metal, setMetal] = useState<MetalTab>('gold')
   const [chartRange, setChartRange] = useState<ChartRange>('1h')
   const [mode, setMode] = useState<ChartDisplayMode>('candles')
@@ -102,6 +110,15 @@ export function PricesHistoryChart({ rates }: Props) {
     staleTime: 25_000,
   })
   const historyFetching = pricingHistoryFetching || legacyHistoryFetching
+
+  const { data: currentSnap } = useQuery({
+    queryKey: ['pricingCurrent', metal],
+    queryFn: () => pricingApi.getCurrent(metal),
+    enabled: rates?.succeeded === true,
+    staleTime: 25_000,
+    refetchInterval: 30_000,
+    retry: 1,
+  })
 
   const preferOz = metal === 'gold' && (chartRange === 'live' || chartRange === '1h')
 
@@ -158,6 +175,40 @@ export function PricesHistoryChart({ rates }: Props) {
   const change = useMemo(() => seriesChange(line), [line])
   const positive = change == null ? true : change.abs >= 0
   const lastPrice = line.length ? line[line.length - 1].value : liveChartV
+
+  const seriesStats = useMemo(() => seriesOhlcStats(line, candles), [line, candles])
+  const snapStats = useMemo(
+    () => snapshotOhlcForUnit(currentSnap, chartUnit),
+    [currentSnap, chartUnit],
+  )
+
+  const displayStats = useMemo(() => {
+    const fmt = (v: number | null | undefined) =>
+      v != null && Number.isFinite(v) ? formatPrice(v, chartUnit, locale) : '—'
+    return {
+      open: fmt(snapStats?.open ?? seriesStats?.open),
+      high: fmt(snapStats?.high ?? seriesStats?.high),
+      low: fmt(snapStats?.low ?? seriesStats?.low),
+      prevClose: fmt(
+        snapStats?.prevClose ??
+          prevCloseFromSnapshot(currentSnap, chartUnit) ??
+          (line.length >= 2 ? line[0].value : null),
+      ),
+    }
+  }, [snapStats, seriesStats, currentSnap, chartUnit, locale, line])
+
+  const referencePrice = useMemo(() => {
+    const fromSnap = prevCloseFromSnapshot(currentSnap, chartUnit) ?? snapStats?.prevClose
+    if (fromSnap != null && Number.isFinite(fromSnap)) return fromSnap
+    if (line.length >= 2) return line[0].value
+    return null
+  }, [currentSnap, chartUnit, snapStats, line])
+
+  const timeRangeLabel = useMemo(() => formatChartTimeRange(line, locale), [line, locale])
+  const asOfLabel = useMemo(() => {
+    if (line.length) return formatChartAsOf(line[line.length - 1].time, locale)
+    return formatChartAsOf(Math.floor(Date.now() / 1000), locale)
+  }, [line, locale])
 
   const metalTabs: { id: MetalTab; labelKey: string }[] = [
     { id: 'gold', labelKey: 'home.chart.metalGold' },
@@ -248,8 +299,15 @@ export function PricesHistoryChart({ rates }: Props) {
               ) : null}
             </div>
 
-            <p className="mt-2 flex items-center gap-2 text-xs text-[#64748B]">
-              <Activity className="h-3.5 w-3.5 text-[#3F6F00]" aria-hidden />
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#64748B]">
+              <span>
+                {t('home.chart.asOf', { time: asOfLabel })}
+                <span className="mx-1.5 text-[#CBD5E1]">·</span>
+                {t('home.chart.disclaimer')}
+              </span>
+            </p>
+            <p className="mt-1 flex items-center gap-2 text-xs text-[#64748B]">
+              <Activity className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
               {t('home.chart.updateCountdown', {
                 seconds: String(countdown).padStart(2, '0'),
               })}
@@ -287,37 +345,6 @@ export function PricesHistoryChart({ rates }: Props) {
               })}
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-[#0B0F19] outline-none transition-colors hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 focus-visible:ring-2 focus-visible:ring-[#85E307]/50"
-                type="button"
-              >
-                {t(`home.chart.range.${chartRange}`)}
-                <span className="text-[#94A3B8]" aria-hidden>
-                  ▼
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="min-w-[11rem] border border-black/10 bg-white text-[#0B0F19] shadow-lg"
-              >
-                {RANGE_KEYS.map((key) => (
-                  <DropdownMenuItem
-                    key={key}
-                    className="cursor-pointer focus:bg-[#ECFCCB]/60 focus:text-[#0B0F19]"
-                    onClick={() => setChartRange(key)}
-                  >
-                    <span className="flex w-full items-center justify-between gap-3">
-                      {t(`home.chart.range.${key}`)}
-                      {chartRange === key ? (
-                        <Check className="h-4 w-4 text-[#3F6F00]" aria-hidden />
-                      ) : null}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <button
               type="button"
               onClick={() => setFitToken((n) => n + 1)}
@@ -327,6 +354,31 @@ export function PricesHistoryChart({ rates }: Props) {
               <Maximize2 className="h-4 w-4" aria-hidden />
             </button>
           </div>
+        </div>
+
+        <div
+          className="mb-4 flex flex-wrap items-center gap-1.5"
+          role="group"
+          aria-label={t('home.chart.rangeAria')}
+        >
+          {RANGE_KEYS.map((key) => {
+            const on = chartRange === key
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setChartRange(key)}
+                className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:text-sm ${
+                  on
+                    ? 'bg-[#E4E4E7] text-[#0B0F19] shadow-sm'
+                    : 'text-[#64748B] hover:bg-[#F4F4F5] hover:text-[#0B0F19]'
+                }`}
+              >
+                {t(`home.chart.range.${key}`)}
+              </button>
+            )
+          })}
         </div>
 
         <p className="mb-4 text-xs leading-relaxed text-[#64748B] sm:text-sm">
@@ -349,11 +401,30 @@ export function PricesHistoryChart({ rates }: Props) {
               height={chartHeight}
               positive={positive}
               fitToken={fitToken}
+              referencePrice={referencePrice}
+              referenceLabel={t('home.chart.prevClose')}
             />
           )}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
+        <div className="mt-3 flex flex-col gap-3 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          {timeRangeLabel ? (
+            <p className="text-xs font-medium text-[#64748B] sm:text-sm">{timeRangeLabel}</p>
+          ) : (
+            <span />
+          )}
+        </div>
+
+        {(line.length >= 2 || candles.length >= 2) && (
+          <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-black/5 pt-4 sm:grid-cols-4">
+            <StatCell label={t('home.chart.open')} value={displayStats.open} />
+            <StatCell label={t('home.chart.high')} value={displayStats.high} />
+            <StatCell label={t('home.chart.low')} value={displayStats.low} />
+            <StatCell label={t('home.chart.prevClose')} value={displayStats.prevClose} />
+          </dl>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
           <span>{t('home.chart.featureZoom')}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span>{t('home.chart.featurePan')}</span>
@@ -361,6 +432,15 @@ export function PricesHistoryChart({ rates }: Props) {
           <span>{t('home.chart.featureCrosshair')}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span>{t('home.chart.featureModes')}</span>
+          <span className="text-[#CBD5E1]">·</span>
+          <a
+            href="https://www.tradingview.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="normal-case tracking-normal text-[#94A3B8] underline-offset-2 hover:text-[#64748B] hover:underline"
+          >
+            {t('home.chart.chartAttribution')}
+          </a>
         </div>
       </div>
     </div>

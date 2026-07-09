@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '../services/api'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
+import { formatLatinNumber } from '@/utils/formatLatinNumber'
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
@@ -15,8 +16,7 @@ function fmt(n: number | null | undefined) {
  * Company / wholesale-style board — sell rates per karat, large type for desk use.
  */
 export default function CompanyPricesPage() {
-  const { t, i18n } = useTranslation()
-  const isAr = i18n.language?.startsWith('ar')
+  const { t } = useTranslation()
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['daralsabaekPublicRates'],
@@ -52,7 +52,6 @@ export default function CompanyPricesPage() {
     return ounceCarat ? resolveDir(ounceCarat.key) : null
   })()
 
-  const locale = isAr ? 'ar-KW' : 'en-US'
   const showBoard = !isLoading && res?.succeeded && carats.length > 0
 
   return (
@@ -113,7 +112,7 @@ export default function CompanyPricesPage() {
                   <PriceTrendBadge dir={ounceTrendDir} variant="dark" size="md" />
                   <p className="text-4xl font-bold tabular-nums tracking-tight sm:text-5xl lg:text-6xl">
                     $
-                    {Number(ounceUsdValue).toLocaleString(locale, {
+                    {formatLatinNumber(Number(ounceUsdValue), {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}

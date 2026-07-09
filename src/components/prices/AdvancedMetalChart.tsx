@@ -6,6 +6,7 @@ import {
   LineStyle,
   type IChartApi,
   type ISeriesApi,
+  type IPriceLine,
   type CandlestickData,
   type LineData,
   type AreaData,
@@ -27,6 +28,9 @@ type Props = {
   positive?: boolean
   /** Increment to force fitContent(). */
   fitToken?: number
+  /** Horizontal reference line (e.g. previous close). */
+  referencePrice?: number | null
+  referenceLabel?: string
 }
 
 /** Light storefront chart palette — matches site canvas (#F9F9FA / white). */
@@ -66,13 +70,44 @@ export function AdvancedMetalChart({
   height = 340,
   positive = true,
   fitToken = 0,
+  referencePrice = null,
+  referenceLabel = '',
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Area'> | null>(
     null,
   )
+  const priceLineRef = useRef<IPriceLine | null>(null)
   const [chartReady, setChartReady] = useState(0)
+
+  const clearPriceLine = () => {
+    const series = seriesRef.current
+    if (series && priceLineRef.current) {
+      try {
+        series.removePriceLine(priceLineRef.current)
+      } catch {
+        /* already removed */
+      }
+    }
+    priceLineRef.current = null
+  }
+
+  const applyReferenceLine = () => {
+    clearPriceLine()
+    const series = seriesRef.current
+    if (!series || referencePrice == null || !Number.isFinite(referencePrice)) return
+    priceLineRef.current = series.createPriceLine({
+      price: referencePrice,
+      color: 'rgba(100, 116, 139, 0.65)',
+      lineWidth: 1,
+      lineStyle: LineStyle.Dotted,
+      axisLabelVisible: true,
+      title: referenceLabel,
+      axisLabelColor: '#64748B',
+      axisLabelTextColor: '#FFFFFF',
+    })
+  }
 
   useEffect(() => {
     const el = containerRef.current
@@ -84,6 +119,7 @@ export function AdvancedMetalChart({
         textColor: TEXT,
         fontFamily: "'The Year of The Camel', system-ui, sans-serif",
         fontSize: 12,
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: GRID, style: LineStyle.Dotted },
@@ -104,9 +140,13 @@ export function AdvancedMetalChart({
           labelBackgroundColor: INK,
         },
       },
-      rightPriceScale: {
+      leftPriceScale: {
+        visible: true,
         borderVisible: false,
         scaleMargins: { top: 0.12, bottom: 0.08 },
+      },
+      rightPriceScale: {
+        visible: false,
       },
       timeScale: {
         borderVisible: false,
@@ -128,7 +168,7 @@ export function AdvancedMetalChart({
         pinch: true,
       },
       localization: {
-        locale,
+        locale: 'en-US',
       },
     }
 
@@ -162,6 +202,7 @@ export function AdvancedMetalChart({
     const chart = chartRef.current
     if (!chart || !chartReady) return
 
+    clearPriceLine()
     if (seriesRef.current) {
       try {
         chart.removeSeries(seriesRef.current)
@@ -212,6 +253,7 @@ export function AdvancedMetalChart({
       seriesRef.current = s
       if (line.length) s.setData(toLineData(line))
     }
+    applyReferenceLine()
     chart.timeScale().fitContent()
   }, [chartReady, mode])
 
@@ -236,7 +278,8 @@ export function AdvancedMetalChart({
         priceLineColor: positive ? 'rgba(63,111,0,0.35)' : 'rgba(220,38,38,0.35)',
       })
     }
-  }, [mode, line, candles, positive, chartReady])
+    applyReferenceLine()
+  }, [mode, line, candles, positive, chartReady, referencePrice, referenceLabel])
 
   useEffect(() => {
     if (!fitToken) return

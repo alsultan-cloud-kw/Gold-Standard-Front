@@ -192,10 +192,150 @@ export function seriesChange(line: LinePoint[]): { abs: number; pct: number } | 
   return { abs, pct }
 }
 
-export function formatPrice(value: number, unit: string, locale: string): string {
+export type SeriesOhlc = {
+  open: number
+  high: number
+  low: number
+  close: number
+}
+
+/** OHLC for the visible chart window (from candles when available). */
+export function seriesOhlcStats(line: LinePoint[], candles: CandlePoint[]): SeriesOhlc | null {
+  if (candles.length >= 1) {
+    return {
+      open: candles[0].open,
+      high: Math.max(...candles.map((c) => c.high)),
+      low: Math.min(...candles.map((c) => c.low)),
+      close: candles[candles.length - 1].close,
+    }
+  }
+  if (line.length >= 1) {
+    const values = line.map((p) => p.value)
+    return {
+      open: values[0],
+      high: Math.max(...values),
+      low: Math.min(...values),
+      close: values[values.length - 1],
+    }
+  }
+  return null
+}
+
+const TROY_OZ_GRAMS = 31.1034768
+
+/** Format unix-sec range for chart caption (e.g. Google Finance style). */
+export function formatChartTimeRange(
+  line: LinePoint[],
+  locale: string,
+  timeZone = 'Asia/Kuwait',
+): string | null {
+  if (line.length < 2) return null
+  const start = new Date(line[0].time * 1000)
+  const end = new Date(line[line.length - 1].time * 1000)
+  const fmt = new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone,
+  })
+  return `${fmt.format(start)} – ${fmt.format(end)}`
+}
+
+export function formatChartAsOf(unixSec: number, locale: string, timeZone = 'Asia/Kuwait'): string {
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone,
+    timeZoneName: 'shortOffset',
+  }).format(new Date(unixSec * 1000))
+}
+
+export function prevCloseFromSnapshot(
+  snap: {
+    prev_close_price?: string | number | null
+    usd_to_kwd_rate?: string | number | null
+    price_gram_24k_kwd?: string | number | null
+  } | null | undefined,
+  unit: string,
+): number | null {
+  if (!snap) return null
+  const prevUsd =
+    snap.prev_close_price != null && snap.prev_close_price !== ''
+      ? Number(snap.prev_close_price)
+      : null
+  if (prevUsd == null || !Number.isFinite(prevUsd)) return null
+
+  if (unit === 'USD/oz') return prevUsd
+
+  if (unit === 'KWD/g') {
+    const rate =
+      snap.usd_to_kwd_rate != null && snap.usd_to_kwd_rate !== ''
+        ? Number(snap.usd_to_kwd_rate)
+        : null
+    if (rate != null && Number.isFinite(rate) && rate > 0) {
+      return (prevUsd * rate) / TROY_OZ_GRAMS
+    }
+    const gramKwd =
+      snap.price_gram_24k_kwd != null && snap.price_gram_24k_kwd !== ''
+        ? Number(snap.price_gram_24k_kwd)
+        : null
+    if (gramKwd != null && Number.isFinite(gramKwd)) return gramKwd
+  }
+  return null
+}
+
+export function snapshotOhlcForUnit(
+  snap: {
+    open_price?: string | number | null
+    high_price?: string | number | null
+    low_price?: string | number | null
+    prev_close_price?: string | number | null
+    price?: string | number | null
+    usd_to_kwd_rate?: string | number | null
+    price_gram_24k_kwd?: string | number | null
+  } | null | undefined,
+  unit: string,
+): Partial<SeriesOhlc & { prevClose: number }> | null {
+  if (!snap) return null
+
+  const num = (v: unknown) => {
+    if (v == null || v === '') return null
+    const n = Number(v)
+    return Number.isFinite(n) ? n : null
+  }
+
+  if (unit === 'USD/oz') {
+    return {
+      open: num(snap.open_price) ?? undefined,
+      high: num(snap.high_price) ?? undefined,
+      low: num(snap.low_price) ?? undefined,
+      prevClose: num(snap.prev_close_price) ?? undefined,
+      close: num(snap.price) ?? undefined,
+    }
+  }
+
+  const prev = prevCloseFromSnapshot(snap, unit)
+  const rate = num(snap.usd_to_kwd_rate)
+  const toGramKwd = (usdOz: number | null) =>
+    usdOz != null && rate != null && rate > 0 ? (usdOz * rate) / TROY_OZ_GRAMS : null
+
+  return {
+    open: toGramKwd(num(snap.open_price)) ?? undefined,
+    high: toGramKwd(num(snap.high_price)) ?? undefined,
+    low: toGramKwd(num(snap.low_price)) ?? undefined,
+    prevClose: prev ?? undefined,
+    close: num(snap.price_gram_24k_kwd) ?? toGramKwd(num(snap.price)) ?? undefined,
+  }
+}
+
+export function formatPrice(value: number, unit: string, _locale?: string): string {
   const digits = unit.includes('USD') ? 2 : 4
   try {
-    return value.toLocaleString(locale, {
+    return value.toLocaleString('en-US', {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     })

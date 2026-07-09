@@ -13,6 +13,7 @@ import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
+import { formatLatinNumber } from '@/utils/formatLatinNumber'
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
@@ -26,11 +27,10 @@ function fmtTotal(n: number | null | undefined) {
  * Customer live prices — buy & sell KWD/g with weight calculator + chart.
  */
 export default function PricesPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [gramsInput, setGramsInput] = useState('')
   const grams = parseFloat(gramsInput)
   const gramsValid = Number.isFinite(grams) && grams > 0
-  const isAr = i18n.language?.startsWith('ar')
 
   const { data, isLoading, isError, refetch, isFetching } = useEnrichedPublicRates(20_000)
   const { data: kuwaitConfigRaw } = useQuery({
@@ -109,7 +109,6 @@ export default function PricesPage() {
     return ounceCarat ? resolveDir(ounceCarat.key) : null
   })()
 
-  const locale = isAr ? 'ar-KW' : 'en-US'
   const showBoard = !isLoading && res?.succeeded && carats.length > 0
 
   return (
@@ -172,7 +171,7 @@ export default function PricesPage() {
                   <PriceTrendBadge dir={ounceTrendDir} variant="dark" size="sm" />
                   <p className="text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
                     $
-                    {Number(ounceUsdValue).toLocaleString(locale, {
+                    {formatLatinNumber(Number(ounceUsdValue), {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
