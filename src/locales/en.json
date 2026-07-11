@@ -275,9 +275,9 @@
     "whyChooseUsDesc": "What sets us apart starts after checkout — verify your piece, sell it back anytime, and visit us in person.",
     "whyKicker": "The difference",
     "wealthProtection": {
-      "kicker": "Inflation hedge",
-      "title": "Protect your wealth from the silent thief",
-      "subtitle": "Cash loses purchasing power every year. Physical gold has preserved — and grown — real value for over five decades.",
+      "kicker": "Preserve your wealth's value",
+      "title": "Inflation erodes purchasing power... gold preserves it",
+      "subtitle": "Over more than fifty years, physical gold has proven its ability to protect the real value of wealth across different economic conditions.",
       "cash": {
         "title": "Cash purchasing power",
         "metric": "Value lost: 90%+",
@@ -350,7 +350,7 @@
         "realEstate": "Solid, but hard to liquidate"
       },
       "criteria": {
-        "inflationHedge": "Inflation hedge",
+        "inflationHedge": "Inflation protection",
         "lowVolatility": "Low volatility",
         "liquidity": "Liquidity",
         "crisisResilience": "Crisis resilience",
