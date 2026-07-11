@@ -244,7 +244,12 @@
       "insuredShipping": "Fully insured shipping",
       "knetSecure": "Secure KNET checkout",
       "licenseNo": "Licence no.:",
-      "buyback": "Buyback guarantee"
+      "buyback": "Buyback guarantee",
+      "iconAlt": {
+        "moci": "State of Kuwait emblem — Ministry of Commerce and Industry",
+        "authentic": "Authentic gold bullion",
+        "knet": "KNET — Kuwait national electronic payment"
+      }
     },
     "heroSpot": {
       "ariaLabel": "Live gold spot price — open full chart",

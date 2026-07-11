@@ -18,7 +18,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    const lang = localStorage.getItem('app_lang') || document.documentElement.getAttribute('lang') || 'en'
+    const lang = localStorage.getItem('app_lang') || document.documentElement.getAttribute('lang') || 'ar'
     config.headers['Accept-Language'] = lang.startsWith('ar') ? 'ar' : 'en'
     if (config.data instanceof FormData) {
       // Let the runtime set multipart boundary (do not send application/json)

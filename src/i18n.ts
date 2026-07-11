@@ -10,7 +10,9 @@ const resources = {
   ar: { translation: ar },
 }
 
-const DEFAULT_LANG = 'en'
+/** Kuwait storefront default — Arabic first; English available via switcher. */
+export const DEFAULT_LANG = 'ar'
+export const FALLBACK_LANG = 'en'
 const ARABIC_CODE = 'ar'
 
 i18n
@@ -18,13 +20,15 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: DEFAULT_LANG,
-    supportedLngs: ['en', 'ar'],
+    lng: DEFAULT_LANG,
+    fallbackLng: FALLBACK_LANG,
+    supportedLngs: ['ar', 'en'],
     interpolation: {
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'navigator'],
+      // Respect saved user choice only; first visit uses lng (Arabic).
+      order: ['localStorage'],
       caches: ['localStorage'],
       lookupLocalStorage: 'app_lang',
     },
@@ -32,7 +36,7 @@ i18n
 
 /** Set document dir and lang for RTL (Arabic). Call when language changes. */
 export function applyLanguageToDocument(lng: string) {
-  const isRtl = lng === ARABIC_CODE
+  const isRtl = lng === ARABIC_CODE || lng.startsWith('ar-')
   const html = document.documentElement
   html.setAttribute('lang', isRtl ? 'ar' : 'en')
   html.setAttribute('dir', isRtl ? 'rtl' : 'ltr')

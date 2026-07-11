@@ -1,19 +1,17 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  BadgeCheck,
-  Gem,
-  ShieldCheck,
-  ArrowRight,
-  ScanLine,
-  type LucideIcon,
-} from 'lucide-react'
+import { ArrowRight, ScanLine } from 'lucide-react'
+import { HeroTrustIcon } from '@/components/home/HeroTrustIcon'
+import { TRUST_VECTOR_ICON_CLASS, TRUST_VECTOR_ICON_STROKE } from '@/constants/trustIcons'
 import { cn } from '@/lib/utils'
 
-const TRUST_BULLETS: ReadonlyArray<{ id: string; labelKey: string; icon: LucideIcon }> = [
-  { id: 'moci', labelKey: 'home.heroTrust.mociHallmark', icon: BadgeCheck },
-  { id: 'authentic', labelKey: 'home.heroTrust.authentic', icon: Gem },
-  { id: 'insured', labelKey: 'home.heroTrust.insuredShipping', icon: ShieldCheck },
+const TRUST_BULLETS: ReadonlyArray<{
+  id: 'moci' | 'authentic' | 'insured'
+  labelKey: 'home.heroTrust.mociHallmark' | 'home.heroTrust.authentic' | 'home.heroTrust.insuredShipping'
+}> = [
+  { id: 'moci', labelKey: 'home.heroTrust.mociHallmark' },
+  { id: 'authentic', labelKey: 'home.heroTrust.authentic' },
+  { id: 'insured', labelKey: 'home.heroTrust.insuredShipping' },
 ]
 
 type Props = {
@@ -41,19 +39,14 @@ export function ProductTrustPanel({ verifyCode, className }: Props) {
         </p>
 
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {TRUST_BULLETS.map((item) => {
-            const Icon = item.icon
-            return (
-              <li key={item.id} className="flex min-w-0 items-start gap-2.5">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ECFCCB]">
-                  <Icon className="h-3 w-3 text-[#3F6F00]" strokeWidth={2.25} aria-hidden />
-                </span>
-                <span className="min-w-0 text-sm font-semibold leading-snug text-[#0C1512]">
-                  {t(item.labelKey)}
-                </span>
-              </li>
-            )
-          })}
+          {TRUST_BULLETS.map((item) => (
+            <li key={item.id} className="flex min-w-0 items-start gap-2.5">
+              <HeroTrustIcon id={item.id} size="sm" className="mt-0.5" />
+              <span className="min-w-0 pt-1 text-sm font-semibold leading-snug text-[#0C1512]">
+                {t(item.labelKey)}
+              </span>
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -61,8 +54,8 @@ export function ProductTrustPanel({ verifyCode, className }: Props) {
         to={verifyHref}
         className="group flex items-center gap-4 rounded-2xl border border-[#3F6F00]/20 bg-[#ECFCCB]/40 px-4 py-3.5 transition-colors hover:border-[#3F6F00]/35 hover:bg-[#ECFCCB]/70 sm:px-5"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
-          <ScanLine className="h-5 w-5 text-[#3F6F00]" aria-hidden />
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+          <ScanLine className={TRUST_VECTOR_ICON_CLASS} strokeWidth={TRUST_VECTOR_ICON_STROKE} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-bold text-[#0C1512]">
