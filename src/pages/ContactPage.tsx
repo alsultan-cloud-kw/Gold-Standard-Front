@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -12,23 +12,121 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
 import { GS_CONTACT } from '@/constants/contact'
 import { GS_INSTAGRAM } from '@/constants/social'
+import { isTurnstileConfigured } from '@/lib/turnstile'
+import { contactApi } from '@/services/api'
 
 const fieldClass =
   'w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-4 py-3 text-sm font-medium text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25'
+
+const fieldErrorClass =
+  'border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500/20'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+type ContactFormData = {
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+}
+
+type ContactField = keyof ContactFormData
+
+type ContactFieldErrors = Partial<Record<ContactField, string>>
+
+function digitsOnly(value: string): string {
+  return value.replace(/\D/g, '')
+}
+
+function validateContactForm(
+  data: ContactFormData,
+  t: (key: string) => string,
+): ContactFieldErrors {
+  const errors: ContactFieldErrors = {}
+  const name = data.name.trim()
+  const email = data.email.trim()
+  const phone = data.phone.trim()
+  const subject = data.subject.trim()
+  const message = data.message.trim()
+
+  if (!name) {
+    errors.name = t('contactPage.validation.nameRequired')
+  } else if (name.length < 2) {
+    errors.name = t('contactPage.validation.nameMin')
+  } else if (name.length > 120) {
+    errors.name = t('contactPage.validation.nameMax')
+  }
+
+  if (!email) {
+    errors.email = t('contactPage.validation.emailRequired')
+  } else if (!EMAIL_PATTERN.test(email)) {
+    errors.email = t('contactPage.validation.emailInvalid')
+  }
+
+  if (phone && digitsOnly(phone).length < 7) {
+    errors.phone = t('contactPage.validation.phoneInvalid')
+  }
+
+  if (!subject) {
+    errors.subject = t('contactPage.validation.subjectRequired')
+  } else if (subject.length < 3) {
+    errors.subject = t('contactPage.validation.subjectMin')
+  } else if (subject.length > 200) {
+    errors.subject = t('contactPage.validation.subjectMax')
+  }
+
+  if (!message) {
+    errors.message = t('contactPage.validation.messageRequired')
+  } else if (message.length < 10) {
+    errors.message = t('contactPage.validation.messageMin')
+  } else if (message.length > 5000) {
+    errors.message = t('contactPage.validation.messageMax')
+  }
+
+  return errors
+}
+
+function mapApiFieldErrors(data: Record<string, unknown>): ContactFieldErrors {
+  const errors: ContactFieldErrors = {}
+  for (const [field, value] of Object.entries(data)) {
+    if (field === 'error' || field === 'detail' || field === 'non_field_errors') continue
+    if (!['name', 'email', 'phone', 'subject', 'message'].includes(field)) continue
+    const message = Array.isArray(value) ? value[0] : value
+    if (typeof message === 'string' && message.trim()) {
+      errors[field as ContactField] = message
+    }
+  }
+  return errors
+}
 
 export default function ContactPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
   const [submitting, setSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
     phone: '',
     subject: '',
     message: '',
   })
+  const [fieldErrors, setFieldErrors] = useState<ContactFieldErrors>({})
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+
+  const clearTurnstile = useCallback(() => {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }, [])
+
+  const handleTurnstileError = useCallback(() => {
+    clearTurnstile()
+    toast.error(t('auth.captchaFailed'))
+  }, [clearTurnstile, t])
 
   const address = isAr ? GS_CONTACT.addressAr : GS_CONTACT.addressEn
 
@@ -38,7 +136,7 @@ export default function ContactPage() {
         icon: MapPin,
         titleKey: 'contactPage.address' as const,
         content: address,
-        href: null as string | null,
+        href: GS_CONTACT.googleMapsDirectionsUrl,
       },
       {
         icon: Phone,
@@ -62,37 +160,95 @@ export default function ContactPage() {
     [address],
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const updateField = (field: ContactField, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const errors = validateContactForm(formData, t)
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      toast.error(t('contactPage.validation.formInvalid'))
+      return
+    }
+
+    if (isTurnstileConfigured && !turnstileToken) {
+      toast.error(t('auth.captchaRequired'))
+      return
+    }
+
     setSubmitting(true)
 
-    const subject = encodeURIComponent(
-      formData.subject.trim() || t('contactPage.defaultSubject'),
-    )
-    const body = encodeURIComponent(
-      [
-        `${t('contactPage.name')}: ${formData.name.trim()}`,
-        `${t('contactPage.emailLabel')}: ${formData.email.trim()}`,
-        formData.phone.trim()
-          ? `${t('contactPage.phoneLabel')}: ${formData.phone.trim()}`
-          : null,
-        '',
-        formData.message.trim(),
-      ]
-        .filter(Boolean)
-        .join('\n'),
-    )
+    try {
+      await contactApi.sendMessage({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+        turnstile_token: turnstileToken || undefined,
+      })
 
-    window.location.href = `mailto:${GS_CONTACT.email}?subject=${subject}&body=${body}`
+      toast.success(t('contactPage.toastSuccess'), {
+        description: t('contactPage.toastSuccessDesc'),
+        duration: 3500,
+      })
 
-    toast.success(t('contactPage.toastSuccess'), {
-      description: t('contactPage.toastSuccessDesc'),
-      duration: 3500,
-    })
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
+      setFieldErrors({})
+      clearTurnstile()
+    } catch (err: unknown) {
+      clearTurnstile()
+      const res = (err as { response?: { status?: number; data?: Record<string, unknown> } })
+        ?.response
+      const data = res?.data
 
-    setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
-    window.setTimeout(() => setSubmitting(false), 600)
+      if (res?.status === 400 && data?.error === 'captcha_failed') {
+        toast.error(t('auth.captchaFailed'))
+        return
+      }
+
+      if (res?.status === 400 && data) {
+        const apiErrors = mapApiFieldErrors(data)
+        if (Object.keys(apiErrors).length > 0) {
+          setFieldErrors(apiErrors)
+          toast.error(t('contactPage.validation.formInvalid'))
+          return
+        }
+      }
+
+      if (res?.status === 429) {
+        toast.error(t('contactPage.toastRateLimited'))
+        return
+      }
+
+      if (
+        res?.status === 503 &&
+        (data?.error === 'email_unavailable' || data?.error === 'email_send_failed')
+      ) {
+        toast.error(t('contactPage.toastEmailUnavailable'))
+        return
+      }
+
+      toast.error(t('contactPage.toastSendFailed'))
+    } finally {
+      setSubmitting(false)
+    }
   }
+
+  const submitDisabled =
+    submitting || (isTurnstileConfigured && !turnstileToken)
+
+  const fieldInputClass = (field: ContactField) =>
+    `${fieldClass}${fieldErrors[field] ? ` ${fieldErrorClass}` : ''}`
 
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
@@ -107,7 +263,7 @@ export default function ContactPage() {
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('contactPage.kicker')}
           </p>
-          <h1 className="max-w-2xl text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl">
+          <h1 className="type-page-title max-w-2xl text-[#0B0F19] sm:text-4xl">
             {t('contactPage.title')}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[#64748B]">
@@ -116,7 +272,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <div className="page-shell py-10 sm:py-14">
+      <div className="page-shell page-section--roomy">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Sidebar info */}
           <aside className="space-y-4 lg:col-span-4">
@@ -214,86 +370,147 @@ export default function ContactPage() {
                   <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
                 </span>
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight text-[#0B0F19]">
+                  <h2 className="type-section-title text-[#0B0F19]">
                     {t('contactPage.formTitle')}
                   </h2>
                   <p className="mt-1 text-sm text-[#64748B]">{t('contactPage.formHint')}</p>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#0B0F19]">
+                    <label
+                      htmlFor="contact-name"
+                      className="mb-1.5 block text-sm font-semibold text-[#0B0F19]"
+                    >
                       {t('contactPage.name')}
                     </label>
                     <input
+                      id="contact-name"
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className={fieldClass}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      className={fieldInputClass('name')}
                       autoComplete="name"
-                      required
+                      aria-invalid={Boolean(fieldErrors.name)}
+                      aria-describedby={fieldErrors.name ? 'contact-name-error' : undefined}
                     />
+                    {fieldErrors.name ? (
+                      <p id="contact-name-error" className="mt-1.5 text-xs font-medium text-red-600">
+                        {fieldErrors.name}
+                      </p>
+                    ) : null}
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#0B0F19]">
+                    <label
+                      htmlFor="contact-email"
+                      className="mb-1.5 block text-sm font-semibold text-[#0B0F19]"
+                    >
                       {t('contactPage.emailLabel')}
                     </label>
                     <input
+                      id="contact-email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className={fieldClass}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      className={fieldInputClass('email')}
                       autoComplete="email"
-                      required
+                      aria-invalid={Boolean(fieldErrors.email)}
+                      aria-describedby={fieldErrors.email ? 'contact-email-error' : undefined}
                     />
+                    {fieldErrors.email ? (
+                      <p id="contact-email-error" className="mt-1.5 text-xs font-medium text-red-600">
+                        {fieldErrors.email}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#0B0F19]">
+                    <label
+                      htmlFor="contact-phone"
+                      className="mb-1.5 block text-sm font-semibold text-[#0B0F19]"
+                    >
                       {t('contactPage.phoneLabel')}
                       <span className="ms-1 font-normal text-[#94A3B8]">
                         ({t('contactPage.optional')})
                       </span>
                     </label>
                     <input
+                      id="contact-phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className={fieldClass}
+                      onChange={(e) => updateField('phone', e.target.value)}
+                      className={fieldInputClass('phone')}
                       autoComplete="tel"
                       placeholder="+965 …"
+                      aria-invalid={Boolean(fieldErrors.phone)}
+                      aria-describedby={fieldErrors.phone ? 'contact-phone-error' : undefined}
                     />
+                    {fieldErrors.phone ? (
+                      <p id="contact-phone-error" className="mt-1.5 text-xs font-medium text-red-600">
+                        {fieldErrors.phone}
+                      </p>
+                    ) : null}
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#0B0F19]">
+                    <label
+                      htmlFor="contact-subject"
+                      className="mb-1.5 block text-sm font-semibold text-[#0B0F19]"
+                    >
                       {t('contactPage.subject')}
                     </label>
                     <input
+                      id="contact-subject"
                       type="text"
                       value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className={fieldClass}
-                      required
+                      onChange={(e) => updateField('subject', e.target.value)}
+                      className={fieldInputClass('subject')}
+                      aria-invalid={Boolean(fieldErrors.subject)}
+                      aria-describedby={fieldErrors.subject ? 'contact-subject-error' : undefined}
                     />
+                    {fieldErrors.subject ? (
+                      <p
+                        id="contact-subject-error"
+                        className="mt-1.5 text-xs font-medium text-red-600"
+                      >
+                        {fieldErrors.subject}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-[#0B0F19]">
+                  <label
+                    htmlFor="contact-message"
+                    className="mb-1.5 block text-sm font-semibold text-[#0B0F19]"
+                  >
                     {t('contactPage.message')}
                   </label>
                   <textarea
+                    id="contact-message"
                     value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    onChange={(e) => updateField('message', e.target.value)}
                     rows={6}
-                    className={`${fieldClass} resize-y min-h-[140px]`}
-                    required
+                    className={`${fieldInputClass('message')} resize-y min-h-[140px]`}
+                    aria-invalid={Boolean(fieldErrors.message)}
+                    aria-describedby={fieldErrors.message ? 'contact-message-error' : undefined}
                   />
+                  {fieldErrors.message ? (
+                    <p id="contact-message-error" className="mt-1.5 text-xs font-medium text-red-600">
+                      {fieldErrors.message}
+                    </p>
+                  ) : null}
                 </div>
+
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  onToken={setTurnstileToken}
+                  onExpire={clearTurnstile}
+                  onError={handleTurnstileError}
+                />
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs leading-relaxed text-[#64748B]">
@@ -301,7 +518,7 @@ export default function ContactPage() {
                   </p>
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitDisabled}
                     className="gold-button inline-flex shrink-0 items-center justify-center gap-2 shadow-md disabled:opacity-70"
                   >
                     <Send className="h-4 w-4" />

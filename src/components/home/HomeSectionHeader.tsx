@@ -22,7 +22,7 @@ export function HomeSectionHeader({
 
   return (
     <header
-      className={`mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between ${
+      className={`section-header flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between ${
         centered ? 'text-center sm:text-center' : 'text-start'
       }`}
     >
@@ -32,9 +32,9 @@ export function HomeSectionHeader({
             {kicker}
           </p>
         ) : null}
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B0F19]">{title}</h2>
+        <h2 className="type-section-title text-[#0B0F19]">{title}</h2>
         {subtitle ? (
-          <p className="mt-2 text-sm sm:text-base text-[#64748B] leading-relaxed">{subtitle}</p>
+          <p className="type-lead mt-3 max-w-2xl text-[#64748B]">{subtitle}</p>
         ) : null}
       </div>
 

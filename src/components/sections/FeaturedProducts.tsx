@@ -28,7 +28,7 @@ export default function FeaturedProducts({
   }
 
   return (
-    <section className="home-section home-section--white">
+    <section className="home-section">
       <div className="home-section-inner">
         <HomeSectionHeader
           kicker={t('home.featuredKicker', { defaultValue: 'Curated' })}

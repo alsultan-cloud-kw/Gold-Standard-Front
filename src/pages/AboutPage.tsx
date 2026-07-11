@@ -8,7 +8,10 @@ import {
   Truck,
   Users,
   Scale,
+  FileCheck,
 } from 'lucide-react'
+import { GS_BUSINESS } from '@/constants/businessCredentials'
+import { CommercialLicenseLink } from '@/components/business/CommercialLicenseLink'
 
 const PILLARS = [
   { id: 'transparency', icon: Scale },
@@ -35,7 +38,7 @@ export default function AboutPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         </div>
 
-        <div className="relative page-shell py-12 sm:py-16 lg:py-20">
+        <div className="relative page-shell page-section--roomy">
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('aboutPage.kicker')}
           </p>
@@ -66,13 +69,13 @@ export default function AboutPage() {
 
       {/* What we do */}
       <section className="border-b border-black/5 bg-white">
-        <div className="page-shell py-12 sm:py-16">
+        <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
             <div className="lg:col-span-5">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
                 {t('aboutPage.storyKicker')}
               </p>
-              <h2 className="text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+              <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
                 {t('aboutPage.storyTitle')}
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-[#64748B] sm:text-base">
@@ -112,12 +115,12 @@ export default function AboutPage() {
 
       {/* Pillars */}
       <section className="bg-[#F9F9FA]">
-        <div className="page-shell py-12 sm:py-16">
+        <div className="page-shell page-section--roomy">
           <div className="mb-8 max-w-2xl">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
               {t('aboutPage.valuesKicker')}
             </p>
-            <h2 className="text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+            <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
               {t('aboutPage.valuesTitle')}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-[#64748B] sm:text-base">
@@ -138,7 +141,7 @@ export default function AboutPage() {
                       0{index + 1}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold tracking-tight text-[#0B0F19]">
+                  <h3 className="type-card-title mb-2.5 text-[#0B0F19]">
                     {t(`aboutPage.v.${item.id}.title`)}
                   </h3>
                   <p className="max-w-md text-sm leading-relaxed text-[#64748B]">
@@ -153,14 +156,14 @@ export default function AboutPage() {
 
       {/* Mission / Vision */}
       <section className="border-t border-black/5 bg-white">
-        <div className="page-shell py-12 sm:py-16">
+        <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] p-7 text-white sm:p-8">
               <div className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-[#85E307]/15 blur-3xl" />
               <p className="relative mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#85E307]">
                 {t('aboutPage.missionKicker')}
               </p>
-              <h3 className="relative mb-3 text-xl font-bold tracking-tight sm:text-2xl">
+              <h3 className="type-section-title relative mb-3 sm:text-2xl">
                 {t('aboutPage.missionTitle')}
               </h3>
               <p className="relative text-sm leading-relaxed text-white/70 sm:text-base">
@@ -172,12 +175,52 @@ export default function AboutPage() {
               <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
                 {t('aboutPage.visionKicker')}
               </p>
-              <h3 className="mb-3 text-xl font-bold tracking-tight text-[#0B0F19] sm:text-2xl">
+              <h3 className="type-section-title mb-3 text-[#0B0F19] sm:text-2xl">
                 {t('aboutPage.visionTitle')}
               </h3>
               <p className="text-sm leading-relaxed text-[#64748B] sm:text-base">
                 {t('aboutPage.visionBody')}
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Commercial licence & MOCI compliance */}
+      <section id="commercial-licence" className="scroll-mt-28 border-b border-black/5 bg-white">
+        <div className="page-shell page-section--roomy">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
+            <div className="lg:col-span-5">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+                {t('aboutPage.licenceKicker')}
+              </p>
+              <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
+                {t('aboutPage.licenceTitle')}
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-[#64748B] sm:text-base">
+                {t('aboutPage.licenceBody')}
+              </p>
+              {GS_BUSINESS.licenseDocumentUrl ? (
+                <CommercialLicenseLink className="mt-6 inline-flex items-center gap-2 rounded-lg border border-black/10 bg-[#F9F9FA] px-4 py-2.5 text-sm font-semibold text-[#0B0F19] no-underline transition-colors hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/50 hover:text-[#0B0F19]">
+                  <FileCheck className="h-4 w-4 text-[#3F6F00]" aria-hidden />
+                  {t('aboutPage.licenceViewDocument')}
+                </CommercialLicenseLink>
+              ) : (
+                <p className="mt-6 text-sm font-medium text-[#5B728D]">
+                  {t('aboutPage.licenceContactForCopy')}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:col-span-7">
+              <div className="rounded-2xl border border-black/10 bg-[#F9F9FA] p-5">
+                <h3 className="mb-2 text-sm font-bold text-[#0B0F19]">{t('aboutPage.licenceMociTitle')}</h3>
+                <p className="text-sm leading-relaxed text-[#64748B]">{t('aboutPage.licenceMociBody')}</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-[#F9F9FA] p-5">
+                <h3 className="mb-2 text-sm font-bold text-[#0B0F19]">{t('aboutPage.licenceTradeTitle')}</h3>
+                <p className="text-sm leading-relaxed text-[#64748B]">{t('aboutPage.licenceTradeBody')}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -193,7 +236,7 @@ export default function AboutPage() {
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
                   {t('aboutPage.ctaKicker')}
                 </p>
-                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h2 className="type-section-title text-white sm:text-3xl">
                   {t('aboutPage.ctaTitle')}
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-white/65 sm:text-base">

@@ -53,6 +53,29 @@ export function ProductStockBadge({ product, className, size = 'sm' }: ProductSt
   )
 }
 
+/**
+ * Compact inline status text (In stock / Low stock / Out of stock) with a status dot,
+ * for the product-card footer row. Always renders a state, unlike {@link ProductStockBadge}.
+ */
+export function ProductStockStatusLabel({ product, className }: { product: Product; className?: string }) {
+  const { t } = useTranslation()
+  const outOfStock = isProductOutOfStock(product)
+  const lowStock = isProductLowStock(product)
+
+  const tone = outOfStock
+    ? { dot: 'bg-[#DC2626]', text: 'text-[#B91C1C]', label: t('stock.outOfStock') }
+    : lowStock
+      ? { dot: 'bg-[#D97706]', text: 'text-[#B45309]', label: t('stock.lowStockShort') }
+      : { dot: 'bg-[#16A34A]', text: 'text-[#15803D]', label: t('stock.inStock') }
+
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold', tone.text, className)}>
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
+      {tone.label}
+    </span>
+  )
+}
+
 export function ProductStockOverlay({ product }: { product: Product }) {
   const { t } = useTranslation()
   if (!isProductOutOfStock(product)) return null

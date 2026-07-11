@@ -13,14 +13,9 @@ import {
   Hash,
   Calendar,
   Tag,
-  Download,
-  Printer,
 } from 'lucide-react'
 import { productsApi, type ProductAuthenticityResponse } from '../services/api'
-import {
-  downloadVerificationCertificate,
-  printVerificationCertificate,
-} from '../lib/verificationCertificate'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 
 function formatWeight(value: string | number | null | undefined, locale?: string) {
   const n = typeof value === 'number' ? value : Number(value)
@@ -105,17 +100,6 @@ export default function ProductAuthenticityPage() {
   }, [product, isAr])
 
   const coverImage = product?.primary_image_url || product?.image_urls?.[0] || null
-  const certLocale = isAr ? 'ar' : 'en'
-
-  const onDownloadCertificate = () => {
-    if (!payload) return
-    downloadVerificationCertificate(payload, certLocale)
-  }
-
-  const onPrintCertificate = () => {
-    if (!payload) return
-    printVerificationCertificate(payload, certLocale)
-  }
 
   if (!code) {
     return (
@@ -138,22 +122,7 @@ export default function ProductAuthenticityPage() {
   }
 
   if (isLoading || isFetching) {
-    return (
-      <div className="min-h-[70vh] bg-gradient-to-b from-lime-50/60 via-white to-white py-10" dir={rtl ? 'rtl' : 'ltr'}>
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="animate-pulse rounded-2xl border border-stone-200 bg-white p-8">
-            <div className="grid gap-8 lg:grid-cols-2">
-              <div className="aspect-square rounded-2xl bg-stone-100" />
-              <div className="space-y-4">
-                <div className="h-8 w-2/3 rounded bg-stone-100" />
-                <div className="h-4 w-full rounded bg-stone-100" />
-                <div className="h-32 rounded bg-stone-100" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <AppLoadingScreen />
   }
 
   if (isError || payload?.status === 'not_found' || status === 'error') {
@@ -277,27 +246,16 @@ export default function ProductAuthenticityPage() {
                     <MessageCircle className="h-4 w-4" />
                     {t('authenticity.contactSupport')}
                   </Link>
-                  {verified && payload ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={onDownloadCertificate}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-semibold text-stone-800 hover:bg-stone-50 sm:col-span-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        {t('authenticity.downloadCertificate')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={onPrintCertificate}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-semibold text-stone-800 hover:bg-stone-50 sm:col-span-2"
-                      >
-                        <Printer className="h-4 w-4" />
-                        {t('authenticity.printCertificate')}
-                      </button>
-                    </>
-                  ) : null}
                 </div>
+
+                {verified ? (
+                  <p className="mt-4 rounded-xl border border-[#3F6F00]/15 bg-[#ECFCCB]/35 px-4 py-3 text-sm leading-relaxed text-[#3F6F00]">
+                    {t('authenticity.certificateAfterPurchase')}
+                  </p>
+                ) : null}
+                <p className="mt-3 text-xs leading-relaxed text-stone-500">
+                  {t('authenticity.registryOnlyNote')}
+                </p>
               </>
             ) : null}
           </section>

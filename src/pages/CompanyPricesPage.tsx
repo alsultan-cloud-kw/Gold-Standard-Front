@@ -7,6 +7,7 @@ import { adminApi, type DaralsabaekPublicRatesResponse } from '../services/api'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
@@ -61,14 +62,14 @@ export default function CompanyPricesPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_50%_at_0%_0%,rgba(133,227,7,0.16),transparent_55%)]" />
         </div>
 
-        <div className="page-shell relative py-10 sm:py-12 lg:py-14">
+        <div className="page-shell relative page-section--roomy">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
                 <Building2 className="h-3.5 w-3.5" />
                 {t('companyPricesPage.kicker')}
               </p>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-[2.75rem]">
+              <h1 className="type-page-title sm:text-4xl lg:text-[2.75rem]">
                 {t('nav.companyPrices')}
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
@@ -125,12 +126,12 @@ export default function CompanyPricesPage() {
         </div>
       </section>
 
-      <div className="page-shell py-8 sm:py-10">
+      <div className="page-shell page-section">
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-20 text-[#64748B]">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            {t('pricesPage.loading')}
-          </div>
+          <AppLoadingScreen
+            message={t('pricesPage.loading')}
+            className="min-h-[40vh] rounded-2xl border border-black/5"
+          />
         ) : null}
 
         {isError ? (

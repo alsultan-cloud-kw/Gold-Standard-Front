@@ -10,19 +10,25 @@ import {
   buildSpotPriceAlertPayloads,
   type PriceReminderBuildErrorCode,
 } from '../../lib/priceReminderPayloads'
+import { cn } from '@/lib/utils'
 
-const BUILD_ERROR_CODES = new Set<PriceReminderBuildErrorCode>(['liveRatesUnavailable', 'invalidDelta', 'noValidRates'])
+const BUILD_ERROR_CODES = new Set<PriceReminderBuildErrorCode>([
+  'liveRatesUnavailable',
+  'invalidDelta',
+  'noValidRates',
+])
 
-const LOGIN_REQUIRED = 'LOGIN_REQUIRED'
+const INPUT_CLASS =
+  'mt-2 w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-base font-medium tabular-nums text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25 disabled:cursor-not-allowed disabled:opacity-60'
 
 /**
- * Sticky floating panel to set spot rate reminders on most storefront pages.
- * Hidden on checkout (including order-success on /checkout) and admin routes.
+ * Sticky floating panel to set spot rate reminders — signed-in customers only.
+ * Hidden on checkout, admin, and join-club routes.
  */
 export default function FloatingPriceReminder() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const [open, setOpen] = useState(false)
 
   const hidden =
@@ -36,7 +42,7 @@ export default function FloatingPriceReminder() {
     queryFn: adminApi.getDaralsabaekPublicRates,
     refetchInterval: 20_000,
     retry: 1,
-    enabled: !hidden,
+    enabled: !hidden && isAuthenticated && !authLoading,
   })
 
   const res = data as DaralsabaekPublicRatesResponse | undefined
@@ -56,7 +62,7 @@ export default function FloatingPriceReminder() {
   const createAlertsMutation = useMutation({
     mutationFn: async () => {
       if (!isAuthenticated || !user) {
-        throw new Error(LOGIN_REQUIRED)
+        throw new Error('LOGIN_REQUIRED')
       }
       const built = buildSpotPriceAlertPayloads({
         res,
@@ -72,10 +78,6 @@ export default function FloatingPriceReminder() {
     },
     onError: (err: unknown) => {
       if (err instanceof Error) {
-        if (err.message === LOGIN_REQUIRED) {
-          toast.error(t('priceReminder.toastLoginRequired'))
-          return
-        }
         const code = err.message as PriceReminderBuildErrorCode
         if (BUILD_ERROR_CODES.has(code)) {
           toast.error(t(`priceReminder.errors.${code}`))
@@ -88,54 +90,60 @@ export default function FloatingPriceReminder() {
     },
   })
 
-  if (hidden) return null
+  if (hidden || authLoading || !isAuthenticated) return null
 
   const ratesReady = !!res?.succeeded
   const hasSpotRates = ratesReady && carats.length > 0
 
   const inputDisabled = !hasSpotRates || createAlertsMutation.isPending
-  const saveDisabled =
-    !isAuthenticated || !hasSpotRates || !deltaValid || createAlertsMutation.isPending
+  const saveDisabled = !hasSpotRates || !deltaValid || createAlertsMutation.isPending
 
   return (
     <div
-      className={`fixed bottom-5 end-5 z-[45] w-full pointer-events-auto transition-[max-width] duration-200 ease-out ${
-        open ? 'max-w-[min(100vw-2.5rem,32rem)]' : 'max-w-[min(100vw-2rem,20rem)]'
-      }`}
+      className={cn(
+        'pointer-events-auto fixed bottom-5 end-5 z-[45] w-full transition-[max-width] duration-200 ease-out',
+        open ? 'max-w-[min(100vw-2.5rem,22rem)]' : 'max-w-[min(100vw-2rem,17rem)]',
+      )}
       role="complementary"
       aria-label={t('priceReminder.ariaLabel')}
     >
       <div
-        className={`border border-gold-500/35 bg-charcoal-950/95 shadow-2xl shadow-black/50 backdrop-blur-md overflow-hidden ${
-          open ? 'rounded-2xl' : 'rounded-xl'
-        }`}
+        className={cn(
+          'overflow-hidden border border-black/10 bg-white shadow-[0_8px_32px_rgba(11,15,25,0.12)]',
+          open ? 'rounded-2xl' : 'rounded-xl',
+        )}
       >
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className={`w-full flex items-center gap-3 text-start hover:bg-gold-500/10 transition-colors ${
-            open ? 'px-4 py-3.5 sm:px-5 sm:py-4' : 'px-3 py-2'
-          }`}
+          className={cn(
+            'flex w-full items-center gap-3 text-start transition-colors hover:bg-[#F9F9FA]',
+            open ? 'px-4 py-3.5' : 'px-3 py-2.5',
+          )}
         >
           <span
-            className={`flex shrink-0 items-center justify-center bg-gold-500/15 text-gold-400 ${
-              open ? 'h-11 w-11 sm:h-12 sm:w-12 rounded-xl' : 'h-9 w-9 rounded-lg'
-            }`}
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]',
+              open ? 'h-10 w-10' : 'h-9 w-9 rounded-lg',
+            )}
           >
-            <Bell className={open ? 'h-5 w-5 sm:h-6 sm:w-6' : 'h-4 w-4'} />
+            <Bell className={open ? 'h-5 w-5' : 'h-4 w-4'} aria-hidden />
           </span>
-          <span className="flex-1 min-w-0">
+
+          <span className="min-w-0 flex-1">
             <span
-              className={`block font-semibold text-gold-100 ${
-                open ? 'text-base sm:text-lg' : 'text-sm'
-              }`}
+              className={cn(
+                'block font-semibold text-[#0B0F19]',
+                open ? 'text-base' : 'text-sm',
+              )}
             >
               {t('priceReminder.title')}
             </span>
             <span
-              className={`block text-gold-200/60 truncate mt-0.5 ${
-                open ? 'text-xs sm:text-sm' : 'text-[11px] leading-snug'
-              }`}
+              className={cn(
+                'mt-0.5 block truncate text-[#64748B]',
+                open ? 'text-xs' : 'text-[11px] leading-snug',
+              )}
             >
               {isLoading
                 ? t('priceReminder.subtitleLoading')
@@ -144,42 +152,42 @@ export default function FloatingPriceReminder() {
                   : t('priceReminder.subtitleUnavailable')}
             </span>
           </span>
+
           {open ? (
-            <ChevronDown className="h-5 w-5 text-gold-300/70 shrink-0" />
+            <ChevronDown className="h-4 w-4 shrink-0 text-[#94A3B8]" aria-hidden />
           ) : (
-            <ChevronUp className="h-4 w-4 text-gold-300/70 shrink-0" />
+            <ChevronUp className="h-4 w-4 shrink-0 text-[#94A3B8]" aria-hidden />
           )}
         </button>
 
-        {open && (
-          <div className="px-4 pb-4 pt-1 sm:px-5 sm:pb-5 border-t border-gold-500/15 space-y-4 max-h-[min(75vh,32rem)] overflow-y-auto">
-            {!isAuthenticated && (
-              <p className="text-sm text-amber-200/90 pt-2">
-                <Link to="/login" className="text-gold-400 underline underline-offset-2">
-                  {t('priceReminder.loginLink')}
-                </Link>{' '}
-                {t('priceReminder.loginPrompt')}
-              </p>
-            )}
-
-            <div className="rounded-lg border border-gold-500/20 bg-charcoal-900/50 px-3 py-3 space-y-2 text-sm text-gold-100/80">
-              <p className="text-xs uppercase tracking-wider text-gold-400/90 font-medium">
+        {open ? (
+          <div className="max-h-[min(75vh,28rem)] space-y-4 overflow-y-auto border-t border-black/6 px-4 pb-4 pt-3">
+            <div className="space-y-2 rounded-xl border border-[#85E307]/20 bg-[#ECFCCB]/35 px-3.5 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
                 {t('priceReminder.watchSummaryTitle')}
               </p>
               {watchSummary && watchSummary.goldKeys.length > 0 ? (
-                <p>
-                  <span className="text-gold-200/55">{t('priceReminder.watchGoldLabel')} </span>
+                <p className="text-sm leading-relaxed text-[#0B0F19]">
+                  <span className="font-medium text-[#3F6F00]">
+                    {t('priceReminder.watchGoldLabel')}{' '}
+                  </span>
                   {watchSummary.goldKeys.join(', ')} — {t('priceReminder.watchBuySellBoth')}
                 </p>
               ) : null}
-              <p className="text-xs text-gold-200/50 leading-relaxed pt-1">{t('priceReminder.watchHowItWorks')}</p>
+              <p className="text-xs leading-relaxed text-[#64748B]">
+                {t('priceReminder.watchHowItWorks')}
+              </p>
             </div>
 
             <div>
-              <label className="text-xs uppercase tracking-wider text-gold-400/90 font-medium">
+              <label
+                htmlFor="price-reminder-delta"
+                className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]"
+              >
                 {t('priceReminder.deltaLabel')}
               </label>
               <input
+                id="price-reminder-delta"
                 type="number"
                 inputMode="decimal"
                 step="0.001"
@@ -187,7 +195,8 @@ export default function FloatingPriceReminder() {
                 value={deltaInput}
                 onChange={(e) => setDeltaInput(e.target.value)}
                 disabled={inputDisabled}
-                className="mt-2 w-full px-3 py-2.5 sm:py-3 rounded-lg bg-charcoal-900/70 border border-gold-500/30 text-gold-100 text-base tabular-nums"
+                className={INPUT_CLASS}
+                dir="ltr"
               />
             </div>
 
@@ -195,24 +204,30 @@ export default function FloatingPriceReminder() {
               type="button"
               onClick={() => createAlertsMutation.mutate()}
               disabled={saveDisabled}
-              className="w-full py-3 sm:py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600 disabled:opacity-50 shadow-lg shadow-amber-900/30"
+              className="gold-button w-full rounded-xl py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:transform-none disabled:hover:shadow-none"
             >
               {createAlertsMutation.isPending
                 ? t('priceReminder.saving')
                 : t('priceReminder.saveReminder')}
             </button>
 
-            <p className="text-xs sm:text-sm text-gold-200/55 text-center leading-relaxed">
-              <Link to="/dashboard?tab=notifications" className="text-gold-400 hover:underline">
+            <p className="text-center text-xs leading-relaxed text-[#64748B]">
+              <Link
+                to="/dashboard?tab=notifications"
+                className="font-medium text-[#3F6F00] transition-colors hover:text-[#4F8E00]"
+              >
                 {t('priceReminder.openNotifications')}
               </Link>
-              {' · '}
-              <Link to="/prices" className="text-gold-400 hover:underline">
+              <span className="mx-1.5 text-[#CBD5E1]">·</span>
+              <Link
+                to="/prices"
+                className="font-medium text-[#3F6F00] transition-colors hover:text-[#4F8E00]"
+              >
                 {t('priceReminder.fullGoldPrices')}
               </Link>
             </p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )

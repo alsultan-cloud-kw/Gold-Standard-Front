@@ -7,7 +7,6 @@ import {
   List,
   SlidersHorizontal,
   ShoppingCart,
-  Search,
   X,
   ArrowUpDown,
 } from 'lucide-react'
@@ -17,8 +16,11 @@ import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { productImageSrc } from '../utils/productImage'
 import { productUnitPrice, formatKwd } from '../utils/productPrice'
 import { useCart } from '../contexts/CartContext'
-import { ProductStockBadge, ProductStockOverlay } from '@/components/products/ProductStockBadge'
-import { isProductOutOfStock } from '@/utils/productStock'
+import { ProductStockBadge, ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
+import { PriceRangeFilter } from '@/components/products/PriceRangeFilter'
+import { ProductSearchBox } from '@/components/products/ProductSearchBox'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+import { isProductOutOfStock, productFineness } from '@/utils/productStock'
 import {
   useProductPriceTrendSincePreviousFetch,
   type ProductFetchTrendMap,
@@ -31,6 +33,13 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'weight-asc' | 'weight-desc' | 'newest'
 type ViewMode = 'grid' | 'list'
@@ -53,11 +62,12 @@ function FilterPanel({
   selectedMetals,
   minPriceParam,
   maxPriceParam,
+  priceBoundsMin,
+  priceBoundsMax,
   onCategory,
   onToggleCarat,
   onToggleMetal,
-  onMinPrice,
-  onMaxPrice,
+  onPriceRange,
   onClear,
   activeFilterCount,
 }: {
@@ -68,11 +78,12 @@ function FilterPanel({
   selectedMetals: string[]
   minPriceParam: string
   maxPriceParam: string
+  priceBoundsMin: number
+  priceBoundsMax: number
   onCategory: (slug: string) => void
   onToggleCarat: (carat: string) => void
   onToggleMetal: (metal: string) => void
-  onMinPrice: (v: string) => void
-  onMaxPrice: (v: string) => void
+  onPriceRange: (min: string, max: string) => void
   onClear: () => void
   activeFilterCount: number
 }) {
@@ -82,7 +93,7 @@ function FilterPanel({
     <div className="flex h-full flex-col">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold tracking-tight text-[#0B0F19]">
+          <h3 className="type-card-title text-[#0B0F19]">
             {t('productsPage.filtersHeading')}
           </h3>
           {activeFilterCount > 0 ? (
@@ -195,37 +206,14 @@ function FilterPanel({
           <h4 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
             {t('productsPage.priceRange')}
           </h4>
-          <p className="mb-2 text-xs text-[#64748B]">{t('productsPage.priceRangeHint')}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-medium text-[#64748B]">
-                {t('productsPage.minPlaceholder')}
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                placeholder={t('productsPage.minPlaceholder')}
-                value={minPriceParam}
-                onChange={(e) => onMinPrice(e.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 text-sm font-medium text-[#0B0F19] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-medium text-[#64748B]">
-                {t('productsPage.maxPlaceholder')}
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                placeholder={t('productsPage.maxPlaceholder')}
-                value={maxPriceParam}
-                onChange={(e) => onMaxPrice(e.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 text-sm font-medium text-[#0B0F19] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25"
-              />
-            </label>
-          </div>
+          <p className="mb-3 text-xs text-[#64748B]">{t('productsPage.priceRangeHint')}</p>
+          <PriceRangeFilter
+            minParam={minPriceParam}
+            maxParam={maxPriceParam}
+            boundsMin={priceBoundsMin}
+            boundsMax={priceBoundsMax}
+            onCommit={onPriceRange}
+          />
         </section>
       </div>
     </div>
@@ -254,7 +242,13 @@ export default function ProductsPage() {
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', category ?? '', search ?? ''],
-    queryFn: () => productsApi.getProducts({ category, search }),
+    queryFn: () =>
+      productsApi.getProducts({
+        category: category || undefined,
+        search: search || undefined,
+        // FTS ranks server-side; pull a fuller page when searching so relevance isn't truncated at 20.
+        page_size: search ? 100 : 40,
+      }),
   })
 
   const { data: categories } = useQuery({
@@ -304,6 +298,26 @@ export default function ProductsPage() {
 
   const minPrice = minPriceParam ? Number(minPriceParam) : NaN
   const maxPrice = maxPriceParam ? Number(maxPriceParam) : NaN
+
+  const { priceBoundsMin, priceBoundsMax } = useMemo(() => {
+    if (activeProductList.length === 0) {
+      return { priceBoundsMin: 0, priceBoundsMax: 1000 }
+    }
+    let lo = Infinity
+    let hi = -Infinity
+    for (const p of activeProductList) {
+      const price = productUnitPrice(p)
+      if (!Number.isFinite(price)) continue
+      if (price < lo) lo = price
+      if (price > hi) hi = price
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) {
+      return { priceBoundsMin: 0, priceBoundsMax: 1000 }
+    }
+    const floor = Math.max(0, Math.floor(lo))
+    const ceil = Math.max(floor + 1, Math.ceil(hi))
+    return { priceBoundsMin: floor, priceBoundsMax: ceil }
+  }, [activeProductList])
 
   const filteredProducts = useMemo(() => {
     let list = activeProductList.filter((product) => {
@@ -376,13 +390,17 @@ export default function ProductsPage() {
     setSearchParams(next)
   }
 
-  const updateParams = (entries: Record<string, string>) => {
+  const updateParams = (entries: Record<string, string>, replace = false) => {
     const next = new URLSearchParams(searchParams)
     for (const [key, value] of Object.entries(entries)) {
       if (!value) next.delete(key)
       else next.set(key, value)
     }
-    setSearchParams(next)
+    setSearchParams(next, { replace })
+  }
+
+  const commitPriceRange = (min: string, max: string) => {
+    updateParams({ minPrice: min, maxPrice: max }, true)
   }
 
   const toggleCarat = (carat: string) => {
@@ -423,10 +441,6 @@ export default function ProductsPage() {
     (maxPriceParam ? 1 : 0) +
     (search ? 1 : 0)
 
-  const commitSearch = () => {
-    updateParam('search', searchDraft.trim())
-  }
-
   const filterProps = {
     category,
     categoryList,
@@ -435,11 +449,12 @@ export default function ProductsPage() {
     selectedMetals,
     minPriceParam,
     maxPriceParam,
+    priceBoundsMin,
+    priceBoundsMax,
     onCategory: (slug: string) => updateParam('category', slug),
     onToggleCarat: toggleCarat,
     onToggleMetal: toggleMetal,
-    onMinPrice: (v: string) => updateParam('minPrice', v),
-    onMaxPrice: (v: string) => updateParam('maxPrice', v),
+    onPriceRange: commitPriceRange,
     onClear: clearFilters,
     activeFilterCount,
   }
@@ -447,7 +462,7 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
       <div className="border-b border-black/5 bg-white">
-        <div className="page-shell py-6 sm:py-8">
+        <div className="page-shell page-section">
           {category ? (
             <nav className="mb-3 text-sm text-[#64748B]" aria-label={t('common.breadcrumb')}>
               <Link to="/products" className="font-medium text-[#3F6F00] hover:underline">
@@ -465,7 +480,7 @@ export default function ProductsPage() {
               <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
                 {t('productsPage.kicker')}
               </p>
-              <h1 className="text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">
+              <h1 className="type-page-title text-[#0B0F19] sm:text-3xl">
                 {pageTitle}
               </h1>
               <p className="mt-1.5 text-sm text-[#64748B]">
@@ -475,36 +490,19 @@ export default function ProductsPage() {
               </p>
             </div>
 
-            <form
-              className="relative w-full max-w-md"
-              onSubmit={(e) => {
-                e.preventDefault()
-                commitSearch()
+            <ProductSearchBox
+              value={searchDraft}
+              category={category}
+              onChange={setSearchDraft}
+              onCommit={(q) => {
+                setSearchDraft(q)
+                updateParam('search', q)
               }}
-            >
-              <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-              <input
-                type="search"
-                value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
-                placeholder={t('productsPage.searchPlaceholder')}
-                className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] py-3 pe-10 ps-10 text-sm font-medium text-[#0B0F19] outline-none transition focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25"
-                aria-label={t('productsPage.searchPlaceholder')}
-              />
-              {searchDraft ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchDraft('')
-                    updateParam('search', '')
-                  }}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#94A3B8] hover:bg-black/5 hover:text-[#0B0F19]"
-                  aria-label={t('productsPage.clearSearch')}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : null}
-            </form>
+              onClear={() => {
+                setSearchDraft('')
+                updateParam('search', '')
+              }}
+            />
           </div>
 
           {subcategories.length > 0 && !activeCategory?.parent ? (
@@ -545,7 +543,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="page-shell py-6 sm:py-8">
+      <div className="page-shell page-section">
         {/* Toolbar */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
@@ -596,20 +594,45 @@ export default function ProductsPage() {
 
           <div className="flex items-center gap-2">
             <div className="relative min-w-0 flex-1 sm:flex-none">
-              <ArrowUpDown className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
-              <select
+              <ArrowUpDown className="pointer-events-none absolute start-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
+              <Select
                 value={sortParam}
-                onChange={(e) => updateParam('sort', e.target.value === 'featured' ? '' : e.target.value)}
-                className="w-full appearance-none rounded-xl border border-black/10 bg-white py-2.5 pe-8 ps-9 text-sm font-semibold text-[#0B0F19] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25 sm:w-48"
-                aria-label={t('productsPage.sortBy')}
+                onValueChange={(v) => updateParam('sort', v === 'featured' ? '' : v)}
               >
-                <option value="featured">{t('productsPage.sort.featured')}</option>
-                <option value="newest">{t('productsPage.sort.newest')}</option>
-                <option value="price-asc">{t('productsPage.sort.priceAsc')}</option>
-                <option value="price-desc">{t('productsPage.sort.priceDesc')}</option>
-                <option value="weight-asc">{t('productsPage.sort.weightAsc')}</option>
-                <option value="weight-desc">{t('productsPage.sort.weightDesc')}</option>
-              </select>
+                <SelectTrigger
+                  aria-label={t('productsPage.sortBy')}
+                  className="h-auto w-full rounded-xl border border-black/10 bg-white py-2.5 pe-8 ps-9 text-sm font-semibold text-[#0B0F19] shadow-none outline-none transition hover:border-[#85E307]/50 focus-visible:border-[#85E307] focus-visible:ring-2 focus-visible:ring-[#85E307]/25 sm:w-52 [&>svg]:hidden"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  align="end"
+                  sideOffset={6}
+                  className="z-[80] overflow-hidden rounded-xl border border-black/10 bg-white p-0 text-[#0B0F19] shadow-[0_18px_40px_-16px_rgba(11,15,25,0.35)]"
+                >
+                  <div className="p-1.5">
+                    {(
+                      [
+                        ['featured', 'productsPage.sort.featured'],
+                        ['newest', 'productsPage.sort.newest'],
+                        ['price-asc', 'productsPage.sort.priceAsc'],
+                        ['price-desc', 'productsPage.sort.priceDesc'],
+                        ['weight-asc', 'productsPage.sort.weightAsc'],
+                        ['weight-desc', 'productsPage.sort.weightDesc'],
+                      ] as const
+                    ).map(([value, labelKey]) => (
+                      <SelectItem
+                        key={value}
+                        value={value}
+                        className="cursor-pointer rounded-lg py-2.5 ps-3 pe-10 text-sm font-medium text-[#0B0F19] outline-none data-[highlighted]:bg-[#ECFCCB]/75 data-[highlighted]:text-[#0B0F19] data-[state=checked]:bg-[#ECFCCB] data-[state=checked]:font-semibold data-[state=checked]:text-[#3F6F00] focus:bg-[#ECFCCB]/75 focus:text-[#0B0F19] [&_svg]:text-[#3F6F00]"
+                      >
+                        {t(labelKey)}
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
             </div>
 
             <div
@@ -657,18 +680,7 @@ export default function ProductsPage() {
 
           <div className="min-w-0 flex-1">
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-3">
-                {[...Array(9)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="animate-pulse rounded-2xl border border-black/5 bg-white p-4"
-                  >
-                    <div className="mb-4 aspect-[4/3] rounded-xl bg-[#E2E8F0]" />
-                    <div className="mb-2 h-4 rounded bg-[#E2E8F0]" />
-                    <div className="h-4 w-2/3 rounded bg-[#E2E8F0]" />
-                  </div>
-                ))}
-              </div>
+              <AppLoadingScreen className="min-h-[42vh] rounded-2xl border border-black/5 bg-[var(--site-bg)]" />
             ) : filteredProducts.length === 0 ? (
               <div className="rounded-2xl border border-black/10 bg-white px-6 py-16 text-center">
                 <p className="text-base font-semibold text-[#0B0F19]">
@@ -773,6 +785,16 @@ function ProductCard({
     isAr && product.carat?.display_name_ar
       ? product.carat.display_name_ar
       : product.carat?.display_name_en
+  const categoryName =
+    isAr && product.category?.name_ar ? product.category.name_ar : product.category?.name_en
+  const fineness = productFineness(product)
+  const specParts = [
+    `${product.weight_grams}g`,
+    fineness != null
+      ? t('home.fineSpec', { value: fineness.toLocaleString('en-US'), defaultValue: '{{value}} fine' })
+      : caratLabel,
+    categoryName,
+  ].filter(Boolean) as string[]
   const ft = fetchTrends[product.id]
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
@@ -835,9 +857,9 @@ function ProductCard({
   }
 
   return (
-    <div className="group flex flex-col rounded-2xl border border-black/10 bg-white p-3 transition-shadow hover:shadow-md sm:p-4">
-      <Link to={`/products/${product.slug}`} className="block min-w-0 flex-1">
-        <div className={`relative mb-3 aspect-[4/3] overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/10 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
+    <div className="group flex flex-col rounded-2xl border border-black/10 bg-white p-3 transition-shadow duration-200 hover:shadow-md sm:p-3.5">
+      <Link to={`/products/${product.slug}`} className="block min-w-0">
+        <div className={`relative aspect-[4/3] overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
           {imageSrc ? (
             <img
               src={imageSrc}
@@ -850,39 +872,55 @@ function ProductCard({
             </div>
           )}
           <ProductStockOverlay product={product} />
-          <div className="absolute start-2 top-2 flex flex-col gap-1">
-            <ProductStockBadge product={product} />
-          </div>
           <div className="absolute end-2 top-2">
-            <span className="rounded-lg bg-white/95 px-2 py-1 text-xs font-bold text-[#0B0F19] shadow-sm ring-1 ring-black/10">
+            <span className="rounded-md bg-white/92 px-2 py-0.5 text-xs font-semibold text-[#0B0F19] ring-1 ring-black/10">
               {caratLabel}
             </span>
           </div>
         </div>
-        <h3 className="line-clamp-1 text-sm font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
-          {productName}
-        </h3>
-        <p className="mb-2 text-xs text-[#64748B]">{product.weight_grams}g</p>
-        <div className="inline-flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-[#F9F9FA] px-2.5 py-1.5 text-sm font-semibold text-[#0B0F19]">
+      </Link>
+
+      <div className="flex flex-1 flex-col px-0.5 pt-3">
+        <Link to={`/products/${product.slug}`} className="min-w-0">
+          <h3 className="line-clamp-1 text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
+            {productName}
+          </h3>
+        </Link>
+
+        {specParts.length ? (
+          <p className="mt-0.5 line-clamp-1 text-xs text-[#64748B]">{specParts.join(' · ')}</p>
+        ) : null}
+
+        <div className="mt-2 flex items-end justify-between gap-2">
+          <span className="min-w-0 text-lg font-bold leading-none text-[#0B0F19] tabular-nums">
+            {formatKwd(unitPrice)}
+            <span className="ms-1 text-xs font-semibold text-[#64748B]">KWD</span>
+          </span>
           <ProductPriceTrendArrow
             product={product}
             variant="light"
             showPercent
             trendOverride={trendOverride}
             percentOverride={percentOverride}
+            className="shrink-0"
           />
-          <span>{formatKwd(unitPrice)} KWD</span>
         </div>
-      </Link>
-      <button
-        type="button"
-        onClick={() => addToCart(product)}
-        disabled={outOfStock}
-        className={`${addButtonClass} mt-3 w-full`}
-      >
-        <ShoppingCart className="h-4 w-4 shrink-0" />
-        {outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}
-      </button>
+
+        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-black/5 pt-2.5">
+          <span className="truncate text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
+          <ProductStockStatusLabel product={product} className="shrink-0" />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => addToCart(product)}
+          disabled={outOfStock}
+          className={`${addButtonClass} mt-3 w-full`}
+        >
+          <ShoppingCart className="h-4 w-4 shrink-0" />
+          {outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}
+        </button>
+      </div>
     </div>
   )
 }

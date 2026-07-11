@@ -1,19 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { 
-  ShoppingCart, 
-  User, 
-  Menu, 
-  X, 
-  Search, 
-  Phone,
-  MapPin,
+import {
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  Search,
   LogOut,
   ChevronDown,
-  Languages
 } from 'lucide-react'
-import { GS_CONTACT } from '@/constants/contact'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
@@ -28,16 +24,40 @@ import {
 import { RegionFlagImg } from '@/components/RegionFlagImg'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { isStaffRole } from '@/utils/authRedirect'
+import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
+import { formatPrice } from '@/utils/metalChartSeries'
+import { CartCountBadge } from '@/components/layout/CartCountBadge'
+import GoldPriceTicker from '@/components/sections/GoldPriceTicker'
 
 export default function Navbar() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
   const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
+  const cartCount = getItemCount()
+  const { data: publicRates } = useEnrichedPublicRates(30_000)
   const navigate = useNavigate()
   const location = useLocation()
+
+  const buyGoldPriceLabel = useMemo(() => {
+    const raw = publicRates?.goldOuncePrice
+    if (raw == null || !Number.isFinite(Number(raw))) return null
+    let usd = Number(raw)
+    // Some payloads send KWD/oz; convert when clearly not USD spot.
+    if (usd > 0 && usd < 1500) {
+      const rate = Number(
+        (publicRates as { usd_to_kwd_rate?: number } | undefined)?.usd_to_kwd_rate,
+      )
+      if (Number.isFinite(rate) && rate > 0) usd = usd / rate
+      else return null
+    }
+    return `$${formatPrice(usd, 'USD/oz')}`
+  }, [publicRates])
+
+  const iconBtnClass =
+    'relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-black/[0.04] hover:text-[#0C1512]'
 
   const navLinks = [
     { nameKey: 'nav.home', href: '/' },
@@ -71,45 +91,8 @@ export default function Navbar() {
     isPathActive('/prices') || isPathActive('/company-prices')
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200">
-      {/* Top Bar */}
-      <div className="bg-gold-500/10 border-b border-gold-500/10">
-        <div className="page-shell">
-          <div className="flex items-center justify-between h-8 text-xs">
-            <div className="flex items-center gap-4 gold-gradient-text-on-light">
-              <a href={`tel:${GS_CONTACT.phoneTel}`} className="flex items-center gap-1 hover:underline">
-                <Phone className="w-3 h-3" />
-                {GS_CONTACT.phone}
-              </a>
-              <span className="hidden sm:flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                {t('nav.location')}
-              </span>
-            </div>
-            <div className="flex items-center gap-4 gold-gradient-text-on-light">
-              <Link to="/prices" className="live-indicator hover:underline">
-                {t('nav.liveGoldPrices')}
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 hover:underline" aria-label={t('common.language')}>
-                    <Languages className="w-3.5 h-3.5" />
-                    <span>{i18n.language === 'ar' ? t('common.arabic') : t('common.english')}</span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[120px] bg-white border-gold-500/30">
-                  <DropdownMenuItem onClick={() => i18n.changeLanguage('en')} className="cursor-pointer">
-                    {t('common.english')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => i18n.changeLanguage('ar')} className="cursor-pointer">
-                    {t('common.arabic')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </div>
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-black/5 bg-[var(--site-bg)]/95 backdrop-blur-md">
+      <GoldPriceTicker />
 
       {/* Main Navbar */}
       <div className="page-shell">
@@ -133,13 +116,13 @@ export default function Navbar() {
                     type="button"
                     aria-haspopup="menu"
                     className={`inline-flex items-center gap-1 text-sm font-medium transition-colors relative ${
-                      isPricesActive ? 'text-gold-700' : 'text-slate-800 group-hover/prices:text-gold-600'
+                      isPricesActive ? 'text-[#3F6F00]' : 'text-[#0C1512] group-hover/prices:text-[#3F6F00]'
                     }`}
                   >
                     {t('nav.prices')}
                     <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-hover/prices:rotate-180" />
                     <span
-                      className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 rtl:right-0 rtl:left-auto ${
+                      className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
                         isPricesActive ? 'w-full' : 'w-0 group-hover/prices:w-full'
                       }`}
                     />
@@ -180,12 +163,12 @@ export default function Navbar() {
                   key={link.nameKey}
                   to={link.href}
                   className={`text-sm font-medium transition-colors relative group ${
-                    isPathActive(link.href) ? 'text-gold-700' : 'text-slate-800 hover:text-gold-600'
+                    isPathActive(link.href) ? 'text-[#3F6F00]' : 'text-[#0C1512] hover:text-[#3F6F00]'
                   }`}
                 >
                   {t(link.nameKey)}
                   <span
-                    className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-300 rtl:right-0 rtl:left-auto ${
+                    className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
                       isPathActive(link.href) ? 'w-full' : 'w-0 group-hover:w-full'
                     }`}
                   />
@@ -195,100 +178,96 @@ export default function Navbar() {
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center gap-4">
-            {/* Search */}
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <button
+              type="button"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2 text-slate-700 hover:text-gold-600 transition-colors"
+              className={iconBtnClass}
+              aria-label={t('nav.searchPlaceholder')}
             >
-              <Search className="w-5 h-5" />
+              <Search className="h-5 w-5" strokeWidth={1.75} />
             </button>
 
-            {/* Cart */}
-            <Link
-              to="/cart"
-              className="relative p-2 text-slate-700 hover:text-gold-600 transition-colors"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {getItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-0.5 bg-gold-500 text-charcoal-950 text-xs font-bold rounded-full flex items-center justify-center tabular-nums">
-                  {getItemCount()}
-                </span>
-              )}
-            </Link>
-
-            {/* User Menu */}
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 p-2 text-slate-700 hover:text-gold-600 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
-                      {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
-                        <span className="inline-flex items-center justify-center rounded bg-charcoal-950/80 p-0.5 ring-1 ring-white/20">
-                          <RegionFlagImg
-                            code={user.nationality}
-                            size="md"
-                            className="w-5 h-3.5 rounded-[2px] ring-1 ring-gold-200/30"
-                          />
-                        </span>
-                      ) : (
-                        <span className="text-charcoal-950 font-bold text-sm">
-                          {user?.full_name?.charAt(0) || 'U'}
-                        </span>
-                      )}
-                    </div>
-                    <ChevronDown className="w-4 h-4 hidden sm:block" />
+                  <button type="button" className={iconBtnClass} aria-label={t('nav.dashboard')}>
+                    <User className="h-5 w-5" strokeWidth={1.75} />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-48 bg-white border-gold-500/30"
+                <DropdownMenuContent
+                  align="end"
+                  className="w-52 border-black/10 bg-white"
                 >
-                  <div className="px-3 py-2 border-b border-gold-500/20">
-                    <p className="text-sm font-medium text-slate-900">{user?.full_name}</p>
-                    <p className="text-xs text-slate-600">{user?.email}</p>
+                  <div className="border-b border-black/10 px-3 py-2">
+                    <p className="text-sm font-medium text-[#0C1512]">{user?.full_name}</p>
+                    <p className="text-xs text-[#64748B]">{user?.email}</p>
                   </div>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => navigate('/dashboard')}
-                    className="text-slate-700 hover:text-gold-600 hover:bg-gold-500/10 cursor-pointer"
+                    className="cursor-pointer text-[#0C1512] hover:bg-[#ECFCCB]/50"
                   >
-                    <User className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                    <User className="me-2 h-4 w-4" />
                     {t('nav.dashboard')}
                   </DropdownMenuItem>
-                  {isStaffRole(user?.role) && (
-                    <DropdownMenuItem 
+                  {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-[#64748B]">
+                      <RegionFlagImg code={user.nationality} size="md" className="h-3.5 w-5 rounded-[2px]" />
+                      {user.nationality}
+                    </div>
+                  ) : null}
+                  {isStaffRole(user?.role) ? (
+                    <DropdownMenuItem
                       onClick={() => navigate('/admin')}
-                      className="text-slate-700 hover:text-gold-600 hover:bg-gold-500/10 cursor-pointer"
+                      className="cursor-pointer text-[#0C1512] hover:bg-[#ECFCCB]/50"
                     >
                       {t('nav.adminPanel')}
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator className="bg-gold-500/20" />
-                  <DropdownMenuItem 
+                  ) : null}
+                  <DropdownMenuSeparator className="bg-black/10" />
+                  <DropdownMenuItem
                     onClick={handleLogout}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                    className="cursor-pointer text-red-600 hover:bg-red-50"
                   >
-                    <LogOut className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                    <LogOut className="me-2 h-4 w-4" />
                     {t('nav.logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link
-                to="/login"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-charcoal-950 bg-gradient-to-r from-gold-400 to-gold-500 rounded-lg hover:from-gold-300 hover:to-gold-400 transition-all"
-              >
-                <User className="w-4 h-4" />
-                {t('nav.login')}
+              <Link to="/login" className={iconBtnClass} aria-label={t('nav.login')}>
+                <User className="h-5 w-5" strokeWidth={1.75} />
               </Link>
             )}
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 text-slate-700 hover:text-gold-600 transition-colors"
+            <Link to="/cart" className={iconBtnClass} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
+              <ShoppingCart className="h-5 w-5" strokeWidth={1.75} />
+              <CartCountBadge count={cartCount} />
+            </Link>
+
+            <Link
+              to="/products"
+              className="ms-1 hidden items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 sm:inline-flex"
+              aria-label={`${t('nav.buyGold')}${buyGoldPriceLabel ? ` ${buyGoldPriceLabel}` : ''}`}
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <span className="flex items-center gap-2 px-3.5 py-2.5 tabular-nums text-[13px] font-bold" dir="ltr">
+                <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0B0F19]/55" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#0B0F19]" />
+                </span>
+                {buyGoldPriceLabel ?? '—'}
+              </span>
+              <span className="w-px self-stretch bg-black/15" aria-hidden />
+              <span className="flex items-center px-4 py-2.5">{t('nav.buyGold')}</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className={`${iconBtnClass} lg:hidden`}
+              aria-label={isMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
@@ -296,14 +275,14 @@ export default function Navbar() {
 
       {/* Search Bar */}
       {isSearchOpen && (
-        <div className="border-t border-stone-200 bg-white/95 backdrop-blur-md">
+        <div className="border-t border-black/5 bg-white/95 backdrop-blur-md">
           <div className="page-shell py-4">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5B728D] rtl:left-auto rtl:right-4" />
               <input
                 type="text"
                 placeholder={t('nav.searchPlaceholder')}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-stone-200 rounded-lg text-slate-900 placeholder-stone-400 focus:outline-none focus:border-lime-600 focus:ring-1 focus:ring-lime-500/25 rtl:pl-4 rtl:pr-12"
+                className="w-full rounded-lg border border-black/10 bg-[#F9F9FA] py-3 pl-12 pr-4 text-[#0C1512] placeholder-[#94A3B8] focus:border-[#85E307] focus:outline-none focus:ring-1 focus:ring-[#85E307]/30 rtl:pl-4 rtl:pr-12"
               />
             </div>
           </div>
@@ -312,7 +291,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-stone-200 bg-white/95 backdrop-blur-md">
+        <div className="border-t border-black/5 bg-white/95 backdrop-blur-md lg:hidden">
           <div className="page-shell py-4">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
@@ -369,11 +348,26 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="mt-2 px-4 py-3 text-center text-charcoal-950 font-medium bg-gradient-to-r from-gold-400 to-gold-500 rounded-lg"
+                  className="ds-btn-primary mt-2 px-4 py-3 text-center"
                 >
                   {t('nav.loginRegister')}
                 </Link>
               )}
+              <Link
+                to="/products"
+                onClick={() => setIsMenuOpen(false)}
+                className="mt-2 inline-flex items-center justify-center overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] sm:hidden"
+              >
+                <span className="flex items-center gap-2 px-3 py-3 tabular-nums text-[13px] font-bold" dir="ltr">
+                  <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0B0F19]/55" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#0B0F19]" />
+                  </span>
+                  {buyGoldPriceLabel ?? '—'}
+                </span>
+                <span className="w-px self-stretch bg-black/15" aria-hidden />
+                <span className="px-4 py-3">{t('nav.buyGold')}</span>
+              </Link>
             </div>
           </div>
         </div>

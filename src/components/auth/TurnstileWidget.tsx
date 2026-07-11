@@ -63,6 +63,13 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
   function TurnstileWidget({ onToken, onExpire, onError, theme = 'auto' }, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const widgetIdRef = useRef<string | null>(null)
+    const onTokenRef = useRef(onToken)
+    const onExpireRef = useRef(onExpire)
+    const onErrorRef = useRef(onError)
+
+    onTokenRef.current = onToken
+    onExpireRef.current = onExpire
+    onErrorRef.current = onError
 
     useImperativeHandle(ref, () => ({
       reset: () => {
@@ -89,14 +96,14 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: turnstileSiteKey,
             theme,
-            callback: (token) => onToken(token),
-            'expired-callback': () => onExpire?.(),
-            'error-callback': () => onError?.(),
+            callback: (token) => onTokenRef.current(token),
+            'expired-callback': () => onExpireRef.current?.(),
+            'error-callback': () => onErrorRef.current?.(),
           })
         })
         .catch((err) => {
           console.error('Turnstile failed to load:', err)
-          onError?.()
+          onErrorRef.current?.()
         })
 
       return () => {
@@ -106,7 +113,7 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
           widgetIdRef.current = null
         }
       }
-    }, [onToken, onExpire, onError, theme])
+    }, [theme])
 
     if (!isTurnstileConfigured) return null
 

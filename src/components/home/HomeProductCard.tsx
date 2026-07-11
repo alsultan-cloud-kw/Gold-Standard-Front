@@ -8,8 +8,8 @@ import ProductPriceTrendArrow from '@/components/ProductPriceTrendArrow'
 import { productImageSrc } from '@/utils/productImage'
 import { productUnitPrice, formatKwd } from '@/utils/productPrice'
 import type { ProductFetchTrendMap } from '@/hooks/useProductPriceTrendSincePreviousFetch'
-import { ProductStockBadge, ProductStockOverlay } from '@/components/products/ProductStockBadge'
-import { isProductOutOfStock } from '@/utils/productStock'
+import { ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
+import { isProductOutOfStock, productFineness } from '@/utils/productStock'
 
 type Props = {
   product: Product
@@ -42,12 +42,21 @@ function HomeProductCardInner({
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
   const outOfStock = isProductOutOfStock(product)
+  const fineness = productFineness(product)
+
+  const specParts = [
+    `${product.weight_grams}g`,
+    fineness != null
+      ? t('home.fineSpec', { value: fineness.toLocaleString('en-US'), defaultValue: '{{value}} fine' })
+      : caratName,
+    categoryName,
+  ].filter(Boolean) as string[]
 
   return (
-    <article className={`home-product-card group flex min-w-0 flex-col ${outOfStock ? 'opacity-95' : ''}`}>
-      <Link to={`/products/${product.slug}`} className="block min-w-0 flex-1">
+    <article className="home-product-card group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-3 transition-shadow duration-200 hover:shadow-md sm:p-3.5">
+      <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div
-          className={`relative mb-3 overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/10 ${
+          className={`relative overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${
             compact ? 'aspect-square' : 'aspect-[4/3]'
           } ${outOfStock ? 'grayscale-[0.35]' : ''}`}
         >
@@ -67,8 +76,7 @@ function HomeProductCardInner({
 
           <ProductStockOverlay product={product} />
 
-          <div className="absolute top-2 left-2 rtl:left-auto rtl:right-2 flex flex-col gap-1">
-            <ProductStockBadge product={product} />
+          <div className="absolute top-2 start-2 flex flex-col gap-1">
             {!compact && product.is_featured ? (
               <span className="rounded-md bg-[#0B0F19]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                 {t('home.featuredBadge', { defaultValue: 'Featured' })}
@@ -80,61 +88,52 @@ function HomeProductCardInner({
               </span>
             ) : null}
           </div>
-
-          {!compact && showAddButton && !outOfStock ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault()
-                addToCart(product)
-              }}
-              className="absolute bottom-2 right-2 rtl:right-auto rtl:left-2 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-[#0B0F19] text-white opacity-0 shadow-md transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-[#1F2937]"
-              aria-label={t('home.addToCart')}
-            >
-              <ShoppingCart className="h-5 w-5" />
-            </button>
-          ) : null}
-        </div>
-
-        <h3 className="mb-1 line-clamp-2 text-base font-semibold text-[#0B0F19] group-hover:underline decoration-black/25">
-          {productName}
-        </h3>
-
-        <p className="mb-2 text-sm text-[#64748B]">
-          {product.weight_grams}g
-          {categoryName ? ` · ${categoryName}` : ''}
-        </p>
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="price-tag-lime text-sm sm:text-base">
-            <ProductPriceTrendArrow
-              product={product}
-              variant="light"
-              showPercent
-              trendOverride={trendOverride}
-              percentOverride={percentOverride}
-            />
-            <span>{productUnitPrice(product).toLocaleString()} KWD</span>
-          </div>
-          {!compact && product.live_buy_price_per_gram != null ? (
-            <span className="shrink-0 text-xs text-[#64748B]">
-              {formatKwd(product.live_buy_price_per_gram)} KWD/g
-            </span>
-          ) : null}
         </div>
       </Link>
 
-      {compact && showAddButton ? (
-        <button
-          type="button"
-          onClick={() => addToCart(product)}
-          disabled={outOfStock}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0B0F19] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
-        >
-          <ShoppingCart className="h-4 w-4 shrink-0" />
-          {outOfStock ? t('stock.outOfStock') : t('home.addToCart')}
-        </button>
-      ) : null}
+      <div className="flex flex-1 flex-col px-0.5 pt-3">
+        <Link to={`/products/${product.slug}`} className="min-w-0">
+          <h3 className="line-clamp-1 text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
+            {productName}
+          </h3>
+        </Link>
+
+        {specParts.length ? (
+          <p className="mt-0.5 line-clamp-1 text-xs text-[#64748B]">{specParts.join(' · ')}</p>
+        ) : null}
+
+        <div className="mt-2 flex items-end justify-between gap-2">
+          <span className="min-w-0 text-lg font-bold leading-none text-[#0B0F19] tabular-nums">
+            {formatKwd(productUnitPrice(product))}
+            <span className="ms-1 text-xs font-semibold text-[#64748B]">KWD</span>
+          </span>
+          <ProductPriceTrendArrow
+            product={product}
+            variant="light"
+            showPercent
+            trendOverride={trendOverride}
+            percentOverride={percentOverride}
+            className="shrink-0"
+          />
+        </div>
+
+        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-black/5 pt-2.5">
+          <span className="truncate text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
+          <ProductStockStatusLabel product={product} className="shrink-0" />
+        </div>
+
+        {showAddButton ? (
+          <button
+            type="button"
+            onClick={() => addToCart(product)}
+            disabled={outOfStock}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+          >
+            <ShoppingCart className="h-4 w-4 shrink-0" />
+            {outOfStock ? t('stock.outOfStock') : t('home.addToCart')}
+          </button>
+        ) : null}
+      </div>
     </article>
   )
 }

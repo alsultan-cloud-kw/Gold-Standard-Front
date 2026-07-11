@@ -31,6 +31,8 @@ type Props = {
   /** Horizontal reference line (e.g. previous close). */
   referencePrice?: number | null
   referenceLabel?: string
+  /** Hero embed: hide axes, disable zoom/pan. */
+  compact?: boolean
 }
 
 /** Light storefront chart palette — matches site canvas (#F9F9FA / white). */
@@ -72,6 +74,7 @@ export function AdvancedMetalChart({
   fitToken = 0,
   referencePrice = null,
   referenceLabel = '',
+  compact = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -117,16 +120,16 @@ export function AdvancedMetalChart({
       layout: {
         background: { type: ColorType.Solid, color: PAPER },
         textColor: TEXT,
-        fontFamily: "'The Year of The Camel', system-ui, sans-serif",
+        fontFamily: 'var(--font-ui)',
         fontSize: 12,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: GRID, style: LineStyle.Dotted },
-        horzLines: { color: GRID, style: LineStyle.Dotted },
+        vertLines: { color: compact ? 'transparent' : GRID, style: LineStyle.Dotted },
+        horzLines: { color: compact ? 'transparent' : GRID, style: LineStyle.Dotted },
       },
       crosshair: {
-        mode: CrosshairMode.Normal,
+        mode: compact ? CrosshairMode.Hidden : CrosshairMode.Normal,
         vertLine: {
           color: CROSS,
           width: 1,
@@ -141,32 +144,46 @@ export function AdvancedMetalChart({
         },
       },
       leftPriceScale: {
-        visible: true,
+        visible: !compact,
         borderVisible: false,
-        scaleMargins: { top: 0.12, bottom: 0.08 },
+        scaleMargins: { top: compact ? 0.08 : 0.12, bottom: compact ? 0.05 : 0.08 },
       },
       rightPriceScale: {
         visible: false,
       },
       timeScale: {
         borderVisible: false,
-        timeVisible: true,
+        visible: !compact,
+        timeVisible: !compact,
         secondsVisible: false,
-        rightOffset: 4,
-        barSpacing: 8,
-        minBarSpacing: 3,
+        rightOffset: compact ? 0 : 4,
+        barSpacing: compact ? 4 : 8,
+        minBarSpacing: compact ? 2 : 3,
       },
-      handleScroll: {
-        mouseWheel: true,
-        pressedMouseMove: true,
-        horzTouchDrag: true,
-        vertTouchDrag: false,
-      },
-      handleScale: {
-        axisPressedMouseMove: true,
-        mouseWheel: true,
-        pinch: true,
-      },
+      handleScroll: compact
+        ? {
+            mouseWheel: false,
+            pressedMouseMove: false,
+            horzTouchDrag: false,
+            vertTouchDrag: false,
+          }
+        : {
+            mouseWheel: true,
+            pressedMouseMove: true,
+            horzTouchDrag: true,
+            vertTouchDrag: false,
+          },
+      handleScale: compact
+        ? {
+            axisPressedMouseMove: false,
+            mouseWheel: false,
+            pinch: false,
+          }
+        : {
+            axisPressedMouseMove: true,
+            mouseWheel: true,
+            pinch: true,
+          },
       localization: {
         locale: 'en-US',
       },
@@ -196,7 +213,7 @@ export function AdvancedMetalChart({
       chartRef.current = null
       seriesRef.current = null
     }
-  }, [locale, height])
+  }, [locale, height, compact])
 
   useEffect(() => {
     const chart = chartRef.current
@@ -289,7 +306,7 @@ export function AdvancedMetalChart({
   return (
     <div
       ref={containerRef}
-      className="metal-chart-canvas w-full overflow-hidden rounded-xl bg-white"
+      className={`metal-chart-canvas w-full overflow-hidden bg-white ${compact ? '' : 'rounded-xl'}`}
       style={{ height }}
       role="img"
       aria-label="Metal price chart"

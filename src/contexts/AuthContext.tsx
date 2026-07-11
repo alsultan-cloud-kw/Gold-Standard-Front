@@ -27,19 +27,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing token and validate
     const token = localStorage.getItem('access_token')
     if (token) {
-      fetchUser()
+      void fetchUser()
     } else {
       setIsLoading(false)
     }
   }, [])
 
   const fetchUser = async () => {
+    let settled = false
+    const failSafe = window.setTimeout(() => {
+      if (settled) return
+      settled = true
+      setIsLoading(false)
+    }, 10_000)
+
     try {
       const userData = await authApi.getMe()
-      setUser(userData as User)
+      if (!settled) setUser(userData as User)
     } catch (error) {
       const status = (error as { response?: { status?: number } })?.response?.status
       console.error('Failed to fetch user:', error)
@@ -49,7 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null)
       }
     } finally {
-      setIsLoading(false)
+      if (!settled) {
+        settled = true
+        window.clearTimeout(failSafe)
+        setIsLoading(false)
+      } else {
+        window.clearTimeout(failSafe)
+      }
     }
   }
 

@@ -15,7 +15,7 @@ export default function TermsOfServiceAndPrivacyPolicyPage() {
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('legal.combined.kicker')}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl">
+          <h1 className="type-page-title text-[#0B0F19] sm:text-4xl">
             {t('legal.combined.pageTitle')}
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-[#64748B]">

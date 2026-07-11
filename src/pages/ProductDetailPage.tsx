@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { ShoppingCart, Share2, Shield, ChevronRight, Minus, Plus } from 'lucide-react'
+import { ShoppingCart, Share2, ChevronRight, Minus, Plus } from 'lucide-react'
 import { productsApi } from '../services/api'
 import type { Product } from '../types'
 import { useCart } from '../contexts/CartContext'
+import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { useProductPriceTrendSincePreviousFetch } from '../hooks/useProductPriceTrendSincePreviousFetch'
 import {
@@ -17,11 +18,15 @@ import {
 } from '../utils/productPrice'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { ProductStockBadge, ProductStockOverlay } from '@/components/products/ProductStockBadge'
+import { ProductTrustPanel } from '@/components/products/ProductTrustPanel'
+import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import {
   clampPurchaseQuantity,
   isProductOutOfStock,
   productAvailableQuantity,
 } from '@/utils/productStock'
+import { cn } from '@/lib/utils'
 
 export default function ProductDetailPage() {
   const { t, i18n } = useTranslation()
@@ -31,6 +36,8 @@ export default function ProductDetailPage() {
   const [showBarcodeZoom, setShowBarcodeZoom] = useState(false)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
   const { addToCart } = useCart()
+  const navigate = useNavigate()
+  const { ensureCanPurchase, isAuthenticated } = usePurchaseAuth()
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
@@ -39,31 +46,33 @@ export default function ProductDetailPage() {
   })
   const trendProducts = useMemo(
     () => (product ? [product as Product] : []),
-    [product]
+    [product],
   )
   const detailFetchTrends = useProductPriceTrendSincePreviousFetch(trendProducts)
 
   if (isLoading) {
+    return <AppLoadingScreen />
+  }
+
+  const p = product as Product & {
+    name_ar?: string
+    name_en?: string
+    description_ar?: string
+    description_en?: string
+    barcode_image_url?: string
+    barcode_value?: string
+    images?: { image: string | null }[]
+    carat?: { display_name_ar?: string; display_name_en?: string }
+    live_total_price?: number | null
+  }
+
+  if (!p) {
     return (
-      <div className="min-h-screen py-8">
-        <div className="page-shell">
-          <div className="animate-pulse">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="aspect-square bg-gold-500/10 rounded-lg" />
-              <div className="space-y-4">
-                <div className="h-8 bg-gold-500/10 rounded w-3/4" />
-                <div className="h-6 bg-gold-500/10 rounded w-1/2" />
-                <div className="h-32 bg-gold-500/10 rounded" />
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-[50vh] items-center justify-center bg-[var(--site-bg)] px-4">
+        <p className="text-sm font-medium text-[#64748B]">{t('productDetail.notFound')}</p>
       </div>
     )
   }
-
-  const p = product as any
-  if (!p) return <div>{t('productDetail.notFound')}</div>
 
   const productName = isAr && p.name_ar ? p.name_ar : p.name_en
   const caratLabel =
@@ -77,16 +86,26 @@ export default function ProductDetailPage() {
   const sellPerGramDisplay = sellPerGramLive ?? sellPerGramSnapshot
   const sellPerGramIsSnapshot = sellPerGramLive == null && sellPerGramSnapshot != null
 
-  const images = p.images?.length > 0 ? p.images : [{ image: null }]
+  const images = (p.images?.length ? p.images : [{ image: null }]) as {
+    image: string | null
+  }[]
   const detailTrend = detailFetchTrends[p.id]
   const productUrl = typeof window !== 'undefined' ? window.location.href : ''
   const outOfStock = isProductOutOfStock(p)
   const availableQty = productAvailableQuantity(p)
   const maxSelectableQty = Math.max(1, availableQty || 1)
+  const verifyCode = p.serial_number || p.barcode_value || p.sku || null
 
   const handleAddToCart = () => {
     if (outOfStock) return
-    addToCart(p as any, clampPurchaseQuantity(p, selectedQuantity))
+    addToCart(p as Product, clampPurchaseQuantity(p, selectedQuantity))
+  }
+
+  const handleBuyNow = () => {
+    if (outOfStock) return
+    if (!ensureCanPurchase('/checkout')) return
+    addToCart(p as Product, clampPurchaseQuantity(p, selectedQuantity))
+    navigate('/checkout')
   }
 
   const handleShare = async () => {
@@ -121,65 +140,78 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="page-shell py-8 sm:py-10">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm gold-gradient-text-on-light mb-6 mt-4">
-          <Link to="/" className="hover:gold-gradient-text-on-light">
+    <div className="min-h-screen bg-[var(--site-bg)]">
+      <div className="page-shell page-section">
+        <nav
+          className="mb-6 mt-2 flex flex-wrap items-center gap-2 text-sm text-[#64748B]"
+          aria-label="Breadcrumb"
+        >
+          <Link to="/" className="font-medium transition-colors hover:text-[#3F6F00]">
             {t('nav.home')}
           </Link>
-          <ChevronRight className="w-4 h-4 shrink-0" />
-          <Link to="/products" className="hover:gold-gradient-text-on-light">
+          <ChevronRight className="h-4 w-4 shrink-0 opacity-50 rtl:rotate-180" aria-hidden />
+          <Link to="/products" className="font-medium transition-colors hover:text-[#3F6F00]">
             {t('nav.products')}
           </Link>
-          <ChevronRight className="w-4 h-4 shrink-0" />
-          <span className="text-gold-100">{productName}</span>
+          <ChevronRight className="h-4 w-4 shrink-0 opacity-50 rtl:rotate-180" aria-hidden />
+          <span className="font-semibold text-[#0C1512]">{productName}</span>
         </nav>
 
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14 xl:gap-16">
-          {/* Image Gallery */}
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          {/* Gallery */}
           <div>
-            <div className={`relative aspect-square rounded-lg overflow-hidden bg-charcoal-800 mb-4 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
+            <div
+              className={cn(
+                'relative mb-4 aspect-square overflow-hidden rounded-2xl bg-[#F4F4F5] ring-1 ring-black/5',
+                outOfStock && 'grayscale-[0.35]',
+              )}
+            >
               {images[selectedImage]?.image ? (
                 <img
-                  src={images[selectedImage].image}
+                  src={images[selectedImage].image!}
                   alt={productName}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gold-400/40">
+                <div className="flex h-full w-full items-center justify-center text-sm font-medium text-[#94A3B8]">
                   {t('productDetail.noImage')}
                 </div>
               )}
               <ProductStockOverlay product={p} />
             </div>
-            {images.length > 1 && (
+
+            {images.length > 1 ? (
               <div className="flex gap-2">
-                {images.map((img: any, idx: number) => (
+                {images.map((img, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setSelectedImage(idx)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === idx ? 'border-gold-500' : 'border-transparent'
-                    }`}
+                    className={cn(
+                      'h-20 w-20 overflow-hidden rounded-xl border-2 transition-colors',
+                      selectedImage === idx
+                        ? 'border-[#3F6F00]'
+                        : 'border-transparent ring-1 ring-black/10',
+                    )}
                   >
                     {img.image ? (
-                      <img src={img.image} alt="" className="w-full h-full object-cover" />
+                      <img src={img.image} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-charcoal-800" />
+                      <div className="h-full w-full bg-[#E2E8F0]" />
                     )}
                   </button>
                 ))}
               </div>
-            )}
+            ) : null}
+
             {descriptionText ? (
-              <div className="mt-6 pt-4 border-t border-stone-200/80">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
+              <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
+                <h2 className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#64748B]">
                   {t('productDetail.descriptionHeading')}
                 </h2>
                 <p
                   dir="auto"
-                  className="text-sm sm:text-base text-stone-700 leading-relaxed whitespace-pre-wrap"
+                  className="text-sm leading-relaxed text-[#475569] sm:text-base whitespace-pre-wrap"
                 >
                   {descriptionText}
                 </p>
@@ -187,34 +219,30 @@ export default function ProductDetailPage() {
             ) : null}
           </div>
 
-          {/* Product Info */}
-          <div>
-            <div className="flex items-start justify-between mb-4">
-              <div>
+          {/* Product info + purchase */}
+          <div className="flex flex-col">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="min-w-0">
                 <div className="mb-3">
                   <ProductStockBadge product={p} size="md" />
                 </div>
-                <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-2">{productName}</h1>
-                {/* <p className="gold-gradient-text-on-light">SKU: {p.sku}</p> */}
+                <h1 className="text-2xl font-bold tracking-tight text-[#0C1512] sm:text-3xl">
+                  {productName}
+                </h1>
               </div>
-              <div className="flex gap-2">
-                {/* <button className="p-2 rounded-lg bg-charcoal-800 text-gold-400 hover:bg-gold-500/10">
-                  <Heart className="w-5 h-5" />
-                </button> */}
-                <button
-                  type="button"
-                  onClick={() => void handleShare()}
-                  aria-label={t('productDetail.share')}
-                  className="p-2 rounded-lg bg-charcoal-800 text-gold-400 hover:bg-gold-500/10"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                aria-label={t('productDetail.share')}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10 bg-white text-[#64748B] transition-colors hover:border-[#3F6F00]/30 hover:text-[#3F6F00]"
+              >
+                <Share2 className="h-5 w-5" />
+              </button>
             </div>
 
-            {/* Price — sell KWD/g (same feed as Prices page); making charge not shown */}
-            <div className="gold-card mb-6">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+            {/* Price */}
+            <div className="mb-5 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 <ProductPriceTrendArrow
                   product={p}
                   variant="light"
@@ -222,61 +250,71 @@ export default function ProductDetailPage() {
                   trendOverride={detailTrend?.trend ?? null}
                   percentOverride={detailTrend?.percent ?? null}
                 />
-                <span className="text-3xl font-bold text-black">
+                <span className="text-3xl font-bold tabular-nums text-[#0C1512]">
                   {formatKwd(productUnitPrice(p))} KWD
                 </span>
-                {p.live_total_price != null && (
-                  <span className="text-xs text-black/70 font-normal">{t('productDetail.liveRate')}</span>
-                )}
+                {p.live_total_price != null ? (
+                  <span className="rounded-full bg-[#ECFCCB] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#3F6F00]">
+                    {t('productDetail.liveRate')}
+                  </span>
+                ) : null}
               </div>
-              {sellPerGramDisplay != null && (
-                <div className="text-sm text-gold-100/60 space-y-1">
+              {sellPerGramDisplay != null ? (
+                <div className="space-y-1 text-sm text-[#64748B]">
                   <p dir="auto" className="tabular-nums">
-                    <span className="text-black-200/55">{t('pricesPage.sell')}</span>{' '}
-                    <span className="font-semibold text-gold-100">
+                    <span>{t('pricesPage.sell')} </span>
+                    <span className="font-semibold text-[#0C1512]">
                       {formatLatinNumber(sellPerGramDisplay, {
                         minimumFractionDigits: 4,
                         maximumFractionDigits: 4,
                       })}
                     </span>
-                    <span className="text-black-200/55"> KWD/g</span>
+                    <span> KWD/g</span>
                   </p>
                   {sellPerGramIsSnapshot ? (
-                    <p className="text-[11px] text-gold-200/45 leading-snug">
+                    <p className="text-[11px] leading-snug text-[#94A3B8]">
                       {t('productDetail.snapshotSellRateHint')}
                     </p>
                   ) : null}
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Specifications */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="gold-card">
-                <p className="text-xs text-gold-100/50 mb-1">{t('productDetail.goldCarat')}</p>
-                <p className="text-lg font-semibold text-gold-100">{caratLabel}</p>
+            {/* Specs */}
+            <div className="mb-5 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-black/10 bg-white px-4 py-3.5">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+                  {t('productDetail.goldCarat')}
+                </p>
+                <p className="text-lg font-bold text-[#0C1512]">{caratLabel}</p>
               </div>
-              <div className="gold-card">
-                <p className="text-xs text-gold-100/50 mb-1">{t('productDetail.weight')}</p>
-                <p className="text-lg font-semibold text-gold-100">{p.weight_grams}g</p>
+              <div className="rounded-xl border border-black/10 bg-white px-4 py-3.5">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+                  {t('productDetail.weight')}
+                </p>
+                <p className="text-lg font-bold tabular-nums text-[#0C1512]">{p.weight_grams}g</p>
               </div>
             </div>
 
-            {/* Barcode (for in-store scanning & invoices) */}
-            {p.barcode_image_url && (
+            {/* Barcode */}
+            {p.barcode_image_url ? (
               <>
-                <div className="mb-6 gold-card flex items-center gap-4">
-                  <div>
-                    <p className="text-xs text-gold-100/50 mb-1">{t('productDetail.productBarcode')}</p>
-                    <p className="text-sm font-semibold text-gold-100">
+                <div className="mb-5 flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+                      {t('productDetail.productBarcode')}
+                    </p>
+                    <p className="font-mono text-sm font-semibold text-[#0C1512]">
                       {p.barcode_value || p.sku}
                     </p>
-                    <p className="text-xs text-gold-100/40 mt-1">{t('productDetail.barcodeHint')}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#64748B]">
+                      {t('productDetail.barcodeHint')}
+                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowBarcodeZoom(true)}
-                    className="ms-auto inline-flex items-center justify-center rounded bg-white px-2 py-1 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                    className="ms-auto inline-flex shrink-0 items-center justify-center rounded-lg bg-[#F4F4F5] px-2 py-1 ring-1 ring-black/5 transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#3F6F00]/40"
                     aria-label={t('productDetail.ariaZoomBarcode')}
                   >
                     <img
@@ -287,66 +325,45 @@ export default function ProductDetailPage() {
                   </button>
                 </div>
 
-                {showBarcodeZoom && (
+                {showBarcodeZoom ? (
                   <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/70"
+                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
                     onClick={() => setShowBarcodeZoom(false)}
+                    role="presentation"
                   >
                     <div
-                      className="bg-white rounded-lg shadow-2xl p-4 max-w-lg w-[90%] flex flex-col items-center"
+                      className="flex w-full max-w-lg flex-col items-center rounded-2xl bg-white p-5 shadow-2xl"
                       onClick={(e) => e.stopPropagation()}
+                      role="dialog"
+                      aria-modal="true"
                     >
-                      <h3 className="text-sm font-semibold mb-3 text-gray-800">
+                      <h3 className="mb-3 text-sm font-bold text-[#0C1512]">
                         {t('productDetail.barcodeModalTitle', { name: productName })}
                       </h3>
                       <img
                         src={p.barcode_image_url}
                         alt={`${t('productDetail.productBarcode')} — ${productName}`}
-                        className="w-full h-auto max-h-[320px] object-contain border border-gray-200"
+                        className="max-h-[320px] w-full border border-black/10 object-contain"
                       />
-                      <p className="mt-3 text-xs text-gray-600">
+                      <p className="mt-3 text-xs text-[#64748B]">
                         {t('productDetail.codeLabel')}{' '}
-                        <span className="font-mono">{p.barcode_value || p.sku}</span>
+                        <span className="font-mono font-semibold text-[#0C1512]">
+                          {p.barcode_value || p.sku}
+                        </span>
                       </p>
                       <button
                         type="button"
                         onClick={() => setShowBarcodeZoom(false)}
-                        className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-md border border-gray-300 text-xs font-medium text-gray-800 hover:bg-gray-100"
+                        className="mt-4 rounded-lg border border-black/15 px-4 py-2 text-xs font-semibold text-[#0C1512] hover:bg-[#F4F4F5]"
                       >
                         {t('productDetail.close')}
                       </button>
                     </div>
                   </div>
-                )}
+                ) : null}
               </>
-            )}
+            ) : null}
 
-            {/* Price Calculator */}
-            {/* <div className="gold-card mb-6">
-              <h3 className="text-sm font-semibold text-gold-100 mb-3">Price Calculator</h3>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={customWeight}
-                  onChange={(e) => setCustomWeight(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="Enter weight (g)"
-                  className="flex-1 px-4 py-2 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
-                />
-                <button
-                  onClick={handleCalculatePrice}
-                  className="px-4 py-2 bg-gold-500 text-charcoal-950 rounded-lg font-medium hover:bg-gold-400"
-                >
-                  Calculate
-                </button>
-              </div>
-              {calculatedPrice && (
-                <p className="mt-2 text-gold-400">
-                  Estimated Price: {calculatedPrice.toLocaleString()} KWD
-                </p>
-              )}
-            </div> */}
-
-            {/* Actions */}
             {outOfStock ? (
               <div className="mb-5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
                 <p className="font-semibold">{t('productDetail.outOfStock')}</p>
@@ -354,18 +371,21 @@ export default function ProductDetailPage() {
               </div>
             ) : null}
 
+            {/* Quantity */}
             <div className="mb-5">
-              <p className="text-xs text-gold-100/70 mb-2">{t('productDetail.quantity')}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+                {t('productDetail.quantity')}
+              </p>
               <div className="flex flex-wrap items-center gap-4">
-                <div className="inline-flex items-center rounded-lg border-2 border-lime-400/70 bg-lime-100">
+                <div className="inline-flex items-center overflow-hidden rounded-xl border border-[#3F6F00]/25 bg-[#ECFCCB]/50">
                   <button
                     type="button"
                     onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
                     disabled={outOfStock}
-                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80 disabled:opacity-40"
+                    className="px-3 py-2.5 text-[#3F6F00] transition-colors hover:bg-[#ECFCCB] disabled:opacity-40"
                     aria-label={t('cartPage.decreaseQty')}
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="h-4 w-4" />
                   </button>
                   <input
                     type="number"
@@ -380,7 +400,7 @@ export default function ProductDetailPage() {
                         outOfStock ? 1 : clampPurchaseQuantity(p, Number.isFinite(next) ? next : 1),
                       )
                     }}
-                    className="w-16 bg-transparent text-center text-lime-950 font-semibold py-2 border-x border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-40"
+                    className="w-14 border-x border-[#3F6F00]/20 bg-transparent py-2.5 text-center text-sm font-bold tabular-nums text-[#0C1512] [appearance:textfield] disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
@@ -390,49 +410,45 @@ export default function ProductDetailPage() {
                       )
                     }
                     disabled={outOfStock || selectedQuantity >= maxSelectableQty}
-                    className="px-3 py-2 text-lime-900 hover:bg-lime-200/80 disabled:opacity-40"
+                    className="px-3 py-2.5 text-[#3F6F00] transition-colors hover:bg-[#ECFCCB] disabled:opacity-40"
                     aria-label={t('cartPage.increaseQty')}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="h-4 w-4" />
                   </button>
                 </div>
                 <Link
                   to="/products"
-                  className="ms-auto inline-flex items-center justify-center px-6 py-2 rounded-lg font-medium gold-gradient-text-on-light border border-gold-500/50 hover:bg-gold-500/10 transition-all text-center"
+                  className="text-sm font-semibold text-[#3F6F00] transition-colors hover:text-[#2D5200]"
                 >
                   {t('productDetail.continueShopping')}
                 </Link>
               </div>
             </div>
 
-            <div className="flex gap-4 mb-3">
+            {/* CTAs */}
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row">
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={outOfStock}
-                className="flex-1 gold-button flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="ds-btn-primary flex flex-1 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="h-5 w-5 shrink-0" />
                 {outOfStock ? t('productDetail.outOfStock') : t('productDetail.addToCart')}
               </button>
-              <Link
-                to="/checkout"
-                className={`flex-1 px-6 py-3 rounded-lg font-medium gold-gradient-text-on-light border border-gold-500/50 transition-all text-center ${
-                  outOfStock ? 'pointer-events-none opacity-50' : 'hover:bg-gold-500/10'
-                }`}
-                aria-disabled={outOfStock}
-                tabIndex={outOfStock ? -1 : undefined}
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                disabled={outOfStock}
+                className="ds-btn-accent flex flex-1 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {t('productDetail.buyNow')}
-              </Link>
+                {isAuthenticated ? t('productDetail.buyNow') : t('auth.signInToBuy')}
+              </button>
             </div>
 
-            {/* Features */}
-            <div className="flex justify-center">
-              <div className="text-center">
-                <Shield className="w-6 h-6 gold-gradient-text-on-light mx-auto mb-2" />
-                <p className="text-xs gold-gradient-text-on-light">{t('productDetail.certified')}</p>
-              </div>
-            </div>
+            <CheckoutTrustBadges variant="panel" className="mb-6" />
+
+            <ProductTrustPanel verifyCode={verifyCode} />
           </div>
         </div>
       </div>

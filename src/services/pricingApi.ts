@@ -77,7 +77,7 @@ export type MetalChartPoint = {
 export type MetalHistoryResponse = {
   metal: MetalSymbol
   friendly: MetalKey
-  range: 'live' | '1h' | '1d' | '1w' | '1m'
+  range: 'live' | '1h' | '1d' | '1w' | '1m' | '6m' | '1y' | '5y' | 'all'
   unit: string
   count: number
   points: MetalChartPoint[]

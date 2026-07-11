@@ -4,6 +4,13 @@ import { ClerkProvider } from '@clerk/react'
 import './i18n'
 import './index.css'
 import App from './App.tsx'
+import {
+  ensureSiteFontsLoaded,
+  initSiteFonts,
+} from './lib/siteFonts'
+
+ensureSiteFontsLoaded()
+initSiteFonts()
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 // Only use a proxy when explicitly set. clerk.goldstandardkw.com DNS is verified — a

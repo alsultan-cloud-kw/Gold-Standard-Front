@@ -1,7 +1,8 @@
 import type { MetalChartPoint } from '@/services/pricingApi'
 
-export type ChartRange = 'live' | '1h' | '1d' | '1w'
+export type ChartRange = 'live' | '1h' | '1d' | '1w' | '1m' | '6m' | '1y' | '5y' | 'all'
 export type MetalTab = 'gold' | 'silver' | 'platinum' | 'palladium'
+export type OunceCurrency = 'USD' | 'KWD'
 
 export type LinePoint = { time: number; value: number }
 export type CandlePoint = {
@@ -22,6 +23,16 @@ export function rangeBackMs(r: ChartRange): number {
       return 24 * 60 * 60 * 1000
     case '1w':
       return 7 * 24 * 60 * 60 * 1000
+    case '1m':
+      return 30 * 24 * 60 * 60 * 1000
+    case '6m':
+      return 180 * 24 * 60 * 60 * 1000
+    case '1y':
+      return 365 * 24 * 60 * 60 * 1000
+    case '5y':
+      return 5 * 365 * 24 * 60 * 60 * 1000
+    case 'all':
+      return 10 * 365 * 24 * 60 * 60 * 1000
     default:
       return 24 * 60 * 60 * 1000
   }
@@ -36,9 +47,76 @@ export function bucketMsForRange(range: ChartRange): number {
       return 15 * 60_000
     case '1w':
       return 60 * 60_000
+    case '1m':
+    case '6m':
+      return 24 * 60 * 60_000
+    case '1y':
+    case '5y':
+    case 'all':
+      return 7 * 24 * 60 * 60_000
     default:
       return 60_000
   }
+}
+
+/** API query range (backend may extend series for long horizons). */
+export function apiRangeForChartRange(range: ChartRange): ChartRange {
+  if (range === '6m') return '6m'
+  if (range === '5y') return '5y'
+  if (range === 'all') return 'all'
+  return range
+}
+
+export function ounceUnit(currency: OunceCurrency): string {
+  return currency === 'USD' ? 'USD/oz' : 'KWD/oz'
+}
+
+export function convertOunceUsdToCurrency(
+  usdOz: number,
+  currency: OunceCurrency,
+  usdToKwdRate: number | null,
+): number {
+  if (currency === 'USD') return usdOz
+  if (usdToKwdRate == null || !Number.isFinite(usdToKwdRate) || usdToKwdRate <= 0) return usdOz
+  return usdOz * usdToKwdRate
+}
+
+export function convertLineToOunceCurrency(
+  line: LinePoint[],
+  currency: OunceCurrency,
+  usdToKwdRate: number | null,
+): LinePoint[] {
+  if (currency === 'USD' || usdToKwdRate == null) return line
+  return line.map((p) => ({
+    ...p,
+    value: convertOunceUsdToCurrency(p.value, currency, usdToKwdRate),
+  }))
+}
+
+/** % change from first point in series (for 10Y / All windows). */
+export function computePeriodChangePct(line: LinePoint[]): number | null {
+  if (line.length < 2) return null
+  const first = line[0].value
+  const last = line[line.length - 1].value
+  if (!Number.isFinite(first) || first === 0) return null
+  return ((last - first) / first) * 100
+}
+
+/** Gold return since Jan 1 of the current calendar year. */
+export function computeYtdChangePct(line: LinePoint[]): number | null {
+  if (line.length < 2) return null
+  const year = new Date().getFullYear()
+  const jan1Sec = Math.floor(new Date(year, 0, 1).getTime() / 1000)
+  const start = line.find((p) => p.time >= jan1Sec) ?? line[0]
+  const last = line[line.length - 1]
+  if (!Number.isFinite(start.value) || start.value === 0) return null
+  return ((last.value - start.value) / start.value) * 100
+}
+
+export function formatPctChange(pct: number | null, digits = 1): string {
+  if (pct == null || !Number.isFinite(pct)) return '—'
+  const sign = pct >= 0 ? '+' : ''
+  return `${sign}${pct.toFixed(digits)}%`
 }
 
 function toUnixSec(iso: string): number | null {
@@ -271,6 +349,14 @@ export function prevCloseFromSnapshot(
 
   if (unit === 'USD/oz') return prevUsd
 
+  if (unit === 'KWD/oz') {
+    const rate =
+      snap.usd_to_kwd_rate != null && snap.usd_to_kwd_rate !== ''
+        ? Number(snap.usd_to_kwd_rate)
+        : null
+    if (rate != null && Number.isFinite(rate) && rate > 0) return prevUsd * rate
+  }
+
   if (unit === 'KWD/g') {
     const rate =
       snap.usd_to_kwd_rate != null && snap.usd_to_kwd_rate !== ''
@@ -318,8 +404,21 @@ export function snapshotOhlcForUnit(
     }
   }
 
-  const prev = prevCloseFromSnapshot(snap, unit)
   const rate = num(snap.usd_to_kwd_rate)
+  const toKwdOz = (usdOz: number | null) =>
+    usdOz != null && rate != null && rate > 0 ? usdOz * rate : null
+
+  if (unit === 'KWD/oz') {
+    return {
+      open: toKwdOz(num(snap.open_price)) ?? undefined,
+      high: toKwdOz(num(snap.high_price)) ?? undefined,
+      low: toKwdOz(num(snap.low_price)) ?? undefined,
+      prevClose: prevCloseFromSnapshot(snap, unit) ?? undefined,
+      close: toKwdOz(num(snap.price)) ?? undefined,
+    }
+  }
+
+  const prev = prevCloseFromSnapshot(snap, unit)
   const toGramKwd = (usdOz: number | null) =>
     usdOz != null && rate != null && rate > 0 ? (usdOz * rate) / TROY_OZ_GRAMS : null
 
@@ -333,7 +432,7 @@ export function snapshotOhlcForUnit(
 }
 
 export function formatPrice(value: number, unit: string, _locale?: string): string {
-  const digits = unit.includes('USD') ? 2 : 4
+  const digits = unit.includes('USD') ? 2 : unit.includes('KWD/oz') ? 3 : 4
   try {
     return value.toLocaleString('en-US', {
       minimumFractionDigits: digits,

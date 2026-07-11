@@ -48,7 +48,7 @@ export function KnetReceiptPanel({
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#64748B]">
           {t('knetReceipt.badge')}
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-[#0B0F19]">
+        <h1 className="type-page-title text-[#0B0F19]">
           {captured ? t('knetReceipt.capturedTitle') : t('knetReceipt.notCapturedTitle')}
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[#64748B]">

@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import i18n from '../i18n'
 import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi } from '../services/api'
+import { useAuth } from './AuthContext'
 import {
   clampPurchaseQuantity,
   isProductOutOfStock,
@@ -113,6 +115,8 @@ function unitPriceForMembership(product: Product, clubPricingEnabled: boolean): 
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
   const [cart, setCart] = useState<Cart>(readCartFromStorage)
   const [clubPricingEnabled, setClubPricingEnabled] = useState(false)
   const itemsRef = useRef<CartItem[]>(cart.items)
@@ -120,6 +124,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const repriceInFlightRef = useRef(false)
   const lastRepriceStartedAtRef = useRef(0)
   const REPRICE_MIN_GAP_MS = 2500
+
+  const assertCanPurchase = (): boolean => {
+    if (authLoading) return false
+    if (!isAuthenticated) {
+      toast.info(i18n.t('auth.loginRequiredToBuy'), {
+        id: 'purchase-login-required',
+        description: i18n.t('auth.loginRequiredToBuyDesc'),
+      })
+      navigate(`/login?next=${encodeURIComponent('/cart')}`)
+      return false
+    }
+    if (user?.is_verified === false) {
+      toast.error(i18n.t('auth.verificationRequiredToBuy'), {
+        id: 'purchase-verify-required',
+        description: i18n.t('auth.verificationRequiredToBuyDesc'),
+      })
+      navigate('/dashboard?tab=profile')
+      return false
+    }
+    return true
+  }
 
   useEffect(() => {
     try {
@@ -266,6 +291,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    if (!assertCanPurchase()) return
+
     if (isProductOutOfStock(product)) {
       cartToastInfo(
         i18n.t('cart.toasts.outOfStock'),

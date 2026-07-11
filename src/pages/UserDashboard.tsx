@@ -121,8 +121,8 @@ export default function UserDashboard() {
   ]
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="page-shell py-8 sm:py-10">
+    <div className="min-h-screen">
+      <div className="page-shell page-section">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 mt-4">
@@ -242,13 +242,17 @@ function ClubTab() {
   const [renameDraft, setRenameDraft] = useState('')
   const [showShareOptions, setShowShareOptions] = useState(false)
 
-  const { data: memData, isLoading: memLoading } = useQuery({
+  const { data: memData, isLoading: memLoading, isError: memError, refetch: refetchMembership } = useQuery({
     queryKey: ['clubMembership'],
     queryFn: () => clubsApi.getMyMembership() as Promise<MembershipPayload>,
+    retry: 1,
+    staleTime: 30_000,
   })
   const { data: offersData } = useQuery({
     queryKey: ['clubOffers'],
     queryFn: () => clubsApi.getMyOffers() as Promise<CustomerOfferRow[]>,
+    retry: 1,
+    staleTime: 30_000,
   })
   const membership = memData?.membership
   const club = memData?.club
@@ -374,6 +378,17 @@ function ClubTab() {
 
       {memLoading ? (
         <div className="gold-card p-8 text-center text-gold-100/70">{t('userDashboard.club.loading')}</div>
+      ) : memError ? (
+        <div className="gold-card space-y-4 text-center">
+          <p className="text-sm text-gold-100/80">{t('userDashboard.club.loadFailed')}</p>
+          <button
+            type="button"
+            onClick={() => void refetchMembership()}
+            className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700"
+          >
+            {t('userDashboard.club.tryAgain')}
+          </button>
+        </div>
       ) : !membership || !club ? (
         <div className="gold-card space-y-4">
           <p className="text-gold-100/80 text-sm">{t('userDashboard.club.notInClub')}</p>

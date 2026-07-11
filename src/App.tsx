@@ -31,6 +31,7 @@ import CompanyPricesPage from './pages/CompanyPricesPage'
 // import NewsPage from './pages/NewsPage'
 import TermsOfServiceAndPrivacyPolicyPage from './pages/TermsOfServiceAndPrivacyPolicyPage'
 import DataDeletionPage from './pages/DataDeletionPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 // Admin Components
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -70,6 +71,7 @@ import { CartProvider } from './contexts/CartContext'
 
 import { ProtectedRoute, StaffRoute, CatalogManagerRoute, GuestOnlyRoute } from './components/routing/ProtectedRoute'
 import ScrollToTop from './components/routing/ScrollToTop'
+import { GlobalBootGate } from './components/routing/GlobalBootGate'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from './featureFlags'
 
 // Create Query Client
@@ -87,14 +89,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ClerkAuthBridge />
-          <CartProvider>
+          <GlobalBootGate>
           <Router>
+            <CartProvider>
             <ScrollToTop />
             <MarketingVisitTracker />
             <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
               <Navbar />
-              <main className="pt-24">
+              <main className="main-under-nav">
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
@@ -102,7 +105,14 @@ function App() {
                   <Route path="/products/:slug" element={<ProductDetailPage />} />
                   <Route path="/verify" element={<ProductAuthenticityPage />} />
                   <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route
+                    path="/checkout"
+                    element={
+                      <ProtectedRoute>
+                        <CheckoutPage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/payment-receipt/:saleId" element={<KnetReceiptPage />} />
                   <Route element={<GuestOnlyRoute />}>
                     <Route path="/login" element={<LoginPage />} />
@@ -133,8 +143,22 @@ function App() {
                   <Route path="/data-deletion" element={<DataDeletionPage />} />
                   {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                     <>
-                      <Route path="/sell-gold" element={<SellGoldPage />} />
-                      <Route path="/trade-gold" element={<TradeGoldPage />} />
+                      <Route
+                        path="/sell-gold"
+                        element={
+                          <ProtectedRoute>
+                            <SellGoldPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/trade-gold"
+                        element={
+                          <ProtectedRoute>
+                            <TradeGoldPage />
+                          </ProtectedRoute>
+                        }
+                      />
                     </>
                   ) : null}
 
@@ -173,7 +197,10 @@ function App() {
                     <Route path="/admin/invoices/templates" element={<AdminInvoiceTemplates />} />
                     <Route path="/admin/invoices/terms" element={<AdminInvoiceTerms />} />
                     <Route path="/admin/clubs" element={<AdminClubs />} />
+                    <Route path="/admin/*" element={<NotFoundPage />} />
                   </Route>
+
+                  <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </main>
               <Footer />
@@ -203,9 +230,10 @@ function App() {
                 }}
               />
             </div>
+            </CartProvider>
           </Router>
-        </CartProvider>
-      </AuthProvider>
+          </GlobalBootGate>
+        </AuthProvider>
     </QueryClientProvider>
   )
 }

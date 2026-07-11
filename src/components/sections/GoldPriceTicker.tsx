@@ -1,17 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { ArrowDown, ArrowUp, Phone, MapPin, Languages } from 'lucide-react'
+import { GS_CONTACT } from '@/constants/contact'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   adminApi,
   type DaralsabaekPublicRatesResponse,
-  type KuwaitMarketConfigResponse,
+  type DaralsabaekPublicCarat,
 } from '../../services/api'
-import { formatLatinNumber } from '@/utils/formatLatinNumber'
+import { cn } from '@/lib/utils'
+import type { PriceTrendDir } from '@/components/ProductPriceTrendArrow'
 
-/** Troy ounce mass in grams (same factor as bullion industry). */
-const TROY_OZ_GRAMS = 31.1034768
+const FLASH_MS = 1800
+
+type MoveDir = 'up' | 'down'
+type FlashField = { dir: MoveDir; token: number }
 
 function numOrNull(v: unknown): number | null {
   if (v == null || v === '') return null
@@ -23,6 +32,10 @@ function numOrNull(v: unknown): number | null {
     return Number.isFinite(n) ? n : null
   }
   return null
+}
+
+function normalizeMetalKey(key: string): string {
+  return String(key).toUpperCase().replace(/\s/g, '')
 }
 
 function usePrefersReducedMotion(): boolean {
@@ -37,84 +50,272 @@ function usePrefersReducedMotion(): boolean {
   return reduced
 }
 
+function buildTickerItems(res: DaralsabaekPublicRatesResponse | undefined): DaralsabaekPublicCarat[] {
+  const items: DaralsabaekPublicCarat[] = [...(res?.carats ?? [])]
+  const seen = new Set(items.map((c) => normalizeMetalKey(c.key)))
+
+  const append = (spot: DaralsabaekPublicCarat | null | undefined, fallbackKey: string) => {
+    if (!spot) return
+    const key = normalizeMetalKey(String(spot.key || fallbackKey))
+    if (seen.has(key)) return
+    if (spot.buyTotal == null && spot.sellTotal == null) return
+    seen.add(key)
+    items.push(spot)
+  }
+
+  append(res?.silver ?? null, 'AG')
+  append(res?.platinum ?? null, 'PT')
+  append(res?.palladium ?? null, 'PD')
+
+  return items
+}
+
+type TickerPulse = {
+  lastDirBuy: Record<string, PriceTrendDir>
+  lastDirSell: Record<string, PriceTrendDir>
+  flashBuy: Record<string, FlashField | undefined>
+  flashSell: Record<string, FlashField | undefined>
+}
+
+/** Tracks live rate moves: flash prices briefly, keep arrow on last direction. */
+function useTickerPricePulse(items: DaralsabaekPublicCarat[]): TickerPulse {
+  const prevRef = useRef<Record<string, { buy: number | null; sell: number | null }>>({})
+  const [lastDirBuy, setLastDirBuy] = useState<Record<string, PriceTrendDir>>({})
+  const [lastDirSell, setLastDirSell] = useState<Record<string, PriceTrendDir>>({})
+  const [flashBuy, setFlashBuy] = useState<Record<string, FlashField | undefined>>({})
+  const [flashSell, setFlashSell] = useState<Record<string, FlashField | undefined>>({})
+  const timersRef = useRef<number[]>([])
+
+  const snapshotKey = useMemo(
+    () =>
+      items
+        .map((c) => `${normalizeMetalKey(c.key)}:${c.buyTotal ?? ''}:${c.sellTotal ?? ''}`)
+        .join('|'),
+    [items],
+  )
+
+  useEffect(() => {
+    const clearTimers = () => {
+      timersRef.current.forEach((id) => window.clearTimeout(id))
+      timersRef.current = []
+    }
+
+    const scheduleClear = (fn: () => void) => {
+      const id = window.setTimeout(fn, FLASH_MS)
+      timersRef.current.push(id)
+    }
+
+    const nextBuyFlash: Record<string, FlashField | undefined> = {}
+    const nextSellFlash: Record<string, FlashField | undefined> = {}
+    let buyDirPatch: Record<string, PriceTrendDir> | null = null
+    let sellDirPatch: Record<string, PriceTrendDir> | null = null
+
+    for (const c of items) {
+      const key = normalizeMetalKey(c.key)
+      const buy = numOrNull(c.buyTotal)
+      const sell = numOrNull(c.sellTotal)
+      const prev = prevRef.current[key]
+      const token = Date.now()
+
+      if (prev) {
+        if (buy != null && prev.buy != null && buy !== prev.buy) {
+          const dir: MoveDir = buy > prev.buy ? 'up' : 'down'
+          nextBuyFlash[key] = { dir, token }
+          buyDirPatch = { ...(buyDirPatch ?? {}), [key]: dir }
+        }
+        if (sell != null && prev.sell != null && sell !== prev.sell) {
+          const dir: MoveDir = sell > prev.sell ? 'up' : 'down'
+          nextSellFlash[key] = { dir, token }
+          sellDirPatch = { ...(sellDirPatch ?? {}), [key]: dir }
+        }
+      }
+
+      prevRef.current[key] = { buy, sell }
+    }
+
+    if (buyDirPatch) setLastDirBuy((prev) => ({ ...prev, ...buyDirPatch }))
+    if (sellDirPatch) setLastDirSell((prev) => ({ ...prev, ...sellDirPatch }))
+
+    if (Object.keys(nextBuyFlash).length) {
+      setFlashBuy((prev) => ({ ...prev, ...nextBuyFlash }))
+      scheduleClear(() => {
+        setFlashBuy((prev) => {
+          const next = { ...prev }
+          for (const k of Object.keys(nextBuyFlash)) {
+            if (next[k]?.token === nextBuyFlash[k]?.token) delete next[k]
+          }
+          return next
+        })
+      })
+    }
+    if (Object.keys(nextSellFlash).length) {
+      setFlashSell((prev) => ({ ...prev, ...nextSellFlash }))
+      scheduleClear(() => {
+        setFlashSell((prev) => {
+          const next = { ...prev }
+          for (const k of Object.keys(nextSellFlash)) {
+            if (next[k]?.token === nextSellFlash[k]?.token) delete next[k]
+          }
+          return next
+        })
+      })
+    }
+
+    return clearTimers
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotKey])
+
+  return { lastDirBuy, lastDirSell, flashBuy, flashSell }
+}
+
+function tickerArrowClass(dir: MoveDir | null, flashing: boolean) {
+  if (!dir) return 'text-white/20'
+  if (flashing) return dir === 'up' ? 'text-[#85E307]' : 'text-[#FCA5A5]'
+  return dir === 'up' ? 'text-[#85E307]/80' : 'text-[#FCA5A5]/80'
+}
+
+function TickerDirArrow({
+  dir,
+  flashing = false,
+}: {
+  dir: MoveDir | null
+  flashing?: boolean
+}) {
+  if (!dir) return null
+
+  const className = cn(
+    'inline-flex shrink-0 transition-colors duration-700 ease-out',
+    tickerArrowClass(dir, flashing),
+  )
+
+  if (dir === 'up') {
+    return (
+      <span className={className} aria-hidden>
+        <ArrowUp className="h-2.5 w-2.5 stroke-[3]" />
+      </span>
+    )
+  }
+
+  return (
+    <span className={className} aria-hidden>
+      <ArrowDown className="h-2.5 w-2.5 stroke-[3]" />
+    </span>
+  )
+}
+
+function TickerPriceValue({
+  value,
+  flash,
+  lastDir,
+}: {
+  value: string
+  flash?: FlashField
+  lastDir: PriceTrendDir
+}) {
+  const flashing = Boolean(flash)
+  const activeDir = flash?.dir ?? lastDir
+
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      <TickerDirArrow dir={activeDir} flashing={flashing} />
+      <span
+        key={flash ? `flash-${flash.token}` : 'steady'}
+        className={cn(
+          'text-sm font-bold tabular-nums sm:text-base',
+          flashing
+            ? flash?.dir === 'up'
+              ? 'ticker-price-flash-up'
+              : 'ticker-price-flash-down'
+            : 'text-white/90 transition-colors duration-700 ease-out',
+        )}
+      >
+        {value}
+      </span>
+    </span>
+  )
+}
+
 export default function GoldPriceTicker() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const reducedMotion = usePrefersReducedMotion()
-  const isRtl = i18n.dir() === 'rtl'
-  const isArabic = i18n.language?.startsWith('ar')
 
   const { data: goldPrices, isLoading } = useQuery({
     queryKey: ['daralsabaekPublicRates'],
     queryFn: adminApi.getDaralsabaekPublicRates,
     refetchInterval: 20_000,
-  })
-  const { data: kuwaitConfigRaw } = useQuery({
-    queryKey: ['kuwaitMarketConfigPublic'],
-    queryFn: adminApi.getKuwaitMarketConfig,
-    staleTime: 60_000,
-    retry: 0,
+    placeholderData: keepPreviousData,
   })
 
   const res = goldPrices as DaralsabaekPublicRatesResponse | undefined
-  const kuwaitConfig = kuwaitConfigRaw as KuwaitMarketConfigResponse | undefined
-  const rawCarats = res?.carats ?? []
-
-  /** Gold karats only — exclude any silver/platinum/palladium-style rows if present in the carats list. */
-  const carats = useMemo(() => {
-    return rawCarats.filter((c) => {
-      const k = String(c.key).toUpperCase().replace(/\s/g, '')
-      if (k === 'AG' || k === 'PT' || k === 'PD') return false
-      if (k.includes('SILVER') || k.includes('PLATINUM') || k.includes('PALLADIUM')) return false
-      return true
-    })
-  }, [rawCarats])
+  const tickerItems = useMemo(() => buildTickerItems(res), [res])
+  const pulse = useTickerPricePulse(tickerItems)
 
   const fmt = (n: number | null | undefined) =>
     typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
 
-  const tickerItems = carats
+  const renderTickerTrack = (loopKey: string) => (
+    <>
+      {tickerItems.map((c) => {
+        const key = normalizeMetalKey(c.key)
+        const buyTotal = c.buyTotal
+        const sellTotal = c.sellTotal
+        const sellFlash = pulse.flashSell[key]
+        const buyFlash = pulse.flashBuy[key]
+        const sellDir = pulse.lastDirSell[key] ?? null
+        const buyDir = pulse.lastDirBuy[key] ?? null
+        return (
+          <div
+            key={`${loopKey}-${c.key}`}
+            className="flex shrink-0 items-center gap-x-2.5 whitespace-nowrap border-e border-white/10 px-4 sm:gap-x-3 sm:px-5"
+            dir="ltr"
+          >
+            <span className="text-sm font-semibold tabular-nums text-white/90 sm:text-base">{c.key}</span>
+            <span className="text-[10px] uppercase tracking-wide text-white/40 sm:text-xs">
+              {t('home.tickerSell')}
+            </span>
+            <TickerPriceValue
+              value={fmt(sellTotal)}
+              flash={sellFlash}
+              lastDir={sellDir}
+            />
+            <span className="text-[10px] uppercase tracking-wide text-white/40 sm:text-xs">
+              {t('home.tickerBuy')}
+            </span>
+            <TickerPriceValue
+              value={fmt(buyTotal)}
+              flash={buyFlash}
+              lastDir={buyDir}
+            />
+            <span className="text-[10px] uppercase tracking-wide text-white/35 sm:text-xs">
+              {t('common.kwdPerGram')}
+            </span>
+          </div>
+        )
+      })}
+    </>
+  )
 
-  const usdToKwdRateFromConfig =
-    typeof kuwaitConfig?.usd_to_kwd_rate === 'number' && Number.isFinite(kuwaitConfig.usd_to_kwd_rate) && kuwaitConfig.usd_to_kwd_rate > 0
-      ? kuwaitConfig.usd_to_kwd_rate
-      : null
-  const usdToKwdRateFromRates =
-    typeof (res as { usd_to_kwd_rate?: number } | undefined)?.usd_to_kwd_rate === 'number' &&
-    Number.isFinite((res as { usd_to_kwd_rate?: number }).usd_to_kwd_rate!) &&
-    (res as { usd_to_kwd_rate?: number }).usd_to_kwd_rate! > 0
-      ? (res as { usd_to_kwd_rate?: number }).usd_to_kwd_rate!
-      : null
-  const usdToKwdRate = usdToKwdRateFromConfig ?? usdToKwdRateFromRates
-  const toUsdOunce = (raw: number | null): number | null => {
-    if (raw == null || !Number.isFinite(raw)) return null
-    if (raw >= 1500) return raw
-    if (typeof usdToKwdRate === 'number' && usdToKwdRate > 0) return raw / usdToKwdRate
-    return null
-  }
-  const goldOunceUsd = toUsdOunce(numOrNull(res?.goldOuncePrice))
-  const goldOunceKwd =
-    numOrNull(res?.goldOunce?.sellTotal) ??
-    numOrNull(res?.goldOunce?.buyTotal) ??
-    (() => {
-      const buy24Total = numOrNull(carats.find((c) => String(c.key).toUpperCase().replace(/\s/g, '') === '24K')?.buyTotal)
-      return buy24Total != null && Number.isFinite(buy24Total) ? buy24Total * TROY_OZ_GRAMS : null
-    })()
+  const liveBeacon = (
+    <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#85E307]/50" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#85E307]" />
+    </span>
+  )
 
-  const hasOunceRow = goldOunceUsd != null || goldOunceKwd != null
-
-  if (isLoading) {
+  if (isLoading && !res) {
     return (
-      <div className="relative bg-[#070604] border-b border-amber-500/25">
-        <div className="page-shell flex items-center gap-4 py-3.5 min-h-[3.25rem]">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-          <div className="flex flex-1 gap-6 overflow-hidden">
+      <div className="relative border-b border-white/10 bg-[#0B0F19]">
+        <div className="page-shell flex min-h-[2.75rem] items-center gap-4 py-2">
+          {liveBeacon}
+          <div className="gold-ticker-fade flex flex-1 gap-0 overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-2 shrink-0">
-                <div className="w-12 h-3.5 bg-amber-500/15 rounded animate-pulse" />
-                <div className="w-16 h-4 bg-amber-400/10 rounded animate-pulse" />
+              <div key={i} className="flex shrink-0 items-center gap-2 border-e border-white/10 px-4">
+                <div className="h-3.5 w-12 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-16 animate-pulse rounded bg-white/10" />
               </div>
             ))}
           </div>
+          <TickerUtilityCluster />
         </div>
       </div>
     )
@@ -122,213 +323,106 @@ export default function GoldPriceTicker() {
 
   if (tickerItems.length === 0) {
     return (
-      <div className="relative bg-[#070604] border-b border-amber-500/25 text-amber-100/80 text-base">
-        <div className="page-shell flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-3.5">
-          {hasOunceRow ? (
-            <div
-              className={`flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3 gap-y-0.5 text-amber-100/95 ${
-                isArabic ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
-              }`}
-            >
-              <span className="font-semibold uppercase tracking-wide text-amber-200/85 whitespace-nowrap">
-                {t('home.tickerOunceTitle')}
-              </span>
-              {goldOunceUsd != null ? (
-                <span className="tabular-nums whitespace-nowrap" dir="ltr">
-                  <span className="text-amber-100/60 uppercase me-1">{t('home.tickerOunceUsd')}</span>
-                  <span className={`font-bold text-amber-200 ${isArabic ? 'text-base sm:text-lg' : ''}`}>
-                    $
-                    {formatLatinNumber(goldOunceUsd, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </span>
-              ) : null}
-              {goldOunceKwd != null ? (
-                <span
-                  className="tabular-nums whitespace-nowrap"
-                  dir="ltr"
-                  title={t('home.tickerOunceKwdHint')}
-                >
-                  <span className="text-amber-100/60 uppercase me-1">{t('home.tickerOunceKwd')}</span>
-                  <span className={`font-bold text-emerald-300/95 ${isArabic ? 'text-base sm:text-lg' : ''}`}>
-                    {formatLatinNumber(goldOunceKwd, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-          {hasOunceRow ? (
-            <span className="text-amber-400/50 select-none" aria-hidden>
-              ·
+      <div className="relative border-b border-white/10 bg-[#0B0F19] text-white/70">
+        <div className="page-shell flex min-h-[2.75rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2 sm:flex-nowrap">
+          <div className="flex min-w-0 flex-1 items-center gap-x-2 sm:gap-x-3">
+            {liveBeacon}
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/80 sm:text-sm">
+              {t('home.metalTickerLabel')}
             </span>
-          ) : null}
-          <Link to="/prices" className="hover:text-amber-200 underline-offset-2 hover:underline font-semibold shrink-0 text-sm sm:text-base">
-            {t('nav.prices')}
-          </Link>
+          </div>
+          <TickerUtilityCluster />
         </div>
       </div>
     )
   }
 
-  const renderTrack = (opts: { ariaHidden?: boolean }) => (
-    <div
-      className="flex items-center gap-0 shrink-0"
-      aria-hidden={opts.ariaHidden ? true : undefined}
-    >
-      {tickerItems.map((c, idx) => {
-        const buyTotal = c.buyTotal
-        const sellTotal = c.sellTotal
-        const spread =
-          typeof buyTotal === 'number' &&
-          Number.isFinite(buyTotal) &&
-          typeof sellTotal === 'number' &&
-          Number.isFinite(sellTotal)
-            ? sellTotal - buyTotal
-            : 0
-        return (
-          <div key={`${opts.ariaHidden ? 'd' : 's'}-${c.key}-${idx}`} className="flex items-center shrink-0">
-            {idx > 0 ? (
-              <span className="text-amber-400/70 px-4 sm:px-5 select-none text-sm font-light" aria-hidden>
-                ·
-              </span>
-            ) : null}
-            <div
-              className="flex items-center gap-x-2 gap-y-0.5 sm:gap-x-2.5 whitespace-nowrap flex-wrap sm:flex-nowrap"
-              dir="ltr"
-            >
-              <span className="text-base sm:text-lg font-semibold text-amber-200/95 tabular-nums">{c.key}</span>
-              <span className="text-xs sm:text-sm text-amber-100/55 uppercase tracking-wide">
-                {t('home.tickerSell')}
-              </span>
-              <span className="text-base sm:text-lg font-bold text-emerald-300/95 tabular-nums">{fmt(sellTotal)}</span>
-              <span className="text-xs sm:text-sm text-amber-100/55 uppercase tracking-wide">
-                {t('home.tickerBuy')}
-              </span>
-              <span className="text-base sm:text-lg font-bold text-amber-300 tabular-nums">{fmt(buyTotal)}</span>
-              <span className="text-xs sm:text-sm text-amber-100/50 uppercase tracking-wide">
-                {t('common.kwdPerGram')}
-              </span>
-              <PriceChangeIndicator spread={spread} />
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-
-  const marqueeAnim = isRtl ? 'animate-gold-marquee-rtl' : 'animate-gold-marquee-ltr'
+  // Marquee math assumes LTR flex + translateX(-50%). Force LTR on the track
+  // so Arabic (html[dir=rtl]) still loops — RTL flex reverses children and breaks %.
+  const marqueeDuration = Math.max(32, tickerItems.length * 6)
 
   return (
-    <div className="group relative bg-[#070604] border-b border-amber-500/25 text-amber-100">
-      <div className="page-shell flex items-stretch min-h-[3.25rem]">
-        <div className="flex shrink-0 items-center gap-2 px-3 sm:ps-6 lg:ps-8 border-e border-amber-500/20 py-3">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-          <span className="text-sm sm:text-base font-semibold text-amber-200/90 tracking-wide uppercase whitespace-nowrap max-[380px]:sr-only">
+    <div className="group relative border-b border-white/10 bg-[#0B0F19] text-white/85">
+      <div className="page-shell flex min-h-[3.25rem] items-stretch">
+        <div className="relative z-10 flex shrink-0 items-center gap-2 border-e border-white/10 bg-[#0B0F19] px-3 py-3 sm:ps-6 lg:ps-8">
+          {liveBeacon}
+          <span className="max-[380px]:sr-only whitespace-nowrap text-sm font-semibold uppercase tracking-wide text-white/80 sm:text-base">
             {t('home.metalTickerLabel')}
           </span>
         </div>
 
-        {hasOunceRow ? (
-          <div
-            className={`flex shrink-0 flex-wrap items-center content-center gap-x-2 sm:gap-x-2.5 gap-y-0.5 px-2 sm:px-3 border-e border-amber-500/20 py-2.5 self-stretch ${
-              isArabic ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
-            }`}
-            title={goldOunceKwd != null ? t('home.tickerOunceKwdHint') : undefined}
-          >
-            <span className="font-semibold text-amber-200/85 uppercase tracking-wide whitespace-nowrap max-[480px]:sr-only">
-              {t('home.tickerOunceTitle')}
-            </span>
-            {goldOunceUsd != null ? (
-              <span className="tabular-nums whitespace-nowrap" dir="ltr">
-                <span className="text-amber-100/55 uppercase me-1">{t('home.tickerOunceUsd')}</span>
-                <span className={`font-bold text-amber-200 ${isArabic ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
-                  $
-                  {formatLatinNumber(goldOunceUsd, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
-              </span>
-            ) : null}
-            {goldOunceKwd != null ? (
-              <span className="tabular-nums whitespace-nowrap" dir="ltr">
-                <span className="text-amber-100/55 uppercase me-1">{t('home.tickerOunceKwd')}</span>
-                <span className={`font-bold text-emerald-300/95 ${isArabic ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
-                  {formatLatinNumber(goldOunceKwd, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-
         <div
-          className="min-w-0 flex-1 overflow-hidden py-2.5 flex items-center"
+          className="gold-ticker-fade relative flex min-w-0 flex-1 items-center overflow-hidden py-2.5"
           role="region"
           aria-label={t('home.metalTickerAria')}
+          dir="ltr"
         >
           {reducedMotion ? (
-            <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 px-3 w-full">
-              {renderTrack({})}
+            <div className="flex w-full flex-wrap items-center gap-0 px-1">
+              {renderTickerTrack('static')}
             </div>
           ) : (
-            <div className="overflow-hidden w-full">
+            <div className="w-full overflow-hidden" dir="ltr">
               <div
-                className={`flex w-max will-change-transform motion-reduce:animate-none group-hover:[animation-play-state:paused] ${marqueeAnim}`}
+                className="flex w-max animate-gold-marquee-ltr will-change-transform motion-reduce:animate-none group-hover:[animation-play-state:paused]"
+                style={{ animationDuration: `${marqueeDuration}s` }}
               >
-                {renderTrack({})}
-                {/* Seam between loop copies (e.g. Pt … 24K) — otherwise no gap */}
-                <span
-                  className="mx-4 sm:mx-5 h-6 w-px shrink-0 self-center bg-amber-400/50 rounded-full"
-                  aria-hidden
-                />
-                {renderTrack({ ariaHidden: true })}
+                <div className="flex shrink-0 items-center">{renderTickerTrack('a')}</div>
+                <div className="flex shrink-0 items-center" aria-hidden>
+                  {renderTickerTrack('b')}
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="hidden sm:flex shrink-0 items-center pe-4 lg:pe-8 border-s border-amber-500/20">
-          <Link
-            to="/prices"
-            className="text-sm font-semibold text-amber-300/90 hover:text-amber-100 whitespace-nowrap transition-colors"
-          >
-            {t('nav.prices')}
-          </Link>
+        <div className="relative z-10 shrink-0 bg-[#0B0F19]">
+          <TickerUtilityCluster />
         </div>
       </div>
     </div>
   )
 }
 
-function PriceChangeIndicator({ spread }: { spread: number }) {
-  if (spread > 0) {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-emerald-400/95 text-sm tabular-nums">
-        <TrendingUp className="w-3.5 h-3.5 shrink-0" aria-hidden />
-        +{spread.toFixed(2)}
-      </span>
-    )
-  }
-  if (spread < 0) {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-red-400/95 text-sm tabular-nums">
-        <TrendingDown className="w-3.5 h-3.5 shrink-0" aria-hidden />
-        {spread.toFixed(2)}
-      </span>
-    )
-  }
+function TickerUtilityCluster() {
+  const { t, i18n } = useTranslation()
+
   return (
-    <span className="inline-flex items-center gap-0.5 text-amber-100/45 text-sm tabular-nums">
-      <Minus className="w-3.5 h-3.5 shrink-0" aria-hidden />
-      0.00
-    </span>
+    <div className="flex shrink-0 items-center gap-3 border-s border-white/10 px-3 sm:gap-4 sm:px-4 lg:pe-6">
+      <a
+        href={`tel:${GS_CONTACT.phoneTel}`}
+        className="hidden items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80 md:inline-flex"
+        dir="ltr"
+      >
+        <Phone className="h-3 w-3 shrink-0" />
+        <span className="whitespace-nowrap">{GS_CONTACT.phone}</span>
+      </a>
+      <span className="hidden items-center gap-1 text-xs text-white/45 lg:inline-flex">
+        <MapPin className="h-3 w-3 shrink-0" />
+        <span className="max-w-[10rem] truncate xl:max-w-none">{t('nav.location')}</span>
+      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80"
+            aria-label={t('common.language')}
+          >
+            <Languages className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">
+              {i18n.language === 'ar' ? t('common.arabic') : t('common.english')}
+            </span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[120px] border-black/10 bg-white">
+          <DropdownMenuItem onClick={() => i18n.changeLanguage('en')} className="cursor-pointer">
+            {t('common.english')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => i18n.changeLanguage('ar')} className="cursor-pointer">
+            {t('common.arabic')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }

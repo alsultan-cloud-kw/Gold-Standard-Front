@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
 import { isStaffRole, resolvePostAuthPath } from '../../utils/authRedirect'
@@ -19,13 +21,7 @@ function isCatalogManagerRole(role: string | undefined): boolean {
 }
 
 export function AuthLoadingFallback({ message }: { message?: string }) {
-  const { t } = useTranslation()
-  return (
-    <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-      <div className="w-12 h-12 border-4 border-lime-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm text-gold-100/70">{message ?? t('common.loading')}</p>
-    </div>
-  )
+  return <AppLoadingScreen message={message} variant="fullscreen" />
 }
 
 function AuthLoadingFallbackCompleting() {
@@ -56,14 +52,28 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
  */
 export function GuestOnlyRoute() {
   const { isAuthenticated, isLoading, user } = useAuth()
-  const { isSignedIn, isLoaded: clerkLoaded } = useClerkAuth()
+  const { isSignedIn, isLoaded: clerkLoaded, signOut } = useClerkAuth()
   const [searchParams] = useSearchParams()
+  const [clerkSyncTimedOut, setClerkSyncTimedOut] = useState(false)
+
+  // Avoid endless “completing sign-in” if Clerk→Django exchange stalls.
+  useEffect(() => {
+    if (!(isSignedIn && !isAuthenticated && clerkLoaded && !isLoading)) {
+      setClerkSyncTimedOut(false)
+      return
+    }
+    const id = window.setTimeout(() => {
+      setClerkSyncTimedOut(true)
+      void signOut().catch(() => undefined)
+    }, 12_000)
+    return () => window.clearTimeout(id)
+  }, [isSignedIn, isAuthenticated, clerkLoaded, isLoading, signOut])
 
   if (isLoading || !clerkLoaded) {
     return <AuthLoadingFallback />
   }
 
-  if (isSignedIn && !isAuthenticated) {
+  if (isSignedIn && !isAuthenticated && !clerkSyncTimedOut) {
     return <AuthLoadingFallbackCompleting />
   }
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import type { MouseEvent } from 'react'
 import {
   ShoppingCart,
   Trash2,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useCart } from '../contexts/CartContext'
+import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import { productImageSrc } from '../utils/productImage'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
@@ -101,8 +103,8 @@ function OrderSummaryCard({
 
         <div className="flex items-center justify-between gap-2 text-[#64748B]">
           <span>{t('cartPage.shipping')}</span>
-          <span className="inline-flex rounded-full border border-[#3F6F00] bg-[#85E307] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0B0F19]">
-            {t('cartPage.shippingFree')}
+          <span className="text-sm font-medium text-[#64748B]">
+            {t('cartPage.shippingAtCheckout')}
           </span>
         </div>
 
@@ -132,6 +134,7 @@ export default function CartPage() {
   const isAr = i18n.language?.startsWith('ar')
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart()
   const summary = useOrderSummaryDisplay(cart)
+  const { ensureCanPurchase, isAuthenticated, needsVerification, loginHref } = usePurchaseAuth()
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =
     cartClubPricingBreakdown(cart.items)
   const displayTotalAfterClub = chargedSubtotal
@@ -140,6 +143,22 @@ export default function CartPage() {
     (item) =>
       isProductOutOfStock(item.product) || item.quantity > productAvailableQuantity(item.product),
   )
+
+  const checkoutHref = !isAuthenticated
+    ? loginHref('/checkout')
+    : needsVerification
+      ? '/dashboard?tab=profile'
+      : '/checkout'
+
+  const onCheckoutClick = (e: MouseEvent) => {
+    if (hasUnavailableItems) {
+      e.preventDefault()
+      return
+    }
+    if (!ensureCanPurchase('/checkout')) {
+      e.preventDefault()
+    }
+  }
 
   if (cart.items.length === 0) {
     return (
@@ -170,7 +189,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
       <div className="border-b border-black/5 bg-white">
-        <div className="page-shell py-8 sm:py-10">
+          <div className="page-shell page-section">
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
             {t('cartPage.kicker')}
           </p>
@@ -183,7 +202,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div className="page-shell py-6 sm:py-8 lg:py-10">
+      <div className="page-shell page-section">
         <div className="commerce-layout">
           <div className="min-w-0 space-y-4">
             {cart.items.map((item) => {
@@ -316,7 +335,8 @@ export default function CartPage() {
             />
 
             <Link
-              to="/checkout"
+              to={checkoutHref}
+              onClick={onCheckoutClick}
               aria-disabled={hasUnavailableItems}
               className={`flex min-h-[3.5rem] w-full items-center justify-center gap-2 rounded-2xl border text-base font-bold shadow-[0_14px_28px_-14px_rgba(133,227,7,0.55)] transition sm:text-lg ${
                 hasUnavailableItems
@@ -324,7 +344,13 @@ export default function CartPage() {
                   : 'border-[#3F6F00] bg-[#85E307] text-[#3F6F00] hover:bg-[#9AEF2A]'
               }`}
             >
-              {hasUnavailableItems ? t('stock.cartBlocked') : t('cartPage.proceedCheckout')}
+              {hasUnavailableItems
+                ? t('stock.cartBlocked')
+                : !isAuthenticated
+                  ? t('auth.signInToCheckout')
+                  : needsVerification
+                    ? t('auth.verifyToCheckout')
+                    : t('cartPage.proceedCheckout')}
               <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Link>
 

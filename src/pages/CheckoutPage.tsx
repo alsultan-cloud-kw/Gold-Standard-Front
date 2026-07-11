@@ -12,6 +12,7 @@ import {
   Crown,
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
+import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
@@ -19,6 +20,7 @@ import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/T
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
 import { CheckoutStepIndicator } from '@/components/checkout/CheckoutStepIndicator'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import knetBadge from '@/assets/trust/knet-badge.png'
 import { cn } from '@/lib/utils'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
@@ -152,6 +154,8 @@ const checkoutSecondaryBtnClass =
 export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
+  const { user } = useAuth()
+  const needsVerification = Boolean(user && user.is_verified === false)
   const navigate = useNavigate()
   const location = useLocation()
   const [step, setStep] = useState(1)
@@ -587,15 +591,10 @@ export default function CheckoutPage() {
 
   if (knetReturnPhase === 'verifying') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-4 py-16">
-        <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#ECFCCB]">
-            <Loader2 className="h-8 w-8 animate-spin text-[#3F6F00]" />
-          </div>
-          <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('checkoutPage.knetVerifyingTitle')}</h1>
-          <p className="text-sm leading-relaxed text-[#64748B]">{t('checkoutPage.knetVerifyingBody')}</p>
-        </div>
-      </div>
+      <AppLoadingScreen
+        variant="fullscreen"
+        message={t('checkoutPage.knetVerifyingTitle')}
+      />
     )
   }
 
@@ -690,6 +689,31 @@ export default function CheckoutPage() {
     )
   }
 
+  if (needsVerification) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
+        <div className="max-w-md rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
+          <Lock className="mx-auto mb-4 h-10 w-10 text-[#3F6F00]" />
+          <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('auth.verificationRequiredToBuy')}</h1>
+          <p className="mb-6 text-sm leading-relaxed text-[#64748B]">
+            {t('auth.verificationRequiredToBuyDesc')}
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link to="/dashboard?tab=profile" className={checkoutPrimaryBtnClass}>
+              {t('auth.goToProfile')}
+            </Link>
+            <Link
+              to="/cart"
+              className="inline-flex items-center justify-center rounded-xl border border-black/10 px-5 py-3 text-sm font-semibold text-[#64748B] transition hover:bg-[#F9F9FA]"
+            >
+              {t('nav.cart')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (cart.items.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
@@ -711,7 +735,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="page-shell py-8 sm:py-10">
+      <div className="page-shell page-section">
         <h1 className="store-display-title mb-2 text-[#0B0F19]">
           {t('checkoutPage.title')}
         </h1>

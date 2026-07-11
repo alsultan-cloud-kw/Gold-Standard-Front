@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Loader2, XCircle } from 'lucide-react'
+import { XCircle } from 'lucide-react'
 import { invoicesApi, ordersApi } from '@/services/api'
 import type { KnetReceiptDetails } from '@/types'
 import { KnetReceiptPanel } from '@/components/checkout/KnetReceiptPanel'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 
 export default function KnetReceiptPage() {
   const { t } = useTranslation()
@@ -68,13 +69,10 @@ export default function KnetReceiptPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
-        <div className="text-center">
-          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[#3F6F00]" />
-          <p className="text-sm font-medium text-[#0B0F19]">{t('checkoutPage.knetVerifyingTitle')}</p>
-          <p className="mt-1 text-xs text-[#64748B]">{t('checkoutPage.knetVerifyingBody')}</p>
-        </div>
-      </div>
+      <AppLoadingScreen
+        variant="fullscreen"
+        message={t('checkoutPage.knetVerifyingTitle')}
+      />
     )
   }
 

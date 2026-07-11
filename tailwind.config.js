@@ -86,8 +86,23 @@ module.exports = {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
       },
       fontFamily: {
-        sans: ['"The Year of The Camel"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        serif: ['"The Year of The Camel"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['var(--font-ui)'],
+        serif: ['var(--font-ui)'],
+        brand: ['"The Year of The Camel"', 'var(--font-ui)'],
+      },
+      lineHeight: {
+        body: 'var(--type-leading-body)',
+        'body-rtl': 'var(--type-leading-body-rtl)',
+        relaxed: 'var(--type-leading-relaxed)',
+        'relaxed-rtl': 'var(--type-leading-relaxed-rtl)',
+        heading: 'var(--type-leading-heading)',
+        'heading-rtl': 'var(--type-leading-heading-rtl)',
+        section: 'var(--type-leading-section)',
+        'section-rtl': 'var(--type-leading-section-rtl)',
+        display: 'var(--type-leading-display)',
+        'display-rtl': 'var(--type-leading-display-rtl)',
+        tight: '1.35',
+        snug: '1.45',
       },
       keyframes: {
         "accordion-down": {
@@ -102,15 +117,15 @@ module.exports = {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" },
         },
-        /** LTR locales: ticker content moves left → right (translate -50% → 0). */
+        /** LTR: seamless loop — scroll content left by exactly one track width. */
         "gold-marquee-ltr": {
-          "0%": { transform: "translateX(-50%)" },
-          "100%": { transform: "translateX(0)" },
+          "0%": { transform: "translate3d(0, 0, 0)" },
+          "100%": { transform: "translate3d(-50%, 0, 0)" },
         },
-        /** RTL locales: ticker content moves right → left (translate 0 → -50%). */
+        /** RTL: mirror direction for Arabic layout. */
         "gold-marquee-rtl": {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" },
+          "0%": { transform: "translate3d(-50%, 0, 0)" },
+          "100%": { transform: "translate3d(0, 0, 0)" },
         },
         /** Navbar cart quantity badge — continuous blink while cart has items */
         "cart-badge-blink": {

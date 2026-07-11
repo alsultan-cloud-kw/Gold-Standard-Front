@@ -94,6 +94,18 @@ export const configApi = {
     apiService.get<{ languages: { code: string; name: string }[]; default: string }>('/config/languages/'),
 }
 
+export const contactApi = {
+  sendMessage: (data: {
+    name: string
+    email: string
+    phone?: string
+    subject: string
+    message: string
+    turnstile_token?: string
+  }) =>
+    apiService.post<{ ok: boolean; message: string }>('/contact/', data),
+}
+
 // Auth API
 export const authApi = {
   login: (credentials: {
@@ -173,6 +185,25 @@ export type ProductAuthenticityResponse = {
   product: ProductAuthenticityProduct | null
 }
 
+export type ProductSearchSuggestItem = {
+  id: string
+  sku: string
+  slug: string
+  name_en: string
+  name_ar: string
+  primary_image?: { image?: string; image_url?: string } | null
+  search_rank?: number
+  trgm_score?: number
+}
+
+export type ProductSearchSuggestResponse = {
+  query: string
+  tokens: string[]
+  did_you_mean: string | null
+  suggestions: string[]
+  products: ProductSearchSuggestItem[]
+}
+
 export const productsApi = {
   verifyAuthenticity: (code: string) =>
     apiService.get<ProductAuthenticityResponse>('/products/products/authenticity/', {
@@ -181,6 +212,16 @@ export const productsApi = {
 
   getProducts: (params?: unknown) =>
     apiService.get('/products/products/', { params }),
+
+  /** Postgres FTS + trigram suggestions (tokens, did-you-mean, product hits). */
+  suggestProducts: (params: { q: string; category?: string; limit?: number }) =>
+    apiService.get<ProductSearchSuggestResponse>('/products/products/suggest/', {
+      params: {
+        q: params.q,
+        category: params.category || undefined,
+        limit: params.limit ?? 8,
+      },
+    }),
 
   getProduct: (slug: string) =>
     apiService.get(`/products/products/${slug}/`),

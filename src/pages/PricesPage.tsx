@@ -14,6 +14,13 @@ import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+
+const PRECIOUS_METAL_LABEL_KEYS = {
+  Silver: 'productsPage.metal.silver',
+  Platinum: 'productsPage.metal.platinum',
+  Palladium: 'productsPage.metal.palladium',
+} as const
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
@@ -126,7 +133,7 @@ export default function PricesPage() {
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
                 {t('pricesPage.kicker')}
               </p>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="type-page-title sm:text-4xl">
                 {t('pricesPage.title')}
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-white/65 sm:text-base">
@@ -214,12 +221,12 @@ export default function PricesPage() {
         </div>
       </section>
 
-      <div className="page-shell py-8 sm:py-10">
+      <div className="page-shell page-section">
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-20 text-[#64748B]">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            {t('pricesPage.loading')}
-          </div>
+          <AppLoadingScreen
+            message={t('pricesPage.loading')}
+            className="min-h-[40vh] rounded-2xl border border-black/5"
+          />
         ) : null}
 
         {isError ? (
@@ -375,8 +382,9 @@ export default function PricesPage() {
                 {t('pricesPage.preciousTitle')}
               </h2>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                {preciousRows.map(({ key: label, data: m }) => {
-                  const spot = m ?? { key: label, buyTotal: null, sellTotal: null }
+                {preciousRows.map(({ key, data: m }) => {
+                  const metalLabel = t(PRECIOUS_METAL_LABEL_KEYS[key])
+                  const spot = m ?? { key, buyTotal: null, sellTotal: null }
                   const tileDir = resolveDir(spot.key)
                   const buyTotal = spot.buyTotal != null ? spot.buyTotal : null
                   const sellTotal = spot.sellTotal != null ? spot.sellTotal : null
@@ -391,11 +399,11 @@ export default function PricesPage() {
 
                   return (
                     <article
-                      key={label}
+                      key={key}
                       className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm"
                     >
                       <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-[#0B0F19]">{label}</h3>
+                        <h3 className="text-lg font-bold text-[#0B0F19]">{metalLabel}</h3>
                         <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
                       </div>
                       {gramsValid ? (

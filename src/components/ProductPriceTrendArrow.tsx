@@ -18,8 +18,7 @@ type TrendProduct = Pick<
 export type PriceTrendDir = 'up' | 'down' | null
 
 /**
- * Solid news-style trend chip (no blink): active arrow + optional %, muted opposite.
- * Matches professional market tickers — direction is always readable at a glance.
+ * Simple price direction: green up / red down arrow, optional % — no background chip.
  */
 export function PriceTrendBadge({
   dir,
@@ -54,23 +53,23 @@ export function PriceTrendBadge({
           : t('productsPage.priceTrendDownShort')
         : t('productsPage.priceTrendNoChange')
 
-  const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]'
-  const textSize = size === 'sm' ? 'text-[10px]' : 'text-[11px] sm:text-xs'
+  const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
+  const textSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]'
 
   if (dir === 'up') {
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold tabular-nums ${
-          variant === 'light'
-            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80'
-            : 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/25'
+        className={`inline-flex items-center gap-0.5 tabular-nums ${
+          variant === 'light' ? 'text-[#3F6F00]' : 'text-[#A3E635]'
         } ${className}`}
         title={title}
         role="img"
         aria-label={title}
       >
         <ArrowUp className={`${iconSize} shrink-0 stroke-[2.5]`} aria-hidden />
-        {showPercent && pctStr ? <span className={textSize}>{pctStr}%</span> : null}
+        {showPercent && pctStr ? (
+          <span className={`${textSize} font-semibold`}>{pctStr}%</span>
+        ) : null}
       </span>
     )
   }
@@ -78,42 +77,37 @@ export function PriceTrendBadge({
   if (dir === 'down') {
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold tabular-nums ${
-          variant === 'light'
-            ? 'bg-red-50 text-red-600 ring-1 ring-red-200/80'
-            : 'bg-red-500/15 text-red-300 ring-1 ring-red-400/25'
+        className={`inline-flex items-center gap-0.5 tabular-nums ${
+          variant === 'light' ? 'text-[#DC2626]' : 'text-[#F87171]'
         } ${className}`}
         title={title}
         role="img"
         aria-label={title}
       >
         <ArrowDown className={`${iconSize} shrink-0 stroke-[2.5]`} aria-hidden />
-        {showPercent && pctStr ? <span className={textSize}>{pctStr}%</span> : null}
+        {showPercent && pctStr ? (
+          <span className={`${textSize} font-semibold`}>{pctStr}%</span>
+        ) : null}
       </span>
     )
   }
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium tabular-nums ${
-        variant === 'light'
-          ? 'bg-stone-100 text-stone-500 ring-1 ring-stone-200/80'
-          : 'bg-white/5 text-white/45 ring-1 ring-white/10'
+      className={`inline-flex items-center gap-0.5 tabular-nums ${
+        variant === 'light' ? 'text-[#94A3B8]' : 'text-white/45'
       } ${className}`}
       title={title}
       role="img"
       aria-label={title}
     >
       <Minus className={`${iconSize} shrink-0 stroke-[2.5]`} aria-hidden />
-      {showPercent ? <span className={textSize}>0.00%</span> : null}
+      {showPercent ? <span className={`${textSize} font-medium`}>0.00%</span> : null}
     </span>
   )
 }
 
-/**
- * Green up / red down for product tiles: optional client override, then server trend.
- * Solid badge — never blinks.
- */
+/** Green up / red down for product tiles. */
 export default function ProductPriceTrendArrow({
   product,
   className = '',

@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { clubsApi } from '../services/api'
 import { formatApiErrorMessage } from '../utils/apiErrors'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 
 const JOIN_NEXT = (token: string) =>
   `/join-club?token=${encodeURIComponent(token)}`
@@ -61,10 +61,19 @@ export default function JoinClubPage() {
   useEffect(() => {
     if (!token || authLoading || !isAuthenticated) return
     if (!previewQuery.isSuccess || previewQuery.data?.valid !== true) return
-    if (joinAttemptedRef.current) return
+    if (joinAttemptedRef.current || joinMutation.isPending || joinMutation.isSuccess) return
     joinAttemptedRef.current = true
     joinMutation.mutate()
-  }, [token, authLoading, isAuthenticated, previewQuery.isSuccess, previewQuery.data?.valid, joinMutation.mutate])
+  }, [
+    token,
+    authLoading,
+    isAuthenticated,
+    previewQuery.isSuccess,
+    previewQuery.data?.valid,
+    joinMutation.isPending,
+    joinMutation.isSuccess,
+    joinMutation.mutate,
+  ])
 
   const retryJoin = () => {
     joinAttemptedRef.current = false
@@ -87,12 +96,7 @@ export default function JoinClubPage() {
   }
 
   if (previewQuery.isLoading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
-        <p className="text-gold-100/70 text-sm">{t('joinClub.loadingInvite')}</p>
-      </div>
-    )
+    return <AppLoadingScreen message={t('joinClub.loadingInvite')} />
   }
 
   if (previewQuery.isError) {
@@ -126,11 +130,7 @@ export default function JoinClubPage() {
   }
 
   if (authLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
-      </div>
-    )
+    return <AppLoadingScreen />
   }
 
   if (!isAuthenticated) {
@@ -166,12 +166,7 @@ export default function JoinClubPage() {
   }
 
   if (isAlreadyInOtherClub) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
-        <p className="text-gold-100/70 text-sm">{t('joinClub.redirecting')}</p>
-      </div>
-    )
+    return <AppLoadingScreen message={t('joinClub.redirecting')} />
   }
 
   if (joinMutation.isError) {
@@ -195,12 +190,5 @@ export default function JoinClubPage() {
     )
   }
 
-  return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="gold-card max-w-md text-center space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto text-gold-400" />
-        <p className="text-gold-100/80">{t('joinClub.joining')}</p>
-      </div>
-    </div>
-  )
+  return <AppLoadingScreen message={t('joinClub.joining')} />
 }

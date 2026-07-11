@@ -2,9 +2,9 @@ import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthenticateWithRedirectCallback } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { useAuth } from '../contexts/AuthContext'
 import { resolvePostAuthPath } from '../utils/authRedirect'
-import { AuthLoadingFallback } from '../components/routing/ProtectedRoute'
 
 export default function SsoCallbackPage() {
   const { t } = useTranslation()
@@ -20,19 +20,18 @@ export default function SsoCallbackPage() {
   }, [isAuthenticated, isLoading, navigate, searchParams, user])
 
   if (isLoading || (isAuthenticated && user)) {
-    return <AuthLoadingFallback message={t('common.signingIn')} />
+    return <AppLoadingScreen message={t('common.signingIn')} variant="fullscreen" />
   }
 
   return (
-    <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4">
+    <div className="relative min-h-[100dvh]">
+      <AppLoadingScreen message={t('common.signingIn')} variant="fullscreen" />
       <AuthenticateWithRedirectCallback
         signInUrl={`${origin}/login`}
         signUpUrl={`${origin}/register`}
         signInFallbackRedirectUrl={`${origin}/`}
         signUpFallbackRedirectUrl={`${origin}/`}
       />
-      <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-gold-100/70 text-sm">{t('common.signingIn')}</p>
       <div id="clerk-captcha" className="hidden" aria-hidden />
     </div>
   )

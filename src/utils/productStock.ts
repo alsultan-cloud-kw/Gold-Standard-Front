@@ -25,6 +25,16 @@ export function isProductOutOfStock(product: Product): boolean {
   return productAvailableQuantity(product) <= 0
 }
 
+/**
+ * Metal fineness (e.g. 999.9 for 24K, 916 for 22K) derived from carat purity.
+ * Returns null when purity is missing/invalid so callers can fall back to the carat label.
+ */
+export function productFineness(product: Product): number | null {
+  const purity = Number(product.carat?.purity_percentage)
+  if (!Number.isFinite(purity) || purity <= 0) return null
+  return Math.round(purity * 100) / 10
+}
+
 export function isProductLowStock(product: Product): boolean {
   return productStockStatus(product) === 'low_stock' && productAvailableQuantity(product) > 0
 }
