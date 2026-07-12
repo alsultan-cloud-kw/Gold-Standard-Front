@@ -53,8 +53,8 @@ export function PriceTrendBadge({
           : t('productsPage.priceTrendDownShort')
         : t('productsPage.priceTrendNoChange')
 
-  const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
-  const textSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]'
+  const iconSize = size === 'sm' ? 'h-3 w-3 sm:h-3.5 sm:w-3.5' : 'h-3.5 w-3.5 sm:h-4 sm:w-4'
+  const textSize = size === 'sm' ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-[11px]'
 
   if (dir === 'up') {
     return (

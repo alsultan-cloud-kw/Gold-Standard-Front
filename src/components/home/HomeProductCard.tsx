@@ -53,7 +53,7 @@ function HomeProductCardInner({
   ].filter(Boolean) as string[]
 
   return (
-    <article className="home-product-card group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-3 transition-shadow duration-200 hover:shadow-md sm:p-3.5">
+    <article className="home-product-card group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 sm:p-3.5 transition-shadow duration-200 hover:shadow-md">
       <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div
           className={`relative overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${
@@ -91,21 +91,21 @@ function HomeProductCardInner({
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col px-0.5 pt-3">
+      <div className="flex flex-1 flex-col px-0.5 pt-2 sm:pt-3">
         <Link to={`/products/${product.slug}`} className="min-w-0">
-          <h3 className="line-clamp-1 text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
+          <h3 className="line-clamp-2 sm:line-clamp-1 text-sm sm:text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 leading-tight sm:leading-normal">
             {productName}
           </h3>
         </Link>
 
         {specParts.length ? (
-          <p className="mt-0.5 line-clamp-1 text-xs text-[#64748B]">{specParts.join(' · ')}</p>
+          <p className="mt-1 sm:mt-0.5 line-clamp-1 text-[10px] sm:text-xs text-[#64748B]">{specParts.join(' · ')}</p>
         ) : null}
 
-        <div className="mt-2 flex items-end justify-between gap-2">
-          <span className="min-w-0 text-lg font-bold leading-none text-[#0B0F19] tabular-nums">
+        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-1.5 sm:gap-2 sm:flex-nowrap">
+          <span className="min-w-0 text-base sm:text-lg font-bold leading-none text-[#0B0F19] tabular-nums">
             {formatKwd(productUnitPrice(product))}
-            <span className="ms-1 text-xs font-semibold text-[#64748B]">KWD</span>
+            <span className="ms-1 text-[10px] sm:text-xs font-semibold text-[#64748B]">KWD</span>
           </span>
           <ProductPriceTrendArrow
             product={product}
@@ -117,9 +117,9 @@ function HomeProductCardInner({
           />
         </div>
 
-        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-black/5 pt-2.5">
-          <span className="truncate text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
-          <ProductStockStatusLabel product={product} className="shrink-0" />
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1.5 border-t border-black/5 pt-2.5 sm:flex-nowrap sm:gap-2">
+          <span className="truncate text-[10px] sm:text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
+          <ProductStockStatusLabel product={product} className="shrink-0 text-[10px] sm:text-xs" />
         </div>
 
         {showAddButton ? (
@@ -127,10 +127,10 @@ function HomeProductCardInner({
             type="button"
             onClick={() => addToCart(product)}
             disabled={outOfStock}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            className="mt-3 flex w-full items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-[#0B0F19] px-2 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
           >
-            <ShoppingCart className="h-4 w-4 shrink-0" />
-            {outOfStock ? t('stock.outOfStock') : t('home.addToCart')}
+            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('home.addToCart')}</span>
           </button>
         ) : null}
       </div>
