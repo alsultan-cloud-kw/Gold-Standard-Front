@@ -80,8 +80,9 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[var(--site-bg)]">
-      <section className="home-section home-section--hero relative overflow-hidden border-b border-black/5">
+    <div className="min-h-screen bg-[var(--site-bg)] flex flex-col lg:block">
+      <div className="order-4 lg:order-none">
+        <section className="home-section home-section--hero relative overflow-hidden border-b border-black/5">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/25 via-[var(--site-bg)] to-[var(--site-bg)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_100%_0%,rgba(133,227,7,0.06),transparent_55%)]" />
@@ -146,34 +147,57 @@ export default function HomePage() {
           <HeroTrustStrip />
         </div>
       </section>
+      </div>
 
-      <SultanGoldTrustStats bullionDockRef={bullionTrustRef} />
+      <div className="order-6 lg:order-none">
+        <SultanGoldTrustStats bullionDockRef={bullionTrustRef} />
+      </div>
 
-      <LiveGoldMarketSection />
+      <div className="order-1 lg:order-none">
+        <LiveGoldMarketSection />
+      </div>
 
-      <WealthProtectionSection />
+      <div className="order-7 lg:order-none">
+        <WealthProtectionSection />
+      </div>
 
-      <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
+      <div className="order-8 lg:order-none">
+        <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
+      </div>
 
       {/* After docks mount so stop refs exist — flyer: hero → heritage → gold vs cash */}
-      <HeroBullionScroll stops={bullionStops} />
+      <div className="order-9 lg:order-none hidden lg:block">
+        <HeroBullionScroll stops={bullionStops} />
+      </div>
 
-      <CategoryGrid />
+      <div className="order-2 lg:order-none">
+        <CategoryGrid />
+      </div>
 
-      <FeaturedProducts
-        title={t('home.featuredCollection')}
-        products={(featuredProducts as Product[]) ?? []}
-        viewAllLink="/products"
-        fetchTrends={fetchTrends}
-      />
+      <div className="order-3 lg:order-none">
+        <FeaturedProducts
+          title={t('home.featuredCollection')}
+          products={(featuredProducts as Product[]) ?? []}
+          viewAllLink="/products"
+          fetchTrends={fetchTrends}
+        />
+      </div>
 
-      <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
+      <div className="order-5 lg:order-none">
+        <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
+      </div>
 
-      <InvestorsClubSection />
+      <div className="order-10 lg:order-none">
+        <InvestorsClubSection />
+      </div>
 
-      <SecurityTrustSection />
+      <div className="order-11 lg:order-none">
+        <SecurityTrustSection />
+      </div>
 
-      <HomeFaqSection />
+      <div className="order-12 lg:order-none">
+        <HomeFaqSection />
+      </div>
 
       {/* Footer includes site-wide CTA band */}
 
@@ -181,6 +205,7 @@ export default function HomePage() {
       <HomeNewsSection />
       */}
 
+      <div className="order-13 lg:order-none">
       <section className="home-section">
         <div className="home-section-inner">
           <HomeSectionHeader
@@ -213,6 +238,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   )
 }

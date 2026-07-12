@@ -9,6 +9,9 @@ import {
   Search,
   LogOut,
   ChevronDown,
+  Home,
+  LayoutGrid,
+  TrendingUp,
 } from 'lucide-react'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -91,6 +94,7 @@ export default function Navbar() {
     isPathActive('/prices') || isPathActive('/company-prices')
 
   return (
+    <>
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-black/5 bg-[var(--site-bg)]/95 backdrop-blur-md">
       <GoldPriceTicker />
 
@@ -240,14 +244,14 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Link to="/cart" className={iconBtnClass} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
+            <Link to="/cart" className={`${iconBtnClass} hidden lg:inline-flex`} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
               <ShoppingCart className="h-5 w-5" strokeWidth={1.75} />
               <CartCountBadge count={cartCount} />
             </Link>
 
             <Link
               to="/products"
-              className="ms-1 hidden items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 sm:inline-flex"
+              className="ms-1 hidden items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 lg:inline-flex"
               aria-label={`${t('nav.buyGold')}${buyGoldPriceLabel ? ` ${buyGoldPriceLabel}` : ''}`}
             >
               <span className="flex items-center gap-2 px-3.5 py-2.5 tabular-nums text-[13px] font-bold" dir="ltr">
@@ -264,7 +268,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`${iconBtnClass} lg:hidden`}
+              className={`${iconBtnClass} hidden`}
               aria-label={isMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -373,5 +377,45 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+
+    {/* Mobile Bottom Navigation */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)]/95 backdrop-blur-md pb-safe lg:hidden">
+      <div className="flex items-center justify-around h-[68px] px-2">
+        <Link to="/" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
+          <Home className="h-6 w-6" strokeWidth={isPathActive('/') ? 2.5 : 1.75} />
+          <span className="text-[10px] font-semibold">{t('nav.home', { defaultValue: 'Home' })}</span>
+        </Link>
+        
+        <Link to="/products" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/products') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
+          <LayoutGrid className="h-6 w-6" strokeWidth={isPathActive('/products') ? 2.5 : 1.75} />
+          <span className="text-[10px] font-semibold">{t('nav.products', { defaultValue: 'Shop' })}</span>
+        </Link>
+
+        <Link to="/prices" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPricesActive ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
+          <TrendingUp className="h-6 w-6" strokeWidth={isPricesActive ? 2.5 : 1.75} />
+          <span className="text-[10px] font-semibold">{t('nav.prices', { defaultValue: 'Prices' })}</span>
+        </Link>
+
+        <Link to="/cart" onClick={() => setIsMenuOpen(false)} className={`relative flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/cart') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
+          <ShoppingCart className="h-6 w-6" strokeWidth={isPathActive('/cart') ? 2.5 : 1.75} />
+          <span className="text-[10px] font-semibold">{t('nav.cart', { defaultValue: 'Cart' })}</span>
+          {cartCount > 0 && (
+            <span className="absolute top-[6px] right-[calc(50%-16px)] flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm ring-1 ring-white" dir="ltr">
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          )}
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isMenuOpen ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+        >
+          {isMenuOpen ? <X className="h-6 w-6" strokeWidth={2.5} /> : <Menu className="h-6 w-6" strokeWidth={1.75} />}
+          <span className="text-[10px] font-semibold">{isMenuOpen ? t('nav.closeMenu', { defaultValue: 'Close' }) : t('nav.menu', { defaultValue: 'Menu' })}</span>
+        </button>
+      </div>
+    </div>
+    </>
   )
 }

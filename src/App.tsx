@@ -97,7 +97,7 @@ function App() {
             <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
               <Navbar />
-              <main className="main-under-nav">
+              <main className="main-under-nav pb-[68px] lg:pb-0">
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
