@@ -53,7 +53,7 @@ function HomeProductCardInner({
   ].filter(Boolean) as string[]
 
   return (
-    <article className="home-product-card group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 sm:p-3.5 transition-shadow duration-200 hover:shadow-md">
+    <article className="home-product-card group flex h-full min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 sm:p-3 transition-shadow duration-200 hover:shadow-md">
       <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div
           className={`relative overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${
@@ -76,14 +76,14 @@ function HomeProductCardInner({
 
           <ProductStockOverlay product={product} />
 
-          <div className="absolute top-2 start-2 flex flex-col gap-1">
+          <div className="absolute top-1.5 start-1.5 flex flex-col gap-0.5">
             {!compact && product.is_featured ? (
-              <span className="rounded-md bg-[#0B0F19]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+              <span className="rounded bg-[#0B0F19]/90 px-1.5 py-0.5 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide text-white">
                 {t('home.featuredBadge', { defaultValue: 'Featured' })}
               </span>
             ) : null}
             {caratName ? (
-              <span className="rounded-md bg-white/92 px-2 py-0.5 text-xs font-semibold text-[#0B0F19] ring-1 ring-black/10">
+              <span className="rounded bg-white/92 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-[#0B0F19] ring-1 ring-black/10">
                 {caratName}
               </span>
             ) : null}
@@ -91,35 +91,38 @@ function HomeProductCardInner({
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col px-0.5 pt-2 sm:pt-3">
+      <div className="flex flex-1 flex-col px-0.5 pt-2">
         <Link to={`/products/${product.slug}`} className="min-w-0">
-          <h3 className="line-clamp-2 sm:line-clamp-1 text-sm sm:text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 leading-tight sm:leading-normal">
+          <h3 className="line-clamp-2 sm:line-clamp-1 text-[12px] sm:text-sm font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 leading-[1.3] sm:leading-normal">
             {productName}
           </h3>
         </Link>
 
         {specParts.length ? (
-          <p className="mt-1 sm:mt-0.5 line-clamp-1 text-[10px] sm:text-xs text-[#64748B]">{specParts.join(' · ')}</p>
+          <p className="mt-0.5 sm:mt-1 line-clamp-1 text-[9px] sm:text-[10px] text-[#64748B]">{specParts.join(' · ')}</p>
         ) : null}
 
-        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-1.5 sm:gap-2 sm:flex-nowrap">
-          <span className="min-w-0 text-base sm:text-lg font-bold leading-none text-[#0B0F19] tabular-nums">
-            {formatKwd(productUnitPrice(product))}
-            <span className="ms-1 text-[10px] sm:text-xs font-semibold text-[#64748B]">KWD</span>
-          </span>
-          <ProductPriceTrendArrow
-            product={product}
-            variant="light"
-            showPercent
-            trendOverride={trendOverride}
-            percentOverride={percentOverride}
-            className="shrink-0"
-          />
-        </div>
+        <div className="mt-auto pt-2 flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-1">
+            <span className="min-w-0 text-[13px] sm:text-base font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight">
+              {formatKwd(productUnitPrice(product))}
+              <span className="ms-0.5 text-[9px] sm:text-[10px] font-semibold text-[#64748B]">KWD</span>
+            </span>
+            <ProductPriceTrendArrow
+              product={product}
+              variant="light"
+              showPercent
+              trendOverride={trendOverride}
+              percentOverride={percentOverride}
+              className="shrink-0"
+              size="sm"
+            />
+          </div>
 
-        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1.5 border-t border-black/5 pt-2.5 sm:flex-nowrap sm:gap-2">
-          <span className="truncate text-[10px] sm:text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
-          <ProductStockStatusLabel product={product} className="shrink-0 text-[10px] sm:text-xs" />
+          <div className="flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 border-t border-black/5 pt-1.5">
+            <span className="truncate text-[9px] sm:text-[10px] text-[#64748B]">{t('home.shipsIn')}</span>
+            <ProductStockStatusLabel product={product} className="shrink-0 text-[9px] sm:text-[10px]" />
+          </div>
         </div>
 
         {showAddButton ? (
@@ -127,9 +130,9 @@ function HomeProductCardInner({
             type="button"
             onClick={() => addToCart(product)}
             disabled={outOfStock}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-[#0B0F19] px-2 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            className="mt-2.5 flex w-full items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1.5 py-1.5 sm:px-2.5 sm:py-2 text-[11px] sm:text-[13px] font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
           >
-            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
             <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('home.addToCart')}</span>
           </button>
         ) : null}
