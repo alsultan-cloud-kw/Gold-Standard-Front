@@ -81,7 +81,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--site-bg)] flex flex-col lg:block">
-      <div className="order-4 lg:order-none">
+      <div className="order-1 lg:order-none">
         <section className="home-section home-section--hero relative overflow-hidden border-b border-black/5">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/25 via-[var(--site-bg)] to-[var(--site-bg)]" />
@@ -153,7 +153,7 @@ export default function HomePage() {
         <SultanGoldTrustStats bullionDockRef={bullionTrustRef} />
       </div>
 
-      <div className="order-1 lg:order-none">
+      <div className="order-2 lg:order-none">
         <LiveGoldMarketSection />
       </div>
 
@@ -170,11 +170,11 @@ export default function HomePage() {
         <HeroBullionScroll stops={bullionStops} />
       </div>
 
-      <div className="order-2 lg:order-none">
+      <div className="order-3 lg:order-none">
         <CategoryGrid />
       </div>
 
-      <div className="order-3 lg:order-none">
+      <div className="order-5 lg:order-none">
         <FeaturedProducts
           title={t('home.featuredCollection')}
           products={(featuredProducts as Product[]) ?? []}
@@ -183,7 +183,7 @@ export default function HomePage() {
         />
       </div>
 
-      <div className="order-5 lg:order-none">
+      <div className="order-4 lg:order-none">
         <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
       </div>
 

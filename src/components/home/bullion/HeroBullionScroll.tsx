@@ -380,14 +380,15 @@ export function BullionStartSlot({
       )}
       aria-label={t('home.bullionScroll.aria')}
     >
-      {staticFallback ? (
-        <img
-          src={bullionVertUrl}
-          alt=""
-          className="absolute inset-0 m-auto h-[88%] w-auto max-w-full object-contain"
-          draggable={false}
-        />
-      ) : null}
+      <img
+        src={bullionVertUrl}
+        alt=""
+        className={cn(
+          "absolute inset-0 m-auto h-[88%] w-auto max-w-full object-contain",
+          staticFallback ? "block" : "block lg:hidden"
+        )}
+        draggable={false}
+      />
     </div>
   )
 }
@@ -425,7 +426,7 @@ export function BullionEndDock({
     <div
       ref={slotRef}
       className={cn(
-        'relative mx-auto w-full',
+        'relative mx-auto w-full hidden lg:block',
         size === 'compact' && 'h-8 max-w-[200px] sm:h-10 sm:max-w-[240px]',
         size === 'default' && 'h-[180px] max-w-[200px] sm:h-[220px] sm:max-w-[240px]',
         size === 'large' &&
