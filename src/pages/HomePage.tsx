@@ -205,7 +205,7 @@ export default function HomePage() {
       <HomeNewsSection />
       */}
 
-      <div className="order-13 lg:order-none">
+      <div className="order-[13] lg:order-none">
       <section className="home-section">
         <div className="home-section-inner">
           <HomeSectionHeader
