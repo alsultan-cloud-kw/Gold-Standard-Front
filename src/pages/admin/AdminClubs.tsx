@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Search, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { clubsApi } from '../../services/api'
 
@@ -248,9 +247,8 @@ export default function AdminClubs() {
   })
 
   return (
-    <div className="min-h-screen py-8 bg-[var(--site-bg)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="mb-8">
           <h1 className="text-3xl font-bold gold-gradient-text-on-light">{t('admin.clubsTitle')}</h1>
           <p className="text-stone-600 mt-1">{t('admin.clubsSubtitle')}</p>

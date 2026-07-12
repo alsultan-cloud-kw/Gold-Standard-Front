@@ -1491,6 +1491,226 @@
     background: var(--site-bg);
   }
 
+  /* ── Admin console (/admin/*) — matches storefront + customer dashboard tokens ── */
+  .admin-page {
+    min-height: 100dvh;
+    background: var(--site-bg);
+  }
+
+  .admin-shell {
+    padding-top: clamp(1rem, 2vw, 1.5rem);
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  .admin-nav {
+    position: sticky;
+    top: calc(var(--nav-offset, 7.25rem) + 0.35rem);
+    z-index: 35;
+    margin-bottom: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    padding: 0.75rem;
+    box-shadow: 0 1px 0 rgba(11, 15, 25, 0.03);
+    /* Reserve two pill rows so wrap/active state never shifts page content */
+    min-height: 6.75rem;
+  }
+
+  .admin-nav__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .admin-nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    max-width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: #64748b;
+    white-space: nowrap;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .admin-nav__link:hover {
+    background: #f9f9fa;
+    color: #0b0f19;
+  }
+
+  .admin-nav__link--active {
+    border-color: rgba(133, 227, 7, 0.4);
+    background: rgba(236, 252, 203, 0.65);
+    color: #3f6f00;
+    font-weight: 600;
+  }
+
+  .admin-nav__icon {
+    height: 1rem;
+    width: 1rem;
+    flex-shrink: 0;
+  }
+
+  .admin-content {
+    min-width: 0;
+    min-height: 24rem;
+  }
+
+  .admin-page-inner {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-page-body {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-page-body--narrow {
+    max-width: 56rem;
+  }
+
+  .admin-report-views {
+    min-height: 28rem;
+  }
+
+  .admin-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-page-title {
+    margin: 0;
+    font-size: clamp(1.5rem, 0.6vw + 1.25rem, 2rem);
+    font-weight: 700;
+    color: #0b0f19;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .admin-page-subtitle {
+    margin: 0.35rem 0 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .admin-kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .admin-kpi-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .admin-kpi-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .admin-kpi-card {
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    padding: 1.125rem 1.25rem;
+  }
+
+  .admin-kpi-card__icon {
+    display: flex;
+    height: 2.75rem;
+    width: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: rgba(236, 252, 203, 0.75);
+    color: #3f6f00;
+  }
+
+  .admin-kpi-card__value {
+    margin-top: 0.875rem;
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #0b0f19;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .admin-kpi-card__label {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    color: #64748b;
+  }
+
+  .admin-segment {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-segment__btn {
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fff;
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .admin-segment__btn:hover {
+    border-color: rgba(133, 227, 7, 0.35);
+    color: #0b0f19;
+  }
+
+  .admin-segment__btn--active {
+    border-color: rgba(133, 227, 7, 0.45);
+    background: rgba(236, 252, 203, 0.65);
+    color: #3f6f00;
+  }
+
+  @media (max-width: 640px) {
+    .admin-nav {
+      /* One reserved row height; horizontal scroll instead of wrap jumps */
+      min-height: 4rem;
+      padding: 0.625rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    .admin-nav__row {
+      flex-wrap: nowrap;
+      width: max-content;
+      min-width: 100%;
+    }
+  }
+
   .dashboard-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -2138,7 +2358,17 @@
   }
 
   .metal-chart-canvas {
-    touch-action: pan-x;
+    /* Default: let the page scroll vertically past the chart on mobile */
+    touch-action: pan-y;
+  }
+
+  .metal-chart-canvas--scroll-friendly {
+    touch-action: pan-y !important;
+  }
+
+  .metal-chart-canvas--gestures {
+    /* Maximized chart only — allow pinch / pan for explore */
+    touch-action: none !important;
   }
 
   .metal-chart-canvas a#tv-attr-logo {

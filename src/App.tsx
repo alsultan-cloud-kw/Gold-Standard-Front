@@ -36,6 +36,7 @@ import DataDeletionPage from './pages/DataDeletionPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 // Admin Components
+import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminCategories from './pages/admin/AdminCategories'
@@ -168,42 +169,44 @@ function App() {
                     </>
                   ) : null}
 
-                  {/* Admin routes: staff roles only (see StaffRoute) */}
+                  {/* Admin routes: staff roles only (see StaffRoute) — shared AdminLayout keeps nav mounted */}
                   <Route element={<StaffRoute />}>
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route element={<CatalogManagerRoute />}>
-                      <Route path="/admin/products" element={<AdminProducts />} />
-                      <Route path="/admin/categories" element={<AdminCategories />} />
+                    <Route element={<AdminLayout />}>
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route element={<CatalogManagerRoute />}>
+                        <Route path="/admin/products" element={<AdminProducts />} />
+                        <Route path="/admin/categories" element={<AdminCategories />} />
+                      </Route>
+                      <Route path="/admin/orders" element={<AdminOrders />} />
+                      <Route path="/admin/checkout-payment" element={<AdminCheckoutPayment />} />
+                      {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                        <>
+                          <Route path="/admin/trading/buybacks" element={<AdminTradingBuybacks />} />
+                          <Route path="/admin/trading/virtual-gold" element={<AdminTradingVirtualGold />} />
+                          <Route path="/admin/accounting/wallet" element={<AdminWallet />} />
+                        </>
+                      ) : null}
+                      <Route path="/admin/inventory" element={<AdminInventory />} />
+                      <Route path="/admin/prices" element={<AdminPrices />} />
+                      <Route path="/admin/scrapped-data" element={<AdminScrappedData />} />
+                      {BANK_CHANGE_REQUESTS_ENABLED ? (
+                        <Route path="/admin/bank-requests" element={<AdminBankChangeRequests />} />
+                      ) : null}
+                      <Route path="/admin/customers" element={<AdminCustomers />} />
+                      <Route path="/admin/customers/:userId" element={<AdminCustomerDetailPage />} />
+                      <Route path="/admin/reports" element={<AdminReports />} />
+                      <Route path="/admin/accounting" element={<AdminAccounting />} />
+                      <Route path="/admin/accounting/accounts" element={<AdminAccounts />} />
+                      <Route path="/admin/accounting/journal" element={<AdminJournal />} />
+                      <Route path="/admin/accounting/purchases" element={<AdminPurchases />} />
+                      <Route path="/admin/accounting/expenses" element={<AdminExpenses />} />
+                      <Route path="/admin/accounting/reports" element={<AdminFinancialReports />} />
+                      <Route path="/admin/invoices" element={<AdminInvoices />} />
+                      <Route path="/admin/invoices/templates" element={<AdminInvoiceTemplates />} />
+                      <Route path="/admin/invoices/terms" element={<AdminInvoiceTerms />} />
+                      <Route path="/admin/clubs" element={<AdminClubs />} />
+                      <Route path="/admin/*" element={<NotFoundPage />} />
                     </Route>
-                    <Route path="/admin/orders" element={<AdminOrders />} />
-                    <Route path="/admin/checkout-payment" element={<AdminCheckoutPayment />} />
-                    {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
-                      <>
-                        <Route path="/admin/trading/buybacks" element={<AdminTradingBuybacks />} />
-                        <Route path="/admin/trading/virtual-gold" element={<AdminTradingVirtualGold />} />
-                        <Route path="/admin/accounting/wallet" element={<AdminWallet />} />
-                      </>
-                    ) : null}
-                    <Route path="/admin/inventory" element={<AdminInventory />} />
-                    <Route path="/admin/prices" element={<AdminPrices />} />
-                    <Route path="/admin/scrapped-data" element={<AdminScrappedData />} />
-                    {BANK_CHANGE_REQUESTS_ENABLED ? (
-                      <Route path="/admin/bank-requests" element={<AdminBankChangeRequests />} />
-                    ) : null}
-                    <Route path="/admin/customers" element={<AdminCustomers />} />
-                    <Route path="/admin/customers/:userId" element={<AdminCustomerDetailPage />} />
-                    <Route path="/admin/reports" element={<AdminReports />} />
-                    <Route path="/admin/accounting" element={<AdminAccounting />} />
-                    <Route path="/admin/accounting/accounts" element={<AdminAccounts />} />
-                    <Route path="/admin/accounting/journal" element={<AdminJournal />} />
-                    <Route path="/admin/accounting/purchases" element={<AdminPurchases />} />
-                    <Route path="/admin/accounting/expenses" element={<AdminExpenses />} />
-                    <Route path="/admin/accounting/reports" element={<AdminFinancialReports />} />
-                    <Route path="/admin/invoices" element={<AdminInvoices />} />
-                    <Route path="/admin/invoices/templates" element={<AdminInvoiceTemplates />} />
-                    <Route path="/admin/invoices/terms" element={<AdminInvoiceTerms />} />
-                    <Route path="/admin/clubs" element={<AdminClubs />} />
-                    <Route path="/admin/*" element={<NotFoundPage />} />
                   </Route>
 
                   <Route path="*" element={<NotFoundPage />} />

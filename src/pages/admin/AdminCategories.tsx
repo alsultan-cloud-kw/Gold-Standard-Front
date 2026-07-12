@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Edit2, Trash2, FolderTree, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { productsApi } from '../../services/api'
-import AdminNav from '../../components/admin/AdminNav'
 import type { Category } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -139,9 +138,8 @@ export default function AdminCategories() {
   const pageRoots = roots.slice(start, end)
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body admin-page-body--narrow">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text flex items-center gap-2">

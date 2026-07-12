@@ -32,6 +32,11 @@ type Props = {
   referenceLabel?: string
   /** Hero embed: hide axes, disable zoom/pan. */
   compact?: boolean
+  /**
+   * Pinch / drag / wheel zoom-pan. Keep false on inline mobile charts so the
+   * page can scroll; enable only in the maximized/expanded overlay.
+   */
+  gesturesEnabled?: boolean
 }
 
 /** Light storefront chart palette — matches site canvas (#F9F9FA / white). */
@@ -105,6 +110,7 @@ export function AdvancedMetalChart({
   referencePrice = null,
   referenceLabel = '',
   compact = false,
+  gesturesEnabled = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -113,6 +119,8 @@ export function AdvancedMetalChart({
   )
   const priceLineRef = useRef<IPriceLine | null>(null)
   const [chartReady, setChartReady] = useState(0)
+
+  const interactive = !compact && gesturesEnabled
 
   const clearPriceLine = () => {
     const series = seriesRef.current
@@ -141,6 +149,33 @@ export function AdvancedMetalChart({
       axisLabelTextColor: '#FFFFFF',
     })
   }
+
+  const interactionOptions = (): DeepPartial<ChartOptions> => ({
+    handleScroll: interactive
+      ? {
+          mouseWheel: true,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: false,
+        }
+      : {
+          mouseWheel: false,
+          pressedMouseMove: false,
+          horzTouchDrag: false,
+          vertTouchDrag: false,
+        },
+    handleScale: interactive
+      ? {
+          axisPressedMouseMove: true,
+          mouseWheel: true,
+          pinch: true,
+        }
+      : {
+          axisPressedMouseMove: false,
+          mouseWheel: false,
+          pinch: false,
+        },
+  })
 
   useEffect(() => {
     const el = containerRef.current
@@ -194,30 +229,7 @@ export function AdvancedMetalChart({
         barSpacing: compact ? 4 : 8,
         minBarSpacing: compact ? 2 : 3,
       },
-      handleScroll: compact
-        ? {
-            mouseWheel: false,
-            pressedMouseMove: false,
-            horzTouchDrag: false,
-            vertTouchDrag: false,
-          }
-        : {
-            mouseWheel: true,
-            pressedMouseMove: true,
-            horzTouchDrag: true,
-            vertTouchDrag: false,
-          },
-      handleScale: compact
-        ? {
-            axisPressedMouseMove: false,
-            mouseWheel: false,
-            pinch: false,
-          }
-        : {
-            axisPressedMouseMove: true,
-            mouseWheel: true,
-            pinch: true,
-          },
+      ...interactionOptions(),
       localization: {
         locale: 'en-US',
       },
@@ -262,7 +274,14 @@ export function AdvancedMetalChart({
       seriesRef.current = null
       priceLineRef.current = null
     }
+    // Mount once per compact/locale/height — gesture flags applied in a separate effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, height, compact])
+
+  useEffect(() => {
+    chartRef.current?.applyOptions(interactionOptions())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interactive, chartReady])
 
   /**
    * Rebuild series whenever mode changes; always push current data in the same pass.
@@ -343,7 +362,9 @@ export function AdvancedMetalChart({
   return (
     <div
       ref={containerRef}
-      className={`metal-chart-canvas w-full overflow-hidden bg-white ${compact ? '' : 'rounded-xl'}`}
+      className={`metal-chart-canvas w-full overflow-hidden bg-white ${compact ? '' : 'rounded-xl'} ${
+        interactive ? 'metal-chart-canvas--gestures' : 'metal-chart-canvas--scroll-friendly'
+      }`}
       style={{ height }}
       role="img"
       aria-label="Metal price chart"

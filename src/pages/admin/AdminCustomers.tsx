@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Search, User, Mail, Phone, Shield } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminNav from '../../components/admin/AdminNav'
 import { adminApi } from '../../services/api'
 
 type UserRecord = {
@@ -82,9 +81,8 @@ export default function AdminCustomers() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">{t('admin.customers')}</h1>

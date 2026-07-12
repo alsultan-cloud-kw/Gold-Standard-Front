@@ -708,6 +708,11 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
         <p className="mb-3 hidden text-xs leading-relaxed text-[#64748B] sm:mb-4 sm:block sm:text-sm">
           {t('home.chart.hint')}
         </p>
+        {!chartExpanded ? (
+          <p className="mb-3 text-xs leading-relaxed text-[#64748B] sm:hidden">
+            {t('home.chart.gestureHintMobile')}
+          </p>
+        ) : null}
 
         <div
           className="relative overflow-hidden rounded-xl border border-black/10 bg-[#F9F9FA]"
@@ -739,6 +744,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
               fitToken={fitToken}
               referencePrice={referencePrice}
               referenceLabel={t('home.chart.prevClose')}
+              gesturesEnabled={chartExpanded}
             />
           )}
 

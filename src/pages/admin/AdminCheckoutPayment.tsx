@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Wallet } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import { CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { ordersApi } from '../../services/api'
 import { toast } from 'sonner'
@@ -37,9 +36,8 @@ export default function AdminCheckoutPayment() {
   })
 
   return (
-    <div className="min-h-screen py-8 bg-[var(--site-bg)]">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body admin-page-body--narrower">
 
         <div className="mb-6 flex items-start gap-3">
           <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { productsApi, inventoryApi } from '../../services/api'
-import AdminNav from '../../components/admin/AdminNav'
 import type { Product } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getApiBaseUrl } from '@/lib/apiBase'
@@ -347,9 +346,8 @@ export default function AdminProducts() {
     'w-full px-3 py-2 bg-white border-2 border-black/15 rounded-lg text-black text-sm placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-lime-500/40 focus:border-black/25'
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">{t('admin.products')}</h1>

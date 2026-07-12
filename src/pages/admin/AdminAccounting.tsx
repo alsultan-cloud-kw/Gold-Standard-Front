@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { BookOpen, FileText, ShoppingBag, Receipt, ShoppingCart, Scale } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi } from '../../services/api'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 
@@ -62,9 +61,8 @@ export default function AdminAccounting() {
   const getLabel = (key: string) => (key === 'sales' || key === 'buybacks') ? t('admin.view') : `${getCount(key as keyof typeof counts)} ${t('admin.inDatabase')}`
 
   return (
-    <div className="min-h-screen py-8 bg-[var(--site-bg)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="mb-8">
           <h1 className="text-3xl font-bold gold-gradient-text-on-light">{t('admin.accountingTitle')}</h1>
           <p className="text-stone-700 mt-1">{t('admin.accountingSubtitle')}</p>

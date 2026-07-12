@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { walletApi } from '../../services/api'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 
 type AdminWalletSummary = {
@@ -45,12 +44,11 @@ export default function AdminWallet() {
   }, [page, totalPages])
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex items-center justify-between mb-6 mt-4">
           <h1 className="text-2xl font-bold gold-gradient-text-on-light">Wallet overview</h1>
         </div>
-        <AdminNav />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="gold-card">

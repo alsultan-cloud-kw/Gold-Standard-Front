@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from '@/featureFlags'
 import { useAuth } from '@/contexts/AuthContext'
+import { cn } from '@/lib/utils'
 
 const CATALOG_MANAGER_ROLES = new Set(['admin', 'general_manager', 'branch_manager'])
 
@@ -61,24 +62,25 @@ export default function AdminNav() {
   })
 
   return (
-    <nav className="flex flex-wrap gap-2 mb-6">
-      {visibleSections.map(({ path, labelKey, icon: Icon }) => {
-        const isActive = location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path))
-        return (
-          <Link
-            key={path}
-            to={path}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? 'bg-lime-200/60 text-lime-900 border border-lime-300/50'
-                : 'bg-siteBg/90 text-slate-700 hover:bg-lime-100/90 hover:text-black border border-transparent'
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-            {t(labelKey)}
-          </Link>
-        )
-      })}
+    <nav className="admin-nav" aria-label={t('admin.adminDashboard')}>
+      <div className="admin-nav__row">
+        {visibleSections.map(({ path, labelKey, icon: Icon }) => {
+          const isActive =
+            location.pathname === path ||
+            (path !== '/admin' && location.pathname.startsWith(path))
+          return (
+            <Link
+              key={path}
+              to={path}
+              className={cn('admin-nav__link', isActive && 'admin-nav__link--active')}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon className="admin-nav__icon" aria-hidden />
+              <span>{t(labelKey)}</span>
+            </Link>
+          )
+        })}
+      </div>
     </nav>
   )
 }

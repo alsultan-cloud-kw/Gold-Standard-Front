@@ -13,7 +13,6 @@ import {
   Scale,
 } from 'lucide-react'
 import { ordersApi, inventoryApi } from '../../services/api'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 
 type OrderRow = {
@@ -219,53 +218,50 @@ export default function AdminDashboard() {
     },
   ]
 
-  const presetBtn =
-    'px-3 py-1.5 text-xs font-medium rounded-lg border border-black/15 text-stone-800 hover:bg-lime-100 transition-colors'
-
   const accountingShortcutClass =
-    'inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border border-black/15 text-black/95 bg-white/80 hover:bg-lime-200/50 hover:border-lime-400/60 transition-colors'
+    'inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-xl border border-black/10 text-[#0B0F19] bg-white hover:bg-[rgba(236,252,203,0.55)] hover:border-[rgba(133,227,7,0.4)] transition-colors'
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
+        <header className="admin-page-header">
           <div>
-            <h1 className="text-3xl font-bold gold-gradient-text-on-light">{t('admin.adminDashboard')}</h1>
-            <p className="gold-gradient-text-on-light">{t('admin.welcomeBack')}</p>
+            <h1 className="admin-page-title">{t('admin.adminDashboard')}</h1>
+            <p className="admin-page-subtitle">{t('admin.welcomeBack')}</p>
           </div>
-          <div className="text-right sm:text-end">
-            <p className="text-sm text-stone-600">{new Date().toLocaleDateString()}</p>
-          </div>
-        </div>
+          <p className="text-sm text-[#64748B] tabular-nums">{new Date().toLocaleDateString()}</p>
+        </header>
 
-        <div className="gold-card mb-8">
+        <div className="dashboard-panel mb-6">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <p className="text-sm font-medium text-black">{t('admin.dashboardPeriod')}</p>
-              <p className="text-sm text-lime-800 font-mono">{periodDescription}</p>
+              <p className="dashboard-panel__title !mb-0 !text-base">{t('admin.dashboardPeriod')}</p>
+              <p className="text-sm text-[#3F6F00] font-mono tabular-nums">{periodDescription}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className={presetBtn} onClick={() => applyPreset('today')}>
-                {t('admin.presetToday')}
-              </button>
-              <button type="button" className={presetBtn} onClick={() => applyPreset('last30')}>
-                {t('admin.presetLast30Days')}
-              </button>
-              <button type="button" className={presetBtn} onClick={() => applyPreset('month')}>
-                {t('admin.presetThisMonth')}
-              </button>
-              <button type="button" className={presetBtn} onClick={() => applyPreset('ytd')}>
-                {t('admin.presetYearToDate')}
-              </button>
-              <button type="button" className={presetBtn} onClick={() => applyPreset('all')}>
-                {t('admin.presetAllTime')}
-              </button>
+            <div className="admin-segment">
+              {(
+                [
+                  ['today', 'admin.presetToday'],
+                  ['last30', 'admin.presetLast30Days'],
+                  ['month', 'admin.presetThisMonth'],
+                  ['ytd', 'admin.presetYearToDate'],
+                  ['all', 'admin.presetAllTime'],
+                ] as const
+              ).map(([id, key]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`admin-segment__btn${id === 'all' && allTime ? ' admin-segment__btn--active' : ''}`}
+                  onClick={() => applyPreset(id)}
+                >
+                  {t(key)}
+                </button>
+              ))}
             </div>
             <div
               className={`flex flex-col md:flex-row md:items-end gap-4 ${allTime ? 'opacity-50 pointer-events-none' : ''}`}
             >
-              <label className="flex flex-col gap-1 text-sm text-stone-700">
+              <label className="flex flex-col gap-1 text-sm text-[#334155]">
                 {t('admin.from')}
                 <input
                   type="date"
@@ -274,10 +270,10 @@ export default function AdminDashboard() {
                     setAllTime(false)
                     setStartDate(e.target.value)
                   }}
-                  className="rounded-lg bg-white border border-stone-200 text-black px-3 py-2 text-sm"
+                  className="dashboard-field"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm text-stone-700">
+              <label className="flex flex-col gap-1 text-sm text-[#334155]">
                 {t('admin.to')}
                 <input
                   type="date"
@@ -286,29 +282,31 @@ export default function AdminDashboard() {
                     setAllTime(false)
                     setEndDate(e.target.value)
                   }}
-                  className="rounded-lg bg-white border border-stone-200 text-black px-3 py-2 text-sm"
+                  className="dashboard-field"
                 />
               </label>
             </div>
             {allTime && (
-              <p className="text-xs text-stone-500">{t('admin.dashboardThroughToday')} — {localISODate(todayDate())}</p>
+              <p className="text-xs text-[#64748B]">
+                {t('admin.dashboardThroughToday')} — {localISODate(todayDate())}
+              </p>
             )}
-            {!rangeValid && <p className="text-sm text-red-400">{t('admin.invalidDateRange')}</p>}
-            {statsError && <p className="text-sm text-red-400">{t('common.error')}</p>}
+            {!rangeValid && <p className="text-sm text-red-600">{t('admin.invalidDateRange')}</p>}
+            {statsError && <p className="text-sm text-red-600">{t('common.error')}</p>}
 
-            <div className="pt-4 mt-2 border-t border-stone-200">
-              <p className="text-xs font-medium text-stone-700 mb-2">{t('admin.accountingShortcuts')}</p>
+            <div className="pt-4 mt-1 border-t border-black/[0.06]">
+              <p className="text-xs font-semibold text-[#64748B] mb-2">{t('admin.accountingShortcuts')}</p>
               <div className="flex flex-wrap gap-2">
                 <Link to="/admin/accounting/accounts#chart-of-accounts" className={accountingShortcutClass}>
-                  <BookOpen className="w-4 h-4 text-lime-800 shrink-0" aria-hidden />
+                  <BookOpen className="w-4 h-4 text-[#3F6F00] shrink-0" aria-hidden />
                   <span>{t('admin.chartOfAccountsTitle')}</span>
                 </Link>
                 <Link to="/admin/accounting/accounts#trial-balance" className={accountingShortcutClass}>
-                  <Scale className="w-4 h-4 text-lime-800 shrink-0" aria-hidden />
+                  <Scale className="w-4 h-4 text-[#3F6F00] shrink-0" aria-hidden />
                   <span>{t('admin.trialBalance')}</span>
                 </Link>
                 <Link to="/admin/accounting/purchases" className={accountingShortcutClass}>
-                  <ShoppingBag className="w-4 h-4 text-lime-800 shrink-0" aria-hidden />
+                  <ShoppingBag className="w-4 h-4 text-[#3F6F00] shrink-0" aria-hidden />
                   <span>{t('admin.purchases')}</span>
                 </Link>
               </div>
@@ -316,118 +314,113 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="admin-kpi-grid">
           {kpiCards.map((card, index) => (
-            <div key={index} className="gold-card">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-lg bg-lime-100/80 flex items-center justify-center">
-                  <card.icon className="w-6 h-6 text-lime-800" />
+            <div key={index} className="admin-kpi-card">
+              <div className="flex items-start justify-between gap-3">
+                <div className="admin-kpi-card__icon">
+                  <card.icon className="w-5 h-5" aria-hidden />
                 </div>
-                {card.change && (
+                {card.change ? (
                   <div
                     className={`flex items-center gap-1 text-sm ${
                       card.trend === 'up'
-                        ? 'text-green-400'
+                        ? 'text-emerald-600'
                         : card.trend === 'down'
-                          ? 'text-red-400'
-                          : 'text-stone-600'
+                          ? 'text-red-600'
+                          : 'text-[#64748B]'
                     }`}
                   >
                     {card.trend === 'up' && <ArrowUpRight className="w-4 h-4" />}
                     {card.trend === 'down' && <ArrowDownRight className="w-4 h-4" />}
                     {card.change}
                   </div>
-                )}
+                ) : null}
               </div>
-              <h3 className="text-2xl font-bold text-black">{card.value}</h3>
-              <p className="text-sm text-stone-600">{t(card.titleKey)}</p>
+              <p className="admin-kpi-card__value">{card.value}</p>
+              <p className="admin-kpi-card__label">{t(card.titleKey)}</p>
             </div>
           ))}
         </div>
 
-        {/* Recent Orders & Low Stock */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="gold-card">
-            <h2 className="text-xl font-bold text-black mb-4">{t('admin.recentOrdersInRange')}</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+          <div className="dashboard-panel">
+            <h2 className="dashboard-panel__title">{t('admin.recentOrdersInRange')}</h2>
             {ordersLoading ? (
-              <p className="text-stone-600 text-sm">{t('common.loading')}</p>
+              <p className="dashboard-empty !py-6">{t('common.loading')}</p>
             ) : recentOrders.length === 0 ? (
-              <p className="text-stone-600 text-sm">{t('admin.noOrdersFound')}</p>
+              <p className="dashboard-empty !py-6">{t('admin.noOrdersFound')}</p>
             ) : (
               <>
-              <div className="space-y-3">
-                {recentOrderPageRows.map((order) => (
-                  <div
-                    key={order.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-black">
-                        {t('admin.orderNumber')} #{order.invoice_number}
-                      </p>
-                      <p className="text-xs text-stone-600">
-                        {order.customer_name || t('admin.customer')} · {new Date(order.sale_date).toLocaleString()}
-                      </p>
+                <div className="space-y-2">
+                  {recentOrderPageRows.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-black/[0.06] bg-[#F9F9FA] p-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#0B0F19]">
+                          {t('admin.orderNumber')} #{order.invoice_number}
+                        </p>
+                        <p className="text-xs text-[#64748B] truncate">
+                          {order.customer_name || t('admin.customer')} ·{' '}
+                          {new Date(order.sale_date).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-end shrink-0">
+                        <p className="text-sm font-semibold text-[#3F6F00] tabular-nums">
+                          {formatNumber(order.total_amount, 3)} KWD
+                        </p>
+                        <p className="text-xs text-emerald-700">
+                          {order.status_display || order.status}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-lime-800">
-                        {formatNumber(order.total_amount, 3)} KWD
-                      </p>
-                      <p className="text-xs text-emerald-700">
-                        {order.status_display || order.status}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {!ordersLoading && recentOrderTotal > recentOrderPageSize && (
-                <AdminPaginationBar
-                  page={recentOrderPage}
-                  totalPages={recentOrderTotalPages}
-                  total={recentOrderTotal}
-                  pageSize={recentOrderPageSize}
-                  onPageChange={setRecentOrderPage}
-                  itemLabel="orders"
-                />
-              )}
+                  ))}
+                </div>
+                {!ordersLoading && recentOrderTotal > recentOrderPageSize ? (
+                  <AdminPaginationBar
+                    page={recentOrderPage}
+                    totalPages={recentOrderTotalPages}
+                    total={recentOrderTotal}
+                    pageSize={recentOrderPageSize}
+                    onPageChange={setRecentOrderPage}
+                    itemLabel="orders"
+                  />
+                ) : null}
               </>
             )}
           </div>
 
-          <div className="gold-card">
-            <h2 className="text-xl font-bold text-black mb-4">{t('admin.lowStockAlerts')}</h2>
-            <p className="text-xs text-stone-500 mb-3">{t('admin.lowStockSnapshotNote')}</p>
+          <div className="dashboard-panel">
+            <h2 className="dashboard-panel__title">{t('admin.lowStockAlerts')}</h2>
+            <p className="dashboard-panel__subtitle">{t('admin.lowStockSnapshotNote')}</p>
             {lowStockLoading ? (
-              <p className="text-stone-600 text-sm">{t('common.loading')}</p>
+              <p className="dashboard-empty !py-6">{t('common.loading')}</p>
             ) : lowStockItems.length === 0 ? (
-              <p className="text-stone-600 text-sm">{t('admin.noLowStockItems')}</p>
+              <p className="dashboard-empty !py-6">{t('admin.noLowStockItems')}</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {lowStockItems.slice(0, 5).map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-black/[0.06] bg-[#F9F9FA] p-3"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-black">
-                        {item.product_name}
-                      </p>
-                      <p className="text-xs text-stone-600">
-                        {t('admin.sku')}: {item.product_sku}{' '}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#0B0F19] truncate">{item.product_name}</p>
+                      <p className="text-xs text-[#64748B]">
+                        {t('admin.sku')}: {item.product_sku}
                         {item.product_serial_number
-                          ? `· ${t('admin.serial')}: ${item.product_serial_number}`
+                          ? ` · ${t('admin.serial')}: ${item.product_serial_number}`
                           : ''}
                       </p>
-                      <p className="text-xs text-stone-600">
-                        {item.branch_name}
-                      </p>
+                      <p className="text-xs text-[#64748B]">{item.branch_name}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-red-400">
+                    <div className="text-end shrink-0">
+                      <p className="text-sm font-semibold text-red-600 tabular-nums">
                         {item.available_quantity} {t('admin.left')}
                       </p>
-                      <p className="text-xs text-stone-600">
+                      <p className="text-xs text-[#64748B]">
                         {t('admin.min')}: {item.low_stock_threshold}
                       </p>
                     </div>

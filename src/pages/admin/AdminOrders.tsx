@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Search, Filter, Eye, Loader2, FileText, Download, BookOpen, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminNav from '../../components/admin/AdminNav'
 import { ordersApi, invoicesApi } from '../../services/api'
 import {
   Dialog,
@@ -300,9 +299,8 @@ export default function AdminOrders() {
   ]
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <Link
           to="/admin/accounting"
           className="inline-flex items-center gap-2 text-stone-600 hover:text-amber-700 mb-6"

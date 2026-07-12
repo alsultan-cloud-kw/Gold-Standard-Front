@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { adminApi, accountingApi, inventoryApi, productsApi } from '../../services/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -310,9 +309,8 @@ export default function AdminPurchases() {
   }, [purchasePage, purchaseTotalPages])
 
   return (
-    <div className="min-h-screen py-8 bg-[var(--site-bg)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <Link
           to="/admin/accounting"
           className="inline-flex items-center gap-2 text-stone-600 hover:text-amber-700 mb-6"

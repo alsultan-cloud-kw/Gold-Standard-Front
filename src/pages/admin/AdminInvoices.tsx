@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { FileText, Mail, MessageCircle, FileDown, ArrowRight } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { invoicesApi } from '../../services/api'
 import { toast } from 'sonner'
@@ -97,9 +96,8 @@ export default function AdminInvoices() {
   }, [allPage, allTotalPages])
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Invoices</h1>

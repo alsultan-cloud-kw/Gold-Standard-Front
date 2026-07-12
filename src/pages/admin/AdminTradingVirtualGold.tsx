@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { goldTradingApi, productsApi } from '../../services/api'
 import { toast } from 'sonner'
@@ -127,9 +126,8 @@ export default function AdminTradingVirtualGold() {
   }, [totals?.unrealized_pl_kwd])
 
   return (
-    <div className="min-h-screen py-8 bg-[var(--site-bg)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>

@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Printer } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import { accountingApi } from '../../services/api'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 
@@ -79,10 +78,9 @@ export default function AdminFinancialReports() {
     : ''
 
   return (
-    <div className="min-h-screen py-8 bg-[var(--site-bg)]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    <div className="admin-page-inner">
+      <div className="admin-page-body admin-page-body--narrow">
         <div className="no-print">
-          <AdminNav />
           <Link
             to="/admin/accounting"
             className="inline-flex items-center gap-2 text-stone-600 hover:text-amber-700 mb-6"

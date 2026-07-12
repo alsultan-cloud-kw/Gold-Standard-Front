@@ -7,7 +7,6 @@ import {
   priceAlertsApi,
   type DaralsabaekMetalPricesResponse,
 } from '../../services/api'
-import AdminNav from '../../components/admin/AdminNav'
 import { toast } from 'sonner'
 
 const CARAT_KEYS = ['24K', '22K', '21K', '18K'] as const
@@ -595,9 +594,8 @@ export default function AdminPrices() {
     typeof n === 'number' && !Number.isNaN(n) ? n.toFixed(4) : '—'
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Gold Prices</h1>

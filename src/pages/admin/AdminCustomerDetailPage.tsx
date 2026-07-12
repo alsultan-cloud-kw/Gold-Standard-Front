@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { User, Mail, Phone, Shield, Calendar, Hash, ShoppingBag, ArrowLeft } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { adminApi, ordersApi } from '../../services/api'
 import { formatNationalityForDisplay } from '@/lib/registrationRegions'
@@ -96,9 +95,8 @@ export default function AdminCustomerDetailPage() {
 
   if (!userId) {
     return (
-      <div className="min-h-screen py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-          <AdminNav />
+      <div className="admin-page-inner">
+        <div className="admin-page-body">
           <p className="text-stone-600">Invalid customer.</p>
           <Link to="/admin/customers" className="text-lime-800 hover:text-lime-800 mt-2 inline-flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back to customers
@@ -109,9 +107,8 @@ export default function AdminCustomerDetailPage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body admin-page-body--narrow">
         <Link
           to="/admin/customers"
           className="inline-flex items-center gap-2 gold-gradient-text-on-light hover:text-lime-800 text-sm mb-6"

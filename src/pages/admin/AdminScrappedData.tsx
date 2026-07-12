@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import { toast } from 'sonner'
 import { adminApi, type WebsiteScrapeEntry } from '../../services/api'
 
@@ -97,9 +96,8 @@ export default function AdminScrappedData() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Scrapped Data Compare</h1>

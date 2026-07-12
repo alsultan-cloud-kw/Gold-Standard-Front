@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TrendingUp, Download, Calendar, DollarSign, ShoppingBag, Users, Eye, FileSpreadsheet } from 'lucide-react'
-import AdminNav from '../../components/admin/AdminNav'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { accountingApi, adminApi, ordersApi } from '../../services/api'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
@@ -677,9 +676,8 @@ export default function AdminReports() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <AdminNav />
+    <div className="admin-page-inner">
+      <div className="admin-page-body">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text-on-light">Reports</h1>
@@ -759,7 +757,7 @@ export default function AdminReports() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="admin-segment mb-6">
           {(
             [
               ['overview', 'Overview'],
@@ -772,26 +770,23 @@ export default function AdminReports() {
               key={id}
               type="button"
               onClick={() => setActiveView(id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-                activeView === id
-                  ? 'bg-lime-200/80 border-lime-400 text-black'
-                  : 'bg-white border-black/15 text-stone-700 hover:bg-stone-50'
-              }`}
+              className={`admin-segment__btn${activeView === id ? ' admin-segment__btn--active' : ''}`}
             >
               {label}
             </button>
           ))}
         </div>
 
-        <p className="text-xs text-stone-600 mb-6 -mt-2">
+        <p className="text-xs text-[#64748B] mb-6 -mt-2">
           Data from Django API (storefront checkout → sales, admin → purchases/buybacks, accounting → P&amp;L).
           Same database as{' '}
-          <a href="https://www.goldstandardkw.com" className="text-lime-800 underline" target="_blank" rel="noreferrer">
+          <a href="https://www.goldstandardkw.com" className="text-[#3F6F00] underline" target="_blank" rel="noreferrer">
             goldstandardkw.com
           </a>
           .
         </p>
 
+        <div className="admin-report-views">
         {activeView === 'profit_loss' && plEnabled && (
           <div className="gold-card mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -1093,6 +1088,7 @@ export default function AdminReports() {
             </div>
           )
         })()}
+        </div>
       </div>
     </div>
   )
