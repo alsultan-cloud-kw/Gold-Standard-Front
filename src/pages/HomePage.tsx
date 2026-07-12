@@ -89,58 +89,64 @@ export default function HomePage() {
         </div>
 
         <div className="home-section-inner relative z-10">
-          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
-            <div className="min-w-0">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#3F6F00]/15 bg-[#ECFCCB]/80 px-3 py-1.5">
-                <span className="h-2 w-2 rounded-full bg-[#3F6F00]" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3F6F00] sm:text-xs">
+          <div className="home-hero">
+            <div className="home-hero-intro">
+              <div className="home-hero-badge mb-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#3F6F00]/15 bg-[#ECFCCB]/80 px-2.5 py-1 sm:mb-4 sm:gap-2 sm:px-3 sm:py-1.5">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#3F6F00] sm:h-2 sm:w-2" aria-hidden />
+                <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#3F6F00] sm:text-xs sm:tracking-[0.12em]">
                   {t('home.heroCertifiedBadge')}
                 </span>
               </div>
 
-              <h1 className="type-display type-display--stack mb-5 text-[#0C1512]">
+              <h1 className="type-display type-display--stack text-[#0C1512]">
                 <span>{t('home.heroHeadlineLead')}</span>
                 <span className="text-[#3F6F00]">{t('home.heroHeadlineAccent')}</span>
               </h1>
-
-              <p className="type-lead mb-8 max-w-xl lg:text-lg">
-                {t('home.heroSubtext')}
-              </p>
-
-              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <Link to="/products" className="ds-btn-accent inline-flex items-center justify-center gap-2">
-                  {t('home.heroBuyGold')}
-                  <ArrowRight className="h-5 w-5 shrink-0 rtl:rotate-180" />
-                </Link>
-                <Link to="/prices" className="ds-btn-primary inline-flex items-center justify-center gap-2">
-                  {t('home.heroViewLivePrice')}
-                </Link>
-                {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
-                  <Link
-                    to="/trade-gold"
-                    className="ds-btn-secondary inline-flex items-center justify-center gap-2"
-                  >
-                    {t('nav.tradeGold')}
-                  </Link>
-                ) : null}
-              </div>
-
-              <ul className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2.5">
-                {[
-                  t('home.heroTrustInsured'),
-                  t('home.heroTrustBuyback'),
-                  t('home.heroTrustFineGold'),
-                ].map((label) => (
-                  <li key={label} className="inline-flex items-center gap-1.5">
-                    <Check className="h-4 w-4 shrink-0 text-[#3F6F00]" strokeWidth={3} aria-hidden />
-                    <span className="type-body-muted font-medium">{label}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
-            <div className="relative min-w-0 lg:max-w-none">
-              <BullionStartSlot slotRef={bullionHeroRef} />
+            <div className="home-hero-body">
+              <div className="home-hero-copy">
+                <p className="type-lead max-w-xl lg:text-lg">{t('home.heroSubtext')}</p>
+
+                <div className="home-hero-cta">
+                  <Link to="/products" className="ds-btn-accent home-hero-cta-btn inline-flex items-center justify-center gap-1.5">
+                    {t('home.heroBuyGold')}
+                    <ArrowRight className="h-4 w-4 shrink-0 sm:h-5 sm:w-5 rtl:rotate-180" aria-hidden />
+                  </Link>
+                  <Link to="/prices" className="ds-btn-primary home-hero-cta-btn inline-flex items-center justify-center gap-1.5">
+                    {t('home.heroViewLivePrice')}
+                  </Link>
+                  {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                    <Link
+                      to="/trade-gold"
+                      className="ds-btn-secondary home-hero-cta-btn home-hero-cta-btn--wide inline-flex items-center justify-center gap-1.5"
+                    >
+                      {t('nav.tradeGold')}
+                    </Link>
+                  ) : null}
+                </div>
+
+                <ul className="home-hero-trust-inline">
+                  {[
+                    t('home.heroTrustInsured'),
+                    t('home.heroTrustBuyback'),
+                    t('home.heroTrustFineGold'),
+                  ].map((label) => (
+                    <li key={label} className="inline-flex min-w-0 items-center gap-1.5">
+                      <Check className="h-4 w-4 shrink-0 text-[#3F6F00]" strokeWidth={3} aria-hidden />
+                      <span className="type-body-muted text-sm font-medium">{label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="home-hero-visual">
+                <div className="home-hero-bullion-shell">
+                  <div className="home-hero-bullion-core">
+                    <BullionStartSlot slotRef={bullionHeroRef} className="home-hero-bullion-slot" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -215,24 +221,24 @@ export default function HomePage() {
             align="start"
           />
 
-          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10">
             {features.map((feature, index) => (
               <div
                 key={feature.titleKey}
-                className={`bg-[var(--site-bg)] p-6 sm:p-8 ${index === 0 ? 'sm:border-e-0' : ''}`}
+                className={`bg-[var(--site-bg)] p-4 sm:p-8 ${index % 2 === 0 ? 'sm:border-e-0' : ''}`}
               >
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
-                    <feature.icon className="h-5 w-5" strokeWidth={1.75} />
+                <div className="mb-3 flex items-center gap-2 sm:mb-5 sm:gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307] sm:h-10 sm:w-10">
+                    <feature.icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} />
                   </span>
-                  <span className="font-mono text-[11px] font-semibold tabular-nums tracking-wider text-[#94A3B8]">
+                  <span className="font-mono text-[10px] font-semibold tabular-nums tracking-wider text-[#94A3B8] sm:text-[11px]">
                     0{index + 1}
                   </span>
                 </div>
-                <h3 className="type-card-title mb-2.5 text-[#0B0F19]">
+                <h3 className="type-card-title mb-1.5 text-sm text-[#0B0F19] sm:mb-2.5 sm:text-base">
                   {t(feature.titleKey)}
                 </h3>
-                <p className="type-body-muted max-w-sm">{t(feature.descKey)}</p>
+                <p className="type-body-muted text-xs leading-relaxed sm:max-w-sm sm:text-sm">{t(feature.descKey)}</p>
               </div>
             ))}
           </div>

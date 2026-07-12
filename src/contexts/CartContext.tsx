@@ -36,11 +36,31 @@ function productDisplayName(product: Product): string {
   return product.name_en?.trim() || product.name_ar?.trim() || i18n.t('common.productFallback')
 }
 
-function cartToastSuccess(title: string, description?: string, id?: string) {
+function cartToastPosition(): 'top-center' | 'bottom-center' {
+  if (typeof window === 'undefined') return 'top-center'
+  return window.matchMedia('(max-width: 1023px)').matches ? 'bottom-center' : 'top-center'
+}
+
+function cartToastSuccess(
+  title: string,
+  description?: string,
+  id?: string,
+  options?: { viewCart?: boolean },
+) {
   toast.success(title, {
     id,
     description,
-    duration: 2800,
+    duration: 3200,
+    position: cartToastPosition(),
+    className: 'gs-toast gs-toast-cart',
+    action: options?.viewCart
+      ? {
+          label: i18n.t('cart.toasts.viewCart'),
+          onClick: () => {
+            window.dispatchEvent(new CustomEvent('gs:navigate-cart'))
+          },
+        }
+      : undefined,
   })
 }
 
@@ -49,6 +69,8 @@ function cartToastInfo(title: string, description?: string, id?: string) {
     id,
     description,
     duration: 2800,
+    position: cartToastPosition(),
+    className: 'gs-toast gs-toast-cart',
   })
 }
 
@@ -108,10 +130,8 @@ function clubUnitPrice(product: Product): number {
 }
 
 function unitPriceForMembership(product: Product, clubPricingEnabled: boolean): number {
-  if (product.live_total_price_club != null && Number.isFinite(Number(product.live_total_price_club))) {
-    return clubUnitPrice(product)
-  }
-  return clubPricingEnabled ? clubUnitPrice(product) : regularUnitPrice(product)
+  if (!clubPricingEnabled) return regularUnitPrice(product)
+  return clubUnitPrice(product)
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -290,6 +310,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    const onNavigateCart = () => navigate('/cart')
+    window.addEventListener('gs:navigate-cart', onNavigateCart)
+    return () => window.removeEventListener('gs:navigate-cart', onNavigateCart)
+  }, [navigate])
+
   const addToCart = (product: Product, quantity: number = 1) => {
     if (!assertCanPurchase()) return
 
@@ -359,14 +385,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (toastKind === 'added') {
       cartToastSuccess(
         i18n.t('cart.toasts.added'),
-        i18n.t('cart.toasts.addedDesc', { name }),
+        i18n.t('cart.toasts.addedDescCount', { name, count: toastQty }),
         `cart-add-${product.id}`,
+        { viewCart: true },
       )
     } else if (toastKind === 'increased') {
       cartToastSuccess(
         i18n.t('cart.toasts.qtyIncreased'),
         i18n.t('cart.toasts.qtyIncreasedDesc', { name, qty: toastQty }),
         `cart-qty-${product.id}`,
+        { viewCart: true },
       )
     } else if (toastKind === 'capped') {
       cartToastInfo(

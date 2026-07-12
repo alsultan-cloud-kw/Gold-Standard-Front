@@ -5,8 +5,8 @@
 export const GS_BUSINESS = {
   legalNameEn: 'Gold Standard Jewellers and Precious Metals Company',
   legalNameAr: 'شركة جولد ستاندرد للمجوهرات والمعادن الثمينة',
-  /** Commercial registration / trade licence document (PDF or image) in /public. */
-  licenseDocumentUrl: '/commercial-licence.pdf' as string | null,
+  /** Commercial registration / trade licence document — disabled; storefront shows licence no. as text only. */
+  licenseDocumentUrl: null as string | null,
   commercialLicenseNo: '279/2026',
   aboutLicenseAnchor: '/about#commercial-licence',
 } as const

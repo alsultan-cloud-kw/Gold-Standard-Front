@@ -14,6 +14,9 @@ type Props = {
   onCommit: (value: string) => void
   onClear: () => void
   className?: string
+  autoFocus?: boolean
+  /** Navbar overlay — larger touch targets, text-only clear, no duplicate dismiss controls */
+  variant?: 'inline' | 'toolbar'
 }
 
 export function ProductSearchBox({
@@ -23,6 +26,8 @@ export function ProductSearchBox({
   onCommit,
   onClear,
   className,
+  autoFocus = false,
+  variant = 'inline',
 }: Props) {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
@@ -36,6 +41,12 @@ export function ProductSearchBox({
     const id = window.setTimeout(() => setDebounced(value.trim()), 280)
     return () => window.clearTimeout(id)
   }, [value])
+
+  useEffect(() => {
+    if (!autoFocus) return
+    const id = window.requestAnimationFrame(() => inputRef.current?.focus())
+    return () => window.cancelAnimationFrame(id)
+  }, [autoFocus])
 
   const enabled = debounced.length >= 2
 
@@ -99,10 +110,16 @@ export function ProductSearchBox({
     dismiss()
   }
 
+  const isToolbar = variant === 'toolbar'
+
   return (
     <div
       ref={rootRef}
-      className={cn('relative w-full max-w-md', className)}
+      className={cn(
+        'product-search-box relative w-full max-w-md',
+        isToolbar && 'product-search-box--toolbar',
+        className,
+      )}
       onBlur={(e) => {
         const next = e.relatedTarget as Node | null
         if (next && rootRef.current?.contains(next)) return
@@ -116,10 +133,17 @@ export function ProductSearchBox({
           dismiss()
         }}
       >
-        <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+        <Search
+          className={cn(
+            'pointer-events-none absolute top-1/2 -translate-y-1/2 text-[#94A3B8]',
+            isToolbar ? 'start-4 h-5 w-5' : 'start-3.5 h-4 w-4',
+          )}
+        />
         <input
           ref={inputRef}
-          type="search"
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
           value={value}
           onChange={(e) => {
             onChange(e.target.value)
@@ -127,7 +151,12 @@ export function ProductSearchBox({
           }}
           onFocus={() => setOpen(true)}
           placeholder={t('productsPage.searchPlaceholder')}
-          className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] py-3 pe-10 ps-10 text-sm font-medium text-[#0B0F19] outline-none transition focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25"
+          className={cn(
+            'product-search-input w-full rounded-xl border border-black/10 bg-[var(--site-bg-muted)] font-medium text-[#0B0F19] outline-none transition focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25',
+            isToolbar
+              ? 'min-h-[3rem] py-3.5 pe-[4.5rem] ps-12 text-base sm:min-h-[3.25rem] sm:rounded-2xl'
+              : 'py-3 pe-10 ps-10 text-sm',
+          )}
           aria-label={t('productsPage.searchPlaceholder')}
           aria-autocomplete="list"
           aria-controls={listId}
@@ -139,12 +168,17 @@ export function ProductSearchBox({
             type="button"
             onClick={() => {
               onClear()
-              dismiss()
+              inputRef.current?.focus()
             }}
-            className="absolute end-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#94A3B8] hover:bg-black/5 hover:text-[#0B0F19]"
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 font-semibold text-[#64748B] transition hover:text-[#0B0F19]',
+              isToolbar
+                ? 'end-3 rounded-lg px-2 py-1 text-xs sm:text-sm'
+                : 'end-3 rounded-md p-1 text-[#94A3B8] hover:bg-black/5',
+            )}
             aria-label={t('productsPage.clearSearch')}
           >
-            <X className="h-4 w-4" />
+            {isToolbar ? t('productsPage.clearSearchShort') : <X className="h-4 w-4" />}
           </button>
         ) : null}
       </form>
@@ -153,13 +187,16 @@ export function ProductSearchBox({
         <div
           id={listId}
           role="listbox"
-          className="absolute inset-x-0 top-[calc(100%+0.4rem)] z-40 overflow-hidden rounded-xl border border-black/10 bg-white shadow-[0_18px_40px_-16px_rgba(11,15,25,0.35)]"
+          className={cn(
+            'product-search-panel absolute inset-x-0 z-40 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_18px_40px_-16px_rgba(11,15,25,0.35)]',
+            isToolbar ? 'top-[calc(100%+0.625rem)]' : 'top-[calc(100%+0.4rem)]',
+          )}
         >
           {suggest?.did_you_mean ? (
             <button
               type="button"
               onClick={() => applyTerm(suggest.did_you_mean!)}
-              className="flex w-full items-center gap-2 border-b border-black/5 px-3.5 py-2.5 text-start text-sm text-[#0B0F19] hover:bg-[#ECFCCB]/50"
+              className="flex w-full items-center gap-2 border-b border-black/5 px-4 py-3 text-start text-sm text-[#0B0F19] hover:bg-[#ECFCCB]/50 sm:px-4"
             >
               <span className="text-[#64748B]">{t('productsPage.didYouMean')}</span>
               <span className="font-semibold text-[#3F6F00]">{suggest.did_you_mean}</span>
@@ -167,17 +204,17 @@ export function ProductSearchBox({
           ) : null}
 
           {suggest && suggest.suggestions.length > 0 ? (
-            <div className="border-b border-black/5 px-3 py-2">
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
+            <div className="border-b border-black/5 px-4 py-3">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#3F6F00]">
                 {t('productsPage.searchSuggestions')}
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {suggest.suggestions.map((term) => (
                   <button
                     key={term}
                     type="button"
                     onClick={() => applyTerm(term)}
-                    className="rounded-full border border-black/10 bg-[#F9F9FA] px-2.5 py-1 text-xs font-medium text-[#0B0F19] transition hover:border-[#85E307]/50 hover:bg-[#ECFCCB]/60"
+                    className="rounded-full border border-black/10 bg-[var(--site-bg-muted)] px-3 py-1.5 text-sm font-medium text-[#0B0F19] transition hover:border-[#85E307]/50 hover:bg-[#ECFCCB]/60"
                   >
                     {term}
                   </button>
@@ -187,7 +224,7 @@ export function ProductSearchBox({
           ) : null}
 
           {suggest && suggest.products.length > 0 ? (
-            <ul className="max-h-72 overflow-y-auto py-1">
+            <ul className="max-h-[min(18rem,50dvh)] overflow-y-auto py-1.5 sm:max-h-72">
               {suggest.products.map((p) => {
                 const label = isAr && p.name_ar ? p.name_ar : p.name_en
                 const img = productImageSrc(p)
@@ -196,9 +233,9 @@ export function ProductSearchBox({
                     <Link
                       to={`/products/${p.slug}`}
                       onClick={() => dismiss()}
-                      className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[#ECFCCB]/55"
+                      className="flex items-center gap-3.5 px-4 py-3 transition hover:bg-[#ECFCCB]/55 sm:gap-4"
                     >
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F4F4F5]">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F4F4F5] sm:h-11 sm:w-11 sm:rounded-lg">
                         {img ? (
                           <img src={img} alt="" className="h-full w-full object-cover" />
                         ) : (
@@ -206,10 +243,10 @@ export function ProductSearchBox({
                         )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-[#0B0F19]">
+                        <span className="block truncate text-[15px] font-semibold leading-snug text-[#0B0F19] sm:text-sm">
                           {label}
                         </span>
-                        <span className="block truncate text-xs text-[#64748B]" dir="ltr">
+                        <span className="mt-0.5 hidden truncate text-xs text-[#64748B] sm:block" dir="ltr">
                           {p.sku}
                         </span>
                       </span>
@@ -221,7 +258,7 @@ export function ProductSearchBox({
           ) : null}
 
           {isFetching && (!suggest || suggest.products.length === 0) ? (
-            <p className="px-3.5 py-2 text-xs text-[#94A3B8]">{t('common.loading')}</p>
+            <p className="px-4 py-3 text-sm text-[#94A3B8]">{t('common.loading')}</p>
           ) : null}
 
           <button
@@ -230,7 +267,7 @@ export function ProductSearchBox({
               onCommit(value.trim())
               dismiss()
             }}
-            className="flex w-full items-center justify-center border-t border-black/5 px-3 py-2.5 text-sm font-semibold text-[#3F6F00] hover:bg-[#ECFCCB]/40"
+            className="flex w-full items-center justify-center border-t border-black/5 px-4 py-3.5 text-sm font-semibold text-[#3F6F00] hover:bg-[#ECFCCB]/40"
           >
             {t('productsPage.searchAllFor', { query: value.trim() })}
           </button>

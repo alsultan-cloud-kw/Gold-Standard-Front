@@ -102,17 +102,15 @@ export default function AdminPurchases() {
   const carats = asList<Carat>(caratsData)
   const publicRates = publicRatesData ? (publicRatesData as any) : undefined
 
-  function getLiveSellPricePerGramForCaratValue(caratValue?: number) {
+  function getLiveBuyPricePerGramForCaratValue(caratValue?: number) {
     if (caratValue == null) return null
     const v = Number(caratValue)
     if (!Number.isFinite(v) || v <= 0) return null
     const rounded = Math.round(v)
     const keys = [`${rounded}K`, `${v}K`]
     const row = publicRates?.carats?.find((x: any) => keys.includes(x?.key))
-    const sellTotal = row?.sellTotal
-    const sell = row?.sell
-    if (typeof sellTotal === 'number' && sellTotal > 0) return sellTotal
-    if (typeof sell === 'number' && sell > 0) return sell
+    const buyTotal = row?.buyTotal
+    if (typeof buyTotal === 'number' && buyTotal > 0) return buyTotal
     return null
   }
 
@@ -191,18 +189,18 @@ export default function AdminPurchases() {
         row.priceUserEdited = true
       }
       if (field === 'carat' && value) {
-        // Scrap purchase mode: user doesn't select a product, so we default rate from live sell value by carat.
+        // Scrap purchase: company pays customer at configured buyTotal (public-rates).
         if (!row.product) {
           const caratObj = carats.find((c) => c.id === String(row.carat))
           const caratValue = caratObj?.carat_value
-          const liveSell = getLiveSellPricePerGramForCaratValue(caratValue)
+          const liveBuy = getLiveBuyPricePerGramForCaratValue(caratValue)
 
           // Only auto-fill if user hasn't manually overridden price.
-          if (liveSell != null && !row.priceUserEdited) {
-            row.price_per_gram = liveSell.toFixed(3)
+          if (liveBuy != null && !row.priceUserEdited) {
+            row.price_per_gram = liveBuy.toFixed(3)
             row.priceUserEdited = false
             const w = parseFloat(String(row.weight_grams)) || 0
-            row.total_price = (w * liveSell).toFixed(3)
+            row.total_price = (w * liveBuy).toFixed(3)
           }
         }
       }
@@ -214,13 +212,12 @@ export default function AdminPurchases() {
           if (prod.metal_type?.id) row.metal_type = prod.metal_type.id
           if (prod.carat?.id) row.carat = prod.carat.id
 
-          // Default price per gram from the current live sell rate for this carat.
-          // User can still override via the "Price/g" input.
+          // Default price/g from live buyTotal — company payout when purchasing from customer.
           const caratObj = carats.find((c) => String(c.id) === String(prod.carat?.id))
           const caratValue = caratObj?.carat_value
-          const liveSell = getLiveSellPricePerGramForCaratValue(caratValue)
+          const liveBuy = getLiveBuyPricePerGramForCaratValue(caratValue)
           const fallback = prod.current_price
-          const p = (liveSell != null ? Number(liveSell) : Number(fallback)) || 0
+          const p = (liveBuy != null ? Number(liveBuy) : Number(fallback)) || 0
           if (p > 0) row.price_per_gram = Number(p).toFixed(3)
           row.priceUserEdited = false
 

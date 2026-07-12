@@ -7,6 +7,7 @@ import type { Product } from '@/types'
 import ProductPriceTrendArrow from '@/components/ProductPriceTrendArrow'
 import { productImageSrc } from '@/utils/productImage'
 import { productUnitPrice, formatKwd } from '@/utils/productPrice'
+import { formatProductCaratLabel } from '@/utils/productCaratLabel'
 import type { ProductFetchTrendMap } from '@/hooks/useProductPriceTrendSincePreviousFetch'
 import { ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
 import { isProductOutOfStock, productFineness } from '@/utils/productStock'
@@ -29,10 +30,7 @@ function HomeProductCardInner({
   const imageSrc = productImageSrc(product)
   const lang = i18n.language
   const productName = lang === 'ar' && product.name_ar ? product.name_ar : product.name_en
-  const caratName =
-    lang === 'ar' && product.carat?.display_name_ar
-      ? product.carat.display_name_ar
-      : product.carat?.display_name_en
+  const caratName = formatProductCaratLabel(product.carat, lang)
   const categoryName =
     lang === 'ar' && product.category?.name_ar
       ? product.category.name_ar
@@ -53,7 +51,7 @@ function HomeProductCardInner({
   ].filter(Boolean) as string[]
 
   return (
-    <article className="home-product-card group flex h-full min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 sm:p-3 transition-shadow duration-200 hover:shadow-md">
+    <article className="home-product-card group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 transition-shadow duration-200 hover:shadow-md sm:h-full sm:p-3">
       <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div
           className={`relative overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${
@@ -91,22 +89,24 @@ function HomeProductCardInner({
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col px-0.5 pt-2">
+      <div className="flex flex-col px-0.5 pt-1.5">
         <Link to={`/products/${product.slug}`} className="min-w-0">
-          <h3 className="line-clamp-2 sm:line-clamp-1 text-[12px] sm:text-sm font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 leading-[1.3] sm:leading-normal">
+          <h3 className="line-clamp-2 text-[12px] font-semibold leading-snug text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 sm:line-clamp-1 sm:text-sm sm:leading-normal">
             {productName}
           </h3>
         </Link>
 
         {specParts.length ? (
-          <p className="mt-0.5 sm:mt-1 line-clamp-1 text-[9px] sm:text-[10px] text-[#64748B]">{specParts.join(' · ')}</p>
+          <p className="mt-0.5 text-[9px] leading-snug text-[#64748B] sm:mt-1 sm:text-[10px]">
+            {specParts.join(' · ')}
+          </p>
         ) : null}
 
-        <div className="mt-auto pt-2 flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-1">
-            <span className="min-w-0 text-[13px] sm:text-base font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight">
+        <div className="mt-1.5 flex flex-col gap-1 sm:gap-1.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5">
+            <span className="min-w-0 text-[13px] font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight sm:text-base">
               {formatKwd(productUnitPrice(product))}
-              <span className="ms-0.5 text-[9px] sm:text-[10px] font-semibold text-[#64748B]">KWD</span>
+              <span className="ms-0.5 text-[9px] font-semibold text-[#64748B] sm:text-[10px]">KWD</span>
             </span>
             <ProductPriceTrendArrow
               product={product}
@@ -119,8 +119,8 @@ function HomeProductCardInner({
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 border-t border-black/5 pt-1.5">
-            <span className="truncate text-[9px] sm:text-[10px] text-[#64748B]">{t('home.shipsIn')}</span>
+          <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 border-t border-black/5 pt-1 sm:pt-1.5">
+            <span className="text-[9px] leading-tight text-[#64748B] sm:text-[10px]">{t('home.shipsIn')}</span>
             <ProductStockStatusLabel product={product} className="shrink-0 text-[9px] sm:text-[10px]" />
           </div>
         </div>
@@ -130,7 +130,7 @@ function HomeProductCardInner({
             type="button"
             onClick={() => addToCart(product)}
             disabled={outOfStock}
-            className="mt-2.5 flex w-full items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1 py-1.5 sm:px-2.5 sm:py-2 text-[10px] sm:text-[13px] font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-lg bg-[#0B0F19] px-1 py-1.5 text-[10px] font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8] sm:mt-2 sm:gap-1.5 sm:rounded-xl sm:px-2.5 sm:py-2 sm:text-[13px]"
           >
             <ShoppingCart className="hidden sm:block h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
             <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('home.addToCart')}</span>

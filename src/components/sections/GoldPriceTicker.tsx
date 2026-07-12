@@ -207,10 +207,12 @@ function TickerPriceValue({
   value,
   flash,
   lastDir,
+  compact = false,
 }: {
   value: string
   flash?: FlashField
   lastDir: PriceTrendDir
+  compact?: boolean
 }) {
   const flashing = Boolean(flash)
   const activeDir = flash?.dir ?? lastDir
@@ -221,7 +223,8 @@ function TickerPriceValue({
       <span
         key={flash ? `flash-${flash.token}` : 'steady'}
         className={cn(
-          'text-sm font-bold tabular-nums sm:text-base',
+          'font-bold tabular-nums',
+          compact ? 'text-xs' : 'text-sm sm:text-base',
           flashing
             ? flash?.dir === 'up'
               ? 'ticker-price-flash-up'
@@ -253,7 +256,7 @@ export default function GoldPriceTicker() {
   const fmt = (n: number | null | undefined) =>
     typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
 
-  const renderTickerTrack = (loopKey: string) => (
+  const renderTickerTrack = (loopKey: string, compact = false) => (
     <>
       {tickerItems.map((c) => {
         const key = normalizeMetalKey(c.key)
@@ -266,29 +269,49 @@ export default function GoldPriceTicker() {
         return (
           <div
             key={`${loopKey}-${c.key}`}
-            className="flex shrink-0 items-center gap-x-2.5 whitespace-nowrap border-e border-white/10 px-4 sm:gap-x-3 sm:px-5"
+            className={cn(
+              'flex shrink-0 items-center whitespace-nowrap border-e border-white/10',
+              compact ? 'gap-x-2 px-3' : 'gap-x-2.5 px-4 sm:gap-x-3 sm:px-5',
+            )}
             dir="ltr"
           >
-            <span className="text-sm font-semibold tabular-nums text-white/90 sm:text-base">{c.key}</span>
-            <span className="text-[10px] uppercase tracking-wide text-white/40 sm:text-xs">
+            <span
+              className={cn(
+                'font-semibold tabular-nums text-white',
+                compact ? 'text-xs' : 'text-sm sm:text-base',
+              )}
+            >
+              {c.key}
+            </span>
+            <span
+              className={cn(
+                'uppercase tracking-wide text-white/55',
+                compact ? 'text-[9px]' : 'text-[10px] sm:text-xs',
+              )}
+            >
               {t('home.tickerSell')}
             </span>
             <TickerPriceValue
               value={fmt(sellTotal)}
               flash={sellFlash}
               lastDir={sellDir}
+              compact={compact}
             />
-            <span className="text-[10px] uppercase tracking-wide text-white/40 sm:text-xs">
-              {t('home.tickerBuy')}
-            </span>
-            <TickerPriceValue
-              value={fmt(buyTotal)}
-              flash={buyFlash}
-              lastDir={buyDir}
-            />
-            <span className="text-[10px] uppercase tracking-wide text-white/35 sm:text-xs">
-              {t('common.kwdPerGram')}
-            </span>
+            {!compact ? (
+              <>
+                <span className="text-[10px] uppercase tracking-wide text-white/40 sm:text-xs">
+                  {t('home.tickerBuy')}
+                </span>
+                <TickerPriceValue
+                  value={fmt(buyTotal)}
+                  flash={buyFlash}
+                  lastDir={buyDir}
+                />
+                <span className="text-[10px] uppercase tracking-wide text-white/35 sm:text-xs">
+                  {t('common.kwdPerGram')}
+                </span>
+              </>
+            ) : null}
           </div>
         )
       })}
@@ -343,37 +366,51 @@ export default function GoldPriceTicker() {
 
   return (
     <div className="group relative border-b border-white/10 bg-[#0B0F19] text-white/85">
-      <div className="page-shell flex min-h-[3.25rem] items-stretch">
-        <div className="relative z-10 flex shrink-0 items-center gap-2 border-e border-white/10 bg-[#0B0F19] px-3 py-3 sm:ps-6 lg:ps-8">
+      <div className="page-shell flex min-h-[2.875rem] items-stretch sm:min-h-[3.25rem]">
+        <div className="relative z-10 hidden shrink-0 items-center gap-2 border-e border-white/10 bg-[#0B0F19] px-3 py-3 sm:flex sm:ps-6 lg:ps-8">
           {liveBeacon}
-          <span className="max-[380px]:sr-only whitespace-nowrap text-sm font-semibold uppercase tracking-wide text-white/80 sm:text-base">
+          <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-wide text-white/80 sm:text-base">
             {t('home.metalTickerLabel')}
           </span>
         </div>
 
-        <div
-          className="gold-ticker-fade relative flex min-w-0 flex-1 items-center overflow-hidden py-2.5"
-          role="region"
-          aria-label={t('home.metalTickerAria')}
-          dir="ltr"
-        >
-          {reducedMotion ? (
-            <div className="flex w-full flex-wrap items-center gap-0 px-1">
-              {renderTickerTrack('static')}
-            </div>
-          ) : (
-            <div className="w-full overflow-hidden" dir="ltr">
-              <div
-                className="flex w-max animate-gold-marquee-ltr will-change-transform motion-reduce:animate-none group-hover:[animation-play-state:paused]"
-                style={{ animationDuration: `${marqueeDuration}s` }}
-              >
-                <div className="flex shrink-0 items-center">{renderTickerTrack('a')}</div>
-                <div className="flex shrink-0 items-center" aria-hidden>
-                  {renderTickerTrack('b')}
+        <div className="flex min-w-0 flex-1 items-center gap-2 py-2 sm:gap-0 sm:py-0">
+          <div className="flex shrink-0 items-center gap-1.5 ps-0.5 sm:hidden">
+            {liveBeacon}
+            <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-wide text-[#85E307]">
+              {t('home.tickerLiveShort')}
+            </span>
+          </div>
+
+          <div
+            className="gold-ticker-fade gold-ticker-fade--mobile relative flex min-w-0 flex-1 items-center overflow-hidden py-0.5 sm:py-2.5"
+            role="region"
+            aria-label={t('home.metalTickerAria')}
+            dir="ltr"
+          >
+            {reducedMotion ? (
+              <div className="flex w-full flex-wrap items-center gap-0 px-1">
+                <div className="hidden sm:contents">{renderTickerTrack('static')}</div>
+                <div className="contents sm:hidden">{renderTickerTrack('static', true)}</div>
+              </div>
+            ) : (
+              <div className="w-full overflow-hidden" dir="ltr">
+                <div
+                  className="flex w-max animate-gold-marquee-ltr will-change-transform motion-reduce:animate-none group-hover:[animation-play-state:paused]"
+                  style={{ animationDuration: `${marqueeDuration}s` }}
+                >
+                  <div className="hidden shrink-0 items-center sm:flex">{renderTickerTrack('a')}</div>
+                  <div className="hidden shrink-0 items-center sm:flex" aria-hidden>
+                    {renderTickerTrack('b')}
+                  </div>
+                  <div className="flex shrink-0 items-center sm:hidden">{renderTickerTrack('a', true)}</div>
+                  <div className="flex shrink-0 items-center sm:hidden" aria-hidden>
+                    {renderTickerTrack('b', true)}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="relative z-10 shrink-0 bg-[#0B0F19]">
@@ -386,9 +423,11 @@ export default function GoldPriceTicker() {
 
 function TickerUtilityCluster() {
   const { t, i18n } = useTranslation()
+  const isAr = i18n.language?.startsWith('ar')
+  const langLabel = isAr ? 'عربي' : 'EN'
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-s border-white/10 px-3 sm:gap-4 sm:px-4 lg:pe-6">
+    <div className="flex shrink-0 items-center gap-1.5 border-s border-white/10 px-1.5 py-1 sm:gap-4 sm:px-4 sm:py-2 lg:pe-6">
       <a
         href={`tel:${GS_CONTACT.phoneTel}`}
         className="hidden items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80 md:inline-flex"
@@ -405,13 +444,11 @@ function TickerUtilityCluster() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80"
+            className="inline-flex h-7 items-center justify-center gap-0.5 rounded-md border border-white/20 bg-white/[0.08] px-1.5 text-[10px] font-semibold leading-none text-white/90 transition-colors hover:border-[#85E307]/40 hover:bg-white/12 sm:h-auto sm:gap-1 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:text-xs sm:font-normal sm:text-white/45 sm:hover:text-white/80"
             aria-label={t('common.language')}
           >
-            <Languages className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden sm:inline">
-              {i18n.language === 'ar' ? t('common.arabic') : t('common.english')}
-            </span>
+            <Languages className="h-3 w-3 shrink-0 opacity-90" />
+            <span className="whitespace-nowrap">{langLabel}</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[120px] border-black/10 bg-white">

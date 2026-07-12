@@ -27,6 +27,7 @@ import {
   formatChartTimeRange,
   formatPctChange,
   formatPrice,
+  kwdOunceSellFromUsd,
   ounceUnit,
   prevCloseFromSnapshot,
   seriesChange,
@@ -34,15 +35,23 @@ import {
   snapshotOhlcForUnit,
   type CandlePoint,
   type ChartRange,
+  type GoldOunceMarkup,
   type LinePoint,
   type MetalTab,
   type OunceCurrency,
 } from '@/utils/metalChartSeries'
+import {
+  resolveAuthoritativeUsdOunceSpot,
+  resolveConfiguredKwdOunceSell,
+} from '@/utils/publicStorefrontRates'
 import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
 import { cn } from '@/lib/utils'
+import { PreciousMetalMark } from '@/components/prices/PreciousMetalMark'
 
 type Props = {
   rates: DaralsabaekPublicRatesResponse | undefined
+  /** Hide kicker/title when the parent page already introduces live prices (e.g. /prices). */
+  showSectionHeader?: boolean
 }
 
 function numOrNull(v: unknown): number | null {
@@ -67,8 +76,9 @@ function resolvePrevClose(
   chartUnit: string,
   line: LinePoint[],
   candles: CandlePoint[],
+  ounceMarkup?: GoldOunceMarkup,
 ): number | null {
-  const fromSnap = snapStats?.prevClose ?? prevCloseFromSnapshot(currentSnap, chartUnit)
+  const fromSnap = snapStats?.prevClose ?? prevCloseFromSnapshot(currentSnap, chartUnit, ounceMarkup)
   if (fromSnap != null && Number.isFinite(fromSnap)) return fromSnap
   if (candles.length >= 2) return candles[candles.length - 2].close
   if (line.length >= 2) return line[line.length - 2].value
@@ -107,13 +117,13 @@ function formatDisplayPrice(value: number | null | undefined, unit: string): str
   return formatted
 }
 
-export function PricesHistoryChart({ rates }: Props) {
+export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language?.startsWith('ar') ? 'ar-KW' : PRICE_NUMBER_LOCALE
   const [metal, setMetal] = useState<MetalTab>('gold')
   const [chartRange, setChartRange] = useState<ChartRange>('1m')
   const [ounceCurrency, setOunceCurrency] = useState<OunceCurrency>('USD')
-  const [mode, setMode] = useState<ChartDisplayMode>('area')
+  const [mode, setMode] = useState<ChartDisplayMode>('line')
   const [countdown, setCountdown] = useState(60)
   const [fitToken, setFitToken] = useState(0)
   const [chartExpanded, setChartExpanded] = useState(false)
@@ -233,9 +243,21 @@ export function PricesHistoryChart({ rates }: Props) {
 
   const carats = rates?.carats ?? []
   const byKey = useMemo(() => new Map(carats.map((c) => [c.key, c])), [carats])
-  const goldOuncePrice = numOrNull(rates?.goldOuncePrice)
 
-  const usdToKwdRate = numOrNull(currentSnap?.usd_to_kwd_rate)
+  const usdToKwdRate =
+    numOrNull(rates?.usd_to_kwd_rate) ?? numOrNull(currentSnap?.usd_to_kwd_rate)
+  const ounceSellAdd = numOrNull(rates?.goldOunce?.sellAdd) ?? 0
+  const usdOunceSpot = resolveAuthoritativeUsdOunceSpot(rates, currentSnap)
+  const configuredKwdSell = resolveConfiguredKwdOunceSell(rates, usdOunceSpot, usdToKwdRate)
+
+  const ounceMarkup = useMemo(
+    (): GoldOunceMarkup => ({
+      usdToKwdRate,
+      sellAdd: ounceSellAdd,
+      buyAdd: numOrNull(rates?.goldOunce?.buyAdd) ?? 0,
+    }),
+    [usdToKwdRate, ounceSellAdd, rates?.goldOunce?.buyAdd],
+  )
 
   const chartUnit = useMemo(() => {
     if (metal === 'gold') return ounceUnit(ounceCurrency)
@@ -244,29 +266,53 @@ export function PricesHistoryChart({ rates }: Props) {
     return 'KWD/g'
   }, [metal, ounceCurrency, pricingHistory?.unit, newHistoryAvailable, legacyHistoryData?.unit])
 
+  // Gold ounce charts: always build the series in USD/oz, then convert for KWD display.
+  const liveUsdOunce = useMemo(() => {
+    if (!rates?.succeeded || metal !== 'gold') return null
+    if (chartUnit === 'KWD/g') return numOrNull(byKey.get('24K')?.buyTotal)
+    return usdOunceSpot
+  }, [rates?.succeeded, metal, chartUnit, byKey, usdOunceSpot])
+
+  const rawLine = useMemo(
+    () => buildLineSeries(rawPoints, metal, chartRange, liveUsdOunce, preferOz),
+    [rawPoints, metal, chartRange, liveUsdOunce, preferOz],
+  )
+
+  const line = useMemo(() => {
+    if (metal !== 'gold' || chartUnit === 'KWD/g') return rawLine
+    if (ounceCurrency === 'USD') return rawLine
+    const converted = convertLineToOunceCurrency(rawLine, 'KWD', usdToKwdRate, ounceSellAdd)
+    if (!converted.length) return converted
+    const kwdLive =
+      configuredKwdSell ??
+      (usdOunceSpot != null && usdToKwdRate != null
+        ? kwdOunceSellFromUsd(usdOunceSpot, usdToKwdRate, ounceSellAdd)
+        : null)
+    if (kwdLive == null) return converted
+    const last = converted[converted.length - 1]
+    return [...converted.slice(0, -1), { ...last, value: kwdLive }]
+  }, [
+    rawLine,
+    metal,
+    chartUnit,
+    ounceCurrency,
+    usdToKwdRate,
+    ounceSellAdd,
+    configuredKwdSell,
+    usdOunceSpot,
+  ])
+
   const liveChartV = useMemo(() => {
     if (!rates?.succeeded) return null
     if (metal === 'gold') {
-      const usd = goldOuncePrice
-      if (usd == null) return null
-      if (chartUnit === 'KWD/oz' && usdToKwdRate != null) return usd * usdToKwdRate
-      if (chartUnit === 'USD/oz') return usd
+      if (chartUnit === 'KWD/oz') return configuredKwdSell
+      if (chartUnit === 'USD/oz') return usdOunceSpot
       return numOrNull(byKey.get('24K')?.buyTotal)
     }
     if (metal === 'silver') return numOrNull(rates.silver?.buyTotal)
     if (metal === 'platinum') return numOrNull(rates.platinum?.buyTotal)
     return numOrNull(rates.palladium?.buyTotal)
-  }, [metal, chartUnit, rates, byKey, goldOuncePrice, usdToKwdRate])
-
-  const rawLine = useMemo(
-    () => buildLineSeries(rawPoints, metal, chartRange, liveChartV, preferOz),
-    [rawPoints, metal, chartRange, liveChartV, preferOz],
-  )
-
-  const line = useMemo(() => {
-    if (metal !== 'gold' || chartUnit === 'KWD/g') return rawLine
-    return convertLineToOunceCurrency(rawLine, ounceCurrency, usdToKwdRate)
-  }, [rawLine, metal, chartUnit, ounceCurrency, usdToKwdRate])
+  }, [metal, chartUnit, rates, byKey, configuredKwdSell, usdOunceSpot])
 
   const candles = useMemo(
     () => buildCandleSeries(line, chartRange, rawPoints, metal, preferOz),
@@ -279,8 +325,8 @@ export function PricesHistoryChart({ rates }: Props) {
 
   const seriesStats = useMemo(() => seriesOhlcStats(line, candles), [line, candles])
   const snapStats = useMemo(
-    () => snapshotOhlcForUnit(currentSnap, chartUnit),
-    [currentSnap, chartUnit],
+    () => snapshotOhlcForUnit(currentSnap, chartUnit, ounceMarkup),
+    [currentSnap, chartUnit, ounceMarkup],
   )
 
   const displayStats = useMemo(() => {
@@ -288,7 +334,14 @@ export function PricesHistoryChart({ rates }: Props) {
       v != null && Number.isFinite(v) ? formatDisplayPrice(v, chartUnit) : '—'
 
     const useSessionSnap = INTRADAY_RANGE_KEYS.has(chartRange) && metal === 'gold'
-    const prevCloseValue = resolvePrevClose(snapStats, currentSnap, chartUnit, line, candles)
+    const prevCloseValue = resolvePrevClose(
+      snapStats,
+      currentSnap,
+      chartUnit,
+      line,
+      candles,
+      ounceMarkup,
+    )
 
     const openValue = useSessionSnap
       ? (snapStats?.open ?? seriesStats?.open ?? null)
@@ -307,20 +360,30 @@ export function PricesHistoryChart({ rates }: Props) {
       low: fmt(lowValue),
       prevClose: fmt(prevCloseValue),
     }
-  }, [snapStats, seriesStats, currentSnap, chartUnit, line, candles, chartRange, metal])
+  }, [snapStats, seriesStats, currentSnap, chartUnit, line, candles, chartRange, metal, ounceMarkup])
 
   const goldYtdPct = useMemo(() => {
     if (metal !== 'gold') return null
-    const ytdLine = convertLineToOunceCurrency(
-      buildLineSeries(ytdHistory?.points ?? [], 'gold', '1y', liveChartV, true),
-      ounceCurrency,
-      usdToKwdRate,
+    const ytdUsdLine = buildLineSeries(
+      ytdHistory?.points ?? [],
+      'gold',
+      '1y',
+      usdOunceSpot,
+      true,
     )
+    let ytdLine =
+      ounceCurrency === 'KWD'
+        ? convertLineToOunceCurrency(ytdUsdLine, 'KWD', usdToKwdRate, ounceSellAdd)
+        : ytdUsdLine
+    if (ounceCurrency === 'KWD' && ytdLine.length && configuredKwdSell != null) {
+      const last = ytdLine[ytdLine.length - 1]
+      ytdLine = [...ytdLine.slice(0, -1), { ...last, value: configuredKwdSell }]
+    }
     return computeYtdChangePct(ytdLine)
-  }, [metal, ytdHistory, liveChartV, ounceCurrency, usdToKwdRate])
+  }, [metal, ytdHistory, ounceCurrency, usdOunceSpot, usdToKwdRate, ounceSellAdd, configuredKwdSell])
 
   const referencePrice = useMemo(() => {
-    const prev = resolvePrevClose(snapStats, currentSnap, chartUnit, line, candles)
+    const prev = resolvePrevClose(snapStats, currentSnap, chartUnit, line, candles, ounceMarkup)
     if (prev != null && Number.isFinite(prev)) return prev
     if (line.length >= 2) return line[line.length - 2].value
     return null
@@ -340,9 +403,9 @@ export function PricesHistoryChart({ rates }: Props) {
   ]
 
   const modeButtons: { id: ChartDisplayMode; icon: typeof CandlestickChart; labelKey: string }[] = [
-    { id: 'candles', icon: CandlestickChart, labelKey: 'home.chart.modeCandles' },
-    { id: 'line', icon: LineIcon, labelKey: 'home.chart.modeLine' },
     { id: 'area', icon: AreaIcon, labelKey: 'home.chart.modeArea' },
+    { id: 'line', icon: LineIcon, labelKey: 'home.chart.modeLine' },
+    { id: 'candles', icon: CandlestickChart, labelKey: 'home.chart.modeCandles' },
   ]
 
   if (!rates?.succeeded) return null
@@ -374,7 +437,7 @@ export function PricesHistoryChart({ rates }: Props) {
         }}
       />
 
-      <div className="relative p-4 sm:p-6 lg:p-8">
+      <div className="relative p-3 sm:p-6 lg:p-8">
         {chartExpanded ? (
           <div className="sticky top-0 z-20 -mx-4 mb-5 flex items-center justify-between gap-3 border-b border-black/10 bg-white/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <p className="text-sm font-semibold text-[#0B0F19]">{t('home.chart.expandedTitle')}</p>
@@ -389,22 +452,32 @@ export function PricesHistoryChart({ rates }: Props) {
           </div>
         ) : null}
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3F6F00] sm:text-[11px]">
-              {t('home.chart.sectionKicker')}
-            </p>
-            <h2 className="type-section-title text-[#0C1512] sm:text-3xl">
-              {t('home.chart.sectionTitle')}
-            </h2>
+        {showSectionHeader ? (
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3F6F00] sm:text-[11px]">
+                {t('home.chart.sectionKicker')}
+              </p>
+              <h2 className="type-section-title text-[#0C1512] sm:text-3xl">
+                {t('home.chart.sectionTitle')}
+              </h2>
+            </div>
+            {metal === 'gold' ? (
+              <ChartCurrencyToggle value={ounceCurrency} onChange={setOunceCurrency} />
+            ) : null}
           </div>
-          {metal === 'gold' ? (
+        ) : metal === 'gold' ? (
+          <div className="mb-4 flex justify-end">
             <ChartCurrencyToggle value={ounceCurrency} onChange={setOunceCurrency} />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
-        {/* Metal tabs */}
-        <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label={t('home.chart.metalsAria')}>
+        {/* Metal tabs — wrap so no label is clipped on small screens */}
+        <div
+          className="mb-4 flex flex-wrap gap-1.5 sm:mb-5 sm:gap-2"
+          role="tablist"
+          aria-label={t('home.chart.metalsAria')}
+        >
           {metalTabs.map(({ id, labelKey }) => {
             const on = metal === id
             return (
@@ -414,66 +487,71 @@ export function PricesHistoryChart({ rates }: Props) {
                 role="tab"
                 aria-selected={on}
                 onClick={() => setMetal(id)}
-                className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 ${
+                className={`cursor-pointer rounded-lg px-2.5 py-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 sm:px-3 sm:py-2 ${
                   on
                     ? 'bg-[#85E307] text-[#0B0F19] shadow-sm'
                     : 'border border-black/10 bg-[#F4F4F5] text-[#64748B] hover:border-[#85E307]/35 hover:bg-[#ECFCCB]/50 hover:text-[#0B0F19]'
                 }`}
               >
-                {t(labelKey)}
+                <PreciousMetalMark
+                  metal={id}
+                  label={t(labelKey)}
+                  variant="tab"
+                  active={on}
+                />
               </button>
             )
           })}
         </div>
 
         {/* Price hero + controls */}
-        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <div className="mb-1 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#85E307]/30 bg-[#ECFCCB]/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
+        <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#85E307]/30 bg-[#ECFCCB]/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3F6F00] sm:gap-1.5 sm:px-2.5 sm:text-[10px] sm:tracking-[0.16em]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#3F6F00]" />
                 {t('home.chart.liveBadge')}
               </span>
-              <span className="text-xs font-medium text-[#64748B]">
+              <span className="text-[10px] font-medium text-[#64748B] sm:text-xs">
                 {t('home.chart.unitLabel', { unit: chartUnit })}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className="text-3xl font-bold tabular-nums tracking-tight text-[#0B0F19] sm:text-4xl lg:text-5xl">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 sm:gap-x-3">
+              <p className="text-2xl font-bold tabular-nums tracking-tight text-[#0B0F19] sm:text-4xl lg:text-5xl">
                 {formatDisplayPrice(lastPrice, chartUnit)}
               </p>
               {change ? (
                 <span
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-sm font-semibold tabular-nums ${
+                  className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold tabular-nums sm:px-2 sm:text-sm ${
                     positive
                       ? 'bg-emerald-50 text-emerald-700'
                       : 'bg-rose-50 text-rose-700'
                   }`}
                 >
                   {positive ? (
-                    <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+                    <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
                   ) : (
-                    <TrendingDown className="h-3.5 w-3.5" aria-hidden />
+                    <TrendingDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
                   )}
                   {formatPctChange(change.pct, 2)}
                   <span className="text-[#94A3B8]">·</span>
-                  <span className="text-xs font-medium uppercase text-[#64748B]">
+                  <span className="text-[10px] font-medium uppercase text-[#64748B] sm:text-xs">
                     {t(`home.chart.range.${chartRange}`)}
                   </span>
                 </span>
               ) : null}
             </div>
 
-            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#64748B]">
+            <p className="mt-1.5 hidden flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#64748B] sm:mt-2 sm:flex">
               <span>
                 {t('home.chart.asOf', { time: asOfLabel })}
                 <span className="mx-1.5 text-[#CBD5E1]">·</span>
                 {t('home.chart.disclaimer')}
               </span>
             </p>
-            <p className="mt-1 flex items-center gap-2 text-xs text-[#64748B]">
-              <Activity className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
+            <p className="mt-1 flex items-center gap-1.5 text-[10px] text-[#64748B] sm:gap-2 sm:text-xs">
+              <Activity className="h-3 w-3 shrink-0 text-[#3F6F00] sm:h-3.5 sm:w-3.5" aria-hidden />
               {t('home.chart.updateCountdown', {
                 seconds: String(countdown).padStart(2, '0'),
               })}
@@ -483,7 +561,7 @@ export function PricesHistoryChart({ rates }: Props) {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <div
               className="inline-flex rounded-lg border border-black/10 bg-[#F4F4F5] p-0.5"
               role="group"
@@ -498,7 +576,7 @@ export function PricesHistoryChart({ rates }: Props) {
                     title={t(labelKey)}
                     aria-pressed={on}
                     onClick={() => setMode(id)}
-                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 ${
+                    className={`inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 sm:text-xs sm:font-semibold ${
                       on
                         ? 'bg-[#85E307] text-[#0B0F19]'
                         : 'text-[#64748B] hover:bg-white hover:text-[#0B0F19]'
@@ -517,23 +595,23 @@ export function PricesHistoryChart({ rates }: Props) {
               title={chartExpanded ? t('home.chart.collapseChart') : t('home.chart.expandChart')}
               aria-label={chartExpanded ? t('home.chart.collapseChart') : t('home.chart.expandChart')}
               aria-pressed={chartExpanded}
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-black/10 bg-white text-[#64748B] transition-colors hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 hover:text-[#0B0F19] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50"
+              className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-black/10 bg-white text-[#64748B] transition-colors hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 hover:text-[#0B0F19] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:h-9 sm:w-9"
             >
               {chartExpanded ? (
-                <Minimize2 className="h-4 w-4" aria-hidden />
+                <Minimize2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
               ) : (
-                <Maximize2 className="h-4 w-4" aria-hidden />
+                <Maximize2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
               )}
             </button>
           </div>
         </div>
 
         <div className="mb-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-wide text-[#94A3B8] sm:mb-2 sm:text-[10px]">
             {t('home.chart.shortRangeLabel')}
           </p>
           <div
-            className="flex flex-wrap items-center gap-1.5"
+            className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-1.5 sm:overflow-visible [&::-webkit-scrollbar]:hidden"
             role="group"
             aria-label={t('home.chart.rangeAria')}
           >
@@ -545,7 +623,7 @@ export function PricesHistoryChart({ rates }: Props) {
                   type="button"
                   aria-pressed={on}
                   onClick={() => setChartRange(key)}
-                  className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:text-sm ${
+                  className={`shrink-0 cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:px-3 sm:py-1.5 sm:text-xs md:text-sm ${
                     on
                       ? 'bg-[#E4E4E7] text-[#0B0F19] shadow-sm'
                       : 'text-[#64748B] hover:bg-[#F4F4F5] hover:text-[#0B0F19]'
@@ -558,12 +636,12 @@ export function PricesHistoryChart({ rates }: Props) {
           </div>
         </div>
 
-        <div className="mb-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+        <div className="mb-3 sm:mb-4">
+          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-wide text-[#94A3B8] sm:mb-2 sm:text-[10px]">
             {t('home.chart.longRangeLabel')}
           </p>
           <div
-            className="flex flex-wrap items-center gap-1.5"
+            className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-1.5 sm:overflow-visible [&::-webkit-scrollbar]:hidden"
             role="group"
             aria-label={t('home.chart.longRangeAria')}
           >
@@ -575,7 +653,7 @@ export function PricesHistoryChart({ rates }: Props) {
                   type="button"
                   aria-pressed={on}
                   onClick={() => setChartRange(key)}
-                  className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:text-sm ${
+                  className={`shrink-0 cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:px-3 sm:py-1.5 sm:text-xs md:text-sm ${
                     on
                       ? 'bg-[#ECFCCB] text-[#3F6F00] shadow-sm'
                       : 'text-[#64748B] hover:bg-[#F4F4F5] hover:text-[#0B0F19]'
@@ -588,7 +666,7 @@ export function PricesHistoryChart({ rates }: Props) {
           </div>
         </div>
 
-        <p className="mb-4 text-xs leading-relaxed text-[#64748B] sm:text-sm">
+        <p className="mb-3 hidden text-xs leading-relaxed text-[#64748B] sm:mb-4 sm:block sm:text-sm">
           {t('home.chart.hint')}
         </p>
 
@@ -660,7 +738,7 @@ export function PricesHistoryChart({ rates }: Props) {
           </>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">
+        <div className="mt-3 hidden flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8] sm:mt-4 sm:flex">
           <span>{t('home.chart.featureZoom')}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span>{t('home.chart.featurePan')}</span>

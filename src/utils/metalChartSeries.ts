@@ -1,4 +1,14 @@
 import type { MetalChartPoint } from '@/services/pricingApi'
+import {
+  kwdOunceSellFromUsd,
+  resolveUsdOunceSpot,
+} from '@/utils/publicStorefrontRates'
+
+export type GoldOunceMarkup = {
+  usdToKwdRate: number | null
+  sellAdd?: number
+  buyAdd?: number
+}
 
 export type ChartRange = 'live' | '1h' | '1d' | '1w' | '1m' | '6m' | '1y' | '5y' | 'all'
 export type MetalTab = 'gold' | 'silver' | 'platinum' | 'palladium'
@@ -71,25 +81,29 @@ export function ounceUnit(currency: OunceCurrency): string {
   return currency === 'USD' ? 'USD/oz' : 'KWD/oz'
 }
 
+export { resolveUsdOunceSpot, kwdOunceSellFromUsd }
+
 export function convertOunceUsdToCurrency(
   usdOz: number,
   currency: OunceCurrency,
   usdToKwdRate: number | null,
+  sellAdd = 0,
 ): number {
   if (currency === 'USD') return usdOz
   if (usdToKwdRate == null || !Number.isFinite(usdToKwdRate) || usdToKwdRate <= 0) return usdOz
-  return usdOz * usdToKwdRate
+  return kwdOunceSellFromUsd(usdOz, usdToKwdRate, sellAdd)
 }
 
 export function convertLineToOunceCurrency(
   line: LinePoint[],
   currency: OunceCurrency,
   usdToKwdRate: number | null,
+  sellAdd = 0,
 ): LinePoint[] {
   if (currency === 'USD' || usdToKwdRate == null) return line
   return line.map((p) => ({
     ...p,
-    value: convertOunceUsdToCurrency(p.value, currency, usdToKwdRate),
+    value: convertOunceUsdToCurrency(p.value, currency, usdToKwdRate, sellAdd),
   }))
 }
 
@@ -127,7 +141,8 @@ function toUnixSec(iso: string): number | null {
 
 function pickClose(p: MetalChartPoint, metal: MetalTab, preferOz: boolean): number | null {
   if (metal === 'gold' && preferOz) {
-    const v = p.price ?? p.price_gram_24k
+    // History unit is USD/oz — never fall back to per-gram (wrong scale).
+    const v = p.price
     return v != null && Number.isFinite(Number(v)) ? Number(v) : null
   }
   const v = p.price_gram_24k ?? p.price
@@ -339,6 +354,7 @@ export function prevCloseFromSnapshot(
     price_gram_24k_kwd?: string | number | null
   } | null | undefined,
   unit: string,
+  markup?: GoldOunceMarkup,
 ): number | null {
   if (!snap) return null
   const prevUsd =
@@ -351,10 +367,14 @@ export function prevCloseFromSnapshot(
 
   if (unit === 'KWD/oz') {
     const rate =
-      snap.usd_to_kwd_rate != null && snap.usd_to_kwd_rate !== ''
+      markup?.usdToKwdRate ??
+      (snap.usd_to_kwd_rate != null && snap.usd_to_kwd_rate !== ''
         ? Number(snap.usd_to_kwd_rate)
-        : null
-    if (rate != null && Number.isFinite(rate) && rate > 0) return prevUsd * rate
+        : null)
+    const sellAdd = markup?.sellAdd ?? 0
+    if (rate != null && Number.isFinite(rate) && rate > 0) {
+      return kwdOunceSellFromUsd(prevUsd, rate, sellAdd)
+    }
   }
 
   if (unit === 'KWD/g') {
@@ -385,6 +405,7 @@ export function snapshotOhlcForUnit(
     price_gram_24k_kwd?: string | number | null
   } | null | undefined,
   unit: string,
+  markup?: GoldOunceMarkup,
 ): Partial<SeriesOhlc & { prevClose: number }> | null {
   if (!snap) return null
 
@@ -404,17 +425,20 @@ export function snapshotOhlcForUnit(
     }
   }
 
-  const rate = num(snap.usd_to_kwd_rate)
-  const toKwdOz = (usdOz: number | null) =>
-    usdOz != null && rate != null && rate > 0 ? usdOz * rate : null
+  const rate =
+    markup?.usdToKwdRate ??
+    num(snap.usd_to_kwd_rate)
+  const sellAdd = markup?.sellAdd ?? 0
+  const toKwdOzSell = (usdOz: number | null) =>
+    usdOz != null && rate != null && rate > 0 ? kwdOunceSellFromUsd(usdOz, rate, sellAdd) : null
 
   if (unit === 'KWD/oz') {
     return {
-      open: toKwdOz(num(snap.open_price)) ?? undefined,
-      high: toKwdOz(num(snap.high_price)) ?? undefined,
-      low: toKwdOz(num(snap.low_price)) ?? undefined,
-      prevClose: prevCloseFromSnapshot(snap, unit) ?? undefined,
-      close: toKwdOz(num(snap.price)) ?? undefined,
+      open: toKwdOzSell(num(snap.open_price)) ?? undefined,
+      high: toKwdOzSell(num(snap.high_price)) ?? undefined,
+      low: toKwdOzSell(num(snap.low_price)) ?? undefined,
+      prevClose: prevCloseFromSnapshot(snap, unit, markup) ?? undefined,
+      close: toKwdOzSell(num(snap.price)) ?? undefined,
     }
   }
 

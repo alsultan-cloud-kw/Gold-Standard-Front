@@ -38,11 +38,11 @@ export function ProductTrustPanel({ verifyCode, className }: Props) {
           {t('productDetail.trustBody')}
         </p>
 
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ul className="grid grid-cols-2 gap-2 sm:gap-3">
           {TRUST_BULLETS.map((item) => (
-            <li key={item.id} className="flex min-w-0 items-start gap-2.5">
+            <li key={item.id} className="flex min-w-0 items-start gap-2 sm:gap-2.5">
               <HeroTrustIcon id={item.id} size="sm" className="mt-0.5" />
-              <span className="min-w-0 pt-1 text-sm font-semibold leading-snug text-[#0C1512]">
+              <span className="min-w-0 pt-0.5 text-[11px] font-semibold leading-snug text-[#0C1512] sm:pt-1 sm:text-sm">
                 {t(item.labelKey)}
               </span>
             </li>

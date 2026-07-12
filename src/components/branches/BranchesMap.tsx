@@ -220,7 +220,11 @@ export function BranchesMap({ branches, selectedId, onSelect, formatTime, classN
     if (!coords) return
 
     map.flyTo([coords.lat, coords.lng], 15, { duration: 0.65 })
-    window.setTimeout(() => marker.openPopup(), 520)
+
+    const prefersDesktopPopup = window.matchMedia('(min-width: 1024px)').matches
+    if (prefersDesktopPopup) {
+      window.setTimeout(() => marker.openPopup(), 520)
+    }
   }, [selectedId, branches])
 
   return (

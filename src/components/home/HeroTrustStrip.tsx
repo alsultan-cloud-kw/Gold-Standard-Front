@@ -19,12 +19,12 @@ export function HeroTrustStrip() {
   const { t } = useTranslation()
 
   return (
-    <div className="mt-10 border-t border-black/5 pt-6 sm:mt-12 sm:pt-7">
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:gap-5">
+    <div className="hero-trust-strip mt-5 border-t border-black/5 pt-4 sm:mt-12 sm:pt-7">
+      <ul className="hero-trust-strip__list grid grid-cols-2 gap-x-3 gap-y-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6 xl:gap-5">
         {TRUST_ITEMS.map((item) => (
-          <li key={item.id} className="flex min-w-0 items-start gap-3">
-            <HeroTrustIcon id={item.id} className="mt-0.5" />
-            <span className="min-w-0 pt-1.5 text-sm font-semibold leading-snug text-[#0C1512]">
+          <li key={item.id} className="hero-trust-strip__item flex min-w-0 items-start gap-2 sm:gap-3">
+            <HeroTrustIcon id={item.id} className="mt-0.5 shrink-0" size="sm" />
+            <span className="hero-trust-strip__label min-w-0 pt-0.5 text-[11px] font-semibold leading-snug text-[#0C1512] sm:pt-1.5 sm:text-sm">
               {item.showLicenseNo ? (
                 <>
                   {t(item.labelKey)} {GS_BUSINESS.commercialLicenseNo}

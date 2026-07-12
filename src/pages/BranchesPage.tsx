@@ -58,8 +58,13 @@ export default function BranchesPage() {
     setSelectedId(id)
   }
 
+  const selectedBranch = useMemo(
+    () => branches.find((b) => b.id === selectedId) ?? branches[0] ?? null,
+    [branches, selectedId],
+  )
+
   return (
-    <div className="min-h-screen bg-[#F9F9FA]">
+    <div className="storefront-static-page min-h-screen">
       <section className="relative overflow-hidden border-b border-black/5 bg-white">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/40 via-white to-white" />
@@ -67,27 +72,25 @@ export default function BranchesPage() {
         </div>
 
         <div className="relative page-shell page-section--roomy">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
-            {t('branchesPage.kicker')}
-          </p>
+          <p className="page-kicker">{t('branchesPage.kicker')}</p>
           <h1 className="type-page-title max-w-3xl text-[#0B0F19]">{t('branchesPage.title')}</h1>
           <p className="type-lead mt-4 max-w-xl text-[#64748B]">{t('branchesPage.subtitle')}</p>
 
-          <div className="mt-6 flex flex-wrap gap-3 text-sm text-[#64748B]">
-            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#F9F9FA] px-3 py-1.5">
-              <MapPin className="h-3.5 w-3.5 text-[#3F6F00]" aria-hidden />
+          <div className="branches-hero-chips mt-6 text-sm text-[#64748B]">
+            <span className="branches-hero-chip inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--site-bg-muted)] px-3 py-1.5">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
               {isAr ? GS_CONTACT.addressAr : GS_CONTACT.addressEn}
             </span>
             <a
               href={`tel:${GS_CONTACT.phoneTel}`}
-              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#F9F9FA] px-3 py-1.5 font-medium text-[#0B0F19] transition-colors hover:border-[#85E307]/40"
+              className="branches-hero-chip inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--site-bg-muted)] px-3 py-1.5 font-medium text-[#0B0F19] transition-colors hover:border-[#85E307]/40"
             >
-              <Phone className="h-3.5 w-3.5 text-[#3F6F00]" aria-hidden />
+              <Phone className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
               <span dir="ltr">{GS_CONTACT.phone}</span>
             </a>
             <GoogleReviewsBadge />
             {!isLoading && branches.length > 0 ? (
-              <span className="inline-flex items-center rounded-full border border-[#85E307]/25 bg-[#ECFCCB]/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#3F6F00]">
+              <span className="branches-hero-chip inline-flex items-center rounded-full border border-[#85E307]/25 bg-[#ECFCCB]/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#3F6F00]">
                 {t('branchesPage.branchCount', { count: branches.length })}
               </span>
             ) : null}
@@ -125,9 +128,7 @@ export default function BranchesPage() {
           <section aria-label={t('branchesPage.mapSectionTitle')}>
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
-                  {t('branchesPage.mapKicker')}
-                </p>
+                <p className="page-kicker">{t('branchesPage.mapKicker')}</p>
                 <h2 className="type-section-title text-[#0B0F19]">{t('branchesPage.mapSectionTitle')}</h2>
                 <p className="type-lead mt-2 max-w-xl text-[#64748B]">{t('branchesPage.mapSectionSubtitle')}</p>
               </div>
@@ -146,18 +147,54 @@ export default function BranchesPage() {
                     selectedId={selectedId}
                     onSelect={handleSelect}
                     formatTime={formatTime}
-                    className="h-[min(52vh,380px)] w-full sm:h-[min(56vh,440px)] lg:h-[min(68vh,560px)]"
+                    className="h-[min(42dvh,300px)] w-full sm:h-[min(48dvh,360px)] lg:h-[min(68vh,560px)]"
                   />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/10 to-transparent lg:hidden" />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/10 to-transparent lg:hidden" />
                 </div>
 
-                <div className="flex min-h-0 flex-col border-t border-black/8 lg:col-span-5 lg:border-t-0 lg:border-s xl:col-span-4">
-                  <div className="border-b border-black/6 bg-[#F9F9FA] px-4 py-3 sm:px-5">
+                <div className="border-t border-black/8 lg:hidden">
+                  <div className="border-b border-black/6 bg-[var(--site-bg-muted)] px-4 py-2.5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#64748B]">
                       {t('branchesPage.selectBranch')}
                     </p>
                   </div>
-                  <div className="flex max-h-[min(52vh,380px)] flex-col overflow-y-auto sm:max-h-[min(56vh,440px)] lg:max-h-[min(68vh,560px)]">
+                  <div className="branches-mobile-switcher" role="tablist" aria-label={t('branchesPage.selectBranch')}>
+                    {branches.map((branch) => {
+                      const label = isAr && branch.name_ar ? branch.name_ar : branch.name_en
+                      const active = branch.id === selectedId
+                      return (
+                        <button
+                          key={branch.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={active}
+                          onClick={() => handleSelect(branch.id)}
+                          className={`branches-mobile-chip ${active ? 'branches-mobile-chip--active' : ''}`}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {selectedBranch ? (
+                    <BranchLocationCard
+                      branch={selectedBranch}
+                      selected
+                      onSelect={() => {}}
+                      formatTime={formatTime}
+                      readOnly
+                      compact
+                    />
+                  ) : null}
+                </div>
+
+                <div className="hidden min-h-0 flex-col border-s border-black/8 lg:col-span-5 lg:flex xl:col-span-4">
+                  <div className="border-b border-black/6 bg-[var(--site-bg-muted)] px-4 py-3 sm:px-5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+                      {t('branchesPage.selectBranch')}
+                    </p>
+                  </div>
+                  <div className="flex max-h-[min(68vh,560px)] flex-col overflow-y-auto">
                     {branches.map((branch) => (
                       <BranchLocationCard
                         key={branch.id}
@@ -175,24 +212,22 @@ export default function BranchesPage() {
           </section>
         ) : null}
 
-        <div className="relative mt-10 overflow-hidden rounded-2xl bg-[#0B0F19] px-6 py-8 sm:px-8">
+        <div className="storefront-static-page__tail relative mt-10 overflow-hidden rounded-2xl bg-[#0B0F19] px-5 py-7 sm:px-8 sm:py-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-lg">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#85E307]">
-                {t('branchesPage.ctaKicker')}
-              </p>
+              <p className="page-kicker text-[#85E307]">{t('branchesPage.ctaKicker')}</p>
               <h2 className="type-section-title text-white">{t('branchesPage.ctaTitle')}</h2>
               <p className="mt-2 text-sm leading-relaxed text-white/65">{t('branchesPage.ctaBody')}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link to="/contact" className="gold-button inline-flex items-center justify-center gap-2">
+              <Link to="/contact" className="gold-button inline-flex w-full items-center justify-center gap-2 sm:w-auto">
                 {t('branchesPage.contactUs')}
                 <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden />
               </Link>
               <Link
                 to="/products"
-                className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex w-full items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto"
               >
                 {t('branchesPage.shopOnline')}
               </Link>

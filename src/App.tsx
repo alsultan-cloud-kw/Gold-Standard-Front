@@ -97,7 +97,7 @@ function App() {
             <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
               <Navbar />
-              <main className="main-under-nav pb-[68px] lg:pb-0">
+              <main className="main-under-nav main-with-bottom-nav">
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
@@ -211,6 +211,10 @@ function App() {
                 closeButton
                 gap={10}
                 offset={16}
+                mobileOffset={{
+                  top: 'calc(var(--nav-offset) + 0.5rem)',
+                  bottom: 'calc(var(--bottom-nav-height) + 0.75rem)',
+                }}
                 toastOptions={{
                   className: 'gs-toast',
                   style: {
@@ -221,11 +225,13 @@ function App() {
                     boxShadow: '0 12px 40px rgba(11, 15, 25, 0.28)',
                     fontSize: '14px',
                     fontWeight: 600,
+                    maxWidth: 'min(24rem, calc(100vw - 1.5rem))',
                   },
                   classNames: {
                     description: 'gs-toast-desc',
                     success: 'gs-toast-success',
                     error: 'gs-toast-error',
+                    actionButton: 'gs-toast-action',
                   },
                 }}
               />

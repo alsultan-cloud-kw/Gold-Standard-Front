@@ -42,8 +42,7 @@ function caratFromKey(key: string): number | null {
 
 /**
  * Trend source = PricesPage live rates feed (daralsabaekPublicRates), not product total price.
- * We compare each carat buyTotal KWD/g against the previous fetched rate and map the movement
- * to all product tiles of the same carat.
+ * Product customer buy price tracks sellTotal KWD/g (URL sell + sellAdd).
  */
 export function useProductPriceTrendSincePreviousFetch(products: Product[] | undefined) {
   const prevRateRef = useRef<Record<string, number>>({})
@@ -62,9 +61,9 @@ export function useProductPriceTrendSincePreviousFetch(products: Product[] | und
     const out: Record<string, number> = {}
     for (const c of res?.carats ?? []) {
       const cv = caratFromKey(c.key)
-      const buy = c.buyTotal
-      if (cv == null || buy == null || !Number.isFinite(Number(buy))) continue
-      out[String(cv)] = Number(buy)
+      const sell = c.sellTotal
+      if (cv == null || sell == null || !Number.isFinite(Number(sell))) continue
+      out[String(cv)] = Number(sell)
     }
     return out
   }, [data])

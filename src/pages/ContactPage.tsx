@@ -19,7 +19,7 @@ import { isTurnstileConfigured } from '@/lib/turnstile'
 import { contactApi } from '@/services/api'
 
 const fieldClass =
-  'w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-4 py-3 text-sm font-medium text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25'
+  'contact-form-field w-full rounded-xl border border-black/10 bg-[var(--site-bg-muted)] px-4 py-3 text-sm font-medium text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25'
 
 const fieldErrorClass =
   'border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500/20'
@@ -251,7 +251,7 @@ export default function ContactPage() {
     `${fieldClass}${fieldErrors[field] ? ` ${fieldErrorClass}` : ''}`
 
   return (
-    <div className="min-h-screen bg-[#F9F9FA]">
+    <div className="storefront-static-page min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-black/5 bg-white">
         <div className="pointer-events-none absolute inset-0">
@@ -259,20 +259,18 @@ export default function ContactPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_0%_0%,rgba(133,227,7,0.1),transparent_55%)]" />
         </div>
 
-        <div className="page-shell relative py-12 sm:py-16">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
-            {t('contactPage.kicker')}
-          </p>
-          <h1 className="type-page-title max-w-2xl text-[#0B0F19] sm:text-4xl">
+        <div className="page-shell relative page-section--roomy">
+          <p className="page-kicker">{t('contactPage.kicker')}</p>
+          <h1 className="type-page-title max-w-2xl text-[#0B0F19]">
             {t('contactPage.title')}
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-[#64748B]">
+          <p className="type-lead mt-4 max-w-xl text-[#64748B]">
             {t('contactPage.subtitle')}
           </p>
         </div>
       </section>
 
-      <div className="page-shell page-section--roomy">
+      <div className="page-shell page-section--roomy storefront-static-page__tail">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Sidebar info */}
           <aside className="space-y-4 lg:col-span-4">
@@ -294,7 +292,7 @@ export default function ContactPage() {
                     <Icon className="h-5 w-5" strokeWidth={1.75} />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
+                    <h3 className="page-kicker !mb-0 !text-[10px]">
                       {t(info.titleKey)}
                     </h3>
                     <p className="mt-1 text-sm font-medium leading-relaxed text-[#0B0F19]">
@@ -336,7 +334,7 @@ export default function ContactPage() {
                 <Instagram className="h-5 w-5" strokeWidth={1.75} />
               </span>
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
+                <p className="page-kicker !mb-0 !text-[10px]">
                   {t('contactPage.social')}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[#0B0F19] group-hover:text-[#3F6F00]">
@@ -346,9 +344,7 @@ export default function ContactPage() {
             </a>
 
             <div className="rounded-2xl bg-[#0B0F19] p-5 text-white">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#85E307]">
-                {t('contactPage.visitKicker')}
-              </p>
+                <p className="page-kicker text-[#85E307]">{t('contactPage.visitKicker')}</p>
               <p className="text-sm leading-relaxed text-white/70">
                 {t('contactPage.visitBody')}
               </p>
@@ -364,7 +360,7 @@ export default function ContactPage() {
 
           {/* Form */}
           <div className="lg:col-span-8">
-            <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm sm:p-8">
+            <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-8">
               <div className="mb-6 flex items-start gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]">
                   <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
@@ -519,7 +515,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={submitDisabled}
-                    className="gold-button inline-flex shrink-0 items-center justify-center gap-2 shadow-md disabled:opacity-70"
+                    className="gold-button inline-flex w-full shrink-0 items-center justify-center gap-2 shadow-md disabled:opacity-70 sm:w-auto"
                   >
                     <Send className="h-4 w-4" />
                     {submitting ? t('contactPage.sending') : t('contactPage.sendMessage')}

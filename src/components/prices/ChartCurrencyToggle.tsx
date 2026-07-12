@@ -1,5 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import type { OunceCurrency } from '@/utils/metalChartSeries'
+import { cn } from '@/lib/utils'
+
+const OPTIONS: readonly OunceCurrency[] = ['USD', 'KWD'] as const
 
 type Props = {
   value: OunceCurrency
@@ -9,14 +12,30 @@ type Props = {
 
 export function ChartCurrencyToggle({ value, onChange, className = '' }: Props) {
   const { t } = useTranslation()
+  const activeIndex = OPTIONS.indexOf(value)
 
   return (
     <div
-      className={`inline-flex rounded-lg border border-black/10 bg-[#F4F4F5] p-0.5 ${className}`}
+      className={cn(
+        'relative inline-grid grid-cols-2 rounded-lg border border-black/10 bg-[var(--site-bg)] p-0.5',
+        className,
+      )}
       role="group"
       aria-label={t('home.chart.currencyAria')}
     >
-      {(['USD', 'KWD'] as const).map((code) => {
+      <span
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute top-0.5 bottom-0.5 rounded-md bg-[#0C1512] shadow-sm',
+          'w-[calc(50%-2px)] transition-[inset-inline-start] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+          'motion-reduce:transition-none',
+        )}
+        style={{
+          insetInlineStart: activeIndex === 0 ? '2px' : 'calc(50%)',
+        }}
+      />
+
+      {OPTIONS.map((code) => {
         const on = value === code
         return (
           <button
@@ -24,11 +43,12 @@ export function ChartCurrencyToggle({ value, onChange, className = '' }: Props) 
             type="button"
             aria-pressed={on}
             onClick={() => onChange(code)}
-            className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:px-4 sm:text-sm ${
-              on
-                ? 'bg-[#0C1512] text-white shadow-sm'
-                : 'text-[#64748B] hover:bg-white hover:text-[#0C1512]'
-            }`}
+            className={cn(
+              'relative z-[1] cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold sm:px-4 sm:text-sm',
+              'transition-colors duration-300 ease-out motion-reduce:transition-none',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50',
+              on ? 'text-white' : 'text-[#64748B] hover:text-[#0C1512]',
+            )}
           >
             {code}
           </button>

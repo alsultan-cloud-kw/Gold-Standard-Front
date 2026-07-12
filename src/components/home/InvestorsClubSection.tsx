@@ -24,6 +24,8 @@ import testimonialsShowcaseUrl from '@/assets/home/club/testimonials-showcase.pn
 import { useAuth } from '@/contexts/AuthContext'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
+import { HorizontalScrollControls } from '@/components/home/HorizontalScrollControls'
+import { useHorizontalScrollRail } from '@/components/home/useHorizontalScrollRail'
 import type { DaralsabaekPublicCarat } from '@/services/api'
 import { cn } from '@/lib/utils'
 
@@ -179,7 +181,7 @@ function AnimatedSparkline({
   }, [active, delay, line])
 
   return (
-    <svg viewBox="0 0 160 48" className={cn('h-14 w-full', className)} aria-hidden>
+    <svg viewBox="0 0 160 48" className={cn('h-10 w-full sm:h-14', className)} aria-hidden>
       <defs>
         <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="rgba(63,111,0,0.28)" />
@@ -245,42 +247,42 @@ function ClubPriceCard({
     <article
       ref={cardRef}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white p-5 shadow-sm',
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-black/8 bg-white p-3 shadow-sm sm:p-5',
         'opacity-0 transition-[box-shadow,transform,border-color] duration-300',
         'hover:-translate-y-1 hover:border-[#3F6F00]/25 hover:shadow-[0_18px_40px_-24px_rgba(63,111,0,0.45)]',
       )}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#85E307]/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <span className="font-mono text-2xl font-bold tabular-nums tracking-tight text-[#1A2E1C] sm:text-[1.75rem]">
+      <div className="mb-3 flex items-center justify-between gap-2 sm:mb-4 sm:gap-3">
+        <span className="font-mono text-xl font-bold tabular-nums tracking-tight text-[#1A2E1C] sm:text-[1.75rem]">
           {card.karat}
-          <span className="text-base font-bold">K</span>
+          <span className="text-sm font-bold sm:text-base">K</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ECFCCB] px-2.5 py-1 text-[10px] font-bold text-[#3F6F00]">
-          <span className="relative flex h-1.5 w-1.5">
+        <span className="inline-flex max-w-[48%] items-center gap-1 rounded-full bg-[#ECFCCB] px-2 py-0.5 text-[9px] font-bold leading-tight text-[#3F6F00] sm:max-w-none sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-[10px]">
+          <span className="relative flex h-1.5 w-1.5 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3F6F00] opacity-60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3F6F00]" />
           </span>
-          {t('home.investorsClub.memberRate')}
+          <span className="truncate">{t('home.investorsClub.memberRate')}</span>
         </span>
       </div>
 
-      <dl className="space-y-2.5 text-sm">
-        <div className="flex justify-between gap-2">
-          <dt className="text-[#94A3B8]">{t('home.investorsClub.marketPrice')}</dt>
+      <dl className="space-y-2 text-xs sm:space-y-2.5 sm:text-sm">
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="shrink-0 text-[#94A3B8]">{t('home.investorsClub.marketPrice')}</dt>
           <dd className="font-mono tabular-nums text-[#64748B]">
             {fmtGramKwd(card.market)} <span className="text-[10px]">{kwd}</span>
           </dd>
         </div>
-        <div className="flex justify-between gap-2">
-          <dt className="font-medium text-[#0B0F19]">{t('home.investorsClub.memberPrice')}</dt>
+        <div className="flex items-baseline justify-between gap-2">
+          <dt className="shrink-0 font-medium text-[#0B0F19]">{t('home.investorsClub.memberPrice')}</dt>
           <dd className="font-mono font-bold tabular-nums text-[#3F6F00]">
             {fmtGramKwd(card.member)} <span className="text-[10px] font-semibold">{kwd}</span>
           </dd>
         </div>
-        <div className="flex justify-between gap-2 border-t border-dashed border-black/10 pt-2.5">
-          <dt className="font-semibold text-[#3F6F00]">{t('home.investorsClub.savings')}</dt>
+        <div className="flex items-baseline justify-between gap-2 border-t border-dashed border-black/10 pt-2 sm:pt-2.5">
+          <dt className="shrink-0 font-semibold text-[#3F6F00]">{t('home.investorsClub.savings')}</dt>
           <dd className="font-mono font-bold tabular-nums text-[#3F6F00]">
             {hasSavings ? (
               <>
@@ -293,8 +295,8 @@ function ClubPriceCard({
         </div>
       </dl>
 
-      <div className="mt-4 border-t border-black/5 pt-3">
-        <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-[#94A3B8]">
+      <div className="mt-3 border-t border-black/5 pt-2.5 sm:mt-4 sm:pt-3">
+        <div className="mb-1 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.12em] text-[#94A3B8] sm:mb-1.5 sm:text-[10px] sm:tracking-[0.14em]">
           <span>{t('home.investorsClub.liveTrend')}</span>
           <span className="font-mono normal-case tracking-normal text-[#3F6F00]">
             +{t('home.investorsClub.live')}
@@ -314,7 +316,7 @@ function ClubPriceCard({
 
 function ClubPriceCompareRail() {
   const { t } = useTranslation()
-  const [railRef, inView] = useInViewOnce<HTMLDivElement>()
+  const [sectionRef, inView] = useInViewOnce<HTMLDivElement>()
   const { data, isLoading, isError } = useEnrichedPublicRates(20_000)
 
   const cards = useMemo((): ClubLivePriceCard[] => {
@@ -326,9 +328,13 @@ function ClubPriceCompareRail() {
         row?.sellTotal != null && Number.isFinite(Number(row.sellTotal))
           ? Number(row.sellTotal)
           : null
-      // Showcase-only sample deduction — does not use clubSellAdd / sellTotalClub.
+      const clubConfigured =
+        row?.sellTotalClub != null && Number.isFinite(Number(row.sellTotalClub))
+          ? Number(row.sellTotalClub)
+          : null
       const member =
-        market != null ? Math.max(0, market - SHOWCASE_MEMBER_DEDUCTION_KWD) : null
+        clubConfigured ??
+        (market != null ? Math.max(0, market - SHOWCASE_MEMBER_DEDUCTION_KWD) : null)
       const save = market != null && member != null ? market - member : null
       return {
         karat: karatNum,
@@ -357,9 +363,11 @@ function ClubPriceCompareRail() {
   usePublicRateTrends(Boolean(data?.succeeded), trendEntries, entriesKey)
 
   const showSkeleton = isLoading && !data?.carats?.length
+  const { railRef, canScrollBack, canScrollForward, scrollBack, scrollForward } =
+    useHorizontalScrollRail(cards.length)
 
   return (
-    <div className="lg:mb-0" ref={railRef}>
+    <div className="lg:mb-0" ref={sectionRef}>
       <div className="section-header flex flex-col items-center gap-1.5 text-center">
         <h3 className="type-section-title text-[#0B0F19] sm:text-2xl">
           {t('home.investorsClub.compareTitle')}
@@ -379,18 +387,38 @@ function ClubPriceCompareRail() {
       {isError && !data?.carats?.length ? (
         <p className="text-center text-sm text-[#94A3B8]">{t('home.investorsClub.ratesUnavailable')}</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-          {showSkeleton
-            ? CLUB_COMPARE_KARATS.map((key) => (
-                <div
-                  key={key}
-                  className="h-[17.5rem] animate-pulse rounded-2xl border border-black/8 bg-white/80"
-                />
-              ))
-            : cards.map((card, index) => (
-                <ClubPriceCard key={card.karat} card={card} index={index} active={inView} />
-              ))}
-        </div>
+        <>
+          <HorizontalScrollControls
+            canScrollBack={canScrollBack}
+            canScrollForward={canScrollForward}
+            onScrollBack={scrollBack}
+            onScrollForward={scrollForward}
+            backLabel={t('home.scrollBack')}
+            forwardLabel={t('home.scrollForward')}
+            className="mb-3"
+          />
+
+          <div
+            ref={railRef}
+            className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:pb-0 sm:snap-none"
+          >
+            {showSkeleton
+              ? CLUB_COMPARE_KARATS.map((key) => (
+                  <div
+                    key={key}
+                    className="h-[12.5rem] w-[min(82vw,17rem)] shrink-0 animate-pulse rounded-2xl border border-black/8 bg-white/80 sm:h-[17.5rem] sm:w-auto sm:shrink"
+                  />
+                ))
+              : cards.map((card, index) => (
+                  <div
+                    key={card.karat}
+                    className="w-[min(82vw,17rem)] shrink-0 snap-center sm:w-auto sm:shrink"
+                  >
+                    <ClubPriceCard card={card} index={index} active={inView} />
+                  </div>
+                ))}
+          </div>
+        </>
       )}
     </div>
   )
@@ -452,27 +480,24 @@ function OrderReviewShowcase() {
   const kwd = t('home.investorsClub.currency')
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)]">
-      <div className="relative border-b border-black/5 px-5 py-4 sm:px-6">
-        <div>
-          <h3 className="type-card-title text-[#0B0F19]">
-            {t('home.investorsClub.orderReview')}
-          </h3>
-          <p className="pointer-events-none mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-[#3F6F00]">
-            <Shield className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            {t('home.investorsClub.autoApplyPrices')}
-          </p>
-        </div>
-        <p className="pointer-events-none mt-2 text-xs font-medium tracking-wide text-[#94A3B8] sm:absolute sm:left-1/2 sm:top-1/2 sm:mt-0 sm:-translate-x-1/2 sm:-translate-y-1/2">
+    <article className="flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)]">
+      <div className="border-b border-black/5 px-4 py-3 sm:px-6 sm:py-4">
+        <h3 className="type-card-title text-base text-[#0B0F19] sm:text-[inherit]">
+          {t('home.investorsClub.orderReview')}
+        </h3>
+        <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium text-[#3F6F00] sm:text-xs">
+          <Shield className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          {t('home.investorsClub.autoApplyPrices')}
+        </p>
+        <p className="mt-1 text-[10px] font-medium tracking-wide text-[#94A3B8] sm:text-xs">
           {t('home.investorsClub.forIllustrationOnly')}
         </p>
       </div>
 
-      <div className="grid flex-1 gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-        {/* Product + qty — matches checkout / app order review */}
-        <div className="flex flex-col gap-4 border-b border-black/5 p-5 sm:p-6 lg:border-b-0 lg:border-e">
-          <div className="flex items-center gap-4 rounded-xl border border-black/8 bg-[#F9F9FA] p-3.5 sm:p-4">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white sm:h-24 sm:w-24">
+      <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col gap-3 border-b border-black/5 p-4 sm:gap-4 sm:p-6 lg:border-b-0 lg:border-e">
+          <div className="flex items-center gap-3 rounded-xl border border-black/8 bg-[#F9F9FA] p-3 sm:gap-4 sm:p-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white sm:h-24 sm:w-24">
               <img
                 src={bullionHorizUrl}
                 alt=""
@@ -481,9 +506,9 @@ function OrderReviewShowcase() {
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-[#0B0F19]">{t('home.investorsClub.productName')}</p>
-              <p className="mt-0.5 text-sm text-[#64748B]">{t('home.investorsClub.productMeta')}</p>
-              <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-bold text-[#0B0F19] sm:text-base">{t('home.investorsClub.productName')}</p>
+              <p className="mt-0.5 text-xs text-[#64748B] sm:text-sm">{t('home.investorsClub.productMeta')}</p>
+              <div className="mt-2 flex items-center justify-between gap-2 sm:mt-3 sm:gap-3">
                 <span className="text-xs font-medium text-[#64748B]">{t('home.investorsClub.qty')}</span>
                 <div className="inline-flex items-center gap-2 rounded-lg bg-[#EEF1F4] px-1.5 py-1">
                   <span className="flex h-7 w-7 items-center justify-center rounded-md text-[#0B0F19]" aria-hidden>
@@ -500,8 +525,8 @@ function OrderReviewShowcase() {
         </div>
 
         {/* Price breakdown */}
-        <div className="flex flex-col p-5 sm:p-6">
-          <ul className="space-y-3 text-sm">
+        <div className="flex flex-col p-4 sm:p-6">
+          <ul className="space-y-2.5 text-xs sm:space-y-3 sm:text-sm">
             <li className="flex items-center justify-between gap-3">
               <span className="text-[#64748B]">{t('home.investorsClub.marketPrice')}</span>
               <span className="font-mono font-semibold tabular-nums text-[#0B0F19]">
@@ -526,9 +551,9 @@ function OrderReviewShowcase() {
                 −9.000 {kwd}
               </span>
             </li>
-            <li className="flex items-center justify-between gap-3 border-t border-dashed border-black/15 pt-3">
+            <li className="flex items-center justify-between gap-2 border-t border-dashed border-black/15 pt-2.5 sm:gap-3 sm:pt-3">
               <span className="font-semibold text-[#0B0F19]">{t('home.investorsClub.totalAmount')}</span>
-              <span className="font-mono text-lg font-bold tabular-nums text-[#3F6F00]">
+              <span className="font-mono text-base font-bold tabular-nums text-[#3F6F00] sm:text-lg">
                 3,437.000 {kwd}
               </span>
             </li>
@@ -575,7 +600,7 @@ export function InvestorsClubSection() {
   ]
 
   return (
-    <section className="home-section relative overflow-hidden" id="investors-club">
+    <section className="home-section home-section--compact relative overflow-x-clip" id="investors-club">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-[#F4F7F1] via-[var(--site-bg)] to-[var(--site-bg)]" />
         <div className="absolute start-1/2 top-0 h-[28rem] w-[40rem] -translate-x-1/2 rounded-full bg-[#ECFCCB]/35 blur-3xl" />
@@ -583,18 +608,18 @@ export function InvestorsClubSection() {
 
       <div className="home-section-inner section-stack">
         {/* Header */}
-        <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_auto] lg:gap-10">
+        <div className="relative grid items-center gap-5 sm:gap-8 lg:grid-cols-[1fr_auto] lg:gap-10">
           <div className="max-w-2xl text-center lg:text-start">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
               {t('home.investorsClub.kicker')}
             </p>
-            <h2 className="type-section-title mb-3 text-[#1A2E1C] sm:text-4xl">
+            <h2 className="type-section-title mb-2 text-[#1A2E1C] sm:mb-3 sm:text-4xl">
               {t('home.investorsClub.title')}
             </h2>
-            <p className="mb-3 text-base font-semibold leading-section text-[#3F6F00] sm:text-lg">
+            <p className="mb-2 text-sm font-semibold leading-section text-[#3F6F00] sm:mb-3 sm:text-lg">
               {t('home.investorsClub.tagline')}
             </p>
-            <p className="type-lead mx-auto mb-7 max-w-xl text-[#64748B] sm:text-base lg:mx-0">
+            <p className="type-lead mx-auto mb-5 max-w-xl text-[#64748B] sm:mb-7 sm:text-base lg:mx-0">
               {t('home.investorsClub.desc')}
             </p>
 
@@ -629,7 +654,7 @@ export function InvestorsClubSection() {
             ) : null}
           </div>
 
-          <div className="relative mx-auto w-[170px] shrink-0 sm:w-[200px] lg:w-[220px] xl:w-[250px]">
+          <div className="relative mx-auto hidden w-[140px] shrink-0 sm:block sm:w-[200px] lg:w-[220px] xl:w-[250px]">
             <img
               src={clubGoldBarUrl}
               alt=""
@@ -639,10 +664,14 @@ export function InvestorsClubSection() {
           </div>
         </div>
 
-        {/* App-tailored showcase */}
+        {/* App-tailored showcase — order review first on mobile */}
         <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-5">
-          <ClubProfileCard />
-          <OrderReviewShowcase />
+          <div className="order-2 lg:order-1">
+            <ClubProfileCard />
+          </div>
+          <div className="order-1 lg:order-2">
+            <OrderReviewShowcase />
+          </div>
         </div>
 
         {/* How it works */}

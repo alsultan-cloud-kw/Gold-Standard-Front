@@ -1,22 +1,49 @@
 /**
- * Prefer live_total_price (URL + markup buy rate × weight + making charge)
- * when API provides it; otherwise fall back to current_price snapshot.
+ * Product unit price — Django `live_total_price` (public-rates sellTotal × weight + making).
+ * Club totals are never selected here; use {@link productUnitPriceForMember} when eligible.
  */
 import { PRICE_NUMBER_LOCALE } from './formatLatinNumber'
+
+export function productUnitPriceRegular(product: {
+  live_total_price?: number | null
+  current_price?: number | null
+}): number {
+  const n =
+    product.live_total_price != null && !Number.isNaN(Number(product.live_total_price))
+      ? Number(product.live_total_price)
+      : product.current_price != null
+        ? Number(product.current_price)
+        : 0
+  return Number.isFinite(n) ? n : 0
+}
+
+/** Member price when club live total exists; otherwise regular. */
+export function productUnitPriceForMember(
+  product: {
+    live_total_price?: number | null
+    live_total_price_club?: number | null
+    current_price?: number | null
+  },
+  clubMember: boolean,
+): number {
+  if (
+    clubMember &&
+    product.live_total_price_club != null &&
+    !Number.isNaN(Number(product.live_total_price_club))
+  ) {
+    const club = Number(product.live_total_price_club)
+    if (Number.isFinite(club)) return club
+  }
+  return productUnitPriceRegular(product)
+}
+
+/** Storefront list/detail default — regular live total only. */
 export function productUnitPrice(product: {
   live_total_price?: number | null
   live_total_price_club?: number | null
   current_price?: number | null
 }): number {
-  const n =
-    product.live_total_price_club != null && !Number.isNaN(Number(product.live_total_price_club))
-      ? Number(product.live_total_price_club)
-      : product.live_total_price != null && !Number.isNaN(Number(product.live_total_price))
-        ? Number(product.live_total_price)
-        : product.current_price != null
-          ? Number(product.current_price)
-          : 0
-  return Number.isFinite(n) ? n : 0
+  return productUnitPriceRegular(product)
 }
 
 export function formatKwd(n: number | null | undefined): string {
@@ -29,14 +56,15 @@ export function formatKwd(n: number | null | undefined): string {
  * API field is named `live_buy_price_per_gram` but backend fills it from the live sell rate.
  * Prefers club per-gram when club live total is present — mirrors {@link productUnitPrice}.
  */
-export function liveSellPricePerGramForProduct(product: {
-  live_total_price_club?: number | null
-  live_buy_price_per_gram_club?: number | null
-  live_buy_price_per_gram?: number | null
-}): number | null {
-  const clubTotalOk =
-    product.live_total_price_club != null && !Number.isNaN(Number(product.live_total_price_club))
-  if (clubTotalOk) {
+export function liveSellPricePerGramForProduct(
+  product: {
+    live_total_price_club?: number | null
+    live_buy_price_per_gram_club?: number | null
+    live_buy_price_per_gram?: number | null
+  },
+  clubMember = false,
+): number | null {
+  if (clubMember) {
     if (
       product.live_buy_price_per_gram_club != null &&
       !Number.isNaN(Number(product.live_buy_price_per_gram_club))

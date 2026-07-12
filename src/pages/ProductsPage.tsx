@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   Grid3X3,
@@ -15,12 +15,13 @@ import type { Product, Category } from '../types'
 import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { productImageSrc } from '../utils/productImage'
 import { productUnitPrice, formatKwd } from '../utils/productPrice'
+import { formatProductCaratLabel } from '../utils/productCaratLabel'
 import { useCart } from '../contexts/CartContext'
 import { ProductStockBadge, ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
 import { PriceRangeFilter } from '@/components/products/PriceRangeFilter'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
-import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
-import { isProductOutOfStock, productFineness } from '@/utils/productStock'
+import { Skeleton } from '@/components/ui/skeleton'
+import { isProductLowStock, isProductOutOfStock, productFineness } from '@/utils/productStock'
 import {
   useProductPriceTrendSincePreviousFetch,
   type ProductFetchTrendMap,
@@ -70,6 +71,7 @@ function FilterPanel({
   onPriceRange,
   onClear,
   activeFilterCount,
+  showHeading = true,
 }: {
   category: string | null
   categoryList: Category[]
@@ -86,23 +88,39 @@ function FilterPanel({
   onPriceRange: (min: string, max: string) => void
   onClear: () => void
   activeFilterCount: number
+  showHeading?: boolean
 }) {
   const { t } = useTranslation()
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <h3 className="type-card-title text-[#0B0F19]">
-            {t('productsPage.filtersHeading')}
-          </h3>
+      {showHeading ? (
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="type-card-title text-[#0B0F19]">
+              {t('productsPage.filtersHeading')}
+            </h3>
+            {activeFilterCount > 0 ? (
+              <p className="mt-0.5 text-xs text-[#64748B]">
+                {t('productsPage.activeFiltersCount', { count: activeFilterCount })}
+              </p>
+            ) : null}
+          </div>
           {activeFilterCount > 0 ? (
-            <p className="mt-0.5 text-xs text-[#64748B]">
-              {t('productsPage.activeFiltersCount', { count: activeFilterCount })}
-            </p>
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-xs font-semibold text-[#3F6F00] transition-colors hover:text-[#2d5200]"
+            >
+              {t('productsPage.clearAll')}
+            </button>
           ) : null}
         </div>
-        {activeFilterCount > 0 ? (
+      ) : activeFilterCount > 0 ? (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-xs text-[#64748B]">
+            {t('productsPage.activeFiltersCount', { count: activeFilterCount })}
+          </p>
           <button
             type="button"
             onClick={onClear}
@@ -110,19 +128,19 @@ function FilterPanel({
           >
             {t('productsPage.clearAll')}
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <div className="space-y-7 overflow-y-auto pe-1">
         <section>
-          <h4 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+          <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.categories')}
           </h4>
           <div className="flex flex-col gap-1.5">
             <button
               type="button"
               onClick={() => onCategory('')}
-              className={`rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
+              className={`filter-panel__option rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
                 !category
                   ? 'bg-[#0B0F19] text-white'
                   : 'bg-[#F4F4F5] text-[#0B0F19] hover:bg-[#ECFCCB]/70'
@@ -137,7 +155,7 @@ function FilterPanel({
                   key={cat.id}
                   type="button"
                   onClick={() => onCategory(active ? '' : cat.slug)}
-                  className={`rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
+                  className={`filter-panel__option rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
                     active
                       ? 'bg-[#0B0F19] text-white'
                       : 'bg-[#F4F4F5] text-[#0B0F19] hover:bg-[#ECFCCB]/70'
@@ -151,7 +169,7 @@ function FilterPanel({
         </section>
 
         <section>
-          <h4 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+          <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.goldCarat')}
           </h4>
           <div className="grid grid-cols-2 gap-2">
@@ -163,7 +181,7 @@ function FilterPanel({
                   type="button"
                   onClick={() => onToggleCarat(carat)}
                   aria-pressed={active}
-                  className={`rounded-xl border px-3 py-3 text-center text-sm font-bold tabular-nums transition-colors ${
+                  className={`filter-panel__chip rounded-xl border px-3 py-3 text-center text-sm font-bold tabular-nums transition-colors ${
                     active
                       ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19] ring-1 ring-[#85E307]/40'
                       : 'border-black/10 bg-white text-[#0B0F19] hover:border-[#85E307]/50 hover:bg-[#F9F9FA]'
@@ -177,7 +195,7 @@ function FilterPanel({
         </section>
 
         <section>
-          <h4 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+          <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.metalType')}
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -189,7 +207,7 @@ function FilterPanel({
                   type="button"
                   onClick={() => onToggleMetal(metal)}
                   aria-pressed={active}
-                  className={`rounded-full border px-3.5 py-2 text-sm font-semibold capitalize transition-colors ${
+                  className={`filter-panel__chip rounded-full border px-3.5 py-2 text-sm font-semibold capitalize transition-colors ${
                     active
                       ? 'border-[#0B0F19] bg-[#0B0F19] text-white'
                       : 'border-black/10 bg-white text-[#475569] hover:border-black/20'
@@ -203,7 +221,7 @@ function FilterPanel({
         </section>
 
         <section>
-          <h4 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+          <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.priceRange')}
           </h4>
           <p className="mb-3 text-xs text-[#64748B]">{t('productsPage.priceRangeHint')}</p>
@@ -240,7 +258,7 @@ export default function ProductsPage() {
     setSearchDraft(search || '')
   }, [search])
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, isFetching } = useQuery({
     queryKey: ['products', category ?? '', search ?? ''],
     queryFn: () =>
       productsApi.getProducts({
@@ -249,14 +267,17 @@ export default function ProductsPage() {
         // FTS ranks server-side; pull a fuller page when searching so relevance isn't truncated at 20.
         page_size: search ? 100 : 40,
       }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => productsApi.getCategories(),
+    staleTime: 60_000,
   })
 
-  const { data: categoryDetail } = useQuery({
+  const { data: categoryDetail, isPending: categoryDetailPending } = useQuery({
     queryKey: ['category', category],
     queryFn: () => productsApi.getCategory(category!),
     enabled: !!category,
@@ -441,6 +462,8 @@ export default function ProductsPage() {
     (maxPriceParam ? 1 : 0) +
     (search ? 1 : 0)
 
+  const isInitialLoad = isLoading && productList.length === 0
+
   const filterProps = {
     category,
     categoryList,
@@ -462,9 +485,9 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
       <div className="border-b border-black/5 bg-white">
-        <div className="page-shell page-section">
+        <div className="page-shell py-4 sm:py-[var(--space-page-y)]">
           {category ? (
-            <nav className="mb-3 text-sm text-[#64748B]" aria-label={t('common.breadcrumb')}>
+            <nav className="mb-2 text-xs text-[#64748B] sm:mb-3 sm:text-sm" aria-label={t('common.breadcrumb')}>
               <Link to="/products" className="font-medium text-[#3F6F00] hover:underline">
                 {t('productsPage.allProducts')}
               </Link>
@@ -475,18 +498,20 @@ export default function ProductsPage() {
             </nav>
           ) : null}
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3F6F00]">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3F6F00] sm:mb-1.5 sm:text-[11px] sm:tracking-[0.22em]">
                 {t('productsPage.kicker')}
               </p>
-              <h1 className="type-page-title text-[#0B0F19] sm:text-3xl">
+              <h1 className="type-page-title min-h-[1.75rem] text-xl text-[#0B0F19] sm:min-h-[2.5rem] sm:text-3xl">
                 {pageTitle}
               </h1>
-              <p className="mt-1.5 text-sm text-[#64748B]">
-                {isLoading
-                  ? t('common.loading')
-                  : t('productsPage.productsFound', { count: filteredProducts.length })}
+              <p className="mt-1 min-h-[1.125rem] text-xs tabular-nums text-[#64748B] sm:mt-1.5 sm:min-h-[1.25rem] sm:text-sm">
+                {isInitialLoad ? (
+                  <Skeleton className="inline-block h-3.5 w-28 rounded bg-[#E2E8F0]" aria-hidden />
+                ) : (
+                  t('productsPage.productsFound', { count: filteredProducts.length })
+                )}
               </p>
             </div>
 
@@ -505,26 +530,36 @@ export default function ProductsPage() {
             />
           </div>
 
-          {subcategories.length > 0 && !activeCategory?.parent ? (
-            <div className="mt-5 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {subcategories.map((sub) => {
-                if (!sub.slug) return null
-                const isActive = category === sub.slug
-                const subLabel = isAr && sub.name_ar ? sub.name_ar : sub.name_en || sub.slug
-                return (
-                  <Link
-                    key={sub.slug}
-                    to={`/products?category=${encodeURIComponent(sub.slug)}`}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                      isActive
-                        ? 'border-[#0B0F19] bg-[#0B0F19] text-white'
-                        : 'border-black/10 bg-white text-[#0B0F19] hover:border-[#85E307]/50 hover:bg-[#ECFCCB]/50'
-                    }`}
-                  >
-                    {subLabel}
-                  </Link>
-                )
-              })}
+          {category && !activeCategory?.parent ? (
+            <div className="mt-3 min-h-[2rem] sm:mt-5">
+              {categoryDetailPending && subcategories.length === 0 ? (
+                <div className="flex gap-1.5 overflow-hidden sm:gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-20 shrink-0 rounded-full bg-[#E2E8F0] sm:w-24" />
+                  ))}
+                </div>
+              ) : subcategories.length > 0 ? (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 sm:gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {subcategories.map((sub) => {
+                    if (!sub.slug) return null
+                    const isActive = category === sub.slug
+                    const subLabel = isAr && sub.name_ar ? sub.name_ar : sub.name_en || sub.slug
+                    return (
+                      <Link
+                        key={sub.slug}
+                        to={`/products?category=${encodeURIComponent(sub.slug)}`}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:px-4 sm:py-2 sm:text-sm ${
+                          isActive
+                            ? 'border-[#0B0F19] bg-[#0B0F19] text-white'
+                            : 'border-black/10 bg-white text-[#0B0F19] hover:border-[#85E307]/50 hover:bg-[#ECFCCB]/50'
+                        }`}
+                      >
+                        {subLabel}
+                      </Link>
+                    )
+                  })}
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -543,14 +578,14 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="page-shell page-section">
+      <div className="page-shell pb-6 pt-2 sm:py-[var(--space-page-y)]">
         {/* Toolbar */}
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="mb-3 flex min-h-[2.75rem] flex-col gap-2 sm:mb-5 sm:min-h-0 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0B0F19] shadow-sm transition hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm lg:hidden"
+              className="products-filter-trigger inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2.5 text-xs font-semibold text-[#0B0F19] shadow-sm transition hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm lg:hidden"
             >
               <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t('productsPage.filters')}
@@ -601,7 +636,7 @@ export default function ProductsPage() {
               >
                 <SelectTrigger
                   aria-label={t('productsPage.sortBy')}
-                  className="h-auto w-full rounded-xl border border-black/10 bg-white py-2 pe-7 ps-8 text-xs font-semibold text-[#0B0F19] shadow-none outline-none transition hover:border-[#85E307]/50 focus-visible:border-[#85E307] focus-visible:ring-2 focus-visible:ring-[#85E307]/25 sm:w-52 sm:py-2.5 sm:pe-8 sm:ps-9 sm:text-sm [&>svg]:hidden"
+                  className="touch-target--row h-auto min-h-11 w-full rounded-xl border border-black/10 bg-white py-2.5 pe-7 ps-8 text-xs font-semibold text-[#0B0F19] shadow-none outline-none transition hover:border-[#85E307]/50 focus-visible:border-[#85E307] focus-visible:ring-2 focus-visible:ring-[#85E307]/25 sm:w-52 sm:py-2.5 sm:pe-8 sm:ps-9 sm:text-sm [&>svg]:hidden"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -678,9 +713,11 @@ export default function ProductsPage() {
             </div>
           </aside>
 
-          <div className="min-w-0 flex-1">
-            {isLoading ? (
-              <AppLoadingScreen className="min-h-[42vh] rounded-2xl border border-black/5 bg-[var(--site-bg)]" />
+          <div
+            className={`min-w-0 flex-1 transition-opacity duration-200 ${isFetching && !isInitialLoad ? 'opacity-70' : 'opacity-100'}`}
+          >
+            {isInitialLoad ? (
+              <ProductGridSkeleton viewMode={viewMode} />
             ) : filteredProducts.length === 0 ? (
               <div className="rounded-2xl border border-black/10 bg-white px-6 py-16 text-center">
                 <p className="text-base font-semibold text-[#0B0F19]">
@@ -702,7 +739,7 @@ export default function ProductsPage() {
                 className={
                   viewMode === 'grid'
                     ? 'grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3'
-                    : 'space-y-3'
+                    : 'space-y-2 sm:space-y-3'
                 }
               >
                 {filteredProducts.map((product) => (
@@ -726,14 +763,14 @@ export default function ProductsPage() {
           side={isAr ? 'left' : 'right'}
           className="flex w-full max-w-md flex-col border-black/10 bg-white p-0 sm:max-w-md"
         >
-          <SheetHeader className="border-b border-black/5 px-5 py-4 text-start">
-            <SheetTitle className="text-[#0B0F19]">{t('productsPage.filtersHeading')}</SheetTitle>
+          <SheetHeader className="border-b border-black/5 px-5 py-4 pe-12 text-start">
+            <SheetTitle className="pe-1 text-[#0B0F19]">{t('productsPage.filtersHeading')}</SheetTitle>
             <SheetDescription className="text-[#64748B]">
               {t('productsPage.filtersSheetDesc')}
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-4">
-            <FilterPanel {...filterProps} />
+            <FilterPanel {...filterProps} showHeading={false} />
           </div>
           <SheetFooter className="border-t border-black/5 bg-[#F9F9FA]">
             <button
@@ -746,6 +783,56 @@ export default function ProductsPage() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+    </div>
+  )
+}
+
+function ProductGridSkeleton({ viewMode }: { viewMode: ViewMode }) {
+  if (viewMode === 'list') {
+    return (
+      <div className="space-y-2 sm:space-y-3" aria-hidden>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex gap-3 rounded-xl border border-black/10 bg-white p-2.5 md:hidden"
+          >
+            <Skeleton className="h-[72px] w-[72px] shrink-0 rounded-lg bg-[#E2E8F0]" />
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+              <div className="space-y-1.5">
+                <Skeleton className="h-3.5 w-[85%] rounded bg-[#E2E8F0]" />
+                <Skeleton className="h-2.5 w-[55%] rounded bg-[#E2E8F0]" />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <Skeleton className="h-4 w-20 rounded bg-[#E2E8F0]" />
+                <Skeleton className="h-8 w-8 shrink-0 rounded-lg bg-[#E2E8F0]" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3" aria-hidden>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 sm:p-3.5"
+        >
+          <Skeleton className="aspect-[4/3] w-full rounded-xl bg-[#E2E8F0]" />
+          <div className="mt-1.5 space-y-2 px-0.5">
+            <Skeleton className="h-3.5 w-full rounded bg-[#E2E8F0]" />
+            <Skeleton className="h-2.5 w-[80%] rounded bg-[#E2E8F0]" />
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <Skeleton className="h-4 w-16 rounded bg-[#E2E8F0]" />
+              <Skeleton className="h-3 w-10 rounded bg-[#E2E8F0]" />
+            </div>
+            <Skeleton className="h-3 w-full rounded bg-[#E2E8F0]" />
+            <Skeleton className="h-8 w-full rounded-lg bg-[#E2E8F0]" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -781,10 +868,7 @@ function ProductCard({
   const productName = isAr && product.name_ar ? product.name_ar : product.name_en
   const descSource =
     isAr && product.description_ar ? product.description_ar : product.description_en
-  const caratLabel =
-    isAr && product.carat?.display_name_ar
-      ? product.carat.display_name_ar
-      : product.carat?.display_name_en
+  const caratLabel = formatProductCaratLabel(product.carat, isAr ? 'ar' : 'en')
   const categoryName =
     isAr && product.category?.name_ar ? product.category.name_ar : product.category?.name_en
   const fineness = productFineness(product)
@@ -799,65 +883,160 @@ function ProductCard({
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
   const outOfStock = isProductOutOfStock(product)
+  const lowStock = isProductLowStock(product)
 
   const addButtonClass =
     'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1.5 py-1.5 sm:px-3 sm:py-2.5 text-[10px] sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1F2937] shrink-0 disabled:cursor-not-allowed disabled:bg-[#94A3B8]'
 
   if (viewMode === 'list') {
     return (
-      <div className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center">
-        <Link to={`/products/${product.slug}`} className="flex min-w-0 flex-1 gap-4">
-          <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/10 sm:h-32 sm:w-32 relative">
-            {imageSrc ? (
-              <img src={imageSrc} alt={productName} className={`h-full w-full object-cover ${outOfStock ? 'grayscale-[0.35]' : ''}`} />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm text-[#94A3B8]">
-                {t('productsPage.noImage')}
+      <article className="group overflow-hidden rounded-xl border border-black/10 bg-white transition-shadow hover:shadow-md sm:rounded-2xl">
+        {/* Mobile — compact catalog row */}
+        <div className="flex gap-3 p-2.5 md:hidden">
+          <Link to={`/products/${product.slug}`} className="shrink-0">
+            <div
+              className={`relative h-[72px] w-[72px] overflow-hidden rounded-lg bg-[#F4F4F5] ring-1 ring-black/5 ${
+                outOfStock ? 'grayscale-[0.35]' : ''
+              }`}
+            >
+              {imageSrc ? (
+                <img src={imageSrc} alt={productName} className="h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] text-[#94A3B8]">
+                  {t('productsPage.noImage')}
+                </div>
+              )}
+              <ProductStockOverlay product={product} />
+            </div>
+          </Link>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-between">
+            <div className="min-w-0">
+              <Link to={`/products/${product.slug}`} className="block min-w-0">
+                <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
+                  {productName}
+                </h3>
+              </Link>
+              {specParts.length ? (
+                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[#64748B]">{specParts.join(' · ')}</p>
+              ) : null}
+              {!outOfStock ? (
+                <div className="mt-1">
+                  <ProductStockStatusLabel product={product} className="text-[9px]" />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                <span className="text-[14px] font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight">
+                  {formatKwd(unitPrice)}
+                  <span className="ms-0.5 text-[9px] font-semibold text-[#64748B]">KWD</span>
+                </span>
+                <span className="inline-flex min-h-[14px] min-w-[2.75rem] shrink-0 items-center">
+                  <ProductPriceTrendArrow
+                    product={product}
+                    variant="light"
+                    showPercent
+                    trendOverride={trendOverride}
+                    percentOverride={percentOverride}
+                    className="shrink-0"
+                    size="sm"
+                    forceVisible
+                  />
+                </span>
               </div>
-            )}
-            <ProductStockOverlay product={product} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <ProductStockBadge product={product} />
-            </div>
-            <h3 className="mb-1 text-base font-semibold text-[#0B0F19] sm:text-lg">{productName}</h3>
-            <p className="mb-2 line-clamp-2 text-sm text-[#64748B]">
-              {descSource ? `${descSource.substring(0, 100)}...` : ''}
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-[#F9F9FA] px-2.5 py-1.5 text-sm font-semibold text-[#0B0F19]">
-                <ProductPriceTrendArrow
-                  product={product}
-                  variant="light"
-                  showPercent
-                  trendOverride={trendOverride}
-                  percentOverride={percentOverride}
-                />
-                {formatKwd(unitPrice)} KWD
-              </span>
-              <span className="text-sm text-[#64748B]">{caratLabel}</span>
-              <span className="text-sm text-[#64748B]">{product.weight_grams}g</span>
+              <button
+                type="button"
+                onClick={() => addToCart(product)}
+                disabled={outOfStock}
+                aria-label={outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B0F19] text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+              >
+                <ShoppingCart className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
-        </Link>
-        <div className="flex items-center gap-2 sm:w-40 sm:flex-col sm:justify-center">
-          <button
-            type="button"
-            onClick={() => addToCart(product)}
-            disabled={outOfStock}
-            className={`${addButtonClass} w-full`}
-          >
-            <ShoppingCart className="hidden sm:block h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}</span>
-          </button>
         </div>
-      </div>
+
+        {/* Desktop — horizontal detail row */}
+        <div className="hidden md:flex md:items-stretch md:gap-4 md:p-4 lg:gap-5 lg:p-5">
+          <Link to={`/products/${product.slug}`} className="shrink-0">
+            <div
+              className={`relative h-28 w-28 overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 lg:h-32 lg:w-32 ${
+                outOfStock ? 'grayscale-[0.35]' : ''
+              }`}
+            >
+              {imageSrc ? (
+                <img src={imageSrc} alt={productName} className="h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-[#94A3B8]">
+                  {t('productsPage.noImage')}
+                </div>
+              )}
+              <ProductStockOverlay product={product} />
+            </div>
+          </Link>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
+            <div className="min-w-0">
+              {lowStock ? (
+                <div className="mb-2">
+                  <ProductStockBadge product={product} />
+                </div>
+              ) : null}
+              <Link to={`/products/${product.slug}`} className="block min-w-0">
+                <h3 className="line-clamp-1 text-lg font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
+                  {productName}
+                </h3>
+              </Link>
+              {descSource ? (
+                <p className="mt-1 line-clamp-1 text-sm text-[#64748B]">{descSource}</p>
+              ) : null}
+              {specParts.length ? (
+                <p className="mt-1.5 text-xs text-[#64748B]">{specParts.join(' · ')}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-3">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-xl font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight">
+                  {formatKwd(unitPrice)}
+                  <span className="ms-1 text-xs font-semibold text-[#64748B]">KWD</span>
+                </span>
+                <span className="inline-flex min-h-[14px] min-w-[2.75rem] items-center">
+                  <ProductPriceTrendArrow
+                    product={product}
+                    variant="light"
+                    showPercent
+                    trendOverride={trendOverride}
+                    percentOverride={percentOverride}
+                    size="sm"
+                    forceVisible
+                  />
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-col justify-center">
+            <button
+              type="button"
+              onClick={() => addToCart(product)}
+              disabled={outOfStock}
+              className={`${addButtonClass} min-w-[9.5rem] px-4`}
+            >
+              <ShoppingCart className="h-4 w-4 shrink-0" />
+              <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}</span>
+            </button>
+          </div>
+        </div>
+      </article>
     )
   }
 
   return (
-    <div className="group flex h-full min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 transition-shadow duration-200 hover:shadow-md sm:p-3.5">
+    <div className="group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 transition-shadow duration-200 hover:shadow-md sm:h-full sm:p-3.5">
       <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div className={`relative aspect-[4/3] overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
           {imageSrc ? (
@@ -865,6 +1044,8 @@ function ProductCard({
               src={imageSrc}
               alt={productName}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -882,36 +1063,43 @@ function ProductCard({
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col px-0.5 pt-2">
+      <div className="flex flex-col px-0.5 pt-1.5">
         <Link to={`/products/${product.slug}`} className="min-w-0">
-          <h3 className="line-clamp-2 sm:line-clamp-1 text-[12px] sm:text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 leading-[1.3] sm:leading-normal">
+          <h3 className="line-clamp-2 text-[12px] font-semibold leading-snug text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 sm:line-clamp-1 sm:text-[15px] sm:leading-normal">
             {productName}
           </h3>
         </Link>
 
         {specParts.length ? (
-          <p className="mt-0.5 line-clamp-1 text-[9px] sm:text-xs text-[#64748B]">{specParts.join(' · ')}</p>
-        ) : null}
+          <p className="mt-0.5 min-h-[1.25rem] text-[9px] leading-snug text-[#64748B] sm:min-h-[1rem] sm:text-xs">
+            {specParts.join(' · ')}
+          </p>
+        ) : (
+          <p className="mt-0.5 min-h-[1.25rem] sm:min-h-[1rem]" aria-hidden />
+        )}
 
-        <div className="mt-auto flex flex-col gap-1.5 pt-2">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-1">
-            <span className="min-w-0 text-[13px] sm:text-lg font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight">
+        <div className="mt-1.5 flex flex-col gap-1 sm:gap-1.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5">
+            <span className="min-w-0 text-[13px] font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight sm:text-lg">
               {formatKwd(unitPrice)}
-              <span className="ms-0.5 text-[9px] sm:text-xs font-semibold text-[#64748B]">KWD</span>
+              <span className="ms-0.5 text-[9px] font-semibold text-[#64748B] sm:text-xs">KWD</span>
             </span>
-            <ProductPriceTrendArrow
-              product={product}
-              variant="light"
-              showPercent
-              trendOverride={trendOverride}
-              percentOverride={percentOverride}
-              className="shrink-0"
-              size="sm"
-            />
+            <span className="inline-flex min-h-[14px] min-w-[2.75rem] shrink-0 items-center justify-end">
+              <ProductPriceTrendArrow
+                product={product}
+                variant="light"
+                showPercent
+                trendOverride={trendOverride}
+                percentOverride={percentOverride}
+                className="shrink-0"
+                size="sm"
+                forceVisible
+              />
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 border-t border-black/5 pt-1.5">
-            <span className="truncate text-[9px] sm:text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
+          <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 border-t border-black/5 pt-1 sm:pt-1.5">
+            <span className="text-[9px] leading-tight text-[#64748B] sm:text-[11px]">{t('home.shipsIn')}</span>
             <ProductStockStatusLabel product={product} className="shrink-0 text-[9px] sm:text-[11px]" />
           </div>
         </div>
@@ -920,7 +1108,7 @@ function ProductCard({
           type="button"
           onClick={() => addToCart(product)}
           disabled={outOfStock}
-          className={`${addButtonClass} mt-2.5 w-full`}
+          className={`${addButtonClass} mt-1.5 min-h-[2rem] w-full sm:mt-2 sm:min-h-[2.5rem]`}
         >
           <ShoppingCart className="hidden sm:block h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
           <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}</span>

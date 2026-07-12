@@ -16,6 +16,12 @@ import {
   seriesChange,
   type OunceCurrency,
 } from '@/utils/metalChartSeries'
+import {
+  getGoldOunceKwdTotals,
+  resolveAuthoritativeUsdOunceSpot,
+  resolveConfiguredKwdOunceSell,
+  resolveUsdToKwdRate,
+} from '@/utils/publicStorefrontRates'
 import { formatLatinFixed } from '@/utils/formatLatinNumber'
 
 type Props = {
@@ -59,8 +65,10 @@ export function HeroGoldSpotCard({ rates }: Props) {
     retry: 1,
   })
 
-  const goldOunceUsd = numOrNull(rates?.goldOuncePrice)
-  const usdToKwdRate = numOrNull(currentSnap?.usd_to_kwd_rate)
+  const usdToKwdRate = resolveUsdToKwdRate(rates) ?? numOrNull(currentSnap?.usd_to_kwd_rate)
+  const usdOunceSpot = resolveAuthoritativeUsdOunceSpot(rates, currentSnap)
+  const ounceSellKwd = resolveConfiguredKwdOunceSell(rates, usdOunceSpot, usdToKwdRate)
+  const { sellAdd: ounceSellAdd } = getGoldOunceKwdTotals(rates)
   const carats = rates?.carats ?? []
   const gold24 = carats.find((c) => c.key === '24K')
   const buyKwd = numOrNull(gold24?.buyTotal)
@@ -68,24 +76,25 @@ export function HeroGoldSpotCard({ rates }: Props) {
 
   const rawPoints = pricingHistory?.points ?? []
   const rawLine = useMemo(
-    () => buildLineSeries(rawPoints, 'gold', '1h', goldOunceUsd, true),
-    [rawPoints, goldOunceUsd],
+    () => buildLineSeries(rawPoints, 'gold', '1h', usdOunceSpot, true),
+    [rawPoints, usdOunceSpot],
   )
 
-  const line = useMemo(
-    () => convertLineToOunceCurrency(rawLine, ounceCurrency, usdToKwdRate),
-    [rawLine, ounceCurrency, usdToKwdRate],
-  )
+  const line = useMemo(() => {
+    if (ounceCurrency === 'USD') return rawLine
+    const converted = convertLineToOunceCurrency(rawLine, 'KWD', usdToKwdRate, ounceSellAdd)
+    if (!converted.length || ounceSellKwd == null) return converted
+    const last = converted[converted.length - 1]
+    return [...converted.slice(0, -1), { ...last, value: ounceSellKwd }]
+  }, [rawLine, ounceCurrency, usdToKwdRate, ounceSellAdd, ounceSellKwd])
 
   const change = useMemo(() => seriesChange(line), [line])
   const positive = change == null ? true : change.abs >= 0
-  const spot = line.length ? line[line.length - 1].value : (
-    goldOunceUsd != null
-      ? ounceCurrency === 'KWD' && usdToKwdRate != null
-        ? goldOunceUsd * usdToKwdRate
-        : goldOunceUsd
-      : null
-  )
+  const spot = line.length
+    ? line[line.length - 1].value
+    : ounceCurrency === 'KWD'
+      ? ounceSellKwd
+      : usdOunceSpot
 
   const spreadPct = useMemo(() => {
     if (buyKwd == null || sellKwd == null || sellKwd === 0) return null

@@ -374,8 +374,9 @@ export function BullionStartSlot({
     <div
       ref={slotRef}
       className={cn(
-        'relative mx-auto w-full max-w-md sm:max-w-lg',
-        'h-[min(62vh,480px)] min-h-[280px] sm:h-[min(68vh,540px)] lg:h-[min(70vh,560px)]',
+        'relative mx-auto w-full',
+        !className?.includes('home-hero-bullion-slot') &&
+          'max-w-md sm:max-w-lg h-[min(42vh,300px)] min-h-[200px] sm:h-[min(56vh,420px)] sm:min-h-[260px] lg:h-[min(70vh,560px)]',
         className,
       )}
       aria-label={t('home.bullionScroll.aria')}
@@ -426,14 +427,23 @@ export function BullionEndDock({
     <div
       ref={slotRef}
       className={cn(
-        'relative mx-auto w-full hidden lg:block',
+        'relative mx-auto flex w-full items-center justify-center',
         size === 'compact' && 'h-8 max-w-[200px] sm:h-10 sm:max-w-[240px]',
-        size === 'default' && 'h-[180px] max-w-[200px] sm:h-[220px] sm:max-w-[240px]',
+        size === 'default' && 'h-[120px] max-w-[200px] sm:h-[180px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]',
         size === 'large' &&
-          'h-[200px] max-w-[240px] sm:h-[240px] sm:max-w-[280px] lg:h-[260px] lg:max-w-[300px]',
+          'h-[140px] max-w-[220px] sm:h-[200px] sm:max-w-[240px] lg:h-[260px] lg:max-w-[300px]',
         className,
       )}
       aria-hidden
-    />
+    >
+      <img
+        src={bullionHorizUrl}
+        alt=""
+        className="h-[88%] w-auto max-w-full object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.18)] lg:hidden"
+        draggable={false}
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
   )
 }

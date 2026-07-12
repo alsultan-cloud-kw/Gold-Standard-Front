@@ -21,12 +21,13 @@ import { ProductStockBadge, ProductStockOverlay } from '@/components/products/Pr
 import { ProductTrustPanel } from '@/components/products/ProductTrustPanel'
 import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+import { cn } from '@/lib/utils'
 import {
   clampPurchaseQuantity,
   isProductOutOfStock,
   productAvailableQuantity,
 } from '@/utils/productStock'
-import { cn } from '@/lib/utils'
+import { formatProductCaratLabel } from '../utils/productCaratLabel'
 
 export default function ProductDetailPage() {
   const { t, i18n } = useTranslation()
@@ -75,8 +76,7 @@ export default function ProductDetailPage() {
   }
 
   const productName = isAr && p.name_ar ? p.name_ar : p.name_en
-  const caratLabel =
-    isAr && p.carat?.display_name_ar ? p.carat.display_name_ar : p.carat?.display_name_en
+  const caratLabel = formatProductCaratLabel(p.carat, isAr ? 'ar' : 'en')
   const descriptionText = (
     isAr ? (p.description_ar || p.description_en || '') : (p.description_en || p.description_ar || '')
   ).trim()

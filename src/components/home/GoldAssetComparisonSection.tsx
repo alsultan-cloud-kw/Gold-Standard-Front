@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next'
 import type { RefObject } from 'react'
 import { Check, Crown, Star } from 'lucide-react'
 import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
+import { HorizontalScrollControls } from '@/components/home/HorizontalScrollControls'
+import { useHorizontalScrollRail } from '@/components/home/useHorizontalScrollRail'
 import {
   ASSET_META,
   COMPARISON_ASSETS_CARDS,
@@ -86,34 +88,26 @@ function GoldVsCashStage({
 
   return (
     <div className="relative">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[2rem]"
-        aria-hidden
-      >
-        <div className="absolute start-[-10%] top-1/2 h-[70%] w-[45%] -translate-y-1/2 rounded-full bg-[#ECFCCB]/55 blur-3xl" />
-        <div className="absolute end-[-8%] top-1/2 h-[65%] w-[42%] -translate-y-1/2 rounded-full bg-[#FEF3C7]/70 blur-3xl" />
-      </div>
-
-      <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-4 lg:gap-6">
-        <div className="relative flex flex-col items-center">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4 lg:gap-6">
+        <div className="relative flex min-w-0 flex-col items-center">
           {bullionDockRef ? (
             <BullionEndDock
               slotRef={bullionDockRef}
-              className="mb-0 h-[170px] max-w-[180px] sm:h-[200px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]"
+              className="mb-0 h-[100px] max-w-[120px] sm:h-[200px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]"
             />
           ) : (
-            <div className="h-[170px] w-full max-w-[180px] sm:h-[200px] sm:max-w-[220px]" aria-hidden />
+            <div className="h-[100px] w-full max-w-[120px] sm:h-[200px] sm:max-w-[220px]" aria-hidden />
           )}
-          <p className="mt-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+          <p className="mt-1.5 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-[#3F6F00] sm:mt-2 sm:text-[11px] sm:tracking-[0.18em]">
             {t('home.goldComparison.assets.gold')}
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center justify-center py-1 sm:py-0">
+        <div className="relative z-10 flex shrink-0 items-center justify-center">
           <span
             className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-full sm:h-14 sm:w-14',
-              'border border-black/10 bg-[#0B0F19] text-xs font-extrabold tracking-[0.1em] text-[#85E307] sm:text-sm',
+              'flex h-10 w-10 items-center justify-center rounded-full sm:h-14 sm:w-14',
+              'border border-black/10 bg-[#0B0F19] text-[10px] font-extrabold tracking-[0.1em] text-[#85E307] sm:text-sm',
               'shadow-[0_12px_40px_-12px_rgba(11,15,25,0.45)]',
             )}
             aria-label={t('home.goldComparison.vs')}
@@ -122,8 +116,8 @@ function GoldVsCashStage({
           </span>
         </div>
 
-        <div className="relative flex flex-col items-center">
-          <div className="relative flex h-[170px] w-full max-w-[180px] items-center justify-center sm:h-[200px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]">
+        <div className="relative flex min-w-0 flex-col items-center">
+          <div className="relative flex h-[100px] w-full max-w-[120px] items-center justify-center sm:h-[200px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]">
             <img
               src={moneyStackUrl}
               alt={t('home.goldComparison.moneyStackAlt')}
@@ -137,7 +131,7 @@ function GoldVsCashStage({
               decoding="async"
             />
           </div>
-          <p className="mt-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-[#B45309]">
+          <p className="mt-1.5 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-[#B45309] sm:mt-2 sm:text-[11px] sm:tracking-[0.18em]">
             {t('home.goldComparison.assets.cash')}
           </p>
         </div>
@@ -156,7 +150,7 @@ function AssetCard({ asset }: { asset: ComparisonAsset }) {
   return (
     <article
       className={cn(
-        'group/card relative flex min-w-[17.5rem] flex-col rounded-2xl p-5 transition-all duration-300 sm:min-w-0 sm:p-6',
+        'group/card relative flex min-w-[15rem] flex-col rounded-2xl p-4 transition-all duration-300 sm:min-w-0 sm:p-6',
         isGold
           ? cn(
               'z-[1] border border-[#E8D7A6] bg-[#FFFDF6]',
@@ -170,15 +164,15 @@ function AssetCard({ asset }: { asset: ComparisonAsset }) {
       )}
     >
       {isGold ? (
-        <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-md bg-[#1A2E1C] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#85E307]">
+        <div className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-md bg-[#1A2E1C] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#85E307] sm:mb-4">
           <Crown className="h-3 w-3" strokeWidth={2.5} aria-hidden />
           {t('home.goldComparison.bestChoice')}
         </div>
       ) : (
-        <div className="mb-4 h-[1.625rem]" aria-hidden />
+        <div className="mb-4 h-[1.625rem] sm:mb-4" aria-hidden />
       )}
 
-      <div className="mb-4 flex items-start gap-3">
+      <div className="mb-3 flex items-start gap-2.5 sm:mb-4 sm:gap-3">
         <span
           className={cn(
             'flex shrink-0 items-center justify-center rounded-xl',
@@ -224,7 +218,7 @@ function AssetCard({ asset }: { asset: ComparisonAsset }) {
         </div>
       </div>
 
-      <ul className="mt-auto space-y-3.5">
+      <ul className="mt-auto space-y-2.5 sm:space-y-3.5">
         {COMPARISON_CRITERIA.map((row) => {
           const CritIcon = row.icon
           const score = row.ratings[asset]
@@ -268,9 +262,11 @@ export function GoldAssetComparisonSection({
   bullionDockRef?: RefObject<HTMLDivElement | null>
 }) {
   const { t } = useTranslation()
+  const { railRef, canScrollBack, canScrollForward, scrollBack, scrollForward } =
+    useHorizontalScrollRail(COMPARISON_ASSETS_CARDS.length)
 
   return (
-    <section className="home-section home-section--muted overflow-x-clip">
+    <section className="home-section home-section--compact overflow-x-clip bg-[var(--site-bg)]">
       <div className="home-section-inner">
         <div className="section-stack--tight flex flex-col">
         <GoldVsCashStage bullionDockRef={bullionDockRef} />
@@ -282,11 +278,21 @@ export function GoldAssetComparisonSection({
           align="center"
         />
 
+        <HorizontalScrollControls
+          canScrollBack={canScrollBack}
+          canScrollForward={canScrollForward}
+          onScrollBack={scrollBack}
+          onScrollForward={scrollForward}
+          backLabel={t('home.scrollBack')}
+          forwardLabel={t('home.scrollForward')}
+        />
+
         {/* Horizontal premium cards — Gold elevated */}
         <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
           <div
+            ref={railRef}
             className={cn(
-              'flex gap-4 overflow-x-auto pb-3 pt-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-5 lg:items-stretch lg:gap-3',
+              'flex gap-3 overflow-x-auto pb-2 pt-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-5 lg:items-stretch lg:gap-3',
               'snap-x snap-mandatory sm:snap-none',
               '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
             )}

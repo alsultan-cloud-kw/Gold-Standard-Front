@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -29,13 +29,19 @@ import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { isStaffRole } from '@/utils/authRedirect'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { formatPrice } from '@/utils/metalChartSeries'
+import { resolveAuthoritativeUsdOunceSpot } from '@/utils/publicStorefrontRates'
 import { CartCountBadge } from '@/components/layout/CartCountBadge'
 import GoldPriceTicker from '@/components/sections/GoldPriceTicker'
+import { ProductSearchBox } from '@/components/products/ProductSearchBox'
 
 export default function Navbar() {
   const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [navSearchDraft, setNavSearchDraft] = useState('')
+  const searchPanelRef = useRef<HTMLDivElement>(null)
+  const searchToggleRef = useRef<HTMLButtonElement>(null)
+  const bottomNavRef = useRef<HTMLElement>(null)
   const { user, isAuthenticated, logout } = useAuth()
   const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
@@ -45,22 +51,13 @@ export default function Navbar() {
   const location = useLocation()
 
   const buyGoldPriceLabel = useMemo(() => {
-    const raw = publicRates?.goldOuncePrice
-    if (raw == null || !Number.isFinite(Number(raw))) return null
-    let usd = Number(raw)
-    // Some payloads send KWD/oz; convert when clearly not USD spot.
-    if (usd > 0 && usd < 1500) {
-      const rate = Number(
-        (publicRates as { usd_to_kwd_rate?: number } | undefined)?.usd_to_kwd_rate,
-      )
-      if (Number.isFinite(rate) && rate > 0) usd = usd / rate
-      else return null
-    }
+    const usd = resolveAuthoritativeUsdOunceSpot(publicRates)
+    if (usd == null) return null
     return `$${formatPrice(usd, 'USD/oz')}`
   }, [publicRates])
 
   const iconBtnClass =
-    'relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-black/[0.04] hover:text-[#0C1512]'
+    'nav-icon-btn relative rounded-lg text-[#64748B] transition-colors hover:bg-black/[0.04] hover:text-[#0C1512]'
 
   const navLinks = [
     { nameKey: 'nav.home', href: '/' },
@@ -89,6 +86,86 @@ export default function Navbar() {
     if (href === '/') return location.pathname === '/'
     return location.pathname === href || location.pathname.startsWith(`${href}/`)
   }
+
+  const isProductsListPage = location.pathname === '/products'
+
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false)
+    setNavSearchDraft('')
+  }, [])
+
+  const openSearch = useCallback(() => {
+    setIsMenuOpen(false)
+    setIsSearchOpen(true)
+  }, [])
+
+  useEffect(() => {
+    closeSearch()
+  }, [location.pathname, closeSearch])
+
+  /**
+   * Keep the mobile bottom nav inside the *visible* viewport.
+   * On first paint mobile browser chrome can cover `position:fixed; bottom:0`
+   * until the user scrolls — visualViewport sync lifts the bar above that chrome.
+   */
+  useEffect(() => {
+    const nav = bottomNavRef.current
+    if (!nav) return
+
+    const sync = () => {
+      const vv = window.visualViewport
+      if (!vv) {
+        nav.style.transform = ''
+        return
+      }
+      const obscuredBottom = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      nav.style.transform = obscuredBottom > 0 ? `translate3d(0, ${-obscuredBottom}px, 0)` : ''
+    }
+
+    sync()
+    const vv = window.visualViewport
+    vv?.addEventListener('resize', sync)
+    vv?.addEventListener('scroll', sync)
+    window.addEventListener('resize', sync)
+    window.addEventListener('orientationchange', sync)
+    const raf = window.requestAnimationFrame(sync)
+    const t = window.setTimeout(sync, 120)
+
+    return () => {
+      vv?.removeEventListener('resize', sync)
+      vv?.removeEventListener('scroll', sync)
+      window.removeEventListener('resize', sync)
+      window.removeEventListener('orientationchange', sync)
+      window.cancelAnimationFrame(raf)
+      window.clearTimeout(t)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isSearchOpen || isProductsListPage) return
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null
+      if (target && searchPanelRef.current?.contains(target)) return
+      if (target && searchToggleRef.current?.contains(target)) return
+      closeSearch()
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeSearch()
+        searchToggleRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isSearchOpen, isProductsListPage, closeSearch])
 
   const isPricesActive =
     isPathActive('/prices') || isPathActive('/company-prices')
@@ -183,14 +260,30 @@ export default function Navbar() {
 
           {/* Right Section */}
           <div className="flex items-center gap-0.5 sm:gap-1">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className={iconBtnClass}
-              aria-label={t('nav.searchPlaceholder')}
-            >
-              <Search className="h-5 w-5" strokeWidth={1.75} />
-            </button>
+            {!isProductsListPage ? (
+              <button
+                ref={searchToggleRef}
+                type="button"
+                onClick={() => (isSearchOpen ? closeSearch() : openSearch())}
+                className={
+                  isSearchOpen
+                    ? 'inline-flex min-h-11 min-w-[3.25rem] items-center justify-center rounded-lg bg-black/[0.06] px-2.5 text-[#0C1512] ring-1 ring-black/10 transition-colors hover:bg-black/[0.04] lg:min-h-10 lg:h-10 lg:w-10 lg:min-w-0 lg:px-0'
+                    : iconBtnClass
+                }
+                aria-label={isSearchOpen ? t('nav.closeSearch') : t('nav.searchPlaceholder')}
+                aria-expanded={isSearchOpen}
+                aria-controls="navbar-search-panel"
+              >
+                {isSearchOpen ? (
+                  <>
+                    <span className="text-xs font-bold sm:text-sm lg:hidden">{t('nav.menuClose')}</span>
+                    <X className="hidden h-5 w-5 lg:block" strokeWidth={1.75} />
+                  </>
+                ) : (
+                  <Search className="h-5 w-5" strokeWidth={1.75} />
+                )}
+              </button>
+            ) : null}
 
             {isAuthenticated ? (
               <DropdownMenu>
@@ -277,45 +370,48 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      {isSearchOpen && (
-        <div className="border-t border-black/5 bg-[var(--site-bg)]">
-          <div className="page-shell py-4">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5B728D] rtl:left-auto rtl:right-4" />
-              <input
-                type="text"
-                placeholder={t('nav.searchPlaceholder')}
-                className="w-full rounded-lg border border-black/10 bg-[#F9F9FA] py-3 pl-12 pr-4 text-[#0C1512] placeholder-[#94A3B8] focus:border-[#85E307] focus:outline-none focus:ring-1 focus:ring-[#85E307]/30 rtl:pl-4 rtl:pr-12"
-              />
-            </div>
+      {/* Search panel — hidden on /products (page has its own search) */}
+      {isSearchOpen && !isProductsListPage ? (
+        <div
+          id="navbar-search-panel"
+          ref={searchPanelRef}
+          role="search"
+          className="border-t border-black/5 bg-[var(--site-bg)]"
+        >
+          <div className="page-shell py-4 sm:py-4">
+            <ProductSearchBox
+              value={navSearchDraft}
+              onChange={setNavSearchDraft}
+              onCommit={(q) => {
+                navigate(q ? `/products?search=${encodeURIComponent(q)}` : '/products')
+                closeSearch()
+              }}
+              onClear={() => setNavSearchDraft('')}
+              className="max-w-none w-full"
+              autoFocus
+              variant="toolbar"
+            />
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="border-t border-black/5 bg-[var(--site-bg)] lg:hidden">
           <div className="page-shell py-4">
             <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
+              {navLinks.map((link) =>
                 link.nameKey === 'nav.prices' ? (
-                  <div key={link.nameKey} className="px-2 py-1">
-                    <div
-                      className={`px-2 py-2 text-sm font-semibold rounded-lg ${
-                        isPricesActive ? 'text-gold-700 bg-gold-500/10' : 'text-slate-700'
-                      }`}
-                    >
+                  <div key={link.nameKey} className="mobile-nav-group">
+                    <div className="mobile-nav-group__label" aria-hidden>
                       {t('nav.prices')}
                     </div>
-                    <div className="mt-1 flex flex-col gap-1">
+                    <div className="mobile-nav-group__children" role="group" aria-label={t('nav.prices')}>
                       <Link
                         to="/prices"
                         onClick={() => setIsMenuOpen(false)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
-                          isPathActive('/prices')
-                            ? 'text-gold-700 bg-gold-500/15 font-semibold'
-                            : 'text-slate-800 hover:text-gold-600 hover:bg-gold-500/10'
+                        className={`mobile-nav-sublink ${
+                          isPathActive('/prices') ? 'mobile-nav-sublink--active' : ''
                         }`}
                       >
                         {t('nav.customerPrices')}
@@ -323,10 +419,8 @@ export default function Navbar() {
                       <Link
                         to="/company-prices"
                         onClick={() => setIsMenuOpen(false)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
-                          isPathActive('/company-prices')
-                            ? 'text-gold-700 bg-gold-500/15 font-semibold'
-                            : 'text-slate-800 hover:text-gold-600 hover:bg-gold-500/10'
+                        className={`mobile-nav-sublink ${
+                          isPathActive('/company-prices') ? 'mobile-nav-sublink--active' : ''
                         }`}
                       >
                         {t('nav.companyPrices')}
@@ -338,16 +432,14 @@ export default function Navbar() {
                     key={link.nameKey}
                     to={link.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`px-4 py-3 rounded-lg transition-colors ${
-                      isPathActive(link.href)
-                        ? 'text-gold-700 bg-gold-500/15 font-semibold'
-                        : 'text-slate-800 hover:text-gold-600 hover:bg-gold-500/10'
+                    className={`mobile-nav-link ${
+                      isPathActive(link.href) ? 'mobile-nav-link--active' : ''
                     }`}
                   >
                     {t(link.nameKey)}
                   </Link>
-                )
-              ))}
+                ),
+              )}
               {!isAuthenticated && (
                 <Link
                   to="/login"
@@ -379,43 +471,68 @@ export default function Navbar() {
     </nav>
 
     {/* Mobile Bottom Navigation */}
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)] pb-safe lg:hidden">
-      <div className="flex items-center justify-around h-[68px] px-2">
-        <Link to="/" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
-          <Home className="h-6 w-6" strokeWidth={isPathActive('/') ? 2.5 : 1.75} />
-          <span className="text-[10px] font-semibold">{t('nav.home', { defaultValue: 'Home' })}</span>
-        </Link>
-        
-        <Link to="/products" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/products') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
-          <LayoutGrid className="h-6 w-6" strokeWidth={isPathActive('/products') ? 2.5 : 1.75} />
-          <span className="text-[10px] font-semibold">{t('nav.products', { defaultValue: 'Shop' })}</span>
-        </Link>
-
-        <Link to="/prices" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPricesActive ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
-          <TrendingUp className="h-6 w-6" strokeWidth={isPricesActive ? 2.5 : 1.75} />
-          <span className="text-[10px] font-semibold">{t('nav.prices', { defaultValue: 'Prices' })}</span>
+    <nav
+      ref={bottomNavRef}
+      aria-label={t('nav.menu')}
+      className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)] lg:hidden"
+    >
+      <div className="mobile-bottom-nav__row flex min-h-[var(--bottom-nav-content)] items-stretch justify-around px-0.5 pt-1 pb-1">
+        <Link
+          to="/"
+          onClick={() => setIsMenuOpen(false)}
+          className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+        >
+          <Home className="h-5 w-5 shrink-0" strokeWidth={isPathActive('/') ? 2.5 : 1.75} />
+          <span className="mobile-bottom-nav__label">{t('nav.home')}</span>
         </Link>
 
-        <Link to="/cart" onClick={() => setIsMenuOpen(false)} className={`relative flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/cart') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
-          <ShoppingCart className="h-6 w-6" strokeWidth={isPathActive('/cart') ? 2.5 : 1.75} />
-          <span className="text-[10px] font-semibold">{t('nav.cart', { defaultValue: 'Cart' })}</span>
-          {cartCount > 0 && (
-            <span className="absolute top-[6px] right-[calc(50%-16px)] flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm ring-1 ring-white" dir="ltr">
-              {cartCount > 99 ? '99+' : cartCount}
-            </span>
-          )}
+        <Link
+          to="/products"
+          onClick={() => setIsMenuOpen(false)}
+          className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/products') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+        >
+          <LayoutGrid className="h-5 w-5 shrink-0" strokeWidth={isPathActive('/products') ? 2.5 : 1.75} />
+          <span className="mobile-bottom-nav__label">{t('nav.productsShort')}</span>
+        </Link>
+
+        <Link
+          to="/prices"
+          onClick={() => setIsMenuOpen(false)}
+          className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPricesActive ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+        >
+          <TrendingUp className="h-5 w-5 shrink-0" strokeWidth={isPricesActive ? 2.5 : 1.75} />
+          <span className="mobile-bottom-nav__label">{t('nav.prices')}</span>
+        </Link>
+
+        <Link
+          to="/cart"
+          onClick={() => setIsMenuOpen(false)}
+          className={`mobile-bottom-nav__item relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/cart') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+        >
+          <span className="relative inline-flex shrink-0">
+            <ShoppingCart className="h-5 w-5" strokeWidth={isPathActive('/cart') ? 2.5 : 1.75} />
+            <CartCountBadge count={cartCount} className="-top-1 -end-1.5" />
+          </span>
+          <span className="mobile-bottom-nav__label">{t('nav.cart')}</span>
         </Link>
 
         <button
           type="button"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isMenuOpen ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
+          onClick={() => {
+            closeSearch()
+            setIsMenuOpen(!isMenuOpen)
+          }}
+          className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isMenuOpen ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
         >
-          {isMenuOpen ? <X className="h-6 w-6" strokeWidth={2.5} /> : <Menu className="h-6 w-6" strokeWidth={1.75} />}
-          <span className="text-[10px] font-semibold">{isMenuOpen ? t('nav.closeMenu', { defaultValue: 'Close' }) : t('nav.menu', { defaultValue: 'Menu' })}</span>
+          {isMenuOpen ? <X className="h-5 w-5 shrink-0" strokeWidth={2.5} /> : <Menu className="h-5 w-5 shrink-0" strokeWidth={1.75} />}
+          <span className="mobile-bottom-nav__label">
+            {isMenuOpen ? t('nav.menuClose') : t('nav.menu')}
+          </span>
         </button>
       </div>
-    </div>
+    </nav>
     </>
   )
 }
