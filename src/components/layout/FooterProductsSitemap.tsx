@@ -80,8 +80,12 @@ export function FooterProductsSitemap() {
                 >
                   {label(root)}
                 </Link>
+                {/* 
+                  Hidden on mobile so it doesn't span out and make the footer too long. 
+                  Displayed on desktop where there's room. 
+                */}
                 {children.length > 0 ? (
-                  <ul className="mt-1.5 space-y-1.5 border-s border-white/[0.06] ps-2.5">
+                  <ul className="mt-1.5 hidden space-y-1.5 border-s border-white/[0.06] ps-2.5 sm:block">
                     {children.map((sub) => (
                       <li key={sub.id}>
                         <Link
