@@ -150,12 +150,12 @@ function AssetCard({ asset }: { asset: ComparisonAsset }) {
   return (
     <article
       className={cn(
-        'group/card relative flex min-w-[15rem] flex-col rounded-2xl p-4 transition-all duration-300 sm:min-w-0 sm:p-6',
+        'group/card relative flex min-w-[15rem] flex-col rounded-2xl p-4 transition-all duration-300 sm:min-w-0 sm:p-5 lg:p-5 2xl:p-6',
         isGold
           ? cn(
               'z-[1] border border-[#E8D7A6] bg-[#FFFDF6]',
               'shadow-[0_20px_60px_-24px_rgba(180,140,40,0.45)]',
-              'sm:scale-[1.02]',
+              '2xl:scale-[1.02]',
             )
           : cn(
               'border border-black/8 bg-white shadow-sm',
@@ -225,13 +225,13 @@ function AssetCard({ asset }: { asset: ComparisonAsset }) {
           return (
             <li key={row.id}>
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#667085]">
+                <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] font-semibold leading-snug text-[#667085]">
                   <CritIcon className="h-3 w-3 shrink-0 opacity-70" strokeWidth={2} aria-hidden />
-                  {t(row.labelKey)}
+                  <span className="min-w-0 break-words">{t(row.labelKey)}</span>
                 </span>
                 <span
                   className={cn(
-                    'font-mono text-[10px] font-bold tabular-nums',
+                    'shrink-0 font-mono text-[10px] font-bold tabular-nums',
                     isGold ? 'text-[#3F6F00]' : 'text-[#94A3B8]',
                   )}
                 >
@@ -292,7 +292,11 @@ export function GoldAssetComparisonSection({
           <div
             ref={railRef}
             className={cn(
-              'flex gap-3 overflow-x-auto pb-2 pt-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-5 lg:items-stretch lg:gap-3',
+              /* Mobile: snap rail. Tablet: 2-up. Small desktop (~1024–1535): 3-up so 1343px isn’t crushed. Wide: 5-up. */
+              'flex gap-3 overflow-x-auto pb-2 pt-1',
+              'sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0',
+              'lg:grid-cols-3 lg:items-stretch lg:gap-4',
+              '2xl:grid-cols-5 2xl:gap-4',
               'snap-x snap-mandatory sm:snap-none',
               '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
             )}
@@ -304,7 +308,7 @@ export function GoldAssetComparisonSection({
                   'snap-center transition-all duration-300 sm:snap-align-none',
                   asset === 'gold'
                     ? 'peer/gold sm:col-span-2 lg:col-span-1'
-                    : 'peer-hover/gold:scale-[0.98] peer-hover/gold:opacity-40',
+                    : 'peer-hover/gold:opacity-55 2xl:peer-hover/gold:scale-[0.98] 2xl:peer-hover/gold:opacity-40',
                 )}
               >
                 <AssetCard asset={asset} />

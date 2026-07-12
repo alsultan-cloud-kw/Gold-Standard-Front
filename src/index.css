@@ -1308,10 +1308,23 @@
   .vault-category-tile {
     @apply relative block overflow-hidden rounded-2xl;
     aspect-ratio: 1;
-    min-height: clamp(9.5rem, 38vw, 13.5rem);
+    width: 100%;
+    min-height: clamp(10.5rem, 42vw, 16rem);
     background-color: #1a1f2e;
     box-shadow: 0 8px 28px rgba(11, 15, 25, 0.12);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  @media (min-width: 380px) {
+    .vault-category-tile {
+      min-height: clamp(11rem, 36vw, 15rem);
+    }
+  }
+
+  @media (min-width: 640px) {
+    .vault-category-tile {
+      min-height: clamp(12rem, 28vw, 17rem);
+    }
   }
 
   .vault-category-tile:hover {
@@ -1330,20 +1343,28 @@
   }
 
   .vault-category-tile-label {
-    @apply absolute inset-0 flex flex-col items-center justify-center px-3 text-center;
+    @apply absolute inset-0 flex flex-col items-center justify-center px-3 text-center sm:px-4;
     min-width: 0;
   }
 
   .vault-category-tile-text {
     @apply font-bold text-white;
-    font-size: clamp(0.95rem, 2.8vw, 1.35rem);
-    letter-spacing: 0.12em;
-    line-height: 1.25;
+    font-size: clamp(0.95rem, 3.2vw, 1.35rem);
+    letter-spacing: 0.08em;
+    line-height: 1.3;
     text-transform: uppercase;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+  }
+
+  html[dir='rtl'] .vault-category-tile-text {
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: clamp(1rem, 3.4vw, 1.4rem);
   }
 
   .vault-category-tile-underline {
