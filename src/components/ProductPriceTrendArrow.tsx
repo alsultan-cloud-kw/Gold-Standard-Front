@@ -116,6 +116,7 @@ export default function ProductPriceTrendArrow({
   trendOverride,
   percentOverride,
   forceVisible = false,
+  size = 'md',
 }: {
   product: TrendProduct
   className?: string
@@ -124,6 +125,7 @@ export default function ProductPriceTrendArrow({
   trendOverride?: 'up' | 'down' | null
   percentOverride?: number | null
   forceVisible?: boolean
+  size?: 'sm' | 'md'
 }) {
   const resolved = resolveProductPriceTrend(product)
   const trend = trendOverride ?? resolved.trend
@@ -138,6 +140,7 @@ export default function ProductPriceTrendArrow({
       variant={variant}
       showPercent={showPercent}
       className={className}
+      size={size}
     />
   )
 }

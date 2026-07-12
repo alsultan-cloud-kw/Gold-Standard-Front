@@ -69,9 +69,9 @@ export function ProductStockStatusLabel({ product, className }: { product: Produ
       : { dot: 'bg-[#16A34A]', text: 'text-[#15803D]', label: t('stock.inStock') }
 
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold', tone.text, className)}>
+    <span className={cn('inline-flex min-w-0 items-center gap-1 text-[11px] font-semibold', tone.text, className)}>
       <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {tone.label}
+      <span className="truncate">{tone.label}</span>
     </span>
   )
 }
@@ -82,7 +82,7 @@ export function ProductStockOverlay({ product }: { product: Product }) {
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[inherit] bg-white/55 backdrop-blur-[1px]">
-      <span className="rounded-full border border-[#FCA5A5] bg-[#FEF2F2]/95 px-2.5 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.16em] text-[#B91C1C] shadow-sm text-center">
+      <span className="rounded-full border border-[#FCA5A5] bg-[#FEF2F2]/95 px-2 py-1 sm:px-4 sm:py-2 text-[9px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-[#B91C1C] shadow-sm text-center max-w-[85%]">
         {t('stock.outOfStock')}
       </span>
     </div>

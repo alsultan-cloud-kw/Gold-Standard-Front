@@ -82,7 +82,7 @@ function HomeProductCardInner({
                 {t('home.featuredBadge', { defaultValue: 'Featured' })}
               </span>
             ) : null}
-            {caratName ? (
+            {caratName && !outOfStock ? (
               <span className="rounded bg-white/92 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-[#0B0F19] ring-1 ring-black/10">
                 {caratName}
               </span>

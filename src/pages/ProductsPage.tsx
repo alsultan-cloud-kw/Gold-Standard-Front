@@ -550,9 +550,9 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-[#0B0F19] shadow-sm transition hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 lg:hidden"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0B0F19] shadow-sm transition hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/40 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm lg:hidden"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t('productsPage.filters')}
               {activeFilterCount > 0 ? (
                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0B0F19] px-1.5 text-[11px] font-bold text-[#85E307]">
@@ -601,7 +601,7 @@ export default function ProductsPage() {
               >
                 <SelectTrigger
                   aria-label={t('productsPage.sortBy')}
-                  className="h-auto w-full rounded-xl border border-black/10 bg-white py-2.5 pe-8 ps-9 text-sm font-semibold text-[#0B0F19] shadow-none outline-none transition hover:border-[#85E307]/50 focus-visible:border-[#85E307] focus-visible:ring-2 focus-visible:ring-[#85E307]/25 sm:w-52 [&>svg]:hidden"
+                  className="h-auto w-full rounded-xl border border-black/10 bg-white py-2 pe-7 ps-8 text-xs font-semibold text-[#0B0F19] shadow-none outline-none transition hover:border-[#85E307]/50 focus-visible:border-[#85E307] focus-visible:ring-2 focus-visible:ring-[#85E307]/25 sm:w-52 sm:py-2.5 sm:pe-8 sm:ps-9 sm:text-sm [&>svg]:hidden"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -644,26 +644,26 @@ export default function ProductsPage() {
                 type="button"
                 onClick={() => setViewMode('grid')}
                 aria-pressed={viewMode === 'grid'}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                className={`inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm ${
                   viewMode === 'grid'
                     ? 'bg-[#0B0F19] text-white'
                     : 'text-[#64748B] hover:text-[#0B0F19]'
                 }`}
               >
-                <Grid3X3 className="h-4 w-4" />
+                <Grid3X3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">{t('productsPage.gridView')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 aria-pressed={viewMode === 'list'}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                className={`inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm ${
                   viewMode === 'list'
                     ? 'bg-[#0B0F19] text-white'
                     : 'text-[#64748B] hover:text-[#0B0F19]'
                 }`}
               >
-                <List className="h-4 w-4" />
+                <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">{t('productsPage.listView')}</span>
               </button>
             </div>
@@ -701,7 +701,7 @@ export default function ProductsPage() {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3'
+                    ? 'grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3'
                     : 'space-y-3'
                 }
               >
@@ -801,7 +801,7 @@ function ProductCard({
   const outOfStock = isProductOutOfStock(product)
 
   const addButtonClass =
-    'flex items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1F2937] shrink-0 disabled:cursor-not-allowed disabled:bg-[#94A3B8]'
+    'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1.5 py-1.5 sm:px-3 sm:py-2.5 text-[10px] sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1F2937] shrink-0 disabled:cursor-not-allowed disabled:bg-[#94A3B8]'
 
   if (viewMode === 'list') {
     return (
@@ -848,8 +848,8 @@ function ProductCard({
             disabled={outOfStock}
             className={`${addButtonClass} w-full`}
           >
-            <ShoppingCart className="h-4 w-4 shrink-0" />
-            {outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}
+            <ShoppingCart className="hidden sm:block h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}</span>
           </button>
         </div>
       </div>
@@ -857,7 +857,7 @@ function ProductCard({
   }
 
   return (
-    <div className="group flex flex-col rounded-2xl border border-black/10 bg-white p-3 transition-shadow duration-200 hover:shadow-md sm:p-3.5">
+    <div className="group flex h-full min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 transition-shadow duration-200 hover:shadow-md sm:p-3.5">
       <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div className={`relative aspect-[4/3] overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
           {imageSrc ? (
@@ -868,57 +868,62 @@ function ProductCard({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <span className="text-sm text-[#94A3B8]">{t('productsPage.noImage')}</span>
+              <span className="text-xs text-[#94A3B8] sm:text-sm">{t('productsPage.noImage')}</span>
             </div>
           )}
           <ProductStockOverlay product={product} />
-          <div className="absolute end-2 top-2">
-            <span className="rounded-md bg-white/92 px-2 py-0.5 text-xs font-semibold text-[#0B0F19] ring-1 ring-black/10">
-              {caratLabel}
-            </span>
-          </div>
+          {!outOfStock && caratLabel ? (
+            <div className="absolute top-1.5 end-1.5">
+              <span className="rounded bg-white/92 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-[#0B0F19] ring-1 ring-black/10">
+                {caratLabel}
+              </span>
+            </div>
+          ) : null}
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col px-0.5 pt-3">
+      <div className="flex flex-1 flex-col px-0.5 pt-2">
         <Link to={`/products/${product.slug}`} className="min-w-0">
-          <h3 className="line-clamp-1 text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20">
+          <h3 className="line-clamp-2 sm:line-clamp-1 text-[12px] sm:text-[15px] font-semibold text-[#0B0F19] transition-colors group-hover:underline decoration-black/20 leading-[1.3] sm:leading-normal">
             {productName}
           </h3>
         </Link>
 
         {specParts.length ? (
-          <p className="mt-0.5 line-clamp-1 text-xs text-[#64748B]">{specParts.join(' · ')}</p>
+          <p className="mt-0.5 line-clamp-1 text-[9px] sm:text-xs text-[#64748B]">{specParts.join(' · ')}</p>
         ) : null}
 
-        <div className="mt-2 flex items-end justify-between gap-2">
-          <span className="min-w-0 text-lg font-bold leading-none text-[#0B0F19] tabular-nums">
-            {formatKwd(unitPrice)}
-            <span className="ms-1 text-xs font-semibold text-[#64748B]">KWD</span>
-          </span>
-          <ProductPriceTrendArrow
-            product={product}
-            variant="light"
-            showPercent
-            trendOverride={trendOverride}
-            percentOverride={percentOverride}
-            className="shrink-0"
-          />
-        </div>
+        <div className="mt-auto flex flex-col gap-1.5 pt-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-1">
+            <span className="min-w-0 text-[13px] sm:text-lg font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight">
+              {formatKwd(unitPrice)}
+              <span className="ms-0.5 text-[9px] sm:text-xs font-semibold text-[#64748B]">KWD</span>
+            </span>
+            <ProductPriceTrendArrow
+              product={product}
+              variant="light"
+              showPercent
+              trendOverride={trendOverride}
+              percentOverride={percentOverride}
+              className="shrink-0"
+              size="sm"
+            />
+          </div>
 
-        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-black/5 pt-2.5">
-          <span className="truncate text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
-          <ProductStockStatusLabel product={product} className="shrink-0" />
+          <div className="flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 border-t border-black/5 pt-1.5">
+            <span className="truncate text-[9px] sm:text-[11px] text-[#64748B]">{t('home.shipsIn')}</span>
+            <ProductStockStatusLabel product={product} className="shrink-0 text-[9px] sm:text-[11px]" />
+          </div>
         </div>
 
         <button
           type="button"
           onClick={() => addToCart(product)}
           disabled={outOfStock}
-          className={`${addButtonClass} mt-3 w-full`}
+          className={`${addButtonClass} mt-2.5 w-full`}
         >
-          <ShoppingCart className="h-4 w-4 shrink-0" />
-          {outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}
+          <ShoppingCart className="hidden sm:block h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+          <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('productsPage.addToCart')}</span>
         </button>
       </div>
     </div>
