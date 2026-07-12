@@ -84,8 +84,8 @@ export function KuwaitLocationFields({
 
   const contentClass = cn(
     'z-[80] max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl',
-    'border border-black/10 bg-white p-0 text-[#0B0F19]',
-    'shadow-[0_18px_40px_-16px_rgba(11,15,25,0.35)]',
+    'border border-black/8 bg-white p-0 text-[#0B0F19]',
+    'shadow-[0_12px_28px_-18px_rgba(11,15,25,0.22)]',
   )
 
   const itemClass = cn(

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
@@ -39,6 +39,14 @@ import {
 } from '../featureFlags'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
+import { cn } from '@/lib/utils'
+import {
+  dashboardFieldClass,
+  dashboardLabelClass,
+  dashboardPanelClass,
+  dashboardPrimaryBtnClass,
+  dashboardSecondaryBtnClass,
+} from '@/lib/dashboardStyles'
 
 function isDisabledDashboardTab(tab: string): boolean {
   if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && isTradingDashboardTab(tab)) return true
@@ -84,8 +92,21 @@ function readDashboardTabFromUrl(): string {
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState(readDashboardTabFromUrl)
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { t } = useTranslation()
+
+  const selectTab = (tabId: string) => {
+    setActiveTab(tabId)
+    const params = new URLSearchParams(location.search)
+    if (tabId === 'profile') {
+      params.delete('tab')
+    } else {
+      params.set('tab', tabId)
+    }
+    const qs = params.toString()
+    navigate({ pathname: '/dashboard', search: qs ? `?${qs}` : '' }, { replace: true })
+  }
 
   useEffect(() => {
     try {
@@ -122,64 +143,69 @@ export default function UserDashboard() {
     { id: 'notifications', name: t('userDashboard.tabs.notifications'), icon: Bell },
   ]
 
+  const userInitial =
+    user?.full_name?.trim().charAt(0)?.toUpperCase()
+    || user?.email?.trim().charAt(0)?.toUpperCase()
+    || 'U'
+
   return (
-    <div className="min-h-screen">
+    <div className="dashboard-page">
       <div className="page-shell page-section">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1 mt-4">
-            <div className="gold-card sticky top-[var(--nav-offset,7.25rem)]">
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gold-500/20">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold-300 via-gold-400 to-amber-600 shadow-[0_10px_24px_-12px_rgba(212,175,55,0.85)] ring-1 ring-gold-200/45 flex items-center justify-center">
-                  {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
-                    <span className="inline-flex items-center justify-center rounded-md bg-charcoal-950/80 px-1.5 py-1 ring-1 ring-white/20">
-                      <RegionFlagImg
-                        code={user.nationality}
-                        size="md"
-                        className="w-8 h-5 rounded-[3px] ring-1 ring-gold-200/30 shadow-sm"
-                      />
-                    </span>
-                  ) : (
-                    <span className="text-xl font-bold text-charcoal-950">
-                      {user?.full_name?.charAt(0) || 'U'}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gold-100">{user?.full_name}</h3>
-                  <p className="text-sm text-gold-100/60"></p>
-                </div>
+        <h1 className="store-display-title mb-1 text-[#0B0F19]">{t('nav.dashboard')}</h1>
+        <p className="mb-6 text-sm text-[#64748B]">{t('userDashboard.pageSubtitle')}</p>
+
+        <div className="dashboard-layout">
+          <aside className="dashboard-sidebar">
+            <div className="dashboard-sidebar__user">
+              <div className="dashboard-sidebar__avatar">
+                {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+                  <RegionFlagImg
+                    code={user.nationality}
+                    size="md"
+                    className="h-5 w-8 rounded-[3px] ring-1 ring-black/10"
+                  />
+                ) : (
+                  userInitial
+                )}
               </div>
-
-              <nav className="space-y-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-gold-500/20 text-gold-400'
-                        : 'text-gold-100/60 hover:bg-gold-500/10 hover:text-gold-100'
-                    }`}
-                  >
-                    <tab.icon className="w-5 h-5" />
-                    {tab.name}
-                    <ChevronRight className="w-4 h-4 ml-auto" />
-                  </button>
-                ))}
-                <button
-                  onClick={logout}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Logout
-                </button>
-              </nav>
+              <div className="min-w-0">
+                <p className="dashboard-sidebar__name">{user?.full_name || t('userDashboard.guestName')}</p>
+                {user?.email ? (
+                  <p className="dashboard-sidebar__email" dir="ltr">
+                    {user.email}
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
 
-          {/* Content */}
-          <div className="lg:col-span-3">
+            <nav className="dashboard-nav" aria-label={t('nav.dashboard')}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => selectTab(tab.id)}
+                  className={cn(
+                    'dashboard-nav-item',
+                    activeTab === tab.id && 'dashboard-nav-item--active',
+                  )}
+                >
+                  <tab.icon className="dashboard-nav-item__icon" aria-hidden />
+                  <span>{tab.name}</span>
+                  <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={logout}
+                className="dashboard-nav-item dashboard-nav-item--logout"
+              >
+                <LogOut className="dashboard-nav-item__icon" aria-hidden />
+                <span>{t('userDashboard.logout')}</span>
+              </button>
+            </nav>
+          </aside>
+
+          <div className="dashboard-content">
             {activeTab === 'profile' && <ProfileTab />}
             {activeTab === 'orders' && <OrdersTab />}
             {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'locked_gold' && <LockedGoldTab />}
@@ -188,9 +214,6 @@ export default function UserDashboard() {
             {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'transactions' && <TransactionsTab />}
             {BANK_CHANGE_REQUESTS_ENABLED && activeTab === 'bank_account' && <BankAccountTab />}
             {activeTab === 'addresses' && <AddressesTab />}
-            {/* Placeholder tabs (can be implemented later) */}
-            {/* {activeTab === 'wishlist' && <WishlistTab />} */}
-            {/* {activeTab === 'payments' && <PaymentsTab />} */}
             {activeTab === 'notifications' && <NotificationsTab />}
           </div>
         </div>
@@ -379,9 +402,9 @@ function ClubTab() {
       </p>
 
       {memLoading ? (
-        <div className="gold-card p-8 text-center text-gold-100/70">{t('userDashboard.club.loading')}</div>
+        <div className="dashboard-panel p-8 text-center text-gold-100/70">{t('userDashboard.club.loading')}</div>
       ) : memError ? (
-        <div className="gold-card space-y-4 text-center">
+        <div className="dashboard-panel space-y-4 text-center">
           <p className="text-sm text-gold-100/80">{t('userDashboard.club.loadFailed')}</p>
           <button
             type="button"
@@ -392,7 +415,7 @@ function ClubTab() {
           </button>
         </div>
       ) : !membership || !club ? (
-        <div className="gold-card space-y-4">
+        <div className="dashboard-panel space-y-4">
           <p className="text-gold-100/80 text-sm">{t('userDashboard.club.notInClub')}</p>
           <div className="flex flex-wrap gap-2 items-end">
             <div className="flex-1 min-w-[200px]">
@@ -415,7 +438,7 @@ function ClubTab() {
           </div>
         </div>
       ) : (
-        <div className="gold-card space-y-4">
+        <div className="dashboard-panel space-y-4">
           <div>
             <p className="text-sm text-gold-100/60">{t('userDashboard.club.clubLabel')}</p>
             {membership.role === 'head' ? (
@@ -581,7 +604,7 @@ function ClubTab() {
         </div>
       )}
 
-      <div className="gold-card">
+      <div className="dashboard-panel">
         <h3 className="text-lg font-semibold text-gold-100 mb-2">{t('userDashboard.club.myOffers')}</h3>
         <p className="text-xs text-gold-100/60 mb-3">{t('userDashboard.club.offersHint')}</p>
         {offers.length === 0 ? (
@@ -727,25 +750,25 @@ function ProfileTab() {
   }
 
   return (
-    <div className="gold-card mt-4">
-      <h2 className="text-xl font-bold text-gold-100 mb-6">{t('userDashboard.profile.title')}</h2>
+    <div className={dashboardPanelClass}>
+      <h2 className="dashboard-panel__title">{t('userDashboard.profile.title')}</h2>
 
       {kycIncomplete ? (
         <div
           role="status"
-          className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
         >
           {t('auth.kyc.incompleteBanner')}
         </div>
       ) : null}
 
       {kycQuestions.length > 0 ? (
-        <div className="mb-8 space-y-4 rounded-xl border border-gold-500/20 bg-charcoal-900/40 p-4 sm:p-5">
+        <div className="dashboard-inset-panel mb-8 space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-gold-100">{t('auth.kyc.completeTitle')}</h3>
-            <p className="mt-1 text-sm text-gold-100/60">{t('auth.kyc.completeHint')}</p>
+            <h3 className="text-base font-semibold text-[#0B0F19]">{t('auth.kyc.completeTitle')}</h3>
+            <p className="mt-1 text-sm text-[#64748B]">{t('auth.kyc.completeHint')}</p>
             {profile?.kyc_registration_complete ? (
-              <p className="mt-2 text-xs font-semibold text-emerald-400">✓ {t('auth.kyc.savedToast')}</p>
+              <p className="mt-2 text-xs font-semibold text-[#3F6F00]">✓ {t('auth.kyc.savedToast')}</p>
             ) : null}
           </div>
           <KycRegistrationFields
@@ -765,7 +788,7 @@ function ProfileTab() {
             type="button"
             onClick={() => void handleSaveKyc()}
             disabled={savingKyc}
-            className="gold-button"
+            className="dashboard-primary-btn"
           >
             {savingKyc ? t('userDashboard.profile.saving') : t('auth.kyc.saveAnswers')}
           </button>
@@ -775,12 +798,12 @@ function ProfileTab() {
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.profile.fullName')}</label>
+            <label className={dashboardLabelClass}>{t('userDashboard.profile.fullName')}</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="dashboard-field"
             />
           </div>
           <div>
@@ -789,7 +812,7 @@ function ProfileTab() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="dashboard-field"
             />
           </div>
         </div>
@@ -800,7 +823,7 @@ function ProfileTab() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="dashboard-field"
             />
           </div>
           <div>
@@ -809,7 +832,7 @@ function ProfileTab() {
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+              className="dashboard-field"
             />
           </div>
         </div>
@@ -869,7 +892,7 @@ function ProfileTab() {
           </div>
         </div>
 
-        <button type="submit" className="gold-button" disabled={saving}>
+        <button type="submit" className="dashboard-primary-btn" disabled={saving}>
           {saving ? t('userDashboard.profile.saving') : t('userDashboard.profile.saveChanges')}
         </button>
       </form>
@@ -943,31 +966,30 @@ function AddressesTab() {
     },
   })
 
-  const inputClass =
-    'w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder:text-gold-100/40'
+  const inputClass = dashboardFieldClass
 
   if (isLoading && !profile) {
     return (
-      <div className="gold-card mt-4">
-        <p className="text-gold-100/60 py-8 text-center">{t('userDashboard.addresses.loading')}</p>
+      <div className={dashboardPanelClass}>
+        <p className="py-10 text-center text-sm text-[#64748B]">{t('userDashboard.addresses.loading')}</p>
       </div>
     )
   }
 
   if (!profile?.id) {
     return (
-      <div className="gold-card mt-4">
-        <p className="text-gold-100/80">{t('userDashboard.addresses.noProfile')}</p>
+      <div className={dashboardPanelClass}>
+        <p className="text-sm text-[#64748B]">{t('userDashboard.addresses.noProfile')}</p>
       </div>
     )
   }
 
   return (
-    <div className="gold-card mt-4">
-      <h2 className="text-xl font-bold text-gold-100 mb-2">{t('userDashboard.addresses.title')}</h2>
-      <p className="text-sm text-gold-100/60 mb-6">{t('userDashboard.addresses.subtitle')}</p>
+    <div className={dashboardPanelClass}>
+      <h2 className="dashboard-panel__title">{t('userDashboard.addresses.title')}</h2>
+      <p className="dashboard-panel__subtitle">{t('userDashboard.addresses.subtitle')}</p>
       <form
-        className="space-y-4"
+        className="space-y-5"
         onSubmit={(e) => {
           e.preventDefault()
           if (!profile?.id) return
@@ -975,7 +997,7 @@ function AddressesTab() {
         }}
       >
         <div>
-          <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.line1')}</label>
+          <label className={dashboardLabelClass}>{t('userDashboard.addresses.line1')}</label>
           <input
             type="text"
             className={inputClass}
@@ -985,7 +1007,7 @@ function AddressesTab() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.line2')}</label>
+          <label className={dashboardLabelClass}>{t('userDashboard.addresses.line2')}</label>
           <input
             type="text"
             className={inputClass}
@@ -1000,12 +1022,12 @@ function AddressesTab() {
             city={city}
             onGovernorateChange={setGovernorate}
             onCityChange={setCity}
-            variant="dark"
+            variant="light"
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">
+            <label className={dashboardLabelClass}>
               {t('userDashboard.addresses.postalCode')}
             </label>
             <input
@@ -1017,7 +1039,7 @@ function AddressesTab() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.addresses.country')}</label>
+            <label className={dashboardLabelClass}>{t('userDashboard.addresses.country')}</label>
             <input
               type="text"
               className={inputClass}
@@ -1027,8 +1049,8 @@ function AddressesTab() {
             />
           </div>
         </div>
-        <p className="text-xs text-gold-100/50">{t('userDashboard.addresses.checkoutHint')}</p>
-        <button type="submit" className="gold-button" disabled={saveMutation.isPending}>
+        <p className="text-xs text-[#64748B]">{t('userDashboard.addresses.checkoutHint')}</p>
+        <button type="submit" className={dashboardPrimaryBtnClass} disabled={saveMutation.isPending}>
           {saveMutation.isPending ? t('userDashboard.profile.saving') : t('userDashboard.addresses.save')}
         </button>
       </form>
@@ -1102,23 +1124,25 @@ function OrdersTab() {
   }
 
   return (
-    <div className="space-y-4 mt-4">
-      <h2 className="text-xl font-bold gold-gradient-text-on-light mb-4">{t('userDashboard.orders.title')}</h2>
-      <div className="gold-card">
+    <div className="space-y-4">
+      <div>
+        <h2 className="dashboard-panel__title">{t('userDashboard.orders.title')}</h2>
+      </div>
+      <div className={dashboardPanelClass}>
         {isLoading ? (
-          <p className="text-gold-100/60 text-center py-8">{t('userDashboard.orders.loading')}</p>
+          <p className="py-10 text-center text-sm text-[#64748B]">{t('userDashboard.orders.loading')}</p>
         ) : orders.length === 0 ? (
-          <p className="text-gold-100/60 text-center py-8">{t('userDashboard.orders.noOrdersYet')}</p>
+          <p className="py-10 text-center text-sm text-[#64748B]">{t('userDashboard.orders.noOrdersYet')}</p>
         ) : (
-          <div className="divide-y divide-gold-500/20">
+          <div className="divide-y dashboard-divider">
             {pageItems.map((order) => (
-              <div key={order.id} className="py-4 first:pt-0">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+              <div key={order.id} className="py-5 first:pt-0 last:pb-0">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-gold-100">
+                    <p className="font-semibold text-[#0B0F19]">
                       {t('userDashboard.orders.orderLabel')} {order.invoice_number}
                     </p>
-                    <p className="text-sm text-gold-100/60">
+                    <p className="mt-0.5 text-sm text-[#64748B]">
                       {order.sale_date ? new Date(order.sale_date).toLocaleDateString(undefined, {
                         year: 'numeric',
                         month: 'short',
@@ -1129,17 +1153,20 @@ function OrdersTab() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        order.status === 'delivered' || order.status === 'paid' || order.status === 'locked'
-                          ? 'bg-green-500/20 text-green-400'
-                          : order.status === 'cancelled' || order.status === 'refunded'
-                          ? 'bg-red-500/20 text-red-400'
-                          : 'bg-gold-500/20 text-gold-400'
-                      }`}>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <span
+                        className={cn(
+                          'dashboard-status-pill',
+                          order.status === 'delivered' || order.status === 'paid' || order.status === 'locked'
+                            ? 'dashboard-status-pill--success'
+                            : order.status === 'cancelled' || order.status === 'refunded'
+                              ? 'dashboard-status-pill--danger'
+                              : 'dashboard-status-pill--neutral',
+                        )}
+                      >
                         {order.status_display ?? order.status}
                       </span>
-                      <span className="font-medium text-gold-400">
+                      <span className="text-sm font-semibold text-[#0B0F19]">
                         {Number(order.total_amount).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
                       </span>
                     </div>
@@ -1147,7 +1174,7 @@ function OrdersTab() {
                       type="button"
                       onClick={() => void handleDownloadInvoice(order)}
                       disabled={downloadingId === order.id}
-                      className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border border-gold-500/60 text-gold-100 hover:bg-gold-500/10 disabled:opacity-50"
+                      className={cn(dashboardSecondaryBtnClass, 'mt-1')}
                     >
                       {downloadingId === order.id
                         ? t('userDashboard.orders.downloading')
@@ -1156,7 +1183,7 @@ function OrdersTab() {
                   </div>
                 </div>
                 {order.items && order.items.length > 0 && (
-                  <ul className="mt-2 text-sm text-gold-100/70 space-y-1">
+                  <ul className="mt-3 space-y-1 text-sm text-[#64748B]">
                     {order.items.slice(0, 3).map((item) => (
                       <li key={item.id}>
                         {item.product_name ?? t('userDashboard.orders.item')} × {item.quantity}
@@ -1164,14 +1191,14 @@ function OrdersTab() {
                       </li>
                     ))}
                     {order.items.length > 3 && (
-                      <li className="text-gold-100/50">
+                      <li className="text-[#94A3B8]">
                         +{order.items.length - 3} {t('userDashboard.orders.more')}
                       </li>
                     )}
                   </ul>
                 )}
                 {order.delivery_type === 'locked' && (
-                  <p className="mt-1 text-xs text-amber-400">{t('userDashboard.orders.lockedInVault')}</p>
+                  <p className="mt-2 text-xs font-medium text-amber-700">{t('userDashboard.orders.lockedInVault')}</p>
                 )}
               </div>
             ))}
@@ -1179,7 +1206,7 @@ function OrdersTab() {
         )}
       </div>
       {!isLoading && total > pageSize && (
-        <div className="gold-card mt-2 flex items-center justify-between text-xs text-black-100/70">
+        <div className={cn(dashboardPanelClass, 'flex flex-wrap items-center justify-between gap-3 text-xs text-[#64748B]')}>
           <div>
             {t('userDashboard.orders.pagination', {
               page,
@@ -1192,7 +1219,7 @@ function OrdersTab() {
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+              className={dashboardSecondaryBtnClass}
             >
               {t('userDashboard.orders.prev')}
             </button>
@@ -1200,7 +1227,7 @@ function OrdersTab() {
               type="button"
               onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
               disabled={page >= totalPages}
-              className="px-3 py-1 rounded-full border border-gold-500/60 disabled:opacity-40 hover:bg-gold-500/10"
+              className={dashboardSecondaryBtnClass}
             >
               {t('userDashboard.orders.next')}
             </button>
@@ -1379,7 +1406,7 @@ function LockedGoldTab() {
         ))}
       </div>
 
-      <div className="gold-card">
+      <div className="dashboard-panel">
         {isLoading ? (
           <p className="text-gold-100/60 text-center py-8">{t('userDashboard.lockedGold.loading')}</p>
         ) : lockedView === 'fund' ? (
@@ -1457,7 +1484,7 @@ function LockedGoldTab() {
       </div>
 
       {lockedView === 'products' && !isLoading && total > pageSize && (
-        <div className="gold-card mt-2 flex items-center justify-between text-xs text-gold-100/70">
+        <div className="dashboard-panel flex items-center justify-between text-xs text-gold-100/70">
           <div>
             {t('userDashboard.lockedGold.pagination', { page, totalPages, total })}
           </div>
@@ -1484,7 +1511,7 @@ function LockedGoldTab() {
 
       {confirmItem && quote && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
-          <div className="gold-card max-w-md w-full">
+          <div className="dashboard-panel max-w-md w-full">
             <h3 className="text-lg font-semibold text-gold-100 mb-3">
               {t('userDashboard.lockedGold.confirmSellFor', {
                 productName:
@@ -1542,7 +1569,7 @@ function LockedGoldTab() {
 
       {withdrawModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
-          <div className="gold-card max-w-md w-full">
+          <div className="dashboard-panel max-w-md w-full">
             <h3 className="text-lg font-semibold text-gold-100 mb-3">{t('userDashboard.lockedGold.withdrawModal.title')}</h3>
             <p className="text-sm text-gold-100/70 mb-3">
               {t('userDashboard.lockedGold.withdrawModal.hint')}
@@ -1722,7 +1749,7 @@ function BankAccountTab() {
       <p className="text-sm gold-gradient-text-on-light mb-4 whitespace-pre-line">
         {t('userDashboard.bankAccount.hintApproval')}
       </p>
-      <div className="gold-card space-y-6">
+      <div className="dashboard-panel space-y-6">
         {busy && !profile ? (
           <p className="text-gold-100/60 text-center py-8">{t('userDashboard.bankAccount.loading')}</p>
         ) : !profile ? (
@@ -1807,7 +1834,7 @@ function BankAccountTab() {
                       type="text"
                       value={bankName}
                       onChange={(e) => setBankName(e.target.value)}
-                      className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                      className="dashboard-field"
                       placeholder={t('userDashboard.bankAccount.bankNamePlaceholder')}
                     />
                   </div>
@@ -1819,7 +1846,7 @@ function BankAccountTab() {
                       type="text"
                       value={iban}
                       onChange={(e) => setIban(e.target.value)}
-                      className="w-full px-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100"
+                      className="dashboard-field"
                       placeholder={t('userDashboard.bankAccount.ibanPlaceholder')}
                     />
                   </div>
@@ -1847,7 +1874,7 @@ function BankAccountTab() {
 
                 <button
                   type="submit"
-                  className="gold-button"
+                  className="dashboard-primary-btn"
                   disabled={saving || mutation.isPending}
                 >
                   {saving || mutation.isPending
@@ -2062,7 +2089,7 @@ function TransactionsTab() {
       </p>
 
       {!isLoading && txs.length > 0 && (
-        <div className="gold-card p-4 space-y-3">
+        <div className="dashboard-panel p-4 space-y-3">
           <h3 className="text-sm font-semibold text-gold-100">{t('userDashboard.transactions.dateRangeTitle')}</h3>
           <p className="text-xs text-gold-100/60">{t('userDashboard.transactions.dateRangeHint')}</p>
           {rangeInvalid && (
@@ -2114,7 +2141,7 @@ function TransactionsTab() {
         </div>
       )}
 
-      <div className="gold-card">
+      <div className="dashboard-panel">
         {isLoading ? (
           <p className="text-gold-100/60 text-center py-8">{t('userDashboard.transactions.loading')}</p>
         ) : txs.length === 0 ? (
@@ -2190,7 +2217,7 @@ function TransactionsTab() {
         )}
       </div>
       {!isLoading && total > pageSize && (
-        <div className="gold-card mt-2 flex items-center justify-between text-xs text-black-100/70">
+        <div className="dashboard-panel flex items-center justify-between text-xs text-black-100/70">
           <div>
             {t('userDashboard.transactions.pagination', { page, totalPages, total })}
           </div>
@@ -2216,7 +2243,7 @@ function TransactionsTab() {
       )}
       {selectedTx && receipt && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
-          <div className="gold-card max-w-2xl w-full bg-[var(--site-bg)]">
+          <div className="dashboard-panel max-w-2xl w-full bg-[var(--site-bg)]">
             <h3 className="text-xl font-bold text-gold-100 mb-4">
               {t('userDashboard.transactions.sellReceiptTitle', {
                 description: selectedTx.description || t('userDashboard.transactions.goldBuybackFallback'),
@@ -2461,7 +2488,7 @@ function NotificationsTab() {
                             })
                           : ''
                   return (
-                    <div key={a.id} className="gold-card p-4 border border-lime-500/30">
+                    <div key={a.id} className="dashboard-panel p-4 border border-lime-500/30">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="text-sm text-black-100/70">
@@ -2547,7 +2574,7 @@ function NotificationsTab() {
             return (
               <div
                 key={a.id}
-                className={`gold-card p-4 border ${
+                className={`dashboard-panel p-4 border ${
                   isNew ? 'border-amber-400/50 ring-1 ring-amber-400/30' : 'border-gold-500/20'
                 }`}
               >
@@ -2648,7 +2675,7 @@ function TradeGoldTab() {
   const plClass = totalUnrealized >= 0 ? 'text-emerald-400' : 'text-red-400'
 
   return (
-    <div className="gold-card mt-4 p-6 space-y-4">
+    <div className="dashboard-panel p-6 space-y-4">
       <h2 className="text-xl font-bold gold-gradient-text-on-light">
         {t('userDashboard.tradeGoldPanel.title')}
       </h2>

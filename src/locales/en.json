@@ -1107,6 +1107,11 @@
     "selectCity": "Select area",
     "selectGovernorateFirst": "Select governorate first",
     "postalPh": "Postal Code",
+    "saveAddressTitle": "Save this address to my account",
+    "saveAddressHint": "We will store it under Addresses in your dashboard for faster checkout next time.",
+    "addressSavedToProfile": "Address saved to your account",
+    "addressSaveFailed": "Order placed, but we could not save your address. You can add it from your dashboard.",
+    "manageAddressLater": "You can also update it anytime from",
     "continuePayment": "Continue to Payment",
     "paymentMethod": "Payment Method",
     "delivery": "Delivery",
@@ -1796,6 +1801,9 @@
     "allStatuses": "All statuses"
   },
   "userDashboard": {
+    "pageSubtitle": "Manage your profile, orders, saved address, and notifications.",
+    "guestName": "Account",
+    "logout": "Log out",
     "tabs": {
       "profile": "Profile",
       "orders": "My Orders",

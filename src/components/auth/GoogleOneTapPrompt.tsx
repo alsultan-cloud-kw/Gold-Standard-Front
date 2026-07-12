@@ -4,10 +4,20 @@ import { useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { cancelGoogleOneTap, promptGoogleOneTap } from '@/lib/googleOneTap'
+import {
+  cancelGoogleOneTap,
+  hasNativeGoogleClientId,
+  promptGoogleOneTap,
+} from '@/lib/googleOneTap'
 import { buildClerkOAuthUrls, clerkOAuthStrategy, getClerkUnavailableMessage } from '@/lib/clerkOAuth'
 
-const HIDDEN_PATHS = new Set(['/login', '/register', '/sso-callback', '/forgot-password'])
+const HIDDEN_PATHS = new Set([
+  '/login',
+  '/register',
+  '/sso-callback',
+  '/forgot-password',
+  '/checkout',
+])
 const PROMPT_DELAY_MS = 700
 const FALLBACK_DELAY_MS = 3200
 const DISMISS_KEY = 'gs_google_signin_nudge_dismissed_until'
@@ -31,21 +41,20 @@ function fallbackDismissed(): boolean {
 }
 
 /**
- * Google One Tap for storefront guests.
- * - With VITE_GOOGLE_CLIENT_ID: native GIS prompt (needs JS origins on your Google OAuth client).
- * - Otherwise: Clerk <GoogleOneTap /> (needs custom Google credentials in Clerk Dashboard).
- * ClerkAuthBridge exchanges the Clerk session for Django JWT after sign-in.
+ * Google One Tap for storefront guests — exactly one GSI path:
+ * - VITE_GOOGLE_CLIENT_ID set → native GIS only (never Clerk <GoogleOneTap />).
+ * - Otherwise → Clerk <GoogleOneTap /> only (never native initialize).
  */
 export default function GoogleOneTapPrompt() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const { isSignedIn, isLoaded: clerkLoaded } = useClerkAuth()
   const clerk = useClerk()
-  const [useClerkComponent, setUseClerkComponent] = useState(false)
   const [showFallback, setShowFallback] = useState(false)
   const [oauthBusy, setOauthBusy] = useState(false)
   const promptedRef = useRef(false)
 
+  const useNativeGsi = hasNativeGoogleClientId()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? ''
   const redirectUrl = `${window.location.origin}${pathname}${window.location.search}`
   const hiddenPath = HIDDEN_PATHS.has(pathname)
@@ -60,30 +69,16 @@ export default function GoogleOneTapPrompt() {
     if (!showPrompt) {
       cancelGoogleOneTap()
       setShowFallback(false)
+      promptedRef.current = false
       return
-    }
-
-    if (!googleClientId) {
-      setUseClerkComponent(true)
-      const fallbackTimer = window.setTimeout(() => {
-        if (!fallbackDismissed()) setShowFallback(true)
-      }, FALLBACK_DELAY_MS)
-      return () => window.clearTimeout(fallbackTimer)
     }
 
     const fallbackTimer = window.setTimeout(() => {
       if (!fallbackDismissed()) setShowFallback(true)
     }, FALLBACK_DELAY_MS)
 
-    const markDisplayed = () => {
-      window.clearTimeout(fallbackTimer)
-      setShowFallback(false)
-    }
-
-    const markUnavailable = (reason?: string) => {
-      console.info('Google One Tap unavailable:', reason || 'unknown')
-      setUseClerkComponent(true)
-      if (!fallbackDismissed()) setShowFallback(true)
+    if (!useNativeGsi) {
+      return () => window.clearTimeout(fallbackTimer)
     }
 
     if (promptedRef.current) {
@@ -96,13 +91,15 @@ export default function GoogleOneTapPrompt() {
 
       void promptGoogleOneTap(googleClientId, clerk, (moment) => {
         if (moment.type === 'displayed') {
-          markDisplayed()
+          window.clearTimeout(fallbackTimer)
+          setShowFallback(false)
         } else {
-          markUnavailable(moment.reason)
+          console.info('Google One Tap unavailable:', moment.reason || 'unknown')
+          if (!fallbackDismissed()) setShowFallback(true)
         }
       }).catch((err) => {
         console.error('Google One Tap failed to initialize:', err)
-        markUnavailable('gsi_init_failed')
+        if (!fallbackDismissed()) setShowFallback(true)
       })
     }, PROMPT_DELAY_MS)
 
@@ -111,16 +108,7 @@ export default function GoogleOneTapPrompt() {
       window.clearTimeout(fallbackTimer)
       cancelGoogleOneTap()
     }
-  }, [showPrompt, googleClientId, clerk, pathname])
-
-  useEffect(() => {
-    if (!showPrompt) {
-      promptedRef.current = false
-      setUseClerkComponent(!googleClientId)
-      setShowFallback(false)
-      return
-    }
-  }, [showPrompt, googleClientId])
+  }, [showPrompt, useNativeGsi, googleClientId, clerk, pathname])
 
   const dismissFallback = useCallback(() => {
     try {
@@ -172,7 +160,7 @@ export default function GoogleOneTapPrompt() {
 
   return (
     <>
-      {(!googleClientId || useClerkComponent) && (
+      {!useNativeGsi && (
         <ClerkLoaded>
           <GoogleOneTap
             cancelOnTapOutside
@@ -189,23 +177,23 @@ export default function GoogleOneTapPrompt() {
           role="dialog"
           aria-modal="false"
           aria-labelledby="gs-signin-nudge-title"
-          className="fixed end-3 z-[60] w-[min(20.5rem,calc(100%_-_1.5rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-[0_18px_40px_-12px_rgba(11,15,25,0.35)] sm:end-6"
+          className="fixed end-3 z-[60] w-[min(20.5rem,calc(100%_-_1.5rem))] overflow-hidden rounded-2xl border border-black/8 bg-white sm:end-6"
           style={{ top: 'calc(var(--nav-offset, 7.25rem) + 0.5rem)' }}
         >
-          <div className="flex items-start gap-3 border-b border-stone-100 px-3.5 py-3 ps-4">
+          <div className="flex items-start gap-3 border-b border-black/6 px-3.5 py-3 ps-4">
             <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ECFCCB] text-[#0B0F19] ring-1 ring-[#85E307]/25">
-              <span className="text-sm font-bold">GS</span>
+              <span className="text-sm font-bold">G</span>
             </div>
             <h2
               id="gs-signin-nudge-title"
-              className="min-w-0 flex-1 pt-1.5 text-sm font-semibold leading-5 text-stone-950"
+              className="min-w-0 flex-1 pt-1.5 text-sm font-semibold leading-5 text-[#0B0F19]"
             >
               {t('auth.signInNudgeTitle')}
             </h2>
             <button
               type="button"
               onClick={dismissFallback}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-700 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-black/8 bg-[#F9F9FA] text-[#64748B] transition hover:border-black/12 hover:bg-[#F4F4F5] hover:text-[#0B0F19] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60"
               aria-label={t('common.dismissSignInPrompt')}
               title={t('common.dismissSignInPrompt')}
             >
@@ -214,14 +202,14 @@ export default function GoogleOneTapPrompt() {
           </div>
 
           <div className="px-4 py-3.5">
-            <p className="text-sm leading-5 text-stone-600">{t('auth.signInNudgeBody')}</p>
+            <p className="text-sm leading-5 text-[#64748B]">{t('auth.signInNudgeBody')}</p>
             <button
               type="button"
               onClick={() => void continueWithGoogle()}
               disabled={oauthBusy}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 active:scale-[0.99] disabled:opacity-60"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a2230] active:scale-[0.99] disabled:opacity-60"
             >
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-stone-950">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#0B0F19]">
                 G
               </span>
               {oauthBusy ? t('auth.oauthSigningIn') : t('auth.continueWithGoogle')}
@@ -232,7 +220,7 @@ export default function GoogleOneTapPrompt() {
                 dismissFallback()
                 window.location.assign('/login')
               }}
-              className="mt-2 w-full py-2 text-center text-xs font-medium text-stone-500 transition hover:text-stone-800"
+              className="mt-2 w-full py-2 text-center text-xs font-medium text-[#64748B] transition hover:text-[#0B0F19]"
             >
               {t('auth.signInWithEmail')}
             </button>

@@ -1,11 +1,3 @@
-type GsiMomentNotification = {
-  isDisplayed: () => boolean
-  isNotDisplayed: () => boolean
-  isSkippedMoment: () => boolean
-  getNotDisplayedReason: () => string
-  getSkippedReason: () => string
-}
-
 type GsiCredentialResponse = {
   credential: string
 }
@@ -16,7 +8,7 @@ declare global {
       accounts: {
         id: {
           initialize: (config: Record<string, unknown>) => void
-          prompt: (listener?: (notification: GsiMomentNotification) => void) => void
+          prompt: (listener?: (notification: unknown) => void) => void
           cancel: () => void
         }
       }
@@ -25,6 +17,8 @@ declare global {
 }
 
 let gsiLoadPromise: Promise<void> | null = null
+let gsiInitializedClientId: string | null = null
+let gsiPromptInFlight = false
 
 export function loadGoogleGsiScript(): Promise<void> {
   if (window.google?.accounts?.id) return Promise.resolve()
@@ -51,6 +45,7 @@ export function loadGoogleGsiScript(): Promise<void> {
 }
 
 export function cancelGoogleOneTap(): void {
+  gsiPromptInFlight = false
   try {
     window.google?.accounts?.id?.cancel()
   } catch {
@@ -63,44 +58,55 @@ type ClerkOneTapClient = {
   setActive: (params: { session: string }) => Promise<unknown>
 }
 
-/** Native Google Identity Services One Tap (uses your Web client ID + JS origins). */
+/** Native Google Identity Services One Tap (single initialize per client ID). */
 export async function promptGoogleOneTap(
   clientId: string,
   clerk: ClerkOneTapClient,
   onMoment?: (moment: { type: 'displayed' | 'unavailable'; reason?: string }) => void,
 ): Promise<void> {
+  if (gsiPromptInFlight) return
+
   await loadGoogleGsiScript()
   if (!window.google?.accounts?.id) {
     onMoment?.({ type: 'unavailable', reason: 'gsi_unavailable' })
     return
   }
 
-  window.google.accounts.id.initialize({
-    client_id: clientId,
-    auto_select: false,
-    cancel_on_tap_outside: true,
-    context: 'signin',
-    use_fedcm_for_prompt: true,
-    callback: async (response: GsiCredentialResponse) => {
-      try {
-        const result = await clerk.authenticateWithGoogleOneTap({ token: response.credential })
-        const sessionId = result?.createdSessionId
-        if (sessionId) {
-          await clerk.setActive({ session: sessionId })
+  if (gsiInitializedClientId !== clientId) {
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      context: 'signin',
+      use_fedcm_for_prompt: true,
+      itp_support: true,
+      callback: async (response: GsiCredentialResponse) => {
+        try {
+          const result = await clerk.authenticateWithGoogleOneTap({ token: response.credential })
+          const sessionId = result?.createdSessionId
+          if (sessionId) {
+            await clerk.setActive({ session: sessionId })
+          }
+        } catch (err) {
+          console.error('Google One Tap → Clerk failed:', err)
         }
-      } catch (err) {
-        console.error('Google One Tap → Clerk failed:', err)
-      }
-    },
-  })
+      },
+    })
+    gsiInitializedClientId = clientId
+  }
 
-  window.google.accounts.id.prompt((notification) => {
-    if (notification.isDisplayed()) {
-      onMoment?.({ type: 'displayed' })
-    } else if (notification.isNotDisplayed()) {
-      onMoment?.({ type: 'unavailable', reason: notification.getNotDisplayedReason() || 'not_displayed' })
-    } else if (notification.isSkippedMoment()) {
-      onMoment?.({ type: 'unavailable', reason: notification.getSkippedReason() || 'skipped' })
-    }
-  })
+  gsiPromptInFlight = true
+  try {
+    // FedCM: avoid deprecated moment notification methods (isDisplayed, etc.).
+    window.google.accounts.id.prompt()
+    onMoment?.({ type: 'displayed' })
+  } catch (err) {
+    gsiPromptInFlight = false
+    onMoment?.({ type: 'unavailable', reason: 'prompt_failed' })
+    throw err
+  }
+}
+
+export function hasNativeGoogleClientId(): boolean {
+  return Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim())
 }

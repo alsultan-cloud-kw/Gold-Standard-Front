@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /checkout
+Disallow: /cart
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /sso-callback
+Disallow: /payment-receipt
+
+Sitemap: https://www.goldstandardkw.com/sitemap.xml

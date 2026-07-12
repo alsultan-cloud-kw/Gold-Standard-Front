@@ -24,7 +24,7 @@ import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import knetBadge from '@/assets/trust/knet-badge.png'
 import { cn } from '@/lib/utils'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
   cartClubPricingBreakdown,
@@ -39,12 +39,35 @@ import {
 } from '@/utils/productStock'
 
 type CheckoutProfileAddress = {
+  id?: string
   address_line1?: string | null
   address_line2?: string | null
   city?: string | null
   governorate?: string | null
   postal_code?: string | null
   country?: string | null
+}
+
+function profileHasSavedAddress(p: CheckoutProfileAddress): boolean {
+  return Boolean(
+    (p.address_line1 && p.address_line1.trim())
+    || (p.city && p.city.trim())
+    || (p.governorate && p.governorate.trim()),
+  )
+}
+
+function shippingDiffersFromProfile(
+  p: CheckoutProfileAddress,
+  shipping: { address: string; city: string; governorate: string; postalCode: string },
+): boolean {
+  const savedCombined = [p.address_line1, p.address_line2].filter(Boolean).join(', ')
+  const norm = (s: string) => s.trim().toLowerCase()
+  return (
+    norm(shipping.address) !== norm(savedCombined)
+    || norm(shipping.city) !== norm(p.city ?? '')
+    || norm(shipping.governorate) !== norm(p.governorate ?? '')
+    || norm(shipping.postalCode) !== norm(p.postal_code ?? '')
+  )
 }
 
 function firstCustomerProfileForCheckout(data: unknown): CheckoutProfileAddress | null {
@@ -180,14 +203,10 @@ type PlaceOrderErrorPayload = {
   requested_quantity?: unknown
 }
 
-const checkoutFieldClass =
-  'w-full rounded-xl border border-[#85E307]/35 bg-white px-4 py-3 text-sm text-[#0B0F19] placeholder:text-[#64748B] outline-none transition focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/20'
-const checkoutPanelClass =
-  'rounded-2xl border border-black/10 bg-white p-5 shadow-sm sm:p-6'
-const checkoutPrimaryBtnClass =
-  'inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-xl bg-[#85E307] px-6 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AEF2A] disabled:cursor-not-allowed disabled:opacity-50'
-const checkoutSecondaryBtnClass =
-  'inline-flex min-h-[3rem] flex-1 items-center justify-center rounded-xl border border-black/10 bg-[#F4F4F5] px-6 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#ECFCCB]/40 disabled:opacity-50'
+const checkoutFieldClass = 'checkout-field'
+const checkoutPanelClass = 'checkout-panel'
+const checkoutPrimaryBtnClass = 'checkout-primary-btn'
+const checkoutSecondaryBtnClass = 'checkout-secondary-btn'
 
 export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
@@ -196,6 +215,7 @@ export default function CheckoutPage() {
   const needsVerification = Boolean(user && user.is_verified === false)
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const [step, setStep] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState('knet')
   const [deliveryType, setDeliveryType] = useState<'physical' | 'locked'>('physical')
@@ -243,6 +263,10 @@ export default function CheckoutPage() {
     queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
     enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
   })
+  const checkoutProfile = useMemo(
+    () => firstCustomerProfileForCheckout(checkoutProfileData),
+    [checkoutProfileData],
+  )
   // Ensure numeric wallet balance (API may return string/Decimal-like)
   const walletBalanceRaw =
     (walletData?.wallet as { balance?: unknown } | undefined)?.balance
@@ -329,7 +353,33 @@ export default function CheckoutPage() {
   const [city, setCity] = useState(savedShipping?.city ?? '')
   const [governorate, setGovernorate] = useState(savedShipping?.governorate ?? '')
   const [postalCode, setPostalCode] = useState(savedShipping?.postalCode ?? '')
+  const [saveAddressToProfile, setSaveAddressToProfile] = useState(false)
+  const saveAddressPromptInitialized = useRef(false)
   const profileHydrated = useRef(false)
+
+  const showSaveAddressPrompt = useMemo(() => {
+    if (!localStorage.getItem('access_token')) return false
+    if (!checkoutProfile?.id) return false
+    const hasShipping = Boolean(
+      address.trim() || (city.trim() && governorate.trim()),
+    )
+    if (!hasShipping) return false
+    if (!profileHasSavedAddress(checkoutProfile)) return true
+    return shippingDiffersFromProfile(checkoutProfile, { address, city, governorate, postalCode })
+  }, [checkoutProfile, address, city, governorate, postalCode])
+
+  useEffect(() => {
+    if (!showSaveAddressPrompt) {
+      saveAddressPromptInitialized.current = false
+      setSaveAddressToProfile(false)
+      return
+    }
+    if (saveAddressPromptInitialized.current) return
+    saveAddressPromptInitialized.current = true
+    if (checkoutProfile && !profileHasSavedAddress(checkoutProfile)) {
+      setSaveAddressToProfile(true)
+    }
+  }, [showSaveAddressPrompt, checkoutProfile])
 
   useEffect(() => {
     writeCheckoutShippingDraft({
@@ -547,6 +597,23 @@ export default function CheckoutPage() {
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })) as SaleResponse
 
+      if (saveAddressToProfile && checkoutProfile?.id) {
+        try {
+          await accountsApi.updateProfile(checkoutProfile.id, {
+            address_line1: address.trim() || null,
+            address_line2: null,
+            city: city.trim() || null,
+            governorate: governorate.trim() || null,
+            postal_code: postalCode.trim() || null,
+            country: 'Kuwait',
+          })
+          void queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+          toast.success(t('checkoutPage.addressSavedToProfile'))
+        } catch {
+          toast.error(t('checkoutPage.addressSaveFailed'))
+        }
+      }
+
       if (paymentMethod === 'knet' && data.payment_url) {
         if (data.id) {
           sessionStorage.setItem(
@@ -672,7 +739,7 @@ export default function CheckoutPage() {
   if (knetReturnPhase === 'failed') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
-        <div className="w-full max-w-lg rounded-2xl border border-red-200/70 bg-white p-10 text-center shadow-sm">
+        <div className="w-full max-w-lg rounded-2xl border border-red-200/70 bg-white p-10 text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(220,38,38,0.1)]">
             <CreditCard className="h-8 w-8 text-[#DC2626]" />
           </div>
@@ -702,7 +769,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-[#F9F9FA] px-4 py-12">
         <div className="mx-auto max-w-lg">
-          <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-black/8 bg-white">
             <div className="border-b border-[#059669]/20 bg-[rgba(5,150,105,0.1)] px-8 py-10 text-center">
               <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(5,150,105,0.15)] ring-4 ring-[rgba(5,150,105,0.08)]">
                 <Check className="h-10 w-10 text-[#059669]" strokeWidth={2.5} />
@@ -763,7 +830,7 @@ export default function CheckoutPage() {
   if (needsVerification) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
-        <div className="max-w-md rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
+        <div className="max-w-md rounded-2xl border border-black/8 bg-white p-8 text-center">
           <Lock className="mx-auto mb-4 h-10 w-10 text-[#3F6F00]" />
           <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('auth.verificationRequiredToBuy')}</h1>
           <p className="mb-6 text-sm leading-relaxed text-[#64748B]">
@@ -804,13 +871,19 @@ export default function CheckoutPage() {
     t('checkoutPage.stepReview'),
   ] as const
 
+  const placeOrderDisabled =
+    submitting ||
+    walletTooLow ||
+    hasUnavailableItems ||
+    (isTurnstileConfigured && !turnstileToken)
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="checkout-page checkout-page-with-mobile-actions">
       <div className="page-shell page-section">
         <h1 className="store-display-title mb-2 text-[#0B0F19]">
           {t('checkoutPage.title')}
         </h1>
-        <p className="mb-6 text-sm text-[#64748B] sm:text-base">{t('checkoutPage.trustNote')}</p>
+        <p className="mb-2 text-sm text-[#64748B] sm:mb-4 sm:text-base">{t('checkoutPage.trustNote')}</p>
 
         <CheckoutStepIndicator labels={stepLabels} step={step} />
 
@@ -818,7 +891,7 @@ export default function CheckoutPage() {
           <div className="min-w-0 space-y-6">
             {step === 1 && (
               <div className={checkoutPanelClass}>
-                <h2 className="mb-5 text-lg font-bold text-[#0B0F19]">{t('checkoutPage.shippingInfo')}</h2>
+                <h2 className="checkout-panel__title">{t('checkoutPage.shippingInfo')}</h2>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <input
                     placeholder={t('checkoutPage.firstNamePh')}
@@ -865,31 +938,66 @@ export default function CheckoutPage() {
                     onChange={(e) => setPostalCode(e.target.value)}
                   />
                 </div>
-                <button type="button" onClick={() => setStep(2)} className={cn(checkoutPrimaryBtnClass, 'mt-6')}>
+
+                {showSaveAddressPrompt ? (
+                  <div className="mt-5 space-y-2">
+                    <label
+                      className={cn(
+                        'checkout-option',
+                        saveAddressToProfile && 'checkout-option--selected',
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={saveAddressToProfile}
+                        onChange={(e) => setSaveAddressToProfile(e.target.checked)}
+                        className="accent-[#85E307]"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#0B0F19]">
+                          {t('checkoutPage.saveAddressTitle')}
+                        </p>
+                        <p className="mt-0.5 text-xs leading-5 text-[#64748B]">
+                          {t('checkoutPage.saveAddressHint')}
+                        </p>
+                      </div>
+                    </label>
+                    <p className="text-xs text-[#64748B]">
+                      {t('checkoutPage.manageAddressLater')}{' '}
+                      <Link to="/dashboard?tab=addresses" className="font-semibold text-[#3F6F00] hover:underline">
+                        {t('userDashboard.tabs.addresses')}
+                      </Link>
+                    </p>
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className={cn(checkoutPrimaryBtnClass, 'checkout-actions-inline mt-6')}
+                >
                   {t('checkoutPage.continuePayment')}
                 </button>
               </div>
             )}
 
             {step === 2 && (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className={checkoutPanelClass}>
-                  <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]">
+                  <div className="checkout-panel__header">
+                    <span className="checkout-panel__icon">
                       <Truck className="h-5 w-5" />
                     </span>
                     <div>
-                      <h2 className="text-lg font-bold text-[#0B0F19]">{t('checkoutPage.delivery')}</h2>
+                      <h2 className="text-base font-bold text-[#0B0F19] sm:text-lg">{t('checkoutPage.delivery')}</h2>
                       <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.deliveryPhysical')}</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <label
                       className={cn(
-                        'flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition',
-                        deliveryType === 'physical'
-                          ? 'border-[#3F6F00] bg-[rgba(133,227,7,0.14)]'
-                          : 'border-black/10 bg-[#F9F9FA]',
+                        'checkout-option',
+                        deliveryType === 'physical' && 'checkout-option--selected',
                       )}
                     >
                       <input
@@ -905,10 +1013,8 @@ export default function CheckoutPage() {
                     {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                       <label
                         className={cn(
-                          'flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition',
-                          deliveryType === 'locked'
-                            ? 'border-[#3F6F00] bg-[rgba(133,227,7,0.14)]'
-                            : 'border-black/10 bg-[#F9F9FA]',
+                          'checkout-option',
+                          deliveryType === 'locked' && 'checkout-option--selected',
                         )}
                       >
                         <input
@@ -926,30 +1032,25 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className={checkoutPanelClass}>
-                  <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB]">
+                  <div className="checkout-panel__header">
+                    <span className="checkout-panel__icon bg-white">
                       <img src={knetBadge} alt="" className="h-6 w-auto object-contain" />
                     </span>
                     <div>
-                      <h2 className="text-lg font-bold text-[#0B0F19]">{t('checkoutPage.paymentMethod')}</h2>
+                      <h2 className="text-base font-bold text-[#0B0F19] sm:text-lg">{t('checkoutPage.paymentMethod')}</h2>
                       <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.trustNote')}</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {paymentMethodOptions.map((method) => (
                       <label
                         key={method.id}
                         className={cn(
-                          'flex items-center gap-4 rounded-xl border p-4 transition',
-                          method.disabled
-                            ? 'cursor-not-allowed border-black/10 bg-[#F9F9FA] opacity-55'
-                            : 'cursor-pointer',
+                          'checkout-option',
+                          method.disabled && 'checkout-option--disabled',
                           !method.disabled &&
                             paymentMethod === method.id &&
-                            'border-[#3F6F00] bg-[rgba(133,227,7,0.14)]',
-                          !method.disabled &&
-                            paymentMethod !== method.id &&
-                            'border-black/10 bg-[#F9F9FA] hover:border-[#85E307]/40',
+                            'checkout-option--selected',
                         )}
                       >
                         <input
@@ -981,10 +1082,10 @@ export default function CheckoutPage() {
                       </label>
                     ))}
                   </div>
-                  <CheckoutTrustBadges variant="compact" className="mt-5" />
+                  <CheckoutTrustBadges variant="compact" className="mt-4" />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="checkout-actions-inline flex gap-3">
                   <button type="button" onClick={() => setStep(1)} className={checkoutSecondaryBtnClass}>
                     {t('checkoutPage.back')}
                   </button>
@@ -997,7 +1098,7 @@ export default function CheckoutPage() {
 
             {step === 3 && (
               <div className={checkoutPanelClass}>
-                <h2 className="mb-5 text-lg font-bold text-[#0B0F19]">{t('checkoutPage.reviewOrder')}</h2>
+                <h2 className="checkout-panel__title">{t('checkoutPage.reviewOrder')}</h2>
                 {hasUnavailableItems && (
                   <div className="mb-4 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-medium text-[#B91C1C]">
                     {t('stock.cartBlocked')}
@@ -1014,11 +1115,10 @@ export default function CheckoutPage() {
                     return (
                       <div
                         key={item.id}
-                        className={`flex items-center gap-4 rounded-xl border p-4 ${
-                          itemOutOfStock
-                            ? 'border-[#FCA5A5] bg-[#FFFBFB]'
-                            : 'border-black/10 bg-[#F9F9FA]'
-                        }`}
+                        className={cn(
+                          'checkout-line-item',
+                          itemOutOfStock && 'checkout-line-item--warn',
+                        )}
                       >
                         <div
                           className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#E5E7EB] sm:h-16 sm:w-16 ${itemOutOfStock ? 'grayscale-[0.35]' : ''}`}
@@ -1061,7 +1161,7 @@ export default function CheckoutPage() {
                   })}
                 </div>
 
-                <div className="mb-5 rounded-xl border border-[#85E307]/25 bg-[#ECFCCB]/35 p-4 space-y-2 text-sm">
+                <div className="checkout-totals mb-5 space-y-2">
                   <p className="mb-2 font-bold text-[#0B0F19]">{t('checkoutPage.orderTotals')}</p>
                   {clubSavings > 0 ? (
                     <>
@@ -1121,8 +1221,10 @@ export default function CheckoutPage() {
                   <p className="mb-4 text-sm font-medium text-[#B91C1C]">{t('stock.cartBlocked')}</p>
                 )}
 
+                <CheckoutTrustBadges variant="compact" className="mb-4 lg:hidden" />
+
                 {step === 3 && isTurnstileConfigured && turnstileMountReady && (
-                  <div className="mb-4">
+                  <div className="checkout-turnstile-wrap">
                     <TurnstileWidget
                       key="checkout-turnstile"
                       ref={turnstileRef}
@@ -1134,7 +1236,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <div className="flex gap-3">
+                <div className="checkout-actions-inline flex gap-3">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
@@ -1146,12 +1248,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => void handlePlaceOrder()}
-                    disabled={
-                      submitting ||
-                      walletTooLow ||
-                      hasUnavailableItems ||
-                      (isTurnstileConfigured && !turnstileToken)
-                    }
+                    disabled={placeOrderDisabled}
                     className={cn(checkoutPrimaryBtnClass, 'flex-1')}
                   >
                     {submitting ? (
@@ -1168,10 +1265,10 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          <aside className="commerce-sidebar">
+          <aside className="commerce-sidebar commerce-sidebar--checkout hidden lg:block">
             <div className="sticky top-[var(--nav-offset,7.25rem)] space-y-4">
-              <div className="rounded-2xl border border-black/10 bg-[#F5F5F5] p-5 shadow-sm">
-                <h2 className="mb-4 font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.orderSummary')}</h2>
+              <div className="checkout-summary-card">
+                <h2 className="mb-4 text-base font-bold text-[#0B0F19] sm:text-lg">{t('cartPage.orderSummary')}</h2>
                 <div className="space-y-2.5 text-sm">
                   {clubSavings > 0 ? (
                     <>
@@ -1213,10 +1310,10 @@ export default function CheckoutPage() {
                     <span className="tabular-nums">{formatOrderKwd(summary.taxAmount)} {t('common.kwd')}</span>
                   </div>
                 </div>
-                <div className="mt-4 border-t border-black/10 pt-4">
+                <div className="mt-4 border-t border-black/8 pt-4">
                   <div className="flex justify-between gap-2">
-                    <span className="font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.total')}</span>
-                    <span className="font-serif text-2xl font-bold tabular-nums text-[#0B0F19]">
+                    <span className="text-base font-bold text-[#0B0F19]">{t('cartPage.total')}</span>
+                    <span className="text-xl font-bold tabular-nums text-[#0B0F19] sm:text-2xl">
                       {formatOrderKwd(checkoutTotalDue)} {t('common.kwd')}
                     </span>
                   </div>
@@ -1230,6 +1327,51 @@ export default function CheckoutPage() {
             </div>
           </aside>
         </div>
+      </div>
+
+      <div className="checkout-mobile-actions">
+        {step === 1 ? (
+          <button type="button" onClick={() => setStep(2)} className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
+            {t('checkoutPage.continuePayment')}
+          </button>
+        ) : null}
+        {step === 2 ? (
+          <>
+            <button type="button" onClick={() => setStep(1)} className={checkoutSecondaryBtnClass}>
+              {t('checkoutPage.back')}
+            </button>
+            <button type="button" onClick={() => setStep(3)} className={cn(checkoutPrimaryBtnClass, 'flex-[1.4]')}>
+              {t('checkoutPage.reviewOrder')}
+            </button>
+          </>
+        ) : null}
+        {step === 3 ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              disabled={submitting}
+              className={checkoutSecondaryBtnClass}
+            >
+              {t('checkoutPage.back')}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handlePlaceOrder()}
+              disabled={placeOrderDisabled}
+              className={cn(checkoutPrimaryBtnClass, 'flex-[1.4]')}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  {t('checkoutPage.placing')}
+                </>
+              ) : (
+                t('checkoutPage.placeOrder')
+              )}
+            </button>
+          </>
+        ) : null}
       </div>
     </div>
   )

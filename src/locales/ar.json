@@ -1107,6 +1107,11 @@
     "selectCity": "اختر المنطقة",
     "selectGovernorateFirst": "اختر المحافظة أولاً",
     "postalPh": "الرمز البريدي",
+    "saveAddressTitle": "حفظ هذا العنوان في حسابي",
+    "saveAddressHint": "سيُحفظ في قسم العناوين في لوحة التحكم لتسريع الدفع لاحقاً.",
+    "addressSavedToProfile": "تم حفظ العنوان في حسابك",
+    "addressSaveFailed": "تم تسجيل الطلب، لكن تعذر حفظ العنوان. يمكنك إضافته من لوحة التحكم.",
+    "manageAddressLater": "يمكنك أيضاً تعديله في أي وقت من",
     "continuePayment": "متابعة إلى الدفع",
     "paymentMethod": "طريقة الدفع",
     "delivery": "التوصيل",
@@ -1796,6 +1801,9 @@
     "allStatuses": "جميع الحالات"
   },
   "userDashboard": {
+    "pageSubtitle": "إدارة ملفك الشخصي وطلباتك والعنوان المحفوظ والإشعارات.",
+    "guestName": "الحساب",
+    "logout": "تسجيل الخروج",
     "tabs": {
       "profile": "الملف الشخصي",
       "orders": "طلباتي",
