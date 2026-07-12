@@ -666,9 +666,9 @@ function ProfileTab() {
     setFullName(user?.full_name ?? '')
     setEmail(user?.email ?? '')
     setPhoneNumber(user?.phone_number ?? '')
-    if (user?.date_of_birth) {
-      const d = typeof user.date_of_birth === 'string' ? user.date_of_birth : (user as { date_of_birth?: string }).date_of_birth
-      setDateOfBirth(d ? d.slice(0, 10) : '')
+    const rawDob = user?.date_of_birth
+    if (typeof rawDob === 'string' && rawDob.trim()) {
+      setDateOfBirth(rawDob.slice(0, 10))
     } else {
       setDateOfBirth('')
     }
@@ -755,6 +755,14 @@ function ProfileTab() {
     }
   }
 
+  if (!user) {
+    return (
+      <div className={dashboardPanelClass}>
+        <p className="dashboard-empty">{t('common.loading')}</p>
+      </div>
+    )
+  }
+
   return (
     <div className={dashboardPanelClass}>
       <h2 className="dashboard-panel__title">{t('userDashboard.profile.title')}</h2>
@@ -813,7 +821,7 @@ function ProfileTab() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.profile.email')}</label>
+            <label className={dashboardLabelClass}>{t('userDashboard.profile.email')}</label>
             <input
               type="email"
               value={email}
@@ -824,7 +832,7 @@ function ProfileTab() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.profile.phone')}</label>
+            <label className={dashboardLabelClass}>{t('userDashboard.profile.phone')}</label>
             <input
               type="tel"
               value={phoneNumber}
@@ -833,7 +841,7 @@ function ProfileTab() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gold-100 mb-2">{t('userDashboard.profile.dateOfBirth')}</label>
+            <label className={dashboardLabelClass}>{t('userDashboard.profile.dateOfBirth')}</label>
             <input
               type="date"
               value={dateOfBirth}
@@ -842,14 +850,14 @@ function ProfileTab() {
             />
           </div>
         </div>
-        <div className="border-t border-gold-500/20 pt-4 space-y-4">
-          <h3 className="text-lg font-semibold text-gold-100">{t('userDashboard.profile.identityDocumentsTitle')}</h3>
-          <p className="text-sm text-gold-100/60">{t('userDashboard.profile.identityDocumentsHint')}</p>
+        <div className="dashboard-divider border-t pt-4 space-y-4">
+          <h3 className="text-base font-semibold text-[#0B0F19]">{t('userDashboard.profile.identityDocumentsTitle')}</h3>
+          <p className="text-sm text-[#64748B]">{t('userDashboard.profile.identityDocumentsHint')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border border-dashed border-gold-500/40 p-4 rounded-lg text-center hover:border-gold-400 transition">
+            <div className="dashboard-inset-panel border border-dashed text-center transition hover:border-[rgba(133,227,7,0.45)]">
               <label className="cursor-pointer block">
-                <span className="block mb-2 text-gold-300 text-2xl">🪪</span>
-                <span className="text-sm text-gold-100/80">{t('userDashboard.profile.civilIdFrontSide')}</span>
+                <span className="block mb-2 text-2xl" aria-hidden>🪪</span>
+                <span className="text-sm text-[#334155]">{t('userDashboard.profile.civilIdFrontSide')}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -858,7 +866,7 @@ function ProfileTab() {
                 />
               </label>
               {(frontFile || profile?.civil_id_front) && (
-                <p className="text-xs text-emerald-400 mt-2">
+                <p className="text-xs text-[#3F6F00] mt-2">
                   {(frontFile && frontFile.name) || t('userDashboard.profile.existingFrontIdUploaded')}
                 </p>
               )}
@@ -866,15 +874,15 @@ function ProfileTab() {
                 <img
                   src={profile.civil_id_front}
                   alt={t('userDashboard.profile.civilIdFrontAlt')}
-                  className="mx-auto mt-3 h-32 w-auto rounded-md border border-gold-500/40 object-cover"
+                  className="mx-auto mt-3 h-32 w-auto rounded-md border border-black/10 object-cover"
                 />
               )}
             </div>
 
-            <div className="border border-dashed border-gold-500/40 p-4 rounded-lg text-center hover:border-gold-400 transition">
+            <div className="dashboard-inset-panel border border-dashed text-center transition hover:border-[rgba(133,227,7,0.45)]">
               <label className="cursor-pointer block">
-                <span className="block mb-2 text-gold-300 text-2xl">🪪</span>
-                <span className="text-sm text-gold-100/80">{t('userDashboard.profile.civilIdBackSide')}</span>
+                <span className="block mb-2 text-2xl" aria-hidden>🪪</span>
+                <span className="text-sm text-[#334155]">{t('userDashboard.profile.civilIdBackSide')}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -883,7 +891,7 @@ function ProfileTab() {
                 />
               </label>
               {(backFile || profile?.civil_id_back) && (
-                <p className="text-xs text-emerald-400 mt-2">
+                <p className="text-xs text-[#3F6F00] mt-2">
                   {(backFile && backFile.name) || t('userDashboard.profile.existingBackIdUploaded')}
                 </p>
               )}
@@ -891,7 +899,7 @@ function ProfileTab() {
                 <img
                   src={profile.civil_id_back}
                   alt={t('userDashboard.profile.civilIdBackAlt')}
-                  className="mx-auto mt-3 h-32 w-auto rounded-md border border-gold-500/40 object-cover"
+                  className="mx-auto mt-3 h-32 w-auto rounded-md border border-black/10 object-cover"
                 />
               )}
             </div>
@@ -1374,86 +1382,65 @@ function LockedGoldTab() {
   }
 
   return (
-    <div className="space-y-4 mt-4">
-      {/* <div className="flex items-center justify-between mt-4">
-        <h2 className="text-xl font-bold gold-gradient-text-on-light">
-          {t('userDashboard.tabs.lockedGold')}
-        </h2>
-        {list.length > 0 && (
-          <Link
-            to="/sell-gold"
-            className="text-sm font-medium gold-gradient-text-on-light hover:text-gold-300 flex items-center gap-1"
-          >
-            Sell gold <ChevronRight className="w-4 h-4" />
-          </Link>
-        )}
-      </div> */}
-      <p className="gold-gradient-text-on-light">
-        {t('userDashboard.lockedGold.heroHint')}
-      </p>
+    <div className="space-y-4">
+      <div className={dashboardPanelClass}>
+        <h2 className="dashboard-panel__title">{t('userDashboard.tabs.lockedGold')}</h2>
+        <p className="dashboard-panel__subtitle !mb-4">{t('userDashboard.lockedGold.heroHint')}</p>
 
-      <div className="flex gap-2">
-        {[
-          { id: 'fund', label: t('userDashboard.lockedGold.tabs.fund') },
-          // { id: 'gold', label: 'Gold' },
-          { id: 'products', label: t('userDashboard.lockedGold.tabs.products') },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setLockedView(tab.id as 'fund' | 'gold' | 'products')}
-            className={`px-3 py-1 rounded-full text-xs font-medium border ${
-              lockedView === tab.id
-                ? 'border-gold-500 bg-amber-900/40 text-gold-100'
-                : 'border-gold-500/40 gold-gradient-text-on-light hover:bg-gold-500/5'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        <div className="dashboard-segment mb-5">
+          {[
+            { id: 'fund', label: t('userDashboard.lockedGold.tabs.fund') },
+            { id: 'products', label: t('userDashboard.lockedGold.tabs.products') },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setLockedView(tab.id as 'fund' | 'gold' | 'products')}
+              className={cn(
+                'dashboard-segment__btn',
+                lockedView === tab.id && 'dashboard-segment__btn--active',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="dashboard-panel">
         {isLoading ? (
-          <p className="text-gold-100/60 text-center py-8">{t('userDashboard.lockedGold.loading')}</p>
+          <p className="dashboard-empty">{t('userDashboard.lockedGold.loading')}</p>
         ) : lockedView === 'fund' ? (
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-sm text-gold-100">{t('userDashboard.lockedGold.availableFund')}</p>
-              <p className="text-3xl font-bold text-gold-100">
+          <div className="dashboard-balance-card dashboard-inset-panel">
+            <div className="space-y-2 min-w-0">
+              <p className="text-sm font-medium text-[#64748B]">{t('userDashboard.lockedGold.availableFund')}</p>
+              <p className="dashboard-balance-card__amount">
                 {walletBalance.toFixed(3)} {walletCurrency}
               </p>
-              <p className="text-xs text-gold-100 mt-2">
-                {t('userDashboard.lockedGold.currentFundHint')}
-              </p>
+              <p className="text-xs text-[#64748B]">{t('userDashboard.lockedGold.currentFundHint')}</p>
             </div>
             <button
               type="button"
               onClick={() => setWithdrawModalOpen(true)}
               disabled={walletBalance <= 0}
-              className="shrink-0 px-4 py-2 rounded-lg text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed border border-amber-500/50"
+              className={cn(dashboardPrimaryBtnClass, 'shrink-0 disabled:opacity-50 disabled:cursor-not-allowed')}
             >
               {t('userDashboard.lockedGold.withdrawButton')}
             </button>
           </div>
         ) : list.length === 0 ? (
-          <p className="text-gold-100/60 text-center py-8">
-            {t('userDashboard.lockedGold.noLockedGold')}
-          </p>
+          <p className="dashboard-empty">{t('userDashboard.lockedGold.noLockedGold')}</p>
         ) : lockedView === 'gold' ? (
-          <div className="space-y-3">
-            <p className="text-sm text-gold-100">{t('userDashboard.lockedGold.totalLockedGold')}</p>
-            <p className="text-3xl font-bold text-gold-100">{totalGold.toFixed(3)} g</p>
-            <p className="text-xs text-gold-100 mt-2">
-              {t('userDashboard.lockedGold.totalLockedGoldHint')}
-            </p>
+          <div className="dashboard-inset-panel space-y-2">
+            <p className="text-sm text-[#64748B]">{t('userDashboard.lockedGold.totalLockedGold')}</p>
+            <p className="dashboard-balance-card__amount">{totalGold.toFixed(3)} g</p>
+            <p className="text-xs text-[#64748B]">{t('userDashboard.lockedGold.totalLockedGoldHint')}</p>
           </div>
         ) : (
-          <div className="divide-y divide-gold-500/20">
+          <div className="divide-y divide-black/[0.06]">
             {pageItems.map((item) => (
               <div key={item.sale_item_id} className="py-4 first:pt-0">
                 <div className="flex justify-between items-start gap-4">
                   <div>
-                    <p className="font-medium text-gold-100">
+                    <p className="font-medium text-[#0B0F19]">
                       {item.product_name ?? item.product_sku ?? t('userDashboard.lockedGold.fallbackGold')}
                     </p>
                     <p className="text-sm text-gold-100/60">
@@ -2229,7 +2216,7 @@ function TransactionsTab() {
         )}
       </div>
       {!isLoading && total > pageSize && (
-        <div className="dashboard-panel flex items-center justify-between text-xs text-black-100/70">
+        <div className="dashboard-panel flex items-center justify-between text-xs text-[#64748B]">
           <div>
             {t('userDashboard.transactions.pagination', { page, totalPages, total })}
           </div>
@@ -2446,24 +2433,20 @@ function NotificationsTab() {
     })
 
   return (
-    <div className="space-y-4 mt-4">
-      <h2 className="text-xl font-bold gold-gradient-text-on-light">
-        {t('userDashboard.tabs.notifications')}
-      </h2>
-      <p className="text-sm gold-gradient-text-on-light mb-1">
-        {t('userDashboard.notificationsPanel.intro')}
-      </p>
+    <div className={dashboardPanelClass}>
+      <h2 className="dashboard-panel__title">{t('userDashboard.tabs.notifications')}</h2>
+      <p className="dashboard-panel__subtitle">{t('userDashboard.notificationsPanel.intro')}</p>
 
       {isLoading ? (
-        <p className="text-black-100/60 text-center py-8">{t('common.loading')}</p>
+        <p className="dashboard-empty">{t('common.loading')}</p>
       ) : (
         <div className="space-y-6">
-          <div>
-            <h3 className="text-base font-semibold text-black-100 mb-2">
+          <div className="dashboard-inset-panel">
+            <h3 className="text-base font-semibold text-[#0B0F19] mb-3">
               {t('userDashboard.notificationsPanel.setReminders')}
             </h3>
             {active.length === 0 ? (
-              <p className="text-black-100/60 text-center py-6">
+              <p className="dashboard-empty !py-4">
                 {t('userDashboard.notificationsPanel.noActive')}
               </p>
             ) : (
@@ -2500,20 +2483,20 @@ function NotificationsTab() {
                             })
                           : ''
                   return (
-                    <div key={a.id} className="dashboard-panel p-4 border border-lime-500/30">
+                    <div key={a.id} className="rounded-xl border border-black/[0.08] bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-sm text-black-100/70">
+                          <div className="text-sm text-[#64748B]">
                             {metalLine} • {sideLabel}
                           </div>
-                          <div className="text-black-100 font-semibold mt-1">
+                          <div className="text-[#0B0F19] font-semibold mt-1">
                             {t('userDashboard.notificationsPanel.statusActive')}
                           </div>
                           {thresholdText && (
-                            <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
+                            <div className="text-sm text-[#475569] mt-1">{thresholdText}</div>
                           )}
                         </div>
-                        <div className="text-xs text-black-100/50">
+                        <div className="text-xs text-[#94A3B8] shrink-0">
                           {d
                             ? d.toLocaleString(undefined, {
                                 year: 'numeric',
@@ -2532,12 +2515,12 @@ function NotificationsTab() {
             )}
           </div>
 
-          <div>
-            <h3 className="text-base font-semibold text-black-100 mb-2">
+          <div className="dashboard-inset-panel">
+            <h3 className="text-base font-semibold text-[#0B0F19] mb-3">
               {t('userDashboard.notificationsPanel.triggeredTitle')}
             </h3>
             {triggered.length === 0 ? (
-              <p className="text-black-100/60 text-center py-6">
+              <p className="dashboard-empty !py-4">
                 {t('userDashboard.notificationsPanel.noTriggered')}
               </p>
             ) : (
@@ -2586,25 +2569,25 @@ function NotificationsTab() {
             return (
               <div
                 key={a.id}
-                className={`dashboard-panel p-4 border ${
-                  isNew ? 'border-amber-400/50 ring-1 ring-amber-400/30' : 'border-gold-500/20'
+                className={`rounded-xl border bg-white p-4 ${
+                  isNew ? 'border-amber-300 ring-1 ring-amber-200' : 'border-black/[0.08]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm text-black-100/70">
+                    <div className="text-sm text-[#64748B]">
                       {metalLine} • {sideLabel}
                     </div>
-                    <div className="text-black-100 font-semibold mt-1">
+                    <div className="text-[#0B0F19] font-semibold mt-1">
                       {t('userDashboard.notificationsPanel.statusTriggered')}
                     </div>
                     {thresholdText && (
-                      <div className="text-sm text-gold-100/70 mt-1">{thresholdText}</div>
+                      <div className="text-sm text-[#475569] mt-1">{thresholdText}</div>
                     )}
                     {sideTriggeredText && (
-                      <div className="text-xs text-black-100/60 mt-1">{sideTriggeredText}</div>
+                      <div className="text-xs text-[#64748B] mt-1">{sideTriggeredText}</div>
                     )}
-                    <div className="text-xs text-black-100/60 mt-2">
+                    <div className="text-xs text-[#64748B] mt-2">
                       {t('userDashboard.notificationsPanel.delivery', {
                         status: a.notification_status ?? 'pending',
                       })}
@@ -2615,7 +2598,7 @@ function NotificationsTab() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="text-xs text-black-100/50">
+                  <div className="text-xs text-[#94A3B8] shrink-0">
                     {d ? d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                   </div>
                 </div>

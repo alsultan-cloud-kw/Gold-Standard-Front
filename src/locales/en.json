@@ -1388,6 +1388,7 @@
     "hasAccount": "Already have an account?",
     "signInLink": "Sign in",
     "loginSuccess": "Login successful!",
+    "loginSuccessBody": "Welcome back — you're signed in.",
     "loginRequiredToBuy": "Sign in to continue",
     "loginRequiredToBuyDesc": "Purchases require a Gold Standard account. Sign in or create one to add items and check out.",
     "verificationRequiredToBuy": "Account verification required",

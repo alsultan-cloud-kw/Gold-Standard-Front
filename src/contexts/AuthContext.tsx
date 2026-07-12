@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { authApi } from '../services/api'
 import type { User, CustomerProfile } from '../types'
+import { markLoginSuccessPending } from '@/lib/authToast'
 
 interface AuthContextType {
   user: User | null
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUser = response.user as User
     setUser(nextUser)
     setIsLoading(false)
+    markLoginSuccessPending()
     return nextUser
   }
 
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUser = response.user as User
     setUser(nextUser)
     setIsLoading(false)
+    markLoginSuccessPending()
     return nextUser
   }
 

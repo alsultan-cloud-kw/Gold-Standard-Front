@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { safeAppNextPath } from '../utils/safeNextPath'
-import { resolvePostAuthPath } from '../utils/authRedirect'
+import { completeAuthNavigation } from '@/lib/completeAuthNavigation'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
@@ -49,7 +49,8 @@ export default function LoginPage() {
     setIsLoading(true)
 
     if (isAuthenticated) {
-      navigate(resolvePostAuthPath(user, nextPath))
+      completeAuthNavigation(navigate, user, nextPath)
+      setIsLoading(false)
       return
     }
 
@@ -64,8 +65,7 @@ export default function LoginPage() {
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
       setLastAuthMethod(loginMethod)
-      toast.success(t('auth.loginSuccess'))
-      navigate(resolvePostAuthPath(loggedInUser, nextPath))
+      completeAuthNavigation(navigate, loggedInUser, nextPath)
     } catch (err: unknown) {
       clearTurnstile()
       const res = (err as { response?: { status?: number; data?: { error?: string; admin_email?: string } } })

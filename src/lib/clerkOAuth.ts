@@ -2,11 +2,20 @@ export type ClerkOAuthProvider = 'google' | 'apple'
 
 export function buildClerkOAuthUrls(redirectComplete: string) {
   const origin = window.location.origin
-  const redirectUrl = `${origin}/sso-callback`
-  const redirectUrlComplete = redirectComplete.startsWith('http')
-    ? redirectComplete
-    : `${origin}${redirectComplete.startsWith('/') ? redirectComplete : `/${redirectComplete}`}`
-  return { redirectUrl, redirectUrlComplete }
+  const completePath = redirectComplete.startsWith('http')
+    ? `${new URL(redirectComplete).pathname}${new URL(redirectComplete).search}`
+    : redirectComplete.startsWith('/')
+      ? redirectComplete
+      : `/${redirectComplete}`
+
+  // Stay on /sso-callback until Django JWT sync finishes; preserve `next` for post-auth redirect.
+  const nextQ =
+    completePath && completePath !== '/'
+      ? `?next=${encodeURIComponent(completePath)}`
+      : ''
+  const redirectUrl = `${origin}/sso-callback${nextQ}`
+
+  return { redirectUrl, redirectUrlComplete: redirectUrl }
 }
 
 export function getClerkUnavailableMessage() {

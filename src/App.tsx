@@ -20,6 +20,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SsoCallbackPage from './pages/SsoCallbackPage'
 import ClerkAuthBridge from './components/auth/ClerkAuthBridge'
+import AuthSuccessNotifier from './components/auth/AuthSuccessNotifier'
 import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UserDashboard from './pages/UserDashboard'
@@ -93,6 +94,7 @@ function App() {
           <ClerkAuthBridge />
           <GlobalBootGate>
           <Router>
+            <AuthSuccessNotifier />
             <CartProvider>
             <ScrollToTop />
             <RouteSeo />

@@ -1388,6 +1388,7 @@
     "hasAccount": "لديك حساب بالفعل؟",
     "signInLink": "تسجيل الدخول",
     "loginSuccess": "تم تسجيل الدخول بنجاح!",
+    "loginSuccessBody": "مرحباً بعودتك — تم تسجيل دخولك.",
     "loginRequiredToBuy": "سجّل الدخول للمتابعة",
     "loginRequiredToBuyDesc": "الشراء يتطلب حساب جولد ستاندرد. سجّل الدخول أو أنشئ حساباً لإضافة المنتجات وإتمام الطلب.",
     "verificationRequiredToBuy": "يلزم توثيق الحساب",

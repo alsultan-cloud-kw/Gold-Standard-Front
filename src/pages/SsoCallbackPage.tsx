@@ -4,7 +4,7 @@ import { AuthenticateWithRedirectCallback } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { useAuth } from '../contexts/AuthContext'
-import { resolvePostAuthPath } from '../utils/authRedirect'
+import { completeAuthNavigation } from '@/lib/completeAuthNavigation'
 
 export default function SsoCallbackPage() {
   const { t } = useTranslation()
@@ -14,23 +14,20 @@ export default function SsoCallbackPage() {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate(resolvePostAuthPath(user, searchParams.get('next')), { replace: true })
-    }
+    if (isLoading || !isAuthenticated) return
+    completeAuthNavigation(navigate, user, searchParams.get('next'))
   }, [isAuthenticated, isLoading, navigate, searchParams, user])
 
-  if (isLoading || (isAuthenticated && user)) {
-    return <AppLoadingScreen message={t('common.signingIn')} variant="fullscreen" />
-  }
-
   return (
-    <div className="relative min-h-[100dvh]">
-      <AppLoadingScreen message={t('common.signingIn')} variant="fullscreen" />
+    <div className="relative min-h-[50dvh]">
+      <div className="auth-route-loading" aria-busy="true">
+        <AppLoadingScreen message={t('common.signingIn')} variant="page" />
+      </div>
       <AuthenticateWithRedirectCallback
         signInUrl={`${origin}/login`}
         signUpUrl={`${origin}/register`}
-        signInFallbackRedirectUrl={`${origin}/`}
-        signUpFallbackRedirectUrl={`${origin}/`}
+        signInFallbackRedirectUrl={`${origin}/sso-callback`}
+        signUpFallbackRedirectUrl={`${origin}/sso-callback`}
       />
       <div id="clerk-captcha" className="hidden" aria-hidden />
     </div>

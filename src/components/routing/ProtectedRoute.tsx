@@ -4,6 +4,7 @@ import { Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+import { RouteErrorBoundary } from '@/components/routing/RouteErrorBoundary'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
 import { isStaffRole, resolvePostAuthPath } from '../../utils/authRedirect'
@@ -20,8 +21,13 @@ function isCatalogManagerRole(role: string | undefined): boolean {
   return !!role && (CATALOG_MANAGER_ROLES as readonly string[]).includes(role)
 }
 
+/** In-route loader — keeps global navbar/footer visible (no fixed overlay). */
 export function AuthLoadingFallback({ message }: { message?: string }) {
-  return <AppLoadingScreen message={message} variant="fullscreen" />
+  return (
+    <div className="auth-route-loading" aria-busy="true">
+      <AppLoadingScreen message={message} variant="page" />
+    </div>
+  )
 }
 
 function AuthLoadingFallbackCompleting() {
@@ -43,7 +49,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to={`/login?next=${next}`} replace />
   }
 
-  return <>{children}</>
+  return <RouteErrorBoundary resetHref="/dashboard">{children}</RouteErrorBoundary>
 }
 
 /**
@@ -78,8 +84,7 @@ export function GuestOnlyRoute() {
   }
 
   if (isAuthenticated) {
-    const target = resolvePostAuthPath(user, searchParams.get('next'))
-    return <Navigate to={target} replace />
+    return <Navigate to={resolvePostAuthPath(user, searchParams.get('next'))} replace />
   }
 
   return <Outlet />
