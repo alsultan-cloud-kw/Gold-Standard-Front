@@ -130,9 +130,9 @@ function HomeProductCardInner({
             type="button"
             onClick={() => addToCart(product)}
             disabled={outOfStock}
-            className="mt-2.5 flex w-full items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1.5 py-1.5 sm:px-2.5 sm:py-2 text-[11px] sm:text-[13px] font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            className="mt-2.5 flex w-full items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1 py-1.5 sm:px-2.5 sm:py-2 text-[10px] sm:text-[13px] font-semibold text-white transition-colors hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
           >
-            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+            <ShoppingCart className="hidden sm:block h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
             <span className="truncate">{outOfStock ? t('stock.outOfStock') : t('home.addToCart')}</span>
           </button>
         ) : null}

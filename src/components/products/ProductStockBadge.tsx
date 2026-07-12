@@ -82,7 +82,7 @@ export function ProductStockOverlay({ product }: { product: Product }) {
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[inherit] bg-white/55 backdrop-blur-[1px]">
-      <span className="rounded-full border border-[#FCA5A5] bg-[#FEF2F2]/95 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#B91C1C] shadow-sm">
+      <span className="rounded-full border border-[#FCA5A5] bg-[#FEF2F2]/95 px-2.5 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.16em] text-[#B91C1C] shadow-sm text-center">
         {t('stock.outOfStock')}
       </span>
     </div>

@@ -93,8 +93,8 @@ export default function Footer() {
 
       {/* Link columns */}
       <div className="relative">
-        <div className="page-shell grid grid-cols-1 gap-10 py-[var(--space-section-compact-bottom)] sm:grid-cols-2 sm:gap-8 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-10 lg:py-[var(--space-section-y-top)]">
-          <div className="min-w-0 sm:col-span-2 lg:col-span-3">
+        <div className="page-shell grid grid-cols-2 gap-x-4 gap-y-8 py-[var(--space-section-compact-bottom)] sm:grid-cols-2 sm:gap-8 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-10 lg:py-[var(--space-section-y-top)]">
+          <div className="min-w-0 col-span-2 sm:col-span-2 lg:col-span-3">
             <Link to="/" className="inline-flex items-center gap-2.5">
               <img
                 src={logo}
@@ -128,11 +128,11 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="col-span-1 lg:col-span-2">
             <FooterProductsSitemap />
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="col-span-1 lg:col-span-2">
             <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
               {t('footer.shop')}
             </h4>
@@ -150,7 +150,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="sm:col-span-2 lg:col-span-3">
+          <div className="col-span-2 sm:col-span-2 lg:col-span-3">
             <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
               {t('footer.company')}
             </p>
@@ -184,7 +184,7 @@ export default function Footer() {
             </nav>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="col-span-2 lg:col-span-2 mt-4 lg:mt-0">
             <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]">
               {t('footer.customerService')}
             </h4>
