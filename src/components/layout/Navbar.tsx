@@ -95,7 +95,7 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-black/5 bg-[var(--site-bg)]/95 backdrop-blur-md">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-black/5 bg-[var(--site-bg)]">
       <GoldPriceTicker />
 
       {/* Main Navbar */}
@@ -279,7 +279,7 @@ export default function Navbar() {
 
       {/* Search Bar */}
       {isSearchOpen && (
-        <div className="border-t border-black/5 bg-white/95 backdrop-blur-md">
+        <div className="border-t border-black/5 bg-[var(--site-bg)]">
           <div className="page-shell py-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5B728D] rtl:left-auto rtl:right-4" />
@@ -295,7 +295,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="border-t border-black/5 bg-white/95 backdrop-blur-md lg:hidden">
+        <div className="border-t border-black/5 bg-[var(--site-bg)] lg:hidden">
           <div className="page-shell py-4">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
@@ -379,7 +379,7 @@ export default function Navbar() {
     </nav>
 
     {/* Mobile Bottom Navigation */}
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)]/95 backdrop-blur-md pb-safe lg:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)] pb-safe lg:hidden">
       <div className="flex items-center justify-around h-[68px] px-2">
         <Link to="/" onClick={() => setIsMenuOpen(false)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isPathActive('/') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}>
           <Home className="h-6 w-6" strokeWidth={isPathActive('/') ? 2.5 : 1.75} />
