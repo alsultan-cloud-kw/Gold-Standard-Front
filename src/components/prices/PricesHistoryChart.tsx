@@ -421,6 +421,23 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
         />
       ) : null}
 
+      {/* Always-visible close control when expanded (mobile accessibility) */}
+      {chartExpanded ? (
+        <button
+          type="button"
+          onClick={() => setChartExpanded(false)}
+          aria-label={t('home.chart.collapseChart')}
+          title={t('home.chart.closeChart')}
+          className="fixed z-[130] inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#0B0F19] shadow-[0_10px_30px_-10px_rgba(11,15,25,0.55)] transition hover:bg-[#ECFCCB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/70 sm:hidden"
+          style={{
+            top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+            insetInlineEnd: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+          }}
+        >
+          <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+        </button>
+      ) : null}
+
       <div
         className={cn(
           'metal-chart-panel relative overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm',
@@ -439,15 +456,18 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
 
       <div className="relative p-3 sm:p-6 lg:p-8">
         {chartExpanded ? (
-          <div className="sticky top-0 z-20 -mx-4 mb-5 flex items-center justify-between gap-3 border-b border-black/10 bg-white/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-            <p className="text-sm font-semibold text-[#0B0F19]">{t('home.chart.expandedTitle')}</p>
+          <div className="sticky top-0 z-20 -mx-3 mb-4 flex items-center justify-between gap-3 border-b border-black/10 bg-white/95 px-3 py-2.5 backdrop-blur-sm sm:-mx-6 sm:mb-5 sm:px-6 sm:py-3 lg:-mx-8 lg:px-8">
+            <p className="min-w-0 truncate text-sm font-semibold text-[#0B0F19]">
+              {t('home.chart.expandedTitle')}
+            </p>
             <button
               type="button"
               onClick={() => setChartExpanded(false)}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-[#0B0F19] px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#1F2937] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60"
+              aria-label={t('home.chart.collapseChart')}
+              className="inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#1F2937] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 sm:min-w-0 sm:px-4 sm:py-2"
             >
-              <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              <span>{t('home.chart.closeChart')}</span>
+              <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+              <span className="hidden sm:inline">{t('home.chart.closeChart')}</span>
             </button>
           </div>
         ) : null}

@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
 import {
   accountsApi,
+  authApi,
   ordersApi,
   walletApi,
   tradingApi,
@@ -37,6 +38,7 @@ import {
   isTradingDashboardTab,
 } from '../featureFlags'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
+import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
 
 function isDisabledDashboardTab(tab: string): boolean {
   if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && isTradingDashboardTab(tab)) return true
@@ -623,6 +625,13 @@ function ProfileTab() {
   const [saving, setSaving] = useState(false)
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
+  const [kycQuestions, setKycQuestions] = useState<KycQuestion[]>([])
+  const [kycAnswers, setKycAnswers] = useState<Record<string, string | boolean>>({})
+  const [kycErrors, setKycErrors] = useState<Record<string, string>>({})
+  const [savingKyc, setSavingKyc] = useState(false)
+
+  const kycIncomplete =
+    kycQuestions.length > 0 && profile?.kyc_registration_complete === false
 
   useEffect(() => {
     setFullName(user?.full_name ?? '')
@@ -635,6 +644,23 @@ function ProfileTab() {
       setDateOfBirth('')
     }
   }, [user])
+
+  useEffect(() => {
+    void authApi
+      .getKycQuestions()
+      .then((res) => {
+        const rows = res.questions as KycQuestion[] | undefined
+        setKycQuestions(Array.isArray(rows) ? rows : [])
+      })
+      .catch(() => setKycQuestions([]))
+  }, [])
+
+  useEffect(() => {
+    const saved = profile?.kyc_registration_answers
+    if (saved && typeof saved === 'object') {
+      setKycAnswers(saved as Record<string, string | boolean>)
+    }
+  }, [profile?.kyc_registration_answers])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -675,9 +701,77 @@ function ProfileTab() {
     }
   }
 
+  const handleSaveKyc = async () => {
+    if (!profile?.id) {
+      toast.error(t('userDashboard.profile.toasts.customerProfileNotFoundForUpload'))
+      return
+    }
+    setSavingKyc(true)
+    setKycErrors({})
+    try {
+      await accountsApi.updateProfile(profile.id, {
+        kyc_registration_answers: kycAnswers,
+      })
+      await queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+      toast.success(t('auth.kyc.savedToast'))
+    } catch (err) {
+      const data = (err as { response?: { data?: { kyc_registration_answers?: Record<string, string> } } })
+        ?.response?.data
+      if (data?.kyc_registration_answers && typeof data.kyc_registration_answers === 'object') {
+        setKycErrors(data.kyc_registration_answers)
+      }
+      toast.error(t('auth.kyc.saveFailed'))
+    } finally {
+      setSavingKyc(false)
+    }
+  }
+
   return (
     <div className="gold-card mt-4">
       <h2 className="text-xl font-bold text-gold-100 mb-6">{t('userDashboard.profile.title')}</h2>
+
+      {kycIncomplete ? (
+        <div
+          role="status"
+          className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+        >
+          {t('auth.kyc.incompleteBanner')}
+        </div>
+      ) : null}
+
+      {kycQuestions.length > 0 ? (
+        <div className="mb-8 space-y-4 rounded-xl border border-gold-500/20 bg-charcoal-900/40 p-4 sm:p-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gold-100">{t('auth.kyc.completeTitle')}</h3>
+            <p className="mt-1 text-sm text-gold-100/60">{t('auth.kyc.completeHint')}</p>
+            {profile?.kyc_registration_complete ? (
+              <p className="mt-2 text-xs font-semibold text-emerald-400">✓ {t('auth.kyc.savedToast')}</p>
+            ) : null}
+          </div>
+          <KycRegistrationFields
+            questions={kycQuestions}
+            answers={kycAnswers}
+            errors={kycErrors}
+            onChange={(key, value) => {
+              setKycAnswers((prev) => ({ ...prev, [key]: value }))
+              setKycErrors((prev) => {
+                const next = { ...prev }
+                delete next[key]
+                return next
+              })
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => void handleSaveKyc()}
+            disabled={savingKyc}
+            className="gold-button"
+          >
+            {savingKyc ? t('userDashboard.profile.saving') : t('auth.kyc.saveAnswers')}
+          </button>
+        </div>
+      ) : null}
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -1526,6 +1620,8 @@ type CustomerProfile = {
   civil_id_front?: string | null
   civil_id_back?: string | null
   iban_proof?: string | null
+  kyc_registration_answers?: Record<string, string | boolean> | null
+  kyc_registration_complete?: boolean
 }
 
 function asSingleProfile(data: unknown): CustomerProfile | null {

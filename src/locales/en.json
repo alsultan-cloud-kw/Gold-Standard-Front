@@ -1369,7 +1369,16 @@
     "registerSuccess": "Account created successfully!",
     "registerFailed": "Failed to create account. Please try again.",
     "kyc": {
-      "sectionTitle": "Verification questions"
+      "sectionTitle": "Verification questions",
+      "skipHint": "You can skip these for now and finish them later in your profile.",
+      "skipForNow": "Skip for now",
+      "skippedToast": "Verification questions skipped — complete them in your profile when ready.",
+      "incompleteBanner": "Your profile is incomplete. Please answer the verification questions below.",
+      "completeTitle": "Verification questions",
+      "completeHint": "These answers were set by Gold Standard compliance. Complete them to finish your profile.",
+      "saveAnswers": "Save verification answers",
+      "savedToast": "Verification answers saved",
+      "saveFailed": "Could not save verification answers"
     },
     "forgotPasswordPage": {
       "title": "Forgot password",

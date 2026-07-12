@@ -357,15 +357,6 @@ export default function Navbar() {
               <span className="w-px self-stretch bg-black/15" aria-hidden />
               <span className="flex items-center px-4 py-2.5">{t('nav.buyGold')}</span>
             </Link>
-
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`${iconBtnClass} hidden`}
-              aria-label={isMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
           </div>
         </div>
       </div>

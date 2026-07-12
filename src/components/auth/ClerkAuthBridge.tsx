@@ -31,10 +31,12 @@ export default function ClerkAuthBridge() {
               : t('auth.accountInactive'),
           )
         } else {
+          const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data
           const apiError =
-            (err as { response?: { data?: { error?: string; detail?: string } } })?.response?.data
-              ?.error ||
-            (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+            (typeof data?.error === 'string' && data.error) ||
+            (typeof data?.detail === 'string' && data.detail) ||
+            (typeof data?.blacklist === 'string' && data.blacklist) ||
+            undefined
           const message = (err as Error)?.message
           toast.error(
             apiError === 'Invalid Clerk session token'

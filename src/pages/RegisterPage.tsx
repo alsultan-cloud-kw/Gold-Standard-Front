@@ -447,6 +447,22 @@ export default function RegisterPage() {
                 })
               }}
             />
+            {kycQuestions.length > 0 ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-gold-100/55">{t('auth.kyc.skipHint')}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKycAnswers({})
+                    setKycErrors({})
+                    toast.message(t('auth.kyc.skippedToast'))
+                  }}
+                  className="text-xs font-semibold text-[#85E307] hover:underline sm:shrink-0"
+                >
+                  {t('auth.kyc.skipForNow')}
+                </button>
+              </div>
+            ) : null}
 
             <div>
               <label className="flex items-start gap-2 cursor-pointer">
