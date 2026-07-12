@@ -17,6 +17,8 @@ import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTre
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+import { isStaffRole } from '@/utils/authRedirect'
 import {
   buildPublicRatesPricing,
   caratGramTotals,
@@ -77,6 +79,8 @@ function karatDescKey(key: string) {
  */
 export default function PricesPage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const isStaff = isStaffRole(user?.role)
   const [gramsInput, setGramsInput] = useState('')
   /** Weight calculator stays collapsed on mobile so the chart is visible above the fold. */
   const [weightOpen, setWeightOpen] = useState(false)
@@ -94,6 +98,7 @@ export default function PricesPage() {
     queryFn: adminApi.getKuwaitMarketConfig,
     staleTime: 60_000,
     retry: 0,
+    enabled: isStaff,
   })
   const { data: goldCurrentSnap } = useQuery({
     queryKey: ['pricingCurrent', 'gold', 'prices-page'],

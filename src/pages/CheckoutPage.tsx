@@ -66,6 +66,44 @@ type SaleResponse = {
 type KnetReturnPhase = 'idle' | 'verifying' | 'success' | 'failed'
 
 const KNET_PENDING_SALE_KEY = 'gs_knet_pending_sale'
+const CHECKOUT_SHIPPING_KEY = 'gs_checkout_shipping_draft'
+
+type CheckoutShippingDraft = {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  governorate: string
+  postalCode: string
+}
+
+function readCheckoutShippingDraft(): CheckoutShippingDraft | null {
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_SHIPPING_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as CheckoutShippingDraft
+  } catch {
+    return null
+  }
+}
+
+function writeCheckoutShippingDraft(draft: CheckoutShippingDraft) {
+  try {
+    sessionStorage.setItem(CHECKOUT_SHIPPING_KEY, JSON.stringify(draft))
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+function clearCheckoutShippingDraft() {
+  try {
+    sessionStorage.removeItem(CHECKOUT_SHIPPING_KEY)
+  } catch {
+    // ignore
+  }
+}
 
 type KnetPendingSale = {
   saleId: string
@@ -166,6 +204,7 @@ export default function CheckoutPage() {
   const [knetReturnPhase, setKnetReturnPhase] = useState<KnetReturnPhase>('idle')
   const [knetReturnReason, setKnetReturnReason] = useState<string | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileMountReady, setTurnstileMountReady] = useState(false)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
@@ -281,16 +320,46 @@ export default function CheckoutPage() {
   }, [paymentMethodOptions, paymentMethod])
 
   // Shipping fields (sent to backend as customer_*)
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [governorate, setGovernorate] = useState('')
-  const [postalCode, setPostalCode] = useState('')
+  const savedShipping = useMemo(() => readCheckoutShippingDraft(), [])
+  const [firstName, setFirstName] = useState(savedShipping?.firstName ?? '')
+  const [lastName, setLastName] = useState(savedShipping?.lastName ?? '')
+  const [email, setEmail] = useState(savedShipping?.email ?? '')
+  const [phone, setPhone] = useState(savedShipping?.phone ?? '')
+  const [address, setAddress] = useState(savedShipping?.address ?? '')
+  const [city, setCity] = useState(savedShipping?.city ?? '')
+  const [governorate, setGovernorate] = useState(savedShipping?.governorate ?? '')
+  const [postalCode, setPostalCode] = useState(savedShipping?.postalCode ?? '')
+  const profileHydrated = useRef(false)
 
   useEffect(() => {
+    writeCheckoutShippingDraft({
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      city,
+      governorate,
+      postalCode,
+    })
+  }, [firstName, lastName, email, phone, address, city, governorate, postalCode])
+
+  useEffect(() => {
+    if (step !== 3) {
+      setTurnstileMountReady(false)
+      setTurnstileToken('')
+      return
+    }
+    const id = window.setTimeout(() => setTurnstileMountReady(true), 120)
+    return () => window.clearTimeout(id)
+  }, [step])
+
+  useEffect(() => {
+    if (profileHydrated.current) return
+    if (savedShipping) {
+      profileHydrated.current = true
+      return
+    }
     const p = firstCustomerProfileForCheckout(checkoutProfileData)
     if (!p) return
     const combined = [p.address_line1, p.address_line2].filter(Boolean).join(', ')
@@ -298,7 +367,8 @@ export default function CheckoutPage() {
     setCity((c) => c || (p.city ?? ''))
     setGovernorate((g) => g || (p.governorate ?? ''))
     setPostalCode((pc) => pc || (p.postal_code ?? ''))
-  }, [checkoutProfileData])
+    profileHydrated.current = true
+  }, [checkoutProfileData, savedShipping])
 
   // Pre-fill customer info from logged-in user so the order stores the customer's email, not the viewer's
   useEffect(() => {
@@ -494,6 +564,7 @@ export default function CheckoutPage() {
 
       setLastOrder(data)
       clearCart()
+      clearCheckoutShippingDraft()
       toast.success(
         data.invoice_number
           ? t('checkoutPage.orderPlacedWithInvoice', { invoice: data.invoice_number })
@@ -1050,9 +1121,10 @@ export default function CheckoutPage() {
                   <p className="mb-4 text-sm font-medium text-[#B91C1C]">{t('stock.cartBlocked')}</p>
                 )}
 
-                {isTurnstileConfigured && (
+                {step === 3 && isTurnstileConfigured && turnstileMountReady && (
                   <div className="mb-4">
                     <TurnstileWidget
+                      key="checkout-turnstile"
                       ref={turnstileRef}
                       theme="light"
                       onToken={setTurnstileToken}

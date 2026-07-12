@@ -892,6 +892,34 @@
     font-weight: 600;
   }
 
+  .mobile-menu-backdrop {
+    animation: mobile-menu-fade-in 0.22s ease-out both;
+  }
+
+  .mobile-menu-sheet {
+    animation: mobile-menu-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  @keyframes mobile-menu-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes mobile-menu-slide-up {
+    from {
+      opacity: 0.85;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   html[dir='rtl'] .mobile-nav-sublink {
     font-size: 0.875rem;
   }

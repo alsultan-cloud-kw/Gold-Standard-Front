@@ -12,6 +12,8 @@ declare global {
           'expired-callback'?: () => void
           'error-callback'?: () => void
           theme?: 'light' | 'dark' | 'auto'
+          retry?: 'auto' | 'never'
+          'refresh-expired'?: 'auto' | 'manual' | 'never'
         },
       ) => string
       reset: (widgetId?: string) => void
@@ -33,6 +35,7 @@ type TurnstileWidgetProps = {
 
 const SCRIPT_ID = 'cf-turnstile-script'
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+const MAX_ERROR_RETRIES = 2
 
 function loadTurnstileScript(): Promise<void> {
   if (window.turnstile) return Promise.resolve()
@@ -66,6 +69,8 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
     const onTokenRef = useRef(onToken)
     const onExpireRef = useRef(onExpire)
     const onErrorRef = useRef(onError)
+    const errorRetriesRef = useRef(0)
+    const retryTimerRef = useRef<number | null>(null)
 
     onTokenRef.current = onToken
     onExpireRef.current = onExpire
@@ -73,6 +78,7 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
 
     useImperativeHandle(ref, () => ({
       reset: () => {
+        errorRetriesRef.current = 0
         if (widgetIdRef.current && window.turnstile) {
           window.turnstile.reset(widgetIdRef.current)
         }
@@ -84,23 +90,40 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
 
       let cancelled = false
 
-      loadTurnstileScript()
-        .then(() => {
-          if (cancelled || !containerRef.current || !window.turnstile) return
+      const renderWidget = () => {
+        if (cancelled || !containerRef.current || !window.turnstile) return
 
-          if (widgetIdRef.current) {
-            window.turnstile.remove(widgetIdRef.current)
-            widgetIdRef.current = null
-          }
+        if (widgetIdRef.current) {
+          window.turnstile.remove(widgetIdRef.current)
+          widgetIdRef.current = null
+        }
 
-          widgetIdRef.current = window.turnstile.render(containerRef.current, {
-            sitekey: turnstileSiteKey,
-            theme,
-            callback: (token) => onTokenRef.current(token),
-            'expired-callback': () => onExpireRef.current?.(),
-            'error-callback': () => onErrorRef.current?.(),
-          })
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: turnstileSiteKey,
+          theme,
+          retry: 'auto',
+          'refresh-expired': 'auto',
+          callback: (token) => {
+            errorRetriesRef.current = 0
+            onTokenRef.current(token)
+          },
+          'expired-callback': () => onExpireRef.current?.(),
+          'error-callback': () => {
+            onErrorRef.current?.()
+            if (errorRetriesRef.current >= MAX_ERROR_RETRIES) return
+            errorRetriesRef.current += 1
+            if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current)
+            retryTimerRef.current = window.setTimeout(() => {
+              if (!cancelled && widgetIdRef.current && window.turnstile) {
+                window.turnstile.reset(widgetIdRef.current)
+              }
+            }, 900)
+          },
         })
+      }
+
+      loadTurnstileScript()
+        .then(renderWidget)
         .catch((err) => {
           console.error('Turnstile failed to load:', err)
           onErrorRef.current?.()
@@ -108,6 +131,10 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
 
       return () => {
         cancelled = true
+        if (retryTimerRef.current) {
+          window.clearTimeout(retryTimerRef.current)
+          retryTimerRef.current = null
+        }
         if (widgetIdRef.current && window.turnstile) {
           window.turnstile.remove(widgetIdRef.current)
           widgetIdRef.current = null
@@ -117,7 +144,7 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
 
     if (!isTurnstileConfigured) return null
 
-    return <div ref={containerRef} className="flex justify-center min-h-[65px]" aria-hidden={false} />
+    return <div ref={containerRef} className="flex min-h-[65px] justify-center" aria-hidden={false} />
   },
 )
 

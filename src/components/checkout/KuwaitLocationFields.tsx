@@ -99,7 +99,7 @@ export function KuwaitLocationFields({
 
   const governorateField = (
     <Select
-      value={governorateEn || undefined}
+      value={governorateEn}
       onValueChange={handleGovernorateChange}
     >
       <SelectTrigger className={triggerClass} aria-label={t('checkoutPage.governoratePh')}>
@@ -128,7 +128,7 @@ export function KuwaitLocationFields({
 
   const cityField = (
     <Select
-      value={city.trim() ? city : undefined}
+      value={city.trim()}
       onValueChange={onCityChange}
       disabled={!governorateEn}
     >

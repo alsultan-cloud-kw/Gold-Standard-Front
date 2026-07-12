@@ -12,6 +12,7 @@ import {
   Home,
   LayoutGrid,
   TrendingUp,
+  Bell,
 } from 'lucide-react'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -33,10 +34,19 @@ import { resolveAuthoritativeUsdOunceSpot } from '@/utils/publicStorefrontRates'
 import { CartCountBadge } from '@/components/layout/CartCountBadge'
 import GoldPriceTicker from '@/components/sections/GoldPriceTicker'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
+import { PriceReminderPanel } from '@/components/reminders/PriceReminderPanel'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 
 export default function Navbar() {
   const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isReminderOpen, setIsReminderOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isPricesMenuOpen, setIsPricesMenuOpen] = useState(false)
   const [navSearchDraft, setNavSearchDraft] = useState('')
@@ -106,7 +116,23 @@ export default function Navbar() {
   useEffect(() => {
     closeSearch()
     setIsPricesMenuOpen(false)
+    setIsMenuOpen(false)
+    setIsReminderOpen(false)
   }, [location.pathname, closeSearch])
+
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setIsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [isMenuOpen])
 
   useEffect(() => {
     if (!isPricesMenuOpen) return
@@ -461,10 +487,42 @@ export default function Navbar() {
         </div>
       ) : null}
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="border-t border-black/5 bg-[var(--site-bg)] lg:hidden">
-          <div className="page-shell py-4">
+      {/* Mobile Menu — bottom sheet above nav bar (not expanding from header) */}
+      {isMenuOpen ? (
+        <button
+          type="button"
+          className="mobile-menu-backdrop fixed inset-0 z-[48] bg-black/45 lg:hidden"
+          onClick={() => setIsMenuOpen(false)}
+          aria-label={t('nav.closeMenu')}
+        />
+      ) : null}
+
+      {isMenuOpen ? (
+        <div
+          className="mobile-menu-sheet fixed inset-x-0 z-[49] max-h-[min(72dvh,34rem)] overflow-y-auto rounded-t-2xl border-t border-black/10 bg-[var(--site-bg)] shadow-[0_-16px_48px_rgba(11,15,25,0.18)] lg:hidden"
+          style={{ bottom: 'var(--bottom-nav-height)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('nav.menu')}
+        >
+          <div className="page-shell py-4 pb-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-bold text-[#0B0F19]">{t('nav.menu')}</p>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    setIsReminderOpen(true)
+                  }}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#85E307]/35 bg-[#ECFCCB]/50 px-3 py-2 text-xs font-semibold text-[#3F6F00] transition hover:bg-[#ECFCCB]"
+                  aria-label={t('priceReminder.ariaLabel')}
+                >
+                  <Bell className="h-4 w-4 shrink-0" aria-hidden />
+                  {t('priceReminder.title')}
+                </button>
+              ) : null}
+            </div>
             <div className="flex flex-col gap-2">
               {navLinks.map((link) =>
                 link.nameKey === 'nav.prices' ? (
@@ -533,8 +591,34 @@ export default function Navbar() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </nav>
+
+    <Sheet open={isReminderOpen} onOpenChange={setIsReminderOpen}>
+      <SheetContent
+        side="bottom"
+        className="z-[55] max-h-[min(85dvh,36rem)] overflow-y-auto rounded-t-2xl border-t border-black/10 px-4 pb-6 pt-5 lg:hidden"
+        style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <SheetHeader className="px-0 text-start">
+          <SheetTitle className="flex items-center gap-2 text-[#0B0F19]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ECFCCB] text-[#3F6F00]">
+              <Bell className="h-4 w-4" aria-hidden />
+            </span>
+            {t('priceReminder.title')}
+          </SheetTitle>
+          <SheetDescription className="text-[#64748B]">
+            {t('priceReminder.subtitleReady')}
+          </SheetDescription>
+        </SheetHeader>
+        {isAuthenticated ? (
+          <PriceReminderPanel
+            className="mt-4"
+            onSaved={() => setIsReminderOpen(false)}
+          />
+        ) : null}
+      </SheetContent>
+    </Sheet>
 
     {/* Mobile Bottom Navigation */}
     <nav
