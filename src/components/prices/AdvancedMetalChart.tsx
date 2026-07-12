@@ -9,7 +9,6 @@ import {
   type IPriceLine,
   type CandlestickData,
   type LineData,
-  type AreaData,
   type Time,
   type DeepPartial,
   type ChartOptions,
@@ -46,22 +45,53 @@ const LIME_DIM = 'rgba(133, 227, 7, 0.28)'
 const ROSE = '#DC2626'
 const ROSE_DIM = 'rgba(220, 38, 38, 0.18)'
 
-function toLineData(points: LinePoint[]): LineData[] {
-  return points.map((p) => ({ time: p.time as Time, value: p.value }))
+/** lightweight-charts requires strictly ascending unique times. */
+function sanitizeLine(points: LinePoint[]): LineData[] {
+  const sorted = [...points]
+    .filter((p) => Number.isFinite(p.time) && Number.isFinite(p.value))
+    .sort((a, b) => a.time - b.time)
+  const out: LineData[] = []
+  for (const p of sorted) {
+    const time = p.time as Time
+    const last = out[out.length - 1]
+    if (last && last.time === time) {
+      last.value = p.value
+    } else {
+      out.push({ time, value: p.value })
+    }
+  }
+  return out
 }
 
-function toCandleData(points: CandlePoint[]): CandlestickData[] {
-  return points.map((p) => ({
-    time: p.time as Time,
-    open: p.open,
-    high: p.high,
-    low: p.low,
-    close: p.close,
-  }))
-}
-
-function toAreaData(points: LinePoint[]): AreaData[] {
-  return points.map((p) => ({ time: p.time as Time, value: p.value }))
+function sanitizeCandles(points: CandlePoint[]): CandlestickData[] {
+  const sorted = [...points]
+    .filter(
+      (p) =>
+        Number.isFinite(p.time) &&
+        Number.isFinite(p.open) &&
+        Number.isFinite(p.high) &&
+        Number.isFinite(p.low) &&
+        Number.isFinite(p.close),
+    )
+    .sort((a, b) => a.time - b.time)
+  const out: CandlestickData[] = []
+  for (const p of sorted) {
+    const time = p.time as Time
+    const row: CandlestickData = {
+      time,
+      open: p.open,
+      high: p.high,
+      low: p.low,
+      close: p.close,
+    }
+    const last = out[out.length - 1]
+    if (last && last.time === time) {
+      out[out.length - 1] = row
+    } else {
+      out.push(row)
+    }
+  }
+  return out
 }
 
 export function AdvancedMetalChart({
@@ -115,6 +145,10 @@ export function AdvancedMetalChart({
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+
+    let cancelled = false
+    let ro: ResizeObserver | null = null
+    let chart: IChartApi | null = null
 
     const options: DeepPartial<ChartOptions> = {
       layout: {
@@ -189,17 +223,30 @@ export function AdvancedMetalChart({
       },
     }
 
-    const chart = createChart(el, {
-      ...options,
-      width: el.clientWidth,
-      height,
-    })
-    chartRef.current = chart
-    seriesRef.current = null
-    setChartReady((n) => n + 1)
+    const mount = () => {
+      if (cancelled || chartRef.current) return
+      const width = Math.max(el.clientWidth, 1)
+      chart = createChart(el, {
+        ...options,
+        width,
+        height,
+      })
+      chartRef.current = chart
+      seriesRef.current = null
+      setChartReady((n) => n + 1)
+    }
 
-    const ro = new ResizeObserver(() => {
-      if (!containerRef.current || !chartRef.current) return
+    // Avoid creating at width 0 (common on first paint) — that corrupts the initial series.
+    if (el.clientWidth > 0) {
+      mount()
+    }
+
+    ro = new ResizeObserver(() => {
+      if (!containerRef.current) return
+      if (!chartRef.current) {
+        if (containerRef.current.clientWidth > 0) mount()
+        return
+      }
       chartRef.current.applyOptions({
         width: containerRef.current.clientWidth,
         height,
@@ -208,13 +255,19 @@ export function AdvancedMetalChart({
     ro.observe(el)
 
     return () => {
-      ro.disconnect()
-      chart.remove()
+      cancelled = true
+      ro?.disconnect()
+      chart?.remove()
       chartRef.current = null
       seriesRef.current = null
+      priceLineRef.current = null
     }
   }, [locale, height, compact])
 
+  /**
+   * Rebuild series whenever mode changes; always push current data in the same pass.
+   * Previous split effects left an empty/corrupt series until the user clicked a mode.
+   */
   useEffect(() => {
     const chart = chartRef.current
     if (!chart || !chartReady) return
@@ -229,6 +282,9 @@ export function AdvancedMetalChart({
       seriesRef.current = null
     }
 
+    const lineData = sanitizeLine(line)
+    const candleData = sanitizeCandles(candles)
+
     if (mode === 'candles') {
       const s = chart.addCandlestickSeries({
         upColor: LIME,
@@ -239,7 +295,7 @@ export function AdvancedMetalChart({
         wickDownColor: ROSE,
       })
       seriesRef.current = s
-      if (candles.length) s.setData(toCandleData(candles))
+      if (candleData.length) s.setData(candleData)
     } else if (mode === 'area') {
       const s = chart.addAreaSeries({
         lineColor: positive ? LIME : ROSE,
@@ -252,7 +308,7 @@ export function AdvancedMetalChart({
         crosshairMarkerBackgroundColor: positive ? LIME : ROSE,
       })
       seriesRef.current = s
-      if (line.length) s.setData(toAreaData(line))
+      if (lineData.length) s.setData(lineData)
     } else {
       const s = chart.addLineSeries({
         color: positive ? LIME : ROSE,
@@ -268,39 +324,20 @@ export function AdvancedMetalChart({
         priceLineStyle: LineStyle.Dashed,
       })
       seriesRef.current = s
-      if (line.length) s.setData(toLineData(line))
+      if (lineData.length) s.setData(lineData)
     }
-    applyReferenceLine()
-    chart.timeScale().fitContent()
-  }, [chartReady, mode])
 
-  useEffect(() => {
-    const series = seriesRef.current
-    if (!series) return
-
-    if (mode === 'candles') {
-      if (candles.length) (series as ISeriesApi<'Candlestick'>).setData(toCandleData(candles))
-    } else if (mode === 'area') {
-      if (line.length) (series as ISeriesApi<'Area'>).setData(toAreaData(line))
-      ;(series as ISeriesApi<'Area'>).applyOptions({
-        lineColor: positive ? LIME : ROSE,
-        topColor: positive ? LIME_DIM : ROSE_DIM,
-        crosshairMarkerBackgroundColor: positive ? LIME : ROSE,
-      })
-    } else {
-      if (line.length) (series as ISeriesApi<'Line'>).setData(toLineData(line))
-      ;(series as ISeriesApi<'Line'>).applyOptions({
-        color: positive ? LIME : ROSE,
-        crosshairMarkerBackgroundColor: positive ? LIME : ROSE,
-        priceLineColor: positive ? 'rgba(63,111,0,0.35)' : 'rgba(220,38,38,0.35)',
-      })
-    }
     applyReferenceLine()
-  }, [mode, line, candles, positive, chartReady, referencePrice, referenceLabel])
+    requestAnimationFrame(() => {
+      chart.timeScale().fitContent()
+    })
+  }, [chartReady, mode, line, candles, positive, referencePrice, referenceLabel])
 
   useEffect(() => {
     if (!fitToken) return
-    chartRef.current?.timeScale().fitContent()
+    requestAnimationFrame(() => {
+      chartRef.current?.timeScale().fitContent()
+    })
   }, [fitToken])
 
   return (

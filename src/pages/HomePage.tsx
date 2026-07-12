@@ -139,12 +139,12 @@ export default function HomePage() {
                   ))}
                 </ul>
               </div>
+            </div>
 
-              <div className="home-hero-visual">
-                <div className="home-hero-bullion-shell">
-                  <div className="home-hero-bullion-core">
-                    <BullionStartSlot slotRef={bullionHeroRef} className="home-hero-bullion-slot" />
-                  </div>
+            <div className="home-hero-visual">
+              <div className="home-hero-bullion-shell">
+                <div className="home-hero-bullion-core">
+                  <BullionStartSlot slotRef={bullionHeroRef} className="home-hero-bullion-slot" />
                 </div>
               </div>
             </div>
@@ -171,8 +171,8 @@ export default function HomePage() {
         <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
       </div>
 
-      {/* After docks mount so stop refs exist — flyer: hero → heritage → gold vs cash */}
-      <div className="order-9 lg:order-none hidden lg:block">
+      {/* After docks mount so stop refs exist — flyer self-gates to real desktop */}
+      <div className="order-9 lg:order-none">
         <HeroBullionScroll stops={bullionStops} />
       </div>
 

@@ -270,7 +270,7 @@ export default function GoldPriceTicker() {
           <div
             key={`${loopKey}-${c.key}`}
             className={cn(
-              'flex shrink-0 items-center whitespace-nowrap border-e border-white/10',
+              'inline-flex shrink-0 flex-nowrap items-center whitespace-nowrap border-e border-white/10',
               compact ? 'gap-x-2 px-3' : 'gap-x-2.5 px-4 sm:gap-x-3 sm:px-5',
             )}
             dir="ltr"
@@ -327,10 +327,10 @@ export default function GoldPriceTicker() {
 
   if (isLoading && !res) {
     return (
-      <div className="relative border-b border-white/10 bg-[#0B0F19]">
-        <div className="page-shell flex min-h-[2.75rem] items-center gap-4 py-2">
+      <div className="gold-ticker-shell relative border-b border-white/10 bg-[#0B0F19]">
+        <div className="page-shell flex min-h-[2.75rem] min-w-0 items-center gap-2 overflow-x-clip py-2 sm:gap-4">
           {liveBeacon}
-          <div className="gold-ticker-fade flex flex-1 gap-0 overflow-hidden">
+          <div className="gold-ticker-fade flex min-w-0 flex-1 gap-0 overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex shrink-0 items-center gap-2 border-e border-white/10 px-4">
                 <div className="h-3.5 w-12 animate-pulse rounded bg-white/10" />
@@ -346,8 +346,8 @@ export default function GoldPriceTicker() {
 
   if (tickerItems.length === 0) {
     return (
-      <div className="relative border-b border-white/10 bg-[#0B0F19] text-white/70">
-        <div className="page-shell flex min-h-[2.75rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2 sm:flex-nowrap">
+      <div className="gold-ticker-shell relative border-b border-white/10 bg-[#0B0F19] text-white/70">
+        <div className="page-shell flex min-h-[2.75rem] min-w-0 flex-nowrap items-center justify-between gap-x-3 overflow-x-clip py-2">
           <div className="flex min-w-0 flex-1 items-center gap-x-2 sm:gap-x-3">
             {liveBeacon}
             <span className="text-xs font-semibold uppercase tracking-wide text-white/80 sm:text-sm">
@@ -365,11 +365,11 @@ export default function GoldPriceTicker() {
   const marqueeDuration = Math.max(32, tickerItems.length * 6)
 
   return (
-    <div className="group relative border-b border-white/10 bg-[#0B0F19] text-white/85">
-      <div className="page-shell flex min-h-[2.875rem] items-stretch sm:min-h-[3.25rem]">
-        <div className="relative z-10 hidden shrink-0 items-center gap-2 border-e border-white/10 bg-[#0B0F19] px-3 py-3 sm:flex sm:ps-6 lg:ps-8">
+    <div className="gold-ticker-shell group relative border-b border-white/10 bg-[#0B0F19] text-white/85">
+      <div className="page-shell flex min-h-[2.875rem] min-w-0 items-stretch overflow-x-clip sm:min-h-[3.25rem]">
+        <div className="gold-ticker-label relative z-10 hidden max-w-[30%] shrink items-center gap-2 overflow-hidden border-e border-white/10 bg-[#0B0F19] px-2 py-3 sm:flex sm:px-3 lg:max-w-none lg:shrink-0 lg:ps-6 lg:pe-3 xl:ps-8">
           {liveBeacon}
-          <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-wide text-white/80 sm:text-base">
+          <span className="truncate whitespace-nowrap text-sm font-semibold uppercase tracking-wide text-white/80 sm:text-base">
             {t('home.metalTickerLabel')}
           </span>
         </div>
@@ -389,22 +389,33 @@ export default function GoldPriceTicker() {
             dir="ltr"
           >
             {reducedMotion ? (
-              <div className="flex w-full flex-wrap items-center gap-0 px-1">
-                <div className="hidden sm:contents">{renderTickerTrack('static')}</div>
-                <div className="contents sm:hidden">{renderTickerTrack('static', true)}</div>
+              <div
+                className="gold-ticker-scroll flex w-full min-w-0 flex-nowrap items-center overflow-x-auto overscroll-x-contain px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                dir="ltr"
+              >
+                <div className="hidden shrink-0 flex-nowrap items-center sm:flex">
+                  {renderTickerTrack('static')}
+                </div>
+                <div className="flex shrink-0 flex-nowrap items-center sm:hidden">
+                  {renderTickerTrack('static', true)}
+                </div>
               </div>
             ) : (
-              <div className="w-full overflow-hidden" dir="ltr">
+              <div className="w-full min-w-0 overflow-hidden" dir="ltr">
                 <div
-                  className="flex w-max animate-gold-marquee-ltr will-change-transform motion-reduce:animate-none group-hover:[animation-play-state:paused]"
+                  className="gold-ticker-marquee flex w-max flex-nowrap items-center animate-gold-marquee-ltr group-hover:[animation-play-state:paused]"
                   style={{ animationDuration: `${marqueeDuration}s` }}
                 >
-                  <div className="hidden shrink-0 items-center sm:flex">{renderTickerTrack('a')}</div>
-                  <div className="hidden shrink-0 items-center sm:flex" aria-hidden>
+                  <div className="hidden shrink-0 flex-nowrap items-center sm:flex">
+                    {renderTickerTrack('a')}
+                  </div>
+                  <div className="hidden shrink-0 flex-nowrap items-center sm:flex" aria-hidden>
                     {renderTickerTrack('b')}
                   </div>
-                  <div className="flex shrink-0 items-center sm:hidden">{renderTickerTrack('a', true)}</div>
-                  <div className="flex shrink-0 items-center sm:hidden" aria-hidden>
+                  <div className="flex shrink-0 flex-nowrap items-center sm:hidden">
+                    {renderTickerTrack('a', true)}
+                  </div>
+                  <div className="flex shrink-0 flex-nowrap items-center sm:hidden" aria-hidden>
                     {renderTickerTrack('b', true)}
                   </div>
                 </div>
@@ -413,7 +424,7 @@ export default function GoldPriceTicker() {
           </div>
         </div>
 
-        <div className="relative z-10 shrink-0 bg-[#0B0F19]">
+        <div className="relative z-10 max-w-[7.5rem] shrink-0 bg-[#0B0F19] sm:max-w-none">
           <TickerUtilityCluster />
         </div>
       </div>
@@ -427,28 +438,28 @@ function TickerUtilityCluster() {
   const langLabel = isAr ? 'عربي' : 'EN'
 
   return (
-    <div className="flex shrink-0 items-center gap-1.5 border-s border-white/10 px-1.5 py-1 sm:gap-4 sm:px-4 sm:py-2 lg:pe-6">
+    <div className="flex min-w-0 shrink-0 items-center gap-1 border-s border-white/10 px-1 py-1 sm:gap-3 sm:px-3 sm:py-2 lg:gap-4 lg:pe-6">
       <a
         href={`tel:${GS_CONTACT.phoneTel}`}
-        className="hidden items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80 md:inline-flex"
+        className="hidden items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80 xl:inline-flex"
         dir="ltr"
       >
         <Phone className="h-3 w-3 shrink-0" />
         <span className="whitespace-nowrap">{GS_CONTACT.phone}</span>
       </a>
-      <span className="hidden items-center gap-1 text-xs text-white/45 lg:inline-flex">
+      <span className="hidden max-w-[8rem] items-center gap-1 truncate text-xs text-white/45 2xl:inline-flex">
         <MapPin className="h-3 w-3 shrink-0" />
-        <span className="max-w-[10rem] truncate xl:max-w-none">{t('nav.location')}</span>
+        <span className="truncate">{t('nav.location')}</span>
       </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-7 items-center justify-center gap-0.5 rounded-md border border-white/20 bg-white/[0.08] px-1.5 text-[10px] font-semibold leading-none text-white/90 transition-colors hover:border-[#85E307]/40 hover:bg-white/12 sm:h-auto sm:gap-1 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:text-xs sm:font-normal sm:text-white/45 sm:hover:text-white/80"
+            className="inline-flex h-7 max-w-full items-center justify-center gap-0.5 rounded-md border border-white/20 bg-white/[0.08] px-1.5 text-[10px] font-semibold leading-none text-white/90 transition-colors hover:border-[#85E307]/40 hover:bg-white/12 sm:h-auto sm:gap-1 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:text-xs sm:font-normal sm:text-white/45 sm:hover:text-white/80"
             aria-label={t('common.language')}
           >
             <Languages className="h-3 w-3 shrink-0 opacity-90" />
-            <span className="whitespace-nowrap">{langLabel}</span>
+            <span className="max-w-[4.5rem] truncate whitespace-nowrap">{langLabel}</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[120px] border-black/10 bg-white">

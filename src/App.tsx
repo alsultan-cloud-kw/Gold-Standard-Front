@@ -6,6 +6,7 @@ import './App.css'
 // Layout Components
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
+import SkipToContentLink from './components/layout/SkipToContentLink'
 
 // Page Components
 import HomePage from './pages/HomePage'
@@ -64,6 +65,7 @@ import AdminClubs from './pages/admin/AdminClubs'
 import JoinClubPage from './pages/JoinClubPage'
 import FloatingPriceReminder from './components/reminders/FloatingPriceReminder'
 import MarketingVisitTracker from './components/analytics/MarketingVisitTracker'
+import { RouteSeo } from './components/seo/RouteSeo'
 
 // Context
 import { AuthProvider } from './contexts/AuthContext'
@@ -93,11 +95,13 @@ function App() {
           <Router>
             <CartProvider>
             <ScrollToTop />
+            <RouteSeo />
             <MarketingVisitTracker />
             <GoogleOneTapPrompt />
             <div className="min-h-screen bg-siteBg">
+              <SkipToContentLink />
               <Navbar />
-              <main className="main-under-nav main-with-bottom-nav">
+              <main id="main-content" className="main-with-bottom-nav" tabIndex={-1}>
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
@@ -212,7 +216,7 @@ function App() {
                 gap={10}
                 offset={16}
                 mobileOffset={{
-                  top: 'calc(var(--nav-offset) + 0.5rem)',
+                  top: 'calc(var(--nav-offset, 7.25rem) + 0.5rem)',
                   bottom: 'calc(var(--bottom-nav-height) + 0.75rem)',
                 }}
                 toastOptions={{

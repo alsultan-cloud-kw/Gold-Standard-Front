@@ -8,9 +8,11 @@ import {
   ensureSiteFontsLoaded,
   initSiteFonts,
 } from './lib/siteFonts'
+import { installMobilePageZoomLock } from './lib/mobilePageZoomLock'
 
 ensureSiteFontsLoaded()
 initSiteFonts()
+installMobilePageZoomLock()
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 // Only use a proxy when explicitly set. clerk.goldstandardkw.com DNS is verified — a

@@ -7,6 +7,7 @@ import {
   CandlestickChart,
   Crosshair,
   LineChart as LineIcon,
+  Loader2,
   Maximize2,
   Minimize2,
   X,
@@ -121,7 +122,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language?.startsWith('ar') ? 'ar-KW' : PRICE_NUMBER_LOCALE
   const [metal, setMetal] = useState<MetalTab>('gold')
-  const [chartRange, setChartRange] = useState<ChartRange>('1m')
+  const [chartRange, setChartRange] = useState<ChartRange>('1w')
   const [ounceCurrency, setOunceCurrency] = useState<OunceCurrency>('USD')
   const [mode, setMode] = useState<ChartDisplayMode>('line')
   const [countdown, setCountdown] = useState(60)
@@ -204,6 +205,20 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
     staleTime: 25_000,
   })
   const historyFetching = pricingHistoryFetching || legacyHistoryFetching
+
+  /** In-chart spinner while a range/metal filter fetch is in flight (not silent background refetch). */
+  const [filterLoadPending, setFilterLoadPending] = useState(false)
+
+  useEffect(() => {
+    setFilterLoadPending(true)
+  }, [chartRange, metal, apiRange])
+
+  useEffect(() => {
+    if (!filterLoadPending) return
+    if (historyFetching) return
+    setFilterLoadPending(false)
+    setFitToken((n) => n + 1)
+  }, [filterLoadPending, historyFetching])
 
   const { data: currentSnap } = useQuery({
     queryKey: ['pricingCurrent', metal],
@@ -322,6 +337,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
   const change = useMemo(() => seriesChange(line), [line])
   const positive = change == null ? true : change.abs >= 0
   const lastPrice = line.length ? line[line.length - 1].value : liveChartV
+  const showChartLoading = filterLoadPending || (historyFetching && line.length < 2)
 
   const seriesStats = useMemo(() => seriesOhlcStats(line, candles), [line, candles])
   const snapStats = useMemo(
@@ -507,10 +523,10 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
                 role="tab"
                 aria-selected={on}
                 onClick={() => setMetal(id)}
-                className={`cursor-pointer rounded-lg px-2.5 py-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 sm:px-3 sm:py-2 ${
+                className={`cursor-pointer rounded-md px-2.5 py-1.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 sm:px-3 sm:py-2 ${
                   on
-                    ? 'bg-[#85E307] text-[#0B0F19] shadow-sm'
-                    : 'border border-black/10 bg-[#F4F4F5] text-[#64748B] hover:border-[#85E307]/35 hover:bg-[#ECFCCB]/50 hover:text-[#0B0F19]'
+                    ? 'bg-[#0B0F19] text-white'
+                    : 'border border-black/10 bg-white text-[#64748B] hover:border-black/20 hover:text-[#0B0F19]'
                 }`}
               >
                 <PreciousMetalMark
@@ -576,7 +592,10 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
                 seconds: String(countdown).padStart(2, '0'),
               })}
               {historyFetching ? (
-                <span className="text-[#3F6F00]">{t('home.chart.refreshing')}</span>
+                <span className="inline-flex items-center gap-1 text-[#3F6F00]">
+                  <Loader2 className="h-3 w-3 animate-spin sm:h-3.5 sm:w-3.5" aria-hidden />
+                  {t('home.chart.refreshing')}
+                </span>
               ) : null}
             </p>
           </div>
@@ -690,12 +709,24 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
           {t('home.chart.hint')}
         </p>
 
-        <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#F9F9FA]">
+        <div
+          className="relative overflow-hidden rounded-xl border border-black/10 bg-[#F9F9FA]"
+          aria-busy={showChartLoading}
+        >
           {line.length < 2 && candles.length < 2 ? (
             <div className="flex h-[280px] flex-col items-center justify-center gap-2 px-4 text-center sm:h-[340px] lg:h-[380px]">
-              <Crosshair className="h-8 w-8 text-[#CBD5E1]" aria-hidden />
-              <p className="text-sm font-medium text-[#64748B]">{t('home.chart.emptyTitle')}</p>
-              <p className="max-w-sm text-xs text-[#94A3B8]">{t('home.chart.emptyBody')}</p>
+              {showChartLoading ? (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin text-[#3F6F00]" aria-hidden />
+                  <p className="text-sm font-medium text-[#64748B]">{t('home.chart.chartLoading')}</p>
+                </>
+              ) : (
+                <>
+                  <Crosshair className="h-8 w-8 text-[#CBD5E1]" aria-hidden />
+                  <p className="text-sm font-medium text-[#64748B]">{t('home.chart.emptyTitle')}</p>
+                  <p className="max-w-sm text-xs text-[#94A3B8]">{t('home.chart.emptyBody')}</p>
+                </>
+              )}
             </div>
           ) : (
             <AdvancedMetalChart
@@ -710,6 +741,17 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
               referenceLabel={t('home.chart.prevClose')}
             />
           )}
+
+          {showChartLoading && (line.length >= 2 || candles.length >= 2) ? (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 bg-white/75 backdrop-blur-[2px]"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-8 w-8 animate-spin text-[#3F6F00]" aria-hidden />
+              <p className="text-sm font-semibold text-[#0B0F19]">{t('home.chart.chartLoading')}</p>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-3 flex flex-col gap-3 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
@@ -766,15 +808,6 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
           <span>{t('home.chart.featureCrosshair')}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span>{t('home.chart.featureModes')}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <a
-            href="https://www.tradingview.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="normal-case tracking-normal text-[#94A3B8] underline-offset-2 hover:text-[#64748B] hover:underline"
-          >
-            {t('home.chart.chartAttribution')}
-          </a>
         </div>
       </div>
     </div>

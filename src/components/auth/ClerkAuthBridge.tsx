@@ -17,7 +17,12 @@ export default function ClerkAuthBridge() {
     syncingRef.current = true
     void (async () => {
       try {
-        const token = await getToken()
+        let token = await getToken()
+        if (!token) {
+          // Brief race after OAuth redirect — retry once before failing.
+          await new Promise((r) => window.setTimeout(r, 500))
+          token = await getToken()
+        }
         if (!token) throw new Error('No Clerk session')
         await loginWithClerk(token)
       } catch (err: unknown) {

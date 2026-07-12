@@ -38,10 +38,14 @@ export default function Navbar() {
   const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isPricesMenuOpen, setIsPricesMenuOpen] = useState(false)
   const [navSearchDraft, setNavSearchDraft] = useState('')
   const searchPanelRef = useRef<HTMLDivElement>(null)
   const searchToggleRef = useRef<HTMLButtonElement>(null)
+  const pricesMenuRef = useRef<HTMLDivElement>(null)
+  const pricesToggleRef = useRef<HTMLButtonElement>(null)
   const bottomNavRef = useRef<HTMLElement>(null)
+  const topChromeRef = useRef<HTMLElement>(null)
   const { user, isAuthenticated, logout } = useAuth()
   const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
@@ -101,44 +105,82 @@ export default function Navbar() {
 
   useEffect(() => {
     closeSearch()
+    setIsPricesMenuOpen(false)
   }, [location.pathname, closeSearch])
 
+  useEffect(() => {
+    if (!isPricesMenuOpen) return
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node
+      if (
+        pricesMenuRef.current?.contains(target) ||
+        pricesToggleRef.current?.contains(target)
+      ) {
+        return
+      }
+      setIsPricesMenuOpen(false)
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setIsPricesMenuOpen(false)
+        pricesToggleRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isPricesMenuOpen])
+
   /**
-   * Keep the mobile bottom nav inside the *visible* viewport.
-   * On first paint mobile browser chrome can cover `position:fixed; bottom:0`
-   * until the user scrolls — visualViewport sync lifts the bar above that chrome.
+   * Sticky (not fixed) chrome sits in document flow — no main padding hack.
+   * Still publish --nav-offset for scroll-margin, toasts, and sticky side panels
+   * when zoom / text size / open menus change the real header height.
+   */
+  useEffect(() => {
+    const el = topChromeRef.current
+    if (!el) return
+
+    const apply = () => {
+      const h = Math.ceil(el.getBoundingClientRect().height)
+      if (h > 0) {
+        document.documentElement.style.setProperty('--nav-offset', `${h}px`)
+      }
+    }
+
+    apply()
+    let ro: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(apply)
+      ro.observe(el)
+    }
+    window.addEventListener('resize', apply)
+    window.addEventListener('orientationchange', apply)
+    window.visualViewport?.addEventListener('resize', apply)
+
+    return () => {
+      ro?.disconnect()
+      window.removeEventListener('resize', apply)
+      window.removeEventListener('orientationchange', apply)
+      window.visualViewport?.removeEventListener('resize', apply)
+    }
+  }, [isSearchOpen, isMenuOpen])
+
+  /**
+   * Bottom nav stays at CSS `bottom: 0` + safe-area padding.
+   * Do NOT sync with visualViewport — URL-bar show/hide made the bar
+   * jump up and snap back (the flicker users reported).
    */
   useEffect(() => {
     const nav = bottomNavRef.current
     if (!nav) return
-
-    const sync = () => {
-      const vv = window.visualViewport
-      if (!vv) {
-        nav.style.transform = ''
-        return
-      }
-      const obscuredBottom = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      nav.style.transform = obscuredBottom > 0 ? `translate3d(0, ${-obscuredBottom}px, 0)` : ''
-    }
-
-    sync()
-    const vv = window.visualViewport
-    vv?.addEventListener('resize', sync)
-    vv?.addEventListener('scroll', sync)
-    window.addEventListener('resize', sync)
-    window.addEventListener('orientationchange', sync)
-    const raf = window.requestAnimationFrame(sync)
-    const t = window.setTimeout(sync, 120)
-
-    return () => {
-      vv?.removeEventListener('resize', sync)
-      vv?.removeEventListener('scroll', sync)
-      window.removeEventListener('resize', sync)
-      window.removeEventListener('orientationchange', sync)
-      window.cancelAnimationFrame(raf)
-      window.clearTimeout(t)
-    }
+    nav.style.transform = ''
   }, [])
 
   useEffect(() => {
@@ -172,52 +214,84 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-black/5 bg-[var(--site-bg)]">
+    <nav
+      ref={topChromeRef}
+      className="site-chrome-top sticky top-0 z-50 w-full border-b border-black/5 bg-[var(--site-bg)]"
+    >
       <GoldPriceTicker />
 
       {/* Main Navbar */}
-      <div className="page-shell">
-        <div className="flex items-center justify-between h-16">
+      <div className="page-shell min-w-0">
+        <div className="navbar-main-row flex min-h-16 min-w-0 items-center justify-between gap-2 py-1 sm:gap-3">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="navbar-logo flex min-w-0 shrink items-center gap-2">
             <img
               src={logo}
               alt={t('common.logoAlt')}
-              className="h-12 w-auto object-contain"
+              className="h-10 w-auto max-w-[min(9.5rem,42vw)] object-contain object-start sm:h-12 sm:max-w-[12rem]"
             />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-8">
+          {/* Desktop Navigation — scrolls horizontally under zoom instead of blowing page width */}
+          <div className="navbar-desktop-links hidden min-w-0 flex-1 items-center justify-center gap-4 overflow-visible lg:flex xl:gap-8">
             {navLinks.map((link) => (
               link.nameKey === 'nav.prices' ? (
-                <div key={link.nameKey} className="relative group/prices">
+                <div
+                  key={link.nameKey}
+                  ref={pricesMenuRef}
+                  className="relative shrink-0 group/prices"
+                  onMouseEnter={() => setIsPricesMenuOpen(true)}
+                  onMouseLeave={() => setIsPricesMenuOpen(false)}
+                >
                   <button
+                    ref={pricesToggleRef}
                     type="button"
+                    id="nav-prices-trigger"
                     aria-haspopup="menu"
-                    className={`inline-flex items-center gap-1 text-sm font-medium transition-colors relative ${
-                      isPricesActive ? 'text-[#3F6F00]' : 'text-[#0C1512] group-hover/prices:text-[#3F6F00]'
+                    aria-expanded={isPricesMenuOpen}
+                    aria-controls="nav-prices-menu"
+                    onClick={() => setIsPricesMenuOpen((open) => !open)}
+                    className={`inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium transition-colors relative ${
+                      isPricesActive || isPricesMenuOpen
+                        ? 'text-[#3F6F00]'
+                        : 'text-[#0C1512] group-hover/prices:text-[#3F6F00]'
                     }`}
                   >
                     {t('nav.prices')}
-                    <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-hover/prices:rotate-180" />
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        isPricesMenuOpen ? 'rotate-180' : 'group-hover/prices:rotate-180'
+                      }`}
+                      aria-hidden="true"
+                    />
                     <span
                       className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
-                        isPricesActive ? 'w-full' : 'w-0 group-hover/prices:w-full'
+                        isPricesActive || isPricesMenuOpen
+                          ? 'w-full'
+                          : 'w-0 group-hover/prices:w-full'
                       }`}
                     />
                   </button>
-                  {/* Hover bridge + panel — opens on hover, no click required */}
-                  <div className="pointer-events-none invisible absolute start-1/2 top-full z-50 w-56 -translate-x-1/2 pt-3 opacity-0 transition-all duration-150 group-hover/prices:pointer-events-auto group-hover/prices:visible group-hover/prices:opacity-100 rtl:translate-x-1/2">
+                  {/* Must not sit inside an overflow-x scrollport — that clipped this panel on desktop */}
+                  <div
+                    className={`absolute start-1/2 top-full z-[60] w-56 -translate-x-1/2 pt-2 transition-all duration-150 rtl:translate-x-1/2 ${
+                      isPricesMenuOpen
+                        ? 'pointer-events-auto visible opacity-100'
+                        : 'pointer-events-none invisible opacity-0'
+                    }`}
+                  >
                     <div
+                      id="nav-prices-menu"
                       role="menu"
+                      aria-labelledby="nav-prices-trigger"
                       className="overflow-hidden rounded-xl border border-black/10 bg-white py-1.5 shadow-lg shadow-black/10"
                     >
                       <Link
                         to="/prices"
                         role="menuitem"
-                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 ${
+                        tabIndex={isPricesMenuOpen ? 0 : -1}
+                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 focus-visible:bg-[#ECFCCB]/60 focus-visible:outline-none ${
                           isPathActive('/prices')
                             ? 'font-semibold text-[#3F6F00]'
                             : 'font-medium text-[#0B0F19]'
@@ -228,7 +302,8 @@ export default function Navbar() {
                       <Link
                         to="/company-prices"
                         role="menuitem"
-                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 ${
+                        tabIndex={isPricesMenuOpen ? 0 : -1}
+                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 focus-visible:bg-[#ECFCCB]/60 focus-visible:outline-none ${
                           isPathActive('/company-prices')
                             ? 'font-semibold text-[#3F6F00]'
                             : 'font-medium text-[#0B0F19]'
@@ -243,7 +318,7 @@ export default function Navbar() {
                 <Link
                   key={link.nameKey}
                   to={link.href}
-                  className={`text-sm font-medium transition-colors relative group ${
+                  className={`relative shrink-0 whitespace-nowrap text-sm font-medium transition-colors group ${
                     isPathActive(link.href) ? 'text-[#3F6F00]' : 'text-[#0C1512] hover:text-[#3F6F00]'
                   }`}
                 >
@@ -259,7 +334,7 @@ export default function Navbar() {
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className="navbar-actions flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-1">
             {!isProductsListPage ? (
               <button
                 ref={searchToggleRef}
@@ -344,18 +419,18 @@ export default function Navbar() {
 
             <Link
               to="/products"
-              className="ms-1 hidden items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 lg:inline-flex"
+              className="navbar-buy-cta ms-1 hidden max-w-[min(100%,18rem)] items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 lg:inline-flex"
               aria-label={`${t('nav.buyGold')}${buyGoldPriceLabel ? ` ${buyGoldPriceLabel}` : ''}`}
             >
-              <span className="flex items-center gap-2 px-3.5 py-2.5 tabular-nums text-[13px] font-bold" dir="ltr">
+              <span className="flex min-w-0 items-center gap-2 px-2.5 py-2.5 tabular-nums text-[12px] font-bold xl:px-3.5 xl:text-[13px]" dir="ltr">
                 <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0B0F19]/55" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#0B0F19]" />
                 </span>
-                {buyGoldPriceLabel ?? '—'}
+                <span className="min-w-0 truncate">{buyGoldPriceLabel ?? '—'}</span>
               </span>
               <span className="w-px self-stretch bg-black/15" aria-hidden />
-              <span className="flex items-center px-4 py-2.5">{t('nav.buyGold')}</span>
+              <span className="flex shrink-0 items-center px-3 py-2.5 xl:px-4">{t('nav.buyGold')}</span>
             </Link>
           </div>
         </div>

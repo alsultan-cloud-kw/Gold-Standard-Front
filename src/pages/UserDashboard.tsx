@@ -128,7 +128,7 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 mt-4">
-            <div className="gold-card sticky top-24">
+            <div className="gold-card sticky top-[var(--nav-offset,7.25rem)]">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gold-500/20">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold-300 via-gold-400 to-amber-600 shadow-[0_10px_24px_-12px_rgba(212,175,55,0.85)] ring-1 ring-gold-200/45 flex items-center justify-center">
                   {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (

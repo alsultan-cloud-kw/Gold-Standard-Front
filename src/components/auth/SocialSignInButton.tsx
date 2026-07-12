@@ -88,8 +88,15 @@ export default function SocialSignInButton({
       setLastAuthMethod(provider)
       if (mode === 'sign-up') {
         await client.signUp.authenticateWithRedirect(params)
-      } else {
+        return
+      }
+
+      try {
         await client.signIn.authenticateWithRedirect(params)
+      } catch (signInErr) {
+        // Brand-new Google/Apple users can fail on sign-in-only — fall through to sign-up.
+        console.warn(`${provider} OAuth sign-in redirect failed, trying sign-up:`, signInErr)
+        await client.signUp.authenticateWithRedirect(params)
       }
     } catch (e) {
       console.error(`${provider} OAuth redirect failed:`, e)

@@ -5,8 +5,16 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import bullionHorizUrl from '@/assets/home/bullion-horiz.png'
 import bullionVertUrl from '@/assets/home/bullion-vert.png'
 import { cn } from '@/lib/utils'
+import { BULLION_FLYER_MQ, prefersBullionFlyer } from './flyerMedia'
 
 gsap.registerPlugin(ScrollTrigger)
+
+const FLYER_EVENT = 'gs-bullion-flyer'
+
+function setFlyerActive(active: boolean) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(FLYER_EVENT, { detail: { active } }))
+}
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
@@ -48,7 +56,6 @@ type Pose = {
 /**
  * Approach progress of a dock seat, from its viewport Y.
  * 0 = seat still low in the viewport · 1 = seat reached its landing line.
- * Pure function of scroll — reverses naturally when scrolling up.
  */
 function seatApproachT(seatCy: number, vh: number, startFrac: number, landFrac: number) {
   const start = vh * startFrac
@@ -57,10 +64,9 @@ function seatApproachT(seatCy: number, vh: number, startFrac: number, landFrac: 
 }
 
 /**
- * Scroll-reactive journey, no fades:
- * — hero → heritage: continuous glide between the two seats
- * — heritage exit: bar stays glued to the seat and scrolls out with the page
- * — comparison: bar slides down from above the viewport and settles into the gold seat
+ * Scroll-reactive journey, no fades.
+ * Hero stay is gated so large text / short viewports don’t yank the bar
+ * toward the next dock while the user is still looking at the hero.
  */
 function sampleJourney(seats: Seat[], vh: number): Pose {
   const n = seats.length - 1
@@ -83,8 +89,12 @@ function sampleJourney(seats: Seat[], vh: number): Pose {
   const trust = seats[1]
   const final = seats[2] ?? seats[seats.length - 1]
 
-  // Section two — slide in from above the viewport, settle onto the gold seat
-  const finalT = easeOutCubic(seatApproachT(final.cy, vh, 1.05, 0.42))
+  // Hero must have scrolled up before later legs can steal the bar
+  const heroLeaving = hero.cy < vh * 0.42
+
+  const finalT = heroLeaving
+    ? easeOutCubic(seatApproachT(final.cy, vh, 0.92, 0.42))
+    : 0
   if (finalT > 0) {
     const overhead = -final.bound * 0.75
     return {
@@ -100,9 +110,9 @@ function sampleJourney(seats: Seat[], vh: number): Pose {
     }
   }
 
-  // Section one — glide from hero seat into the heritage seat, then stay glued
-  // (glued seat scrolls out of view naturally with the page — no fade)
-  const trustT = easeOutCubic(seatApproachT(trust.cy, vh, 0.96, 0.5))
+  const trustT = heroLeaving
+    ? easeOutCubic(seatApproachT(trust.cy, vh, 0.88, 0.48))
+    : 0
   if (trustT > 0) {
     const flight = Math.sin(Math.PI * trustT)
     const arc = flight * Math.min(vh * 0.05, 44)
@@ -119,7 +129,6 @@ function sampleJourney(seats: Seat[], vh: number): Pose {
     }
   }
 
-  // Hero — bar in start slot
   return {
     cx: hero.cx,
     cy: hero.cy,
@@ -155,20 +164,40 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
     let resizeObservers: ResizeObserver[] = []
     let onScroll: (() => void) | null = null
     let onResize: (() => void) | null = null
+    let onMq: (() => void) | null = null
     let raf = 0
     let tries = 0
+    const mq = window.matchMedia(BULLION_FLYER_MQ)
+    const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)')
 
-    const teardown = () => {
+    const clearListeners = () => {
       if (onScroll) window.removeEventListener('scroll', onScroll)
       if (onResize) window.removeEventListener('resize', onResize)
+      onScroll = null
+      onResize = null
       resizeObservers.forEach((ro) => ro.disconnect())
       resizeObservers = []
       st?.kill()
       st = null
     }
 
+    const teardown = () => {
+      clearListeners()
+      setReady(false)
+      setFlyerActive(false)
+      layer.style.opacity = '0'
+      layer.style.visibility = 'hidden'
+    }
+
     const bootJourney = () => {
       if (cancelled) return
+
+      clearListeners()
+
+      if (!prefersBullionFlyer()) {
+        teardown()
+        return
+      }
 
       const els = stops.map((s) => s.current).filter(Boolean) as HTMLElement[]
       if (els.length < stops.length) {
@@ -179,11 +208,6 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
 
       const startEl = els[0]
       const endEl = els[els.length - 1]
-
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        setReady(false)
-        return
-      }
 
       const readSeats = (): Seat[] =>
         els.map((el) => {
@@ -196,6 +220,11 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
         })
 
       const place = () => {
+        if (!prefersBullionFlyer()) {
+          teardown()
+          return
+        }
+
         const seats = readSeats()
         const {
           cx,
@@ -252,21 +281,10 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
 
       const sync = () => place()
 
-      Promise.all([
-        vert.decode?.().catch(() => undefined) ?? Promise.resolve(),
-        horiz.decode?.().catch(() => undefined) ?? Promise.resolve(),
-      ]).then(() => {
-        if (cancelled) return
-        place()
-        setReady(true)
-      })
-
-      teardown()
-
       st = ScrollTrigger.create({
         trigger: startEl,
         endTrigger: endEl,
-        start: 'center center',
+        start: 'top center',
         end: 'center center',
         scrub: 1.15,
         invalidateOnRefresh: true,
@@ -296,17 +314,40 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
       onResize = refreshLayout
       window.addEventListener('resize', onResize)
 
-      requestAnimationFrame(() => {
+      Promise.all([
+        vert.decode?.().catch(() => undefined) ?? Promise.resolve(),
+        horiz.decode?.().catch(() => undefined) ?? Promise.resolve(),
+      ]).then(() => {
+        if (cancelled) return
+        place()
+        setReady(true)
+        setFlyerActive(true)
         ScrollTrigger.refresh()
         sync()
       })
     }
+
+    onMq = () => {
+      tries = 0
+      teardown()
+      bootJourney()
+    }
+    mq.addEventListener?.('change', onMq)
+    reduceMq.addEventListener?.('change', onMq)
+    mq.addListener?.(onMq)
+    reduceMq.addListener?.(onMq)
 
     bootJourney()
 
     return () => {
       cancelled = true
       cancelAnimationFrame(raf)
+      if (onMq) {
+        mq.removeEventListener?.('change', onMq)
+        reduceMq.removeEventListener?.('change', onMq)
+        mq.removeListener?.(onMq)
+        reduceMq.removeListener?.(onMq)
+      }
       teardown()
     }
   }, [stops])
@@ -329,11 +370,12 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
           src={bullionVertUrl}
           alt=""
           draggable={false}
-          className="absolute left-0 top-0 max-w-none will-change-transform"
+          className="absolute left-0 top-0"
           style={{
-            transformOrigin: 'center center',
-            backfaceVisibility: 'hidden',
+            transformOrigin: '50% 50%',
             opacity: 1,
+            visibility: 'hidden',
+            backfaceVisibility: 'hidden',
           }}
         />
         <img
@@ -341,12 +383,12 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
           src={bullionHorizUrl}
           alt=""
           draggable={false}
-          className="absolute left-0 top-0 max-w-none will-change-transform"
+          className="absolute left-0 top-0"
           style={{
-            transformOrigin: 'center center',
-            backfaceVisibility: 'hidden',
+            transformOrigin: '50% 50%',
             visibility: 'hidden',
             opacity: 1,
+            backfaceVisibility: 'hidden',
           }}
         />
       </div>
@@ -355,7 +397,6 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
   )
 }
 
-/** Hero layout seat — flyer locks here at scroll start. */
 export function BullionStartSlot({
   slotRef,
   className,
@@ -364,19 +405,50 @@ export function BullionStartSlot({
   className?: string
 }) {
   const { t } = useTranslation()
-  const [staticFallback, setStaticFallback] = useState(false)
+  /** Static bar stays until a real desktop flyer is active — survives zoom / large text. */
+  const [hideForFlyer, setHideForFlyer] = useState(false)
 
   useEffect(() => {
-    setStaticFallback(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    const sync = (active?: boolean) => {
+      const flyerOk = prefersBullionFlyer()
+      if (!flyerOk) {
+        setHideForFlyer(false)
+        return
+      }
+      if (typeof active === 'boolean') {
+        setHideForFlyer(active)
+        return
+      }
+      setHideForFlyer(false)
+    }
+
+    sync(false)
+
+    const onFlyer = (e: Event) => {
+      const detail = (e as CustomEvent<{ active?: boolean }>).detail
+      sync(Boolean(detail?.active))
+    }
+    const onMq = () => sync(false)
+
+    window.addEventListener(FLYER_EVENT, onFlyer)
+    const mq = window.matchMedia(BULLION_FLYER_MQ)
+    mq.addEventListener?.('change', onMq)
+    mq.addListener?.(onMq)
+
+    return () => {
+      window.removeEventListener(FLYER_EVENT, onFlyer)
+      mq.removeEventListener?.('change', onMq)
+      mq.removeListener?.(onMq)
+    }
   }, [])
 
   return (
     <div
       ref={slotRef}
       className={cn(
-        'relative mx-auto w-full',
+        'relative mx-auto flex w-full items-center justify-center',
         !className?.includes('home-hero-bullion-slot') &&
-          'max-w-md sm:max-w-lg h-[min(42vh,300px)] min-h-[200px] sm:h-[min(56vh,420px)] sm:min-h-[260px] lg:h-[min(70vh,560px)]',
+          'max-w-[11rem] h-[clamp(7.25rem,34vw,11rem)] min-h-[7.25rem] sm:max-w-[18rem] sm:h-[clamp(14rem,32vw,20rem)] sm:min-h-[14rem] lg:max-w-[20rem] lg:h-[clamp(16rem,26vw,22rem)] lg:min-h-[16rem]',
         className,
       )}
       aria-label={t('home.bullionScroll.aria')}
@@ -385,8 +457,8 @@ export function BullionStartSlot({
         src={bullionVertUrl}
         alt=""
         className={cn(
-          "absolute inset-0 m-auto h-[88%] w-auto max-w-full object-contain",
-          staticFallback ? "block" : "block lg:hidden"
+          'relative z-0 mx-auto h-[88%] w-auto max-w-full object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.16)] transition-opacity duration-200',
+          hideForFlyer ? 'opacity-0' : 'opacity-100',
         )}
         draggable={false}
       />
@@ -423,13 +495,46 @@ export function BullionEndDock({
   className?: string
   size?: 'default' | 'compact' | 'large'
 }) {
+  const [hideForFlyer, setHideForFlyer] = useState(false)
+
+  useEffect(() => {
+    const sync = (active?: boolean) => {
+      if (!prefersBullionFlyer()) {
+        setHideForFlyer(false)
+        return
+      }
+      if (typeof active === 'boolean') {
+        setHideForFlyer(active)
+        return
+      }
+      setHideForFlyer(false)
+    }
+
+    sync(false)
+    const onFlyer = (e: Event) => {
+      const detail = (e as CustomEvent<{ active?: boolean }>).detail
+      sync(Boolean(detail?.active))
+    }
+    const onMq = () => sync(false)
+    window.addEventListener(FLYER_EVENT, onFlyer)
+    const mq = window.matchMedia(BULLION_FLYER_MQ)
+    mq.addEventListener?.('change', onMq)
+    mq.addListener?.(onMq)
+    return () => {
+      window.removeEventListener(FLYER_EVENT, onFlyer)
+      mq.removeEventListener?.('change', onMq)
+      mq.removeListener?.(onMq)
+    }
+  }, [])
+
   return (
     <div
       ref={slotRef}
       className={cn(
         'relative mx-auto flex w-full items-center justify-center',
         size === 'compact' && 'h-8 max-w-[200px] sm:h-10 sm:max-w-[240px]',
-        size === 'default' && 'h-[120px] max-w-[200px] sm:h-[180px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]',
+        size === 'default' &&
+          'h-[120px] max-w-[200px] sm:h-[180px] sm:max-w-[220px] lg:h-[220px] lg:max-w-[240px]',
         size === 'large' &&
           'h-[140px] max-w-[220px] sm:h-[200px] sm:max-w-[240px] lg:h-[260px] lg:max-w-[300px]',
         className,
@@ -439,7 +544,10 @@ export function BullionEndDock({
       <img
         src={bullionHorizUrl}
         alt=""
-        className="h-[88%] w-auto max-w-full object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.18)] lg:hidden"
+        className={cn(
+          'h-[88%] w-auto max-w-full object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.18)] transition-opacity duration-200',
+          hideForFlyer ? 'opacity-0' : 'opacity-100',
+        )}
         draggable={false}
         loading="lazy"
         decoding="async"

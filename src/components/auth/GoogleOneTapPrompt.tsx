@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ClerkLoaded, GoogleOneTap, useAuth as useClerkAuth, useClerk } from '@clerk/react'
 import { useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
@@ -122,14 +122,14 @@ export default function GoogleOneTapPrompt() {
     }
   }, [showPrompt, googleClientId])
 
-  const dismissFallback = () => {
+  const dismissFallback = useCallback(() => {
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_MS))
     } catch {
       // ignore
     }
     setShowFallback(false)
-  }
+  }, [])
 
   const continueWithGoogle = async () => {
     if (oauthBusy) return
@@ -141,17 +141,32 @@ export default function GoogleOneTapPrompt() {
     setOauthBusy(true)
     try {
       const { redirectUrl: ssoRedirectUrl, redirectUrlComplete } = buildClerkOAuthUrls(redirectUrl)
-      await clerk.client.signIn.authenticateWithRedirect({
+      const params = {
         strategy: clerkOAuthStrategy('google'),
         redirectUrl: ssoRedirectUrl,
         redirectUrlComplete,
-      })
+      }
+      try {
+        await clerk.client.signIn.authenticateWithRedirect(params)
+      } catch (signInErr) {
+        console.warn('Nudge Google sign-in failed, trying sign-up:', signInErr)
+        await clerk.client.signUp.authenticateWithRedirect(params)
+      }
     } catch (err) {
       console.error('Google OAuth nudge failed:', err)
       toast.error(t('auth.googleSignInFailed'))
       setOauthBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (!showFallback) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dismissFallback()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showFallback, dismissFallback])
 
   if (!showPrompt) return null
 
@@ -170,30 +185,45 @@ export default function GoogleOneTapPrompt() {
       )}
 
       {showFallback && (
-        <div className="fixed top-[5.75rem] end-4 sm:end-6 z-[45] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-stone-200/80 bg-white/95 shadow-xl shadow-black/10 backdrop-blur-md">
-          <button
-            type="button"
-            onClick={dismissFallback}
-            className="absolute end-2.5 top-2.5 rounded-full p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
-            aria-label={t('common.dismissSignInPrompt')}
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <div className="px-4 py-4 pe-9">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-500/15 text-charcoal-950 ring-1 ring-gold-500/15">
-                <span className="text-sm font-bold">GS</span>
-              </div>
-              <h2 className="text-sm font-semibold leading-5 text-stone-950">{t('auth.signInNudgeTitle')}</h2>
+        <div
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="gs-signin-nudge-title"
+          className="fixed end-3 z-[60] w-[min(20.5rem,calc(100%_-_1.5rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-[0_18px_40px_-12px_rgba(11,15,25,0.35)] sm:end-6"
+          style={{ top: 'calc(var(--nav-offset, 7.25rem) + 0.5rem)' }}
+        >
+          <div className="flex items-start gap-3 border-b border-stone-100 px-3.5 py-3 ps-4">
+            <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ECFCCB] text-[#0B0F19] ring-1 ring-[#85E307]/25">
+              <span className="text-sm font-bold">GS</span>
             </div>
-            <p className="mt-1 text-sm leading-5 text-stone-600">{t('auth.signInNudgeBody')}</p>
+            <h2
+              id="gs-signin-nudge-title"
+              className="min-w-0 flex-1 pt-1.5 text-sm font-semibold leading-5 text-stone-950"
+            >
+              {t('auth.signInNudgeTitle')}
+            </h2>
+            <button
+              type="button"
+              onClick={dismissFallback}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-700 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60"
+              aria-label={t('common.dismissSignInPrompt')}
+              title={t('common.dismissSignInPrompt')}
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            </button>
+          </div>
+
+          <div className="px-4 py-3.5">
+            <p className="text-sm leading-5 text-stone-600">{t('auth.signInNudgeBody')}</p>
             <button
               type="button"
               onClick={() => void continueWithGoogle()}
               disabled={oauthBusy}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 active:scale-[0.99] disabled:opacity-60"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 active:scale-[0.99] disabled:opacity-60"
             >
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-stone-950">G</span>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-stone-950">
+                G
+              </span>
               {oauthBusy ? t('auth.oauthSigningIn') : t('auth.continueWithGoogle')}
             </button>
             <button
@@ -202,7 +232,7 @@ export default function GoogleOneTapPrompt() {
                 dismissFallback()
                 window.location.assign('/login')
               }}
-              className="mt-2 w-full text-center text-xs font-medium text-stone-500 transition hover:text-stone-800"
+              className="mt-2 w-full py-2 text-center text-xs font-medium text-stone-500 transition hover:text-stone-800"
             >
               {t('auth.signInWithEmail')}
             </button>

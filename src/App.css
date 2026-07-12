@@ -1,4 +1,6 @@
-/* Full-bleed layout — site background fills entire viewport */
+/* Full-bleed layout — site background fills entire viewport.
+ * Do not set overflow-x here: it creates a sticky containing block and
+ * breaks sticky top chrome (Burgan-style header) on mobile browsers. */
 #root {
   min-height: 100dvh;
   width: 100%;
@@ -7,5 +9,4 @@
   margin: 0;
   padding: 0;
   background-color: #f7f9f5;
-  overflow-x: clip;
 }

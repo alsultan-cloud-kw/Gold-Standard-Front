@@ -1,17 +1,31 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCw, ArrowRight, Building2 } from 'lucide-react'
+import { RefreshCw, ArrowRight, Building2, Scale } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '../services/api'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
-import { buildPublicRatesPricing } from '@/utils/publicStorefrontRates'
+import { buildPublicRatesPricing, normalizeCaratKey } from '@/utils/publicStorefrontRates'
+import { cn } from '@/lib/utils'
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
+}
+
+function isFeaturedKarat(key: string) {
+  return normalizeCaratKey(key).startsWith('24')
+}
+
+function karatDescKey(key: string) {
+  const norm = normalizeCaratKey(key)
+  if (/^24/.test(norm)) return 'pricesPage.karatDesc.24K'
+  if (/^22/.test(norm)) return 'pricesPage.karatDesc.22K'
+  if (/^21/.test(norm)) return 'pricesPage.karatDesc.21K'
+  if (/^18/.test(norm)) return 'pricesPage.karatDesc.18K'
+  return 'companyPricesPage.karatLabel'
 }
 
 /**
@@ -151,7 +165,7 @@ export default function CompanyPricesPage() {
               <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6F00] sm:mb-4 sm:text-[11px] sm:tracking-[0.2em]">
                 {t('companyPricesPage.boardTitle')}
               </h2>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+              <div className="price-rate-board grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 min-[420px]:gap-3 sm:gap-4 xl:grid-cols-4">
                 {carats.map((c) => {
                   const sellTotal = c.sellTotal != null ? c.sellTotal : null
                   const tileDir = resolveDir(c.key)
@@ -159,27 +173,33 @@ export default function CompanyPricesPage() {
                   return (
                     <article
                       key={c.key}
-                      className="relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md sm:rounded-2xl sm:p-6 lg:p-7"
+                      className={cn('price-desk-card', isFeaturedKarat(c.key) && 'price-desk-card--featured')}
                     >
-                      <div className="pointer-events-none absolute -end-6 -top-6 hidden h-24 w-24 rounded-full bg-[#ECFCCB]/50 blur-2xl sm:block sm:-end-8 sm:-top-8 sm:h-28 sm:w-28" />
-                      <div className="relative mb-2 flex items-start justify-between gap-1 sm:mb-6 sm:gap-3">
-                        <div className="min-w-0">
-                          <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-[#94A3B8] sm:text-[10px] sm:tracking-[0.16em]">
-                            {t('companyPricesPage.karatLabel')}
-                          </p>
-                          <h3 className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[#0B0F19] sm:mt-1 sm:text-3xl lg:text-4xl">
-                            {c.key}
-                          </h3>
+                      <div className="price-desk-card__rail" aria-hidden="true" />
+                      <div className="price-desk-card__body">
+                        <div className="price-desk-card__top">
+                          <span className="price-desk-card__live">
+                            <span className="price-desk-card__live-dot" aria-hidden="true" />
+                            {t('pricesPage.liveBadge')}
+                          </span>
+                          <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
                         </div>
-                        <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
+                        <div>
+                          <h3 className="price-desk-card__karat">{c.key}</h3>
+                          <p className="price-desk-card__desc">{t(karatDescKey(c.key))}</p>
+                        </div>
+                        <div className="price-desk-card__price-row">
+                          <p className="price-desk-card__price">{fmt(sellTotal)}</p>
+                          <span className="price-desk-card__currency">{t('common.kwd')}</span>
+                        </div>
+                        <p className="price-desk-card__unit-row">
+                          <Scale className="price-desk-card__unit-icon" aria-hidden="true" />
+                          <span className="price-rate-card__side-tag price-rate-card__side-tag--sell">
+                            {t('pricesPage.sell')}
+                          </span>
+                          <span>{t('common.kwdPerGram')}</span>
+                        </p>
                       </div>
-
-                      <p className="relative text-[8px] font-bold uppercase tracking-[0.12em] text-[#3F6F00] sm:text-[11px] sm:tracking-[0.16em]">
-                        {t('pricesPage.sell')} · {t('common.kwdPerGram')}
-                      </p>
-                      <p className="relative mt-1 text-lg font-extrabold tabular-nums leading-none tracking-tight text-[#0B0F19] sm:mt-2 sm:text-4xl lg:text-5xl xl:text-[3.25rem]">
-                        {fmt(sellTotal)}
-                      </p>
                     </article>
                   )
                 })}

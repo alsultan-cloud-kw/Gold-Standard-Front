@@ -708,7 +708,7 @@ export default function ProductsPage() {
         <div className="flex gap-8">
           {/* Desktop sidebar — always visible */}
           <aside className="hidden w-72 shrink-0 lg:block">
-            <div className="sticky top-24 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+            <div className="sticky top-[var(--nav-offset,7.25rem)] rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
               <FilterPanel {...filterProps} />
             </div>
           </aside>

@@ -440,6 +440,7 @@
       "metalPlatinum": "Platinum",
       "metalPalladium": "Palladium",
       "liveBadge": "Live",
+      "chartLoading": "Loading chart…",
       "unitLabel": "Chart · {{unit}}",
       "updateCountdown": "Prices update in {{seconds}}s",
       "refreshing": "· refreshing",
@@ -566,7 +567,54 @@
     "brandName": "Gold Standard",
     "defaultDocumentTitle": "Gold Standard — Certified Gold & Jewelry · Kuwait",
     "instagram": "Instagram",
-    "dismissSignInPrompt": "Dismiss sign-in prompt"
+    "dismissSignInPrompt": "Dismiss sign-in prompt",
+    "skipToContent": "Skip to main content"
+  },
+  "seo": {
+    "default": {
+      "title": "Gold Standard — Certified Gold & Jewelry · Kuwait",
+      "description": "Buy certified MOCI-hallmarked gold in Kuwait at live market prices. Insured delivery, buyback, and transparent KWD pricing."
+    },
+    "home": {
+      "title": "Gold Standard — Certified Gold & Jewelry · Kuwait",
+      "description": "Kuwait’s trusted gold dealer. Shop 999.9 fine gold, track live prices, and get insured delivery with buyback guarantees."
+    },
+    "prices": {
+      "title": "Live Gold Prices Kuwait · Buy & Sell KWD/g | Gold Standard",
+      "description": "Live gold and precious metal buy/sell rates in Kuwaiti dinar. Interactive chart, karat board, and gram calculator — updated continuously."
+    },
+    "companyPrices": {
+      "title": "Company Gold Sell Rates by Karat | Gold Standard Kuwait",
+      "description": "Desk-ready sell rates by karat for company and counter use. Live market-linked KWD/g board from Gold Standard Kuwait."
+    },
+    "products": {
+      "title": "Shop Certified Gold Products | Gold Standard Kuwait",
+      "description": "Browse MOCI-hallmarked gold bars and jewelry. Live KWD pricing, insured shipping, and authenticated products."
+    },
+    "about": {
+      "title": "About Gold Standard · Licensed Gold Dealer Kuwait",
+      "description": "Learn about Gold Standard — a licensed Kuwait gold and jewelry trading company with MOCI hallmarking and insured delivery."
+    },
+    "contact": {
+      "title": "Contact Gold Standard Kuwait",
+      "description": "Contact Gold Standard for gold purchases, buyback, and branch support in Kuwait."
+    },
+    "branches": {
+      "title": "Gold Standard Branches & Locations · Kuwait",
+      "description": "Find Gold Standard branches in Kuwait — hours, maps, and directions."
+    },
+    "cart": {
+      "title": "Your Cart | Gold Standard",
+      "description": "Review items in your Gold Standard cart."
+    },
+    "auth": {
+      "title": "Sign in | Gold Standard",
+      "description": "Sign in or create your Gold Standard account."
+    },
+    "app": {
+      "title": "Account | Gold Standard",
+      "description": "Gold Standard account area."
+    }
   },
   "priceReminder": {
     "ariaLabel": "Remind me",
@@ -754,9 +802,20 @@
     "sell": "Sell",
     "customerPay": "You pay",
     "customerReceive": "You receive",
-    "spreadTotal": "Spread {{value}} KWD",
-    "spreadPerGram": "Spread {{value}} KWD/g",
+    "spreadTotal": "Spread {{value}} fils",
+    "spreadPerGram": "Spread {{value}} fils/g",
     "perGramAbbr": "(KWD/g)",
+    "liveBadge": "Live",
+    "sellPerGram": "Sell · KWD/g",
+    "buyPerGram": "Buy · KWD/g",
+    "sellHint": "You pay",
+    "buyHint": "You receive",
+    "karatDesc": {
+      "24K": "Pure gold",
+      "22K": "22 karat gold",
+      "21K": "21 karat gold",
+      "18K": "18 karat gold"
+    },
     "disclaimer": "Indicative rates for reference. Final price at checkout may vary with live market and product making charges.",
     "preciousTitle": "Silver · Platinum · Palladium",
     "preciousKicker": "Precious spot metals",

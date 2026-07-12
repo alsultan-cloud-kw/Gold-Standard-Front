@@ -1097,7 +1097,7 @@ export default function CheckoutPage() {
           </div>
 
           <aside className="commerce-sidebar">
-            <div className="sticky top-24 space-y-4">
+            <div className="sticky top-[var(--nav-offset,7.25rem)] space-y-4">
               <div className="rounded-2xl border border-black/10 bg-[#F5F5F5] p-5 shadow-sm">
                 <h2 className="mb-4 font-serif text-lg font-bold text-[#0B0F19]">{t('cartPage.orderSummary')}</h2>
                 <div className="space-y-2.5 text-sm">
