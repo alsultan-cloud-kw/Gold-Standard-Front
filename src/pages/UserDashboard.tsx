@@ -35,6 +35,7 @@ import { buildWalletTransactionsDocxBlob } from '../utils/walletTransactionsWord
 import {
   TRADING_AND_VIRTUAL_WALLET_ENABLED,
   BANK_CHANGE_REQUESTS_ENABLED,
+  CHECKOUT_VAULT_DELIVERY_ENABLED,
   isTradingDashboardTab,
 } from '../featureFlags'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
@@ -49,6 +50,9 @@ import {
 } from '@/lib/dashboardStyles'
 
 function isDisabledDashboardTab(tab: string): boolean {
+  if (tab === 'locked_gold') {
+    return !(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED)
+  }
   if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && isTradingDashboardTab(tab)) return true
   if (!BANK_CHANGE_REQUESTS_ENABLED && tab === 'bank_account') return true
   return false
@@ -126,9 +130,11 @@ export default function UserDashboard() {
   const tabs = [
     { id: 'profile', name: t('userDashboard.tabs.profile'), icon: User },
     { id: 'orders', name: t('userDashboard.tabs.orders'), icon: ShoppingBag },
+    ...(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED
+      ? [{ id: 'locked_gold', name: t('userDashboard.tabs.lockedGold'), icon: Scale }]
+      : []),
     ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
       ? [
-          { id: 'locked_gold', name: t('userDashboard.tabs.lockedGold'), icon: Scale },
           { id: 'trade_gold', name: t('userDashboard.tabs.tradeGold'), icon: Crown },
           { id: 'transactions', name: t('userDashboard.tabs.transactions'), icon: CreditCard },
         ]
@@ -208,7 +214,7 @@ export default function UserDashboard() {
           <div className="dashboard-content">
             {activeTab === 'profile' && <ProfileTab />}
             {activeTab === 'orders' && <OrdersTab />}
-            {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'locked_gold' && <LockedGoldTab />}
+            {(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED) && activeTab === 'locked_gold' && <LockedGoldTab />}
             {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'trade_gold' && <TradeGoldTab />}
             {activeTab === 'club' && <ClubTab />}
             {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'transactions' && <TransactionsTab />}
@@ -1455,18 +1461,24 @@ function LockedGoldTab() {
                       {item.carat_display && ` · ${item.carat_display}`}
                       {item.product_serial_number && ` · ${item.product_serial_number}`}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => handleSellClick(item)}
-                      disabled={quoteMutation.isPending || sellMutation.isPending}
-                      className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
-                    >
-                      {quoteMutation.isPending && confirmItem?.sale_item_id === item.sale_item_id
-                        ? t('userDashboard.lockedGold.selling.preparingQuote')
-                        : sellMutation.isPending
-                        ? t('userDashboard.lockedGold.selling.selling')
-                        : t('userDashboard.lockedGold.selling.sellThisProduct')}
-                    </button>
+                    {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSellClick(item)}
+                        disabled={quoteMutation.isPending || sellMutation.isPending}
+                        className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                      >
+                        {quoteMutation.isPending && confirmItem?.sale_item_id === item.sale_item_id
+                          ? t('userDashboard.lockedGold.selling.preparingQuote')
+                          : sellMutation.isPending
+                          ? t('userDashboard.lockedGold.selling.selling')
+                          : t('userDashboard.lockedGold.selling.sellThisProduct')}
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-xs font-medium text-[#3F6F00]">
+                        {t('userDashboard.orders.lockedInVault')}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-gold-400">

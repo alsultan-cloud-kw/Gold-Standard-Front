@@ -23,7 +23,7 @@ import { CheckoutStepIndicator } from '@/components/checkout/CheckoutStepIndicat
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import knetBadge from '@/assets/trust/knet-badge.png'
 import { cn } from '@/lib/utils'
-import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_VAULT_DELIVERY_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
@@ -293,7 +293,7 @@ export default function CheckoutPage() {
   )
 
   useEffect(() => {
-    if (!TRADING_AND_VIRTUAL_WALLET_ENABLED && deliveryType === 'locked') {
+    if (!CHECKOUT_VAULT_DELIVERY_ENABLED && !TRADING_AND_VIRTUAL_WALLET_ENABLED && deliveryType === 'locked') {
       setDeliveryType('physical')
     }
   }, [deliveryType])
@@ -947,20 +947,24 @@ export default function CheckoutPage() {
                         saveAddressToProfile && 'checkout-option--selected',
                       )}
                     >
+                      <span className="checkout-option__rail" aria-hidden />
                       <input
                         type="checkbox"
                         checked={saveAddressToProfile}
                         onChange={(e) => setSaveAddressToProfile(e.target.checked)}
-                        className="accent-[#85E307]"
+                        className="sr-only"
                       />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[#0B0F19]">
+                      <span className="checkout-option__body">
+                        <span className="checkout-option__title">
                           {t('checkoutPage.saveAddressTitle')}
-                        </p>
-                        <p className="mt-0.5 text-xs leading-5 text-[#64748B]">
+                        </span>
+                        <span className="checkout-option__hint">
                           {t('checkoutPage.saveAddressHint')}
-                        </p>
-                      </div>
+                        </span>
+                      </span>
+                      <span className="checkout-option__check" aria-hidden>
+                        {saveAddressToProfile ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
+                      </span>
                     </label>
                     <p className="text-xs text-[#64748B]">
                       {t('checkoutPage.manageAddressLater')}{' '}
@@ -974,7 +978,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className={cn(checkoutPrimaryBtnClass, 'checkout-actions-inline mt-6')}
+                  className={cn(checkoutPrimaryBtnClass, 'checkout-actions-inline mt-6 hidden lg:inline-flex')}
                 >
                   {t('checkoutPage.continuePayment')}
                 </button>
@@ -990,42 +994,60 @@ export default function CheckoutPage() {
                     </span>
                     <div>
                       <h2 className="text-base font-bold text-[#0B0F19] sm:text-lg">{t('checkoutPage.delivery')}</h2>
-                      <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.deliveryPhysical')}</p>
+                      <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.deliveryChooseHint')}</p>
                     </div>
                   </div>
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
                     <label
                       className={cn(
                         'checkout-option',
                         deliveryType === 'physical' && 'checkout-option--selected',
                       )}
                     >
+                      <span className="checkout-option__rail" aria-hidden />
                       <input
                         type="radio"
                         name="delivery"
                         checked={deliveryType === 'physical'}
                         onChange={() => setDeliveryType('physical')}
-                        className="accent-[#85E307]"
+                        className="sr-only"
                       />
-                      <Truck className="h-5 w-5 text-[#3F6F00]" />
-                      <span className="text-sm font-semibold text-[#0B0F19]">{t('checkoutPage.deliveryPhysical')}</span>
+                      <span className="checkout-option__icon">
+                        <Truck className="h-5 w-5" />
+                      </span>
+                      <span className="checkout-option__body">
+                        <span className="checkout-option__title">{t('checkoutPage.deliveryPhysical')}</span>
+                        <span className="checkout-option__hint">{t('checkoutPage.deliveryPhysicalHint')}</span>
+                      </span>
+                      <span className="checkout-option__check" aria-hidden>
+                        {deliveryType === 'physical' ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
+                      </span>
                     </label>
-                    {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                    {(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED) ? (
                       <label
                         className={cn(
                           'checkout-option',
                           deliveryType === 'locked' && 'checkout-option--selected',
                         )}
                       >
+                        <span className="checkout-option__rail" aria-hidden />
                         <input
                           type="radio"
                           name="delivery"
                           checked={deliveryType === 'locked'}
                           onChange={() => setDeliveryType('locked')}
-                          className="accent-[#85E307]"
+                          className="sr-only"
                         />
-                        <Lock className="h-5 w-5 text-[#3F6F00]" />
-                        <span className="text-sm font-semibold text-[#0B0F19]">{t('checkoutPage.deliveryVault')}</span>
+                        <span className="checkout-option__icon">
+                          <Lock className="h-5 w-5" />
+                        </span>
+                        <span className="checkout-option__body">
+                          <span className="checkout-option__title">{t('checkoutPage.deliveryVault')}</span>
+                          <span className="checkout-option__hint">{t('checkoutPage.deliveryVaultHint')}</span>
+                        </span>
+                        <span className="checkout-option__check" aria-hidden>
+                          {deliveryType === 'locked' ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
+                        </span>
                       </label>
                     ) : null}
                   </div>
@@ -1041,7 +1063,7 @@ export default function CheckoutPage() {
                       <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.trustNote')}</p>
                     </div>
                   </div>
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
                     {paymentMethodOptions.map((method) => (
                       <label
                         key={method.id}
@@ -1053,6 +1075,7 @@ export default function CheckoutPage() {
                             'checkout-option--selected',
                         )}
                       >
+                        <span className="checkout-option__rail" aria-hidden />
                         <input
                           type="radio"
                           name="payment"
@@ -1060,24 +1083,39 @@ export default function CheckoutPage() {
                           checked={paymentMethod === method.id}
                           disabled={method.disabled}
                           onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="accent-[#85E307] disabled:opacity-40"
+                          className="sr-only"
                         />
-                        {method.id === 'knet' ? (
-                          <img src={knetBadge} alt="" className="h-8 w-auto rounded object-contain" />
-                        ) : (
-                          <method.icon className="h-6 w-6 text-[#3F6F00]" />
-                        )}
-                        <span className="text-sm font-semibold text-[#0B0F19]">
-                          {method.nameKey != null
-                            ? t(method.nameKey)
-                            : t('checkoutPage.payWallet', { balance: walletBalance.toFixed(3) })}
-                          {method.id === 'wallet' && method.disabled && (
-                            <span className="mt-1 block text-xs font-normal text-[#64748B]">
+                        <span className="checkout-option__icon bg-white">
+                          {method.id === 'knet' ? (
+                            <img src={knetBadge} alt="" className="h-7 w-auto rounded object-contain" />
+                          ) : (
+                            <method.icon className="h-5 w-5" />
+                          )}
+                        </span>
+                        <span className="checkout-option__body">
+                          <span className="checkout-option__title">
+                            {method.nameKey != null
+                              ? t(method.nameKey)
+                              : t('checkoutPage.payWallet', { balance: walletBalance.toFixed(3) })}
+                          </span>
+                          {method.id === 'wallet' && method.disabled ? (
+                            <span className="checkout-option__hint">
                               {t('checkoutPage.walletInsufficient', {
                                 total: formatOrderKwd(checkoutTotalDue),
                               })}
                             </span>
-                          )}
+                          ) : null}
+                          {method.id === 'knet' ? (
+                            <span className="checkout-option__hint">{t('checkoutPage.payKnetHint')}</span>
+                          ) : null}
+                          {method.id === 'cod' ? (
+                            <span className="checkout-option__hint">{t('checkoutPage.payCodHint')}</span>
+                          ) : null}
+                        </span>
+                        <span className="checkout-option__check" aria-hidden>
+                          {!method.disabled && paymentMethod === method.id ? (
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                          ) : null}
                         </span>
                       </label>
                     ))}
@@ -1085,7 +1123,7 @@ export default function CheckoutPage() {
                   <CheckoutTrustBadges variant="compact" className="mt-4" />
                 </div>
 
-                <div className="checkout-actions-inline flex gap-3">
+                <div className="checkout-actions-inline hidden gap-3 lg:flex">
                   <button type="button" onClick={() => setStep(1)} className={checkoutSecondaryBtnClass}>
                     {t('checkoutPage.back')}
                   </button>
@@ -1104,6 +1142,25 @@ export default function CheckoutPage() {
                     {t('stock.cartBlocked')}
                   </div>
                 )}
+
+                {deliveryType === 'locked' ? (
+                  <div className="checkout-vault-banner mb-5">
+                    <Lock className="mt-0.5 h-5 w-5 shrink-0 text-[#3F6F00]" />
+                    <div>
+                      <p className="font-semibold text-[#0B0F19]">{t('checkoutPage.vaultReviewTitle')}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#64748B]">{t('checkoutPage.vaultReviewBody')}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-5 flex items-start gap-3 rounded-xl border border-black/8 bg-[#F9F9FA] px-4 py-3">
+                    <Truck className="mt-0.5 h-5 w-5 shrink-0 text-[#3F6F00]" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#0B0F19]">{t('checkoutPage.deliveryPhysical')}</p>
+                      <p className="mt-0.5 text-xs text-[#64748B]">{t('checkoutPage.deliveryPhysicalHint')}</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-5 space-y-3">
                   {cart.items.map((item) => {
                     const lineList = cartLineStandardTotal(item)
@@ -1112,6 +1169,13 @@ export default function CheckoutPage() {
                     const productName =
                       isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
                     const itemOutOfStock = isProductOutOfStock(item.product)
+                    const carat =
+                      item.product.carat?.display_name_en
+                      || item.product.carat?.display_name_ar
+                      || (item.product.carat?.carat_value != null
+                        ? `${item.product.carat.carat_value}K`
+                        : null)
+                    const weight = item.product.weight_grams
                     return (
                       <div
                         key={item.id}
@@ -1120,8 +1184,9 @@ export default function CheckoutPage() {
                           itemOutOfStock && 'checkout-line-item--warn',
                         )}
                       >
+                        <span className="checkout-line-item__rail" aria-hidden />
                         <div
-                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#E5E7EB] sm:h-16 sm:w-16 ${itemOutOfStock ? 'grayscale-[0.35]' : ''}`}
+                          className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 sm:h-[4.5rem] sm:w-[4.5rem] ${itemOutOfStock ? 'grayscale-[0.35]' : ''}`}
                         >
                           {imageSrc ? (
                             <img
@@ -1135,9 +1200,12 @@ export default function CheckoutPage() {
                           <div className="mb-1.5">
                             <ProductStockBadge product={item.product} />
                           </div>
-                          <p className="font-semibold text-[#0B0F19]">{productName}</p>
-                          <p className="text-sm text-[#64748B]">
+                          <p className="font-semibold leading-snug text-[#0B0F19]">{productName}</p>
+                          <p className="mt-1 text-xs leading-5 text-[#64748B]">
                             {t('checkoutPage.qty', { count: item.quantity })}
+                            {weight != null ? ` · ${weight}g` : ''}
+                            {carat ? ` · ${carat}` : ''}
+                            {item.product.sku ? ` · ${item.product.sku}` : ''}
                           </p>
                         </div>
                         <div className="text-end">
@@ -1162,6 +1230,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="checkout-totals mb-5 space-y-2">
+                  <span className="checkout-totals__rail" aria-hidden />
                   <p className="mb-2 font-bold text-[#0B0F19]">{t('checkoutPage.orderTotals')}</p>
                   {clubSavings > 0 ? (
                     <>
@@ -1236,7 +1305,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <div className="checkout-actions-inline flex gap-3">
+                <div className="checkout-actions-inline hidden gap-3 lg:flex">
                   <button
                     type="button"
                     onClick={() => setStep(2)}

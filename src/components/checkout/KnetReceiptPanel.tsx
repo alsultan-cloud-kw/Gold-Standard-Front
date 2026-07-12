@@ -1,4 +1,4 @@
-import { Check, CreditCard, Download, Loader2, XCircle } from 'lucide-react'
+import { Check, CreditCard, Download, Loader2, Lock, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { KnetReceiptDetails } from '@/types'
@@ -68,6 +68,16 @@ export function KnetReceiptPanel({
           <CreditCard className="h-4 w-4 text-[#3F6F00]" aria-hidden />
           <h2 className="text-sm font-bold text-[#0B0F19]">{t('knetReceipt.paymentDetails')}</h2>
         </div>
+
+        {receipt.is_vault_held ? (
+          <div className="checkout-vault-banner mb-4">
+            <Lock className="mt-0.5 h-5 w-5 shrink-0 text-[#3F6F00]" aria-hidden />
+            <div>
+              <p className="font-semibold text-[#0B0F19]">{t('knetReceipt.vaultHeldTitle')}</p>
+              <p className="mt-1 text-xs leading-5 text-[#64748B]">{t('knetReceipt.vaultHeldBody')}</p>
+            </div>
+          </div>
+        ) : null}
 
         <div className="divide-y divide-black/5 rounded-xl border border-black/10 bg-[#F9F9FA]">
           {fields.map((row) => (

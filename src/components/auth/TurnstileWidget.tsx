@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 declare global {
   interface Window {
     turnstile?: {
-      ready: (callback: () => void) => void
       render: (
         container: HTMLElement,
         options: {
@@ -44,41 +43,40 @@ const MAX_ERROR_RETRIES = 3
 
 let turnstileScriptPromise: Promise<void> | null = null
 
+/**
+ * Load Turnstile with async. Do NOT call turnstile.ready() — Cloudflare throws if
+ * ready() is used with async/defer script tags.
+ * Explicit render mode only needs the script onload (window.turnstile available).
+ */
 function loadTurnstileScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('no_window'))
   if (window.turnstile) return Promise.resolve()
   if (turnstileScriptPromise) return turnstileScriptPromise
 
-  const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null
-  if (existing) {
-    turnstileScriptPromise = new Promise((resolve, reject) => {
+  turnstileScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null
+    if (existing) {
+      if (window.turnstile) {
+        resolve()
+        return
+      }
       existing.addEventListener('load', () => resolve(), { once: true })
       existing.addEventListener('error', () => reject(new Error('Turnstile script failed')), {
         once: true,
       })
-    })
-    return turnstileScriptPromise
-  }
+      return
+    }
 
-  turnstileScriptPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script')
     script.id = SCRIPT_ID
     script.src = SCRIPT_SRC
     script.async = true
-    script.defer = true
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('Turnstile script failed'))
     document.head.appendChild(script)
   })
 
   return turnstileScriptPromise
-}
-
-function whenTurnstileReady(run: () => void): void {
-  if (window.turnstile?.ready) {
-    window.turnstile.ready(run)
-    return
-  }
-  run()
 }
 
 const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
@@ -157,17 +155,14 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
         })
       }
 
-      const mount = () => {
-        whenTurnstileReady(() => {
-          if (!cancelled) renderWidget()
-        })
-      }
-
       loadTurnstileScript()
         .then(() => {
-          // Wait for layout paint so Turnstile iframe has dimensions (avoids 600010 on mobile).
+          if (cancelled) return
+          // Wait for layout so the iframe has dimensions (helps avoid 600010).
           requestAnimationFrame(() => {
-            requestAnimationFrame(mount)
+            requestAnimationFrame(() => {
+              if (!cancelled) renderWidget()
+            })
           })
         })
         .catch((err) => {
@@ -193,7 +188,7 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
 
     return (
       <div className={cn('space-y-2', className)}>
-        <div ref={containerRef} className="flex min-h-[70px] justify-center" aria-hidden={false} />
+        <div ref={containerRef} className="flex min-h-[70px] justify-center" />
         {failed ? (
           <div className="rounded-xl border border-black/8 bg-[#F9F9FA] px-3 py-2.5 text-center">
             <p className="text-xs text-[#64748B]">{t('auth.captchaFailed')}</p>

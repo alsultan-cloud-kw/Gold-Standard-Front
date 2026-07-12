@@ -45,6 +45,9 @@ export interface KnetReceiptDetails {
   invoice_number: string
   payment_status: string
   order_status: string
+  delivery_type?: string
+  delivery_type_display?: string
+  is_vault_held?: boolean
   payment_method: string
   result: string
   amount: string

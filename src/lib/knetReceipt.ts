@@ -40,6 +40,12 @@ export function buildKnetReceiptFields(
   }
 
   fields.push(
+    {
+      label: t('knetReceipt.delivery'),
+      value: receipt.is_vault_held
+        ? t('knetReceipt.deliveryVault')
+        : (receipt.delivery_type_display?.trim() || t('knetReceipt.deliveryPhysical')),
+    },
     { label: t('knetReceipt.amount'), value: formatReceiptAmount(receipt.amount, receipt.currency) },
     {
       label: t('knetReceipt.dateTime'),

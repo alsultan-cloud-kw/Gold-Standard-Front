@@ -4,6 +4,12 @@
  */
 export const TRADING_AND_VIRTUAL_WALLET_ENABLED = false;
 
+/**
+ * Checkout “keep in vault” delivery — independent of trading/wallet.
+ * Gold is stored with the store (not shipped), billed, and shown on receipt/orders.
+ */
+export const CHECKOUT_VAULT_DELIVERY_ENABLED = true;
+
 /** Website checkout: KNET + cash on delivery only. */
 export const CHECKOUT_CREDIT_CARD_ENABLED = false;
 export const CHECKOUT_COD_ENABLED = true;
