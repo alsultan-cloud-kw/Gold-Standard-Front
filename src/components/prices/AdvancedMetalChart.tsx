@@ -14,6 +14,7 @@ import {
   type ChartOptions,
 } from 'lightweight-charts'
 import type { CandlePoint, LinePoint } from '@/utils/metalChartSeries'
+import { cn } from '@/lib/utils'
 
 export type ChartDisplayMode = 'candles' | 'line' | 'area'
 
@@ -22,7 +23,14 @@ type Props = {
   line: LinePoint[]
   candles: CandlePoint[]
   locale: string
+  /** Used as fixed height, or as min-height when `fillContainer` is true. */
   height?: number
+  /**
+   * Fill the parent box (expanded overlay). Chart uses lightweight-charts
+   * `autoSize` so it tracks container width/height without stale canvases.
+   */
+  fillContainer?: boolean
+  className?: string
   /** When true, chart is bullish (lime); else bearish (rose). */
   positive?: boolean
   /** Increment to force fitContent(). */
@@ -99,12 +107,18 @@ function sanitizeCandles(points: CandlePoint[]): CandlestickData[] {
   return out
 }
 
+function containerReady(el: HTMLElement): boolean {
+  return el.clientWidth >= 2 && el.clientHeight >= 2
+}
+
 export function AdvancedMetalChart({
   mode,
   line,
   candles,
   locale,
   height = 340,
+  fillContainer = false,
+  className,
   positive = true,
   fitToken = 0,
   referencePrice = null,
@@ -184,8 +198,10 @@ export function AdvancedMetalChart({
     let cancelled = false
     let ro: ResizeObserver | null = null
     let chart: IChartApi | null = null
+    let raf = 0
 
     const options: DeepPartial<ChartOptions> = {
+      autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: PAPER },
         textColor: TEXT,
@@ -236,47 +252,50 @@ export function AdvancedMetalChart({
     }
 
     const mount = () => {
-      if (cancelled || chartRef.current) return
-      const width = Math.max(el.clientWidth, 1)
-      chart = createChart(el, {
-        ...options,
-        width,
-        height,
-      })
+      if (cancelled || chartRef.current || !containerRef.current) return
+      if (!containerReady(containerRef.current)) return
+      chart = createChart(containerRef.current, options)
       chartRef.current = chart
       seriesRef.current = null
       setChartReady((n) => n + 1)
+      requestAnimationFrame(() => {
+        if (cancelled) return
+        chart?.timeScale().fitContent()
+      })
     }
 
-    // Avoid creating at width 0 (common on first paint) — that corrupts the initial series.
-    if (el.clientWidth > 0) {
-      mount()
-    }
-
-    ro = new ResizeObserver(() => {
-      if (!containerRef.current) return
-      if (!chartRef.current) {
-        if (containerRef.current.clientWidth > 0) mount()
+    // Portal / fixed overlays often paint at 0×0 for a frame — wait for real box size.
+    const scheduleMount = () => {
+      if (cancelled) return
+      if (containerReady(el)) {
+        mount()
         return
       }
-      chartRef.current.applyOptions({
-        width: containerRef.current.clientWidth,
-        height,
-      })
+      raf = requestAnimationFrame(scheduleMount)
+    }
+
+    scheduleMount()
+
+    ro = new ResizeObserver(() => {
+      if (cancelled || !containerRef.current) return
+      // Only used to mount once the portal/fixed overlay has a real box size.
+      // autoSize keeps width/height in sync after that — do not fitContent on every resize.
+      if (!chartRef.current) mount()
     })
     ro.observe(el)
 
     return () => {
       cancelled = true
+      cancelAnimationFrame(raf)
       ro?.disconnect()
       chart?.remove()
       chartRef.current = null
       seriesRef.current = null
       priceLineRef.current = null
     }
-    // Mount once per compact/locale/height — gesture flags applied in a separate effect.
+    // Mount once per compact/locale — size via autoSize + CSS; gestures in a separate effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale, height, compact])
+  }, [locale, compact, fillContainer])
 
   useEffect(() => {
     chartRef.current?.applyOptions(interactionOptions())
@@ -354,18 +373,34 @@ export function AdvancedMetalChart({
 
   useEffect(() => {
     if (!fitToken) return
-    requestAnimationFrame(() => {
-      chartRef.current?.timeScale().fitContent()
+    let outer = 0
+    let inner = 0
+    outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        chartRef.current?.timeScale().fitContent()
+      })
     })
+    const tmr = window.setTimeout(() => {
+      chartRef.current?.timeScale().fitContent()
+    }, 120)
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+      window.clearTimeout(tmr)
+    }
   }, [fitToken])
 
   return (
     <div
       ref={containerRef}
-      className={`metal-chart-canvas w-full overflow-hidden bg-white ${compact ? '' : 'rounded-xl'} ${
-        interactive ? 'metal-chart-canvas--gestures' : 'metal-chart-canvas--scroll-friendly'
-      }`}
-      style={{ height }}
+      className={cn(
+        'metal-chart-canvas w-full overflow-hidden bg-white',
+        compact ? '' : 'rounded-xl',
+        interactive ? 'metal-chart-canvas--gestures' : 'metal-chart-canvas--scroll-friendly',
+        fillContainer && 'h-full min-h-0',
+        className,
+      )}
+      style={fillContainer ? { minHeight: height } : { height }}
       role="img"
       aria-label="Metal price chart"
     />

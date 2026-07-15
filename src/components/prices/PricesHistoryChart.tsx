@@ -130,7 +130,6 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
   const [fitToken, setFitToken] = useState(0)
   const [chartExpanded, setChartExpanded] = useState(false)
   const [chartHeight, setChartHeight] = useState(340)
-  const [expandedChartHeight, setExpandedChartHeight] = useState(520)
 
   useEffect(() => {
     const sync = () => {
@@ -139,7 +138,6 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
       else if (w >= 1536) setChartHeight(420)
       else if (w >= 1024) setChartHeight(380)
       else setChartHeight(340)
-      setExpandedChartHeight(Math.max(320, window.innerHeight - 300))
     }
     sync()
     window.addEventListener('resize', sync)
@@ -155,25 +153,21 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
       if (e.key === 'Escape') setChartExpanded(false)
     }
     window.addEventListener('keydown', onKey)
+    // Portal paints at 0×0 for a frame — nudge fit after layout settles.
+    const t1 = window.setTimeout(() => setFitToken((n) => n + 1), 50)
+    const t2 = window.setTimeout(() => setFitToken((n) => n + 1), 200)
     return () => {
       document.body.style.overflow = prevOverflow
       document.documentElement.removeAttribute('data-chart-expanded')
       window.removeEventListener('keydown', onKey)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
     }
   }, [chartExpanded])
 
   const toggleChartExpanded = () => {
-    setChartExpanded((open) => {
-      const next = !open
-      if (next) {
-        setExpandedChartHeight(Math.max(320, window.innerHeight - 300))
-        window.setTimeout(() => setFitToken((n) => n + 1), 80)
-      }
-      return next
-    })
+    setChartExpanded((open) => !open)
   }
-
-  const activeChartHeight = chartExpanded ? expandedChartHeight : chartHeight
 
   const updateEverySec =
     typeof rates?.updateIntervalInSeconds === 'number'
@@ -434,7 +428,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
       className={cn(
         'metal-chart-panel relative overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm',
         chartExpanded &&
-          'fixed inset-3 z-[200] m-0 flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-2xl border-black/15 shadow-2xl sm:inset-6',
+          'fixed inset-0 z-[200] m-0 flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none border-0 shadow-2xl sm:inset-4 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-auto sm:rounded-2xl sm:border sm:border-black/15',
       )}
     >
       <div
@@ -448,12 +442,14 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
 
       <div
         className={cn(
-          'relative p-3 sm:p-6 lg:p-8',
-          chartExpanded && 'flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain',
+          'relative',
+          chartExpanded
+            ? 'flex min-h-0 flex-1 flex-col overflow-hidden p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5'
+            : 'p-3 sm:p-6 lg:p-8',
         )}
       >
         {chartExpanded ? (
-          <div className="sticky top-0 z-30 -mx-3 mb-4 flex items-center justify-between gap-3 border-b border-black/10 bg-white/95 px-3 py-2.5 backdrop-blur-sm sm:-mx-6 sm:mb-5 sm:px-6 sm:py-3 lg:-mx-8 lg:px-8">
+          <div className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-black/10 pb-2.5 sm:mb-4 sm:pb-3">
             <p className="min-w-0 truncate text-sm font-semibold text-[#0B0F19]">
               {t('home.chart.expandedTitle')}
             </p>
@@ -469,7 +465,14 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
           </div>
         ) : null}
 
-        {showSectionHeader ? (
+        <div
+          className={cn(
+            chartExpanded &&
+              'min-h-0 shrink-0 space-y-3 overflow-y-auto overscroll-contain sm:max-h-[min(38vh,320px)]',
+          )}
+        >
+
+        {showSectionHeader && !chartExpanded ? (
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3F6F00] sm:text-[11px]">
@@ -484,7 +487,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
             ) : null}
           </div>
         ) : metal === 'gold' ? (
-          <div className="mb-4 flex justify-end">
+          <div className={cn('flex justify-end', chartExpanded ? 'mb-2' : 'mb-4')}>
             <ChartCurrencyToggle value={ounceCurrency} onChange={setOunceCurrency} />
           </div>
         ) : null}
@@ -686,21 +689,32 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
           </div>
         </div>
 
-        <p className="mb-3 hidden text-xs leading-relaxed text-[#64748B] sm:mb-4 sm:block sm:text-sm">
-          {t('home.chart.hint')}
-        </p>
         {!chartExpanded ? (
-          <p className="mb-3 text-xs leading-relaxed text-[#64748B] sm:hidden">
-            {t('home.chart.gestureHintMobile')}
-          </p>
+          <>
+            <p className="mb-3 hidden text-xs leading-relaxed text-[#64748B] sm:mb-4 sm:block sm:text-sm">
+              {t('home.chart.hint')}
+            </p>
+            <p className="mb-3 text-xs leading-relaxed text-[#64748B] sm:hidden">
+              {t('home.chart.gestureHintMobile')}
+            </p>
+          </>
         ) : null}
+        </div>
 
         <div
-          className="relative overflow-hidden rounded-xl border border-black/10 bg-[#F9F9FA]"
+          className={cn(
+            'relative overflow-hidden rounded-xl border border-black/10 bg-[#F9F9FA]',
+            chartExpanded && 'mt-3 min-h-[220px] flex-1',
+          )}
           aria-busy={showChartLoading}
         >
           {line.length < 2 && candles.length < 2 ? (
-            <div className="flex h-[280px] flex-col items-center justify-center gap-2 px-4 text-center sm:h-[340px] lg:h-[380px]">
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center gap-2 px-4 text-center',
+                chartExpanded ? 'absolute inset-0' : 'h-[280px] sm:h-[340px] lg:h-[380px]',
+              )}
+            >
               {showChartLoading ? (
                 <>
                   <Loader2 className="h-8 w-8 animate-spin text-[#3F6F00]" aria-hidden />
@@ -715,18 +729,22 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
               )}
             </div>
           ) : (
-            <AdvancedMetalChart
-              mode={mode}
-              line={line}
-              candles={candles}
-              locale={locale}
-              height={activeChartHeight}
-              positive={positive}
-              fitToken={fitToken}
-              referencePrice={referencePrice}
-              referenceLabel={t('home.chart.prevClose')}
-              gesturesEnabled={chartExpanded}
-            />
+            <div className={cn(chartExpanded && 'absolute inset-0')}>
+              <AdvancedMetalChart
+                key={chartExpanded ? 'expanded' : 'inline'}
+                mode={mode}
+                line={line}
+                candles={candles}
+                locale={locale}
+                height={chartExpanded ? 240 : chartHeight}
+                fillContainer={chartExpanded}
+                positive={positive}
+                fitToken={fitToken}
+                referencePrice={referencePrice}
+                referenceLabel={t('home.chart.prevClose')}
+                gesturesEnabled={chartExpanded}
+              />
+            </div>
           )}
 
           {showChartLoading && (line.length >= 2 || candles.length >= 2) ? (
@@ -741,77 +759,102 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
           ) : null}
         </div>
 
-        <div className="mt-3 flex flex-col gap-3 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          {timeRangeLabel ? (
-            <p className="text-xs font-medium text-[#64748B] sm:text-sm">{timeRangeLabel}</p>
-          ) : (
-            <span />
-          )}
-        </div>
-
-        {(line.length >= 2 || candles.length >= 2) && (
-          <>
-            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-black/5 pt-4 sm:grid-cols-3 lg:grid-cols-5">
-              <StatCell
-                label={t(
-                  displayStats.useSessionSnap ? 'home.chart.sessionOpen' : 'home.chart.periodOpen',
-                )}
-                value={displayStats.open}
-              />
-              <StatCell
-                label={t(
-                  displayStats.useSessionSnap ? 'home.chart.sessionHigh' : 'home.chart.periodHigh',
-                )}
-                value={displayStats.high}
-              />
-              <StatCell
-                label={t(
-                  displayStats.useSessionSnap ? 'home.chart.sessionLow' : 'home.chart.periodLow',
-                )}
-                value={displayStats.low}
-              />
-              <StatCell label={t('home.chart.prevClose')} value={displayStats.prevClose} />
-              {metal === 'gold' ? (
-                <StatCell
-                  label={t('home.chart.goldYtd')}
-                  value={formatPctChange(goldYtdPct)}
-                  positive={goldYtdPct == null ? null : goldYtdPct >= 0}
-                />
-              ) : null}
-            </dl>
-            {metal === 'gold' ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-[#94A3B8]">{t('home.chart.statsNote')}</p>
+        <div className={cn('shrink-0', chartExpanded ? 'mt-2 sm:mt-3' : 'mt-3')}>
+          <div className="flex flex-col gap-3 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            {timeRangeLabel ? (
+              <p className="text-xs font-medium text-[#64748B] sm:text-sm">{timeRangeLabel}</p>
             ) : (
-              <p className="mt-2 text-[11px] leading-relaxed text-[#94A3B8]">{t('home.chart.periodStatsNote')}</p>
+              <span />
             )}
-          </>
-        )}
+          </div>
 
-        <div className="mt-3 hidden flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8] sm:mt-4 sm:flex">
-          <span>{t('home.chart.featureZoom')}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <span>{t('home.chart.featurePan')}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <span>{t('home.chart.featureCrosshair')}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <span>{t('home.chart.featureModes')}</span>
+          {(line.length >= 2 || candles.length >= 2) && (
+            <>
+              <dl
+                className={cn(
+                  'mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-black/5 pt-3 sm:grid-cols-3 lg:grid-cols-5',
+                  chartExpanded ? 'gap-y-3 sm:mt-3' : 'mt-4 gap-y-4 pt-4',
+                )}
+              >
+                <StatCell
+                  label={t(
+                    displayStats.useSessionSnap ? 'home.chart.sessionOpen' : 'home.chart.periodOpen',
+                  )}
+                  value={displayStats.open}
+                />
+                <StatCell
+                  label={t(
+                    displayStats.useSessionSnap ? 'home.chart.sessionHigh' : 'home.chart.periodHigh',
+                  )}
+                  value={displayStats.high}
+                />
+                <StatCell
+                  label={t(
+                    displayStats.useSessionSnap ? 'home.chart.sessionLow' : 'home.chart.periodLow',
+                  )}
+                  value={displayStats.low}
+                />
+                <StatCell label={t('home.chart.prevClose')} value={displayStats.prevClose} />
+                {metal === 'gold' ? (
+                  <StatCell
+                    label={t('home.chart.goldYtd')}
+                    value={formatPctChange(goldYtdPct)}
+                    positive={goldYtdPct == null ? null : goldYtdPct >= 0}
+                  />
+                ) : null}
+              </dl>
+              {!chartExpanded ? (
+                metal === 'gold' ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-[#94A3B8]">
+                    {t('home.chart.statsNote')}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[11px] leading-relaxed text-[#94A3B8]">
+                    {t('home.chart.periodStatsNote')}
+                  </p>
+                )
+              ) : null}
+            </>
+          )}
+
+          {!chartExpanded ? (
+            <div className="mt-3 hidden flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8] sm:mt-4 sm:flex">
+              <span>{t('home.chart.featureZoom')}</span>
+              <span className="text-[#CBD5E1]">·</span>
+              <span>{t('home.chart.featurePan')}</span>
+              <span className="text-[#CBD5E1]">·</span>
+              <span>{t('home.chart.featureCrosshair')}</span>
+              <span className="text-[#CBD5E1]">·</span>
+              <span>{t('home.chart.featureModes')}</span>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
   )
 
   if (chartExpanded && typeof document !== 'undefined') {
-    return createPortal(
+    return (
       <>
-        <button
-          type="button"
-          aria-label={t('home.chart.collapseChart')}
-          className="fixed inset-0 z-[190] cursor-default bg-[#0B0F19]/45 backdrop-blur-[2px]"
-          onClick={() => setChartExpanded(false)}
+        {/* Preserve in-flow height so the page does not jump when the panel portals. */}
+        <div
+          className="metal-chart-panel rounded-2xl border border-transparent"
+          style={{ minHeight: chartHeight + 220 }}
+          aria-hidden
         />
-        {chartPanel}
-      </>,
-      document.body,
+        {createPortal(
+          <>
+            <button
+              type="button"
+              aria-label={t('home.chart.collapseChart')}
+              className="fixed inset-0 z-[190] cursor-default bg-[#0B0F19]/45 backdrop-blur-[2px]"
+              onClick={() => setChartExpanded(false)}
+            />
+            {chartPanel}
+          </>,
+          document.body,
+        )}
+      </>
     )
   }
 
