@@ -55,7 +55,7 @@ export function LiveGoldMarketSection({ bullionDockRef }: Props) {
 
         {showChart ? (
           <div
-            className="relative z-20 space-y-5 bg-[var(--site-bg)]"
+            className="relative space-y-5 bg-[var(--site-bg)]"
             data-bullion-clear-zone="live-market-chart"
           >
             <PricesHistoryChart rates={res} />

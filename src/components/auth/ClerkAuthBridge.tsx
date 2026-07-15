@@ -3,18 +3,22 @@ import { useAuth as useClerkAuth } from '@clerk/react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
+import { suppressSignInNudge } from '@/lib/signInNudgeGate'
 
 /** After Clerk OAuth, exchange session for Django JWT so the rest of the app keeps working. */
 export default function ClerkAuthBridge() {
   const { t } = useTranslation()
   const { isSignedIn, isLoaded, getToken, signOut } = useClerkAuth()
-  const { isAuthenticated, isLoading, loginWithClerk } = useAuth()
+  const { isAuthenticated, isLoading, loginWithClerk, setClerkSyncing } = useAuth()
   const syncingRef = useRef(false)
 
   useEffect(() => {
     if (!isLoaded || isLoading || !isSignedIn || isAuthenticated || syncingRef.current) return
 
     syncingRef.current = true
+    setClerkSyncing(true)
+    suppressSignInNudge()
+
     void (async () => {
       try {
         let token = await getToken()
@@ -57,9 +61,10 @@ export default function ClerkAuthBridge() {
         }
       } finally {
         syncingRef.current = false
+        setClerkSyncing(false)
       }
     })()
-  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, getToken, loginWithClerk, signOut, t])
+  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, getToken, loginWithClerk, signOut, setClerkSyncing, t])
 
   return null
 }

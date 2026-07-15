@@ -1,8 +1,7 @@
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, ScanLine } from 'lucide-react'
 import { HeroTrustIcon } from '@/components/home/HeroTrustIcon'
-import { TRUST_VECTOR_ICON_CLASS, TRUST_VECTOR_ICON_STROKE } from '@/constants/trustIcons'
+import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
+import { ProductAuthenticityAssurance } from '@/components/products/ProductAuthenticityAssurance'
 import { cn } from '@/lib/utils'
 
 const TRUST_BULLETS: ReadonlyArray<{
@@ -21,12 +20,13 @@ type Props = {
 
 export function ProductTrustPanel({ verifyCode, className }: Props) {
   const { t } = useTranslation()
-  const verifyHref = verifyCode
-    ? `/verify?code=${encodeURIComponent(verifyCode)}`
-    : '/verify'
 
   return (
     <div className={cn('space-y-4', className)}>
+      <DigitalOwnershipBadge variant="compact" verifyCode={verifyCode} className="sm:text-[11px]" />
+
+      <ProductAuthenticityAssurance verifyCode={verifyCode} />
+
       <div className="rounded-2xl border border-black/10 bg-white p-4 sm:p-5">
         <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
           {t('productDetail.trustKicker')}
@@ -49,27 +49,6 @@ export function ProductTrustPanel({ verifyCode, className }: Props) {
           ))}
         </ul>
       </div>
-
-      <Link
-        to={verifyHref}
-        className="group flex items-center gap-4 rounded-2xl border border-[#3F6F00]/20 bg-[#ECFCCB]/40 px-4 py-3.5 transition-colors hover:border-[#3F6F00]/35 hover:bg-[#ECFCCB]/70 sm:px-5"
-      >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center">
-          <ScanLine className={TRUST_VECTOR_ICON_CLASS} strokeWidth={TRUST_VECTOR_ICON_STROKE} aria-hidden />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-bold text-[#0C1512]">
-            {t('productDetail.verifyCta')}
-          </span>
-          <span className="mt-0.5 block text-xs leading-relaxed text-[#64748B]">
-            {t('productDetail.verifyHint')}
-          </span>
-        </span>
-        <ArrowRight
-          className="h-4 w-4 shrink-0 text-[#3F6F00] transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5"
-          aria-hidden
-        />
-      </Link>
     </div>
   )
 }

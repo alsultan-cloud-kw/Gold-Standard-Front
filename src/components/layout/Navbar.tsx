@@ -56,7 +56,8 @@ export default function Navbar() {
   const pricesToggleRef = useRef<HTMLButtonElement>(null)
   const bottomNavRef = useRef<HTMLElement>(null)
   const topChromeRef = useRef<HTMLElement>(null)
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing, logout } = useAuth()
+  const authPending = authLoading || isClerkSyncing
   const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
   const cartCount = getItemCount()
@@ -79,6 +80,7 @@ export default function Navbar() {
     { nameKey: 'nav.prices', href: '/prices' },
     // News temporarily hidden — re-enable with HomeNewsSection + /news route
     // { nameKey: 'nav.news', href: '/news' },
+    { nameKey: 'nav.trading', href: '/trading' },
     ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
       ? [{ nameKey: 'nav.tradeGold', href: '/trade-gold' }]
       : []),
@@ -386,7 +388,15 @@ export default function Navbar() {
               </button>
             ) : null}
 
-            {isAuthenticated ? (
+            {authPending ? (
+              <span
+                className={`${iconBtnClass} pointer-events-none animate-pulse bg-black/[0.04]`}
+                aria-busy="true"
+                aria-label={t('common.signingIn')}
+              >
+                <User className="h-5 w-5 opacity-40" strokeWidth={1.75} aria-hidden />
+              </span>
+            ) : isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className={iconBtnClass} aria-label={t('nav.dashboard')}>
@@ -564,7 +574,15 @@ export default function Navbar() {
                   </Link>
                 ),
               )}
-              {!isAuthenticated && (
+              {authPending ? (
+                <div
+                  className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-black/8 bg-white px-4 py-3 text-sm font-medium text-[#64748B]"
+                  aria-busy="true"
+                >
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#3F6F00]/30 border-t-[#3F6F00]" />
+                  {t('common.signingIn')}
+                </div>
+              ) : !isAuthenticated ? (
                 <Link
                   to="/login"
                   onClick={() => setIsMenuOpen(false)}
@@ -572,7 +590,7 @@ export default function Navbar() {
                 >
                   {t('nav.loginRegister')}
                 </Link>
-              )}
+              ) : null}
               <Link
                 to="/products"
                 onClick={() => setIsMenuOpen(false)}

@@ -293,7 +293,7 @@ function WealthValueBarChart() {
           ref={ref}
           data-bullion-clear-zone="wealth-bar-chart"
           className={cn(
-            'wealth-bar-chart relative z-20 mt-6 rounded-2xl border border-black/10 bg-white px-4 py-6 shadow-sm sm:mt-8 sm:px-8 sm:py-8',
+            'wealth-bar-chart relative mt-6 rounded-2xl border border-black/10 bg-white px-4 py-6 shadow-sm sm:mt-8 sm:px-8 sm:py-8',
             active && 'is-active',
           )}
         >
@@ -517,7 +517,7 @@ export function WealthProtectionSection({
           ref={ref}
           data-bullion-clear-zone="wealth-timeline"
           className={cn(
-            'relative z-20 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm',
+            'relative overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm',
             active && 'is-active',
           )}
         >

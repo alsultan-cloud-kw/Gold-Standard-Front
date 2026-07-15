@@ -356,7 +356,7 @@ export function HeroBullionScroll({ stops }: JourneyProps) {
     <div
       ref={layerRef}
       className={cn(
-        'pointer-events-none fixed inset-0 z-30 overflow-hidden',
+        'bullion-flyer-layer pointer-events-none fixed inset-0 z-30 overflow-hidden',
         ready ? '' : 'opacity-0',
       )}
       aria-hidden

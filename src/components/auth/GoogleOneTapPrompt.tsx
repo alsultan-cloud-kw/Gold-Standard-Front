@@ -4,12 +4,18 @@ import { useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import {
-  cancelGoogleOneTap,
-  hasNativeGoogleClientId,
-  promptGoogleOneTap,
-} from '@/lib/googleOneTap'
+import { cancelGoogleOneTap, hasNativeGoogleClientId, promptGoogleOneTap } from '@/lib/googleOneTap'
 import { buildClerkOAuthUrls, clerkOAuthStrategy, getClerkUnavailableMessage } from '@/lib/clerkOAuth'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  dismissSignInNudge,
+  hasDjangoJwt,
+  isSignInNudgeDismissed,
+  isSignInNudgeSuppressed,
+  markSignInNudgeShownThisSession,
+  suppressSignInNudge,
+  wasSignInNudgeShownThisSession,
+} from '@/lib/signInNudgeGate'
 
 const HIDDEN_PATHS = new Set([
   '/login',
@@ -18,38 +24,20 @@ const HIDDEN_PATHS = new Set([
   '/forgot-password',
   '/checkout',
 ])
-const PROMPT_DELAY_MS = 700
-const FALLBACK_DELAY_MS = 3200
-const DISMISS_KEY = 'gs_google_signin_nudge_dismissed_until'
-const DISMISS_MS = 24 * 60 * 60 * 1000
-
-function hasDjangoJwt(): boolean {
-  try {
-    return Boolean(localStorage.getItem('access_token'))
-  } catch {
-    return false
-  }
-}
-
-function fallbackDismissed(): boolean {
-  try {
-    const dismissedUntil = Number(localStorage.getItem(DISMISS_KEY) || '0')
-    return dismissedUntil > Date.now()
-  } catch {
-    return false
-  }
-}
+const PROMPT_DELAY_MS = 900
+const FALLBACK_DELAY_MS = 3600
 
 /**
- * Google One Tap for storefront guests — exactly one GSI path:
- * - VITE_GOOGLE_CLIENT_ID set → native GIS only (never Clerk <GoogleOneTap />).
- * - Otherwise → Clerk <GoogleOneTap /> only (never native initialize).
+ * Google One Tap + custom sign-in nudge for storefront guests.
+ * Never shows while Django auth is loading, Clerk→Django sync is in flight,
+ * or after a successful sign-in (suppress gate).
  */
 export default function GoogleOneTapPrompt() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const { isSignedIn, isLoaded: clerkLoaded } = useClerkAuth()
   const clerk = useClerk()
+  const { isAuthenticated, isLoading: authLoading, isClerkSyncing } = useAuth()
   const [showFallback, setShowFallback] = useState(false)
   const [oauthBusy, setOauthBusy] = useState(false)
   const promptedRef = useRef(false)
@@ -58,26 +46,51 @@ export default function GoogleOneTapPrompt() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? ''
   const redirectUrl = `${window.location.origin}${pathname}${window.location.search}`
   const hiddenPath = HIDDEN_PATHS.has(pathname)
-  const showPrompt =
+
+  const authSettledGuest =
     clerkLoaded
     && clerk.loaded
+    && !authLoading
+    && !isClerkSyncing
+    && !isAuthenticated
     && !isSignedIn
     && !hasDjangoJwt()
-    && !hiddenPath
+    && !isSignInNudgeSuppressed()
+
+  const showPrompt = authSettledGuest && !hiddenPath
+
+  // Hard cancel whenever the user is signed in / syncing / suppressed.
+  useEffect(() => {
+    if (isAuthenticated || isSignedIn || isClerkSyncing || hasDjangoJwt() || isSignInNudgeSuppressed()) {
+      cancelGoogleOneTap()
+      setShowFallback(false)
+      if (isAuthenticated || hasDjangoJwt()) {
+        suppressSignInNudge()
+      }
+    }
+  }, [isAuthenticated, isSignedIn, isClerkSyncing])
 
   useEffect(() => {
     if (!showPrompt) {
       cancelGoogleOneTap()
       setShowFallback(false)
-      promptedRef.current = false
+      return
+    }
+
+    // One auto-prompt attempt per browser tab session — stops multi-fire on route changes.
+    if (wasSignInNudgeShownThisSession() || isSignInNudgeDismissed()) {
       return
     }
 
     const fallbackTimer = window.setTimeout(() => {
-      if (!fallbackDismissed()) setShowFallback(true)
+      if (!isSignInNudgeDismissed() && !isSignInNudgeSuppressed() && !hasDjangoJwt()) {
+        markSignInNudgeShownThisSession()
+        setShowFallback(true)
+      }
     }, FALLBACK_DELAY_MS)
 
     if (!useNativeGsi) {
+      markSignInNudgeShownThisSession()
       return () => window.clearTimeout(fallbackTimer)
     }
 
@@ -87,7 +100,9 @@ export default function GoogleOneTapPrompt() {
 
     const promptTimer = window.setTimeout(() => {
       if (promptedRef.current || !clerk.loaded) return
+      if (isSignInNudgeSuppressed() || hasDjangoJwt() || isSignInNudgeDismissed()) return
       promptedRef.current = true
+      markSignInNudgeShownThisSession()
 
       void promptGoogleOneTap(googleClientId, clerk, (moment) => {
         if (moment.type === 'displayed') {
@@ -95,11 +110,15 @@ export default function GoogleOneTapPrompt() {
           setShowFallback(false)
         } else {
           console.info('Google One Tap unavailable:', moment.reason || 'unknown')
-          if (!fallbackDismissed()) setShowFallback(true)
+          if (!isSignInNudgeDismissed() && !isSignInNudgeSuppressed()) {
+            setShowFallback(true)
+          }
         }
       }).catch((err) => {
         console.error('Google One Tap failed to initialize:', err)
-        if (!fallbackDismissed()) setShowFallback(true)
+        if (!isSignInNudgeDismissed() && !isSignInNudgeSuppressed()) {
+          setShowFallback(true)
+        }
       })
     }, PROMPT_DELAY_MS)
 
@@ -108,14 +127,11 @@ export default function GoogleOneTapPrompt() {
       window.clearTimeout(fallbackTimer)
       cancelGoogleOneTap()
     }
-  }, [showPrompt, useNativeGsi, googleClientId, clerk, pathname])
+  }, [showPrompt, useNativeGsi, googleClientId, clerk])
 
   const dismissFallback = useCallback(() => {
-    try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_MS))
-    } catch {
-      // ignore
-    }
+    dismissSignInNudge()
+    markSignInNudgeShownThisSession()
     setShowFallback(false)
   }, [])
 
@@ -127,6 +143,8 @@ export default function GoogleOneTapPrompt() {
     }
 
     setOauthBusy(true)
+    suppressSignInNudge()
+    setShowFallback(false)
     try {
       const { redirectUrl: ssoRedirectUrl, redirectUrlComplete } = buildClerkOAuthUrls(redirectUrl)
       const params = {
@@ -160,7 +178,7 @@ export default function GoogleOneTapPrompt() {
 
   return (
     <>
-      {!useNativeGsi && (
+      {!useNativeGsi ? (
         <ClerkLoaded>
           <GoogleOneTap
             cancelOnTapOutside
@@ -170,14 +188,14 @@ export default function GoogleOneTapPrompt() {
             signUpForceRedirectUrl={redirectUrl}
           />
         </ClerkLoaded>
-      )}
+      ) : null}
 
-      {showFallback && (
+      {showFallback ? (
         <div
           role="dialog"
           aria-modal="false"
           aria-labelledby="gs-signin-nudge-title"
-          className="fixed end-3 z-[60] w-[min(20.5rem,calc(100%_-_1.5rem))] overflow-hidden rounded-2xl border border-black/8 bg-white sm:end-6"
+          className="fixed end-3 z-[60] w-[min(20.5rem,calc(100%_-_1.5rem))] overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_12px_40px_-12px_rgba(11,15,25,0.28)] sm:end-6"
           style={{ top: 'calc(var(--nav-offset, 7.25rem) + 0.5rem)' }}
         >
           <div className="flex items-start gap-3 border-b border-black/6 px-3.5 py-3 ps-4">
@@ -226,7 +244,7 @@ export default function GoogleOneTapPrompt() {
             </button>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   )
 }

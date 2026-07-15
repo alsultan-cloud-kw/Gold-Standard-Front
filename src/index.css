@@ -640,6 +640,46 @@
     container-type: inline-size;
   }
 
+  /* Trust & authenticity — dark bento (landing standout band) */
+  .security-trust-bento {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'blockchain'
+      'qr'
+      'ministry'
+      'hologram'
+      'receipt';
+  }
+
+  .security-trust-bento__blockchain { grid-area: blockchain; }
+  .security-trust-bento__qr { grid-area: qr; }
+  .security-trust-bento__ministry { grid-area: ministry; }
+  .security-trust-bento__hologram { grid-area: hologram; }
+  .security-trust-bento__receipt { grid-area: receipt; }
+
+  @media (min-width: 640px) {
+    .security-trust-bento {
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+      grid-template-areas:
+        'blockchain qr'
+        'ministry hologram'
+        'receipt receipt';
+    }
+  }
+
+  /* Credentials strip inside dark band — readable light text */
+  .security-trust-credentials .hero-trust-strip__label {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .security-trust-credentials .hero-trust-strip__item {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .security-trust-credentials svg {
+    color: #85e307;
+  }
+
   /** Vertical stack of blocks inside a section (header → content → content) */
   .section-stack {
     display: flex;
@@ -2369,6 +2409,11 @@
   .metal-chart-canvas--gestures {
     /* Maximized chart only — allow pinch / pan for explore */
     touch-action: none !important;
+  }
+
+  html[data-chart-expanded] .bullion-flyer-layer {
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   .metal-chart-canvas a#tv-attr-logo {
@@ -4102,6 +4147,20 @@ html[dir='rtl'] .gs-app-loader__trust {
 
 .filter-panel__section-title {
   margin-bottom: 0.75rem;
+}
+
+.filter-panel__option-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+}
+
+.filter-panel__option-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-panel__option-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.2);
 }
 
 .filter-panel__option {

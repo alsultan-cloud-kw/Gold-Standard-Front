@@ -10,6 +10,7 @@ import { productUnitPrice, formatKwd } from '@/utils/productPrice'
 import { formatProductCaratLabel } from '@/utils/productCaratLabel'
 import type { ProductFetchTrendMap } from '@/hooks/useProductPriceTrendSincePreviousFetch'
 import { ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
+import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
 import { isProductOutOfStock, productFineness } from '@/utils/productStock'
 
 type Props = {
@@ -101,6 +102,14 @@ function HomeProductCardInner({
             {specParts.join(' · ')}
           </p>
         ) : null}
+
+        <div className="mt-1.5">
+          <DigitalOwnershipBadge
+            variant="compact"
+            verifyCode={product.serial_number || product.sku || null}
+            to={`/products/${product.slug}#product-authenticity`}
+          />
+        </div>
 
         <div className="mt-1.5 flex flex-col gap-1 sm:gap-1.5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5">

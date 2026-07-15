@@ -155,7 +155,7 @@ export default function HomePage() {
       </section>
       </div>
 
-      <div className="order-6 lg:order-none">
+      <div className="order-7 lg:order-none">
         <SultanGoldTrustStats bullionDockRef={bullionTrustRef} />
       </div>
 
@@ -163,24 +163,29 @@ export default function HomePage() {
         <LiveGoldMarketSection />
       </div>
 
-      <div className="order-7 lg:order-none">
-        <WealthProtectionSection />
+      {/* Trust credentials + bullion verification — early on the page */}
+      <div className="order-3 lg:order-none">
+        <SecurityTrustSection />
       </div>
 
       <div className="order-8 lg:order-none">
+        <WealthProtectionSection />
+      </div>
+
+      <div className="order-9 lg:order-none">
         <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
       </div>
 
       {/* After docks mount so stop refs exist — flyer self-gates to real desktop */}
-      <div className="order-9 lg:order-none">
+      <div className="order-10 lg:order-none">
         <HeroBullionScroll stops={bullionStops} />
       </div>
 
-      <div className="order-3 lg:order-none">
+      <div className="order-4 lg:order-none">
         <CategoryGrid />
       </div>
 
-      <div className="order-5 lg:order-none">
+      <div className="order-6 lg:order-none">
         <FeaturedProducts
           title={t('home.featuredCollection')}
           products={(featuredProducts as Product[]) ?? []}
@@ -189,16 +194,12 @@ export default function HomePage() {
         />
       </div>
 
-      <div className="order-4 lg:order-none">
+      <div className="order-5 lg:order-none">
         <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
       </div>
 
-      <div className="order-10 lg:order-none">
-        <InvestorsClubSection />
-      </div>
-
       <div className="order-11 lg:order-none">
-        <SecurityTrustSection />
+        <InvestorsClubSection />
       </div>
 
       <div className="order-12 lg:order-none">

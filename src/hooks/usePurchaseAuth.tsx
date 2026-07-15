@@ -6,13 +6,14 @@ import { useAuth } from '@/contexts/AuthContext'
 
 /** Guest / unverified customers cannot purchase. */
 export function usePurchaseAuth() {
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading, isClerkSyncing, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
 
   /** Explicitly unverified (API sent false). Missing flag treated as OK for older payloads. */
   const needsVerification = Boolean(user && user.is_verified === false)
+  const authPending = isLoading || isClerkSyncing
 
   const loginHref = useCallback(
     (nextPath?: string) => {
@@ -28,7 +29,7 @@ export function usePurchaseAuth() {
    */
   const ensureCanPurchase = useCallback(
     (nextPath?: string): boolean => {
-      if (isLoading) return false
+      if (authPending) return false
 
       if (!isAuthenticated) {
         toast.info(t('auth.loginRequiredToBuy'), {
@@ -50,12 +51,12 @@ export function usePurchaseAuth() {
 
       return true
     },
-    [isLoading, isAuthenticated, needsVerification, navigate, loginHref, t],
+    [authPending, isAuthenticated, needsVerification, navigate, loginHref, t],
   )
 
   return {
     isAuthenticated,
-    isLoading,
+    isLoading: authPending,
     isVerified: isAuthenticated && !needsVerification,
     needsVerification,
     ensureCanPurchase,

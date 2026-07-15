@@ -14,7 +14,7 @@
     "dashboard": "Dashboard",
     "adminPanel": "Admin Panel",
     "loginRegister": "Login / Register",
-    "searchPlaceholder": "Search for gold, jewelry, categories...",
+    "searchPlaceholder": "Search gold bars, coins, categories...",
     "liveGoldPrices": "Live Gold Prices Available",
     "phone": "Phone",
     "openMenu": "Open menu",
@@ -27,13 +27,14 @@
     "customerPrices": "Customer prices",
     "companyPrices": "Company prices",
     "buyGold": "Buy gold",
-    "cart": "Cart"
+    "cart": "Cart",
+    "trading": "Trading"
   },
   "legal": {
     "combined": {
       "kicker": "Legal",
       "pageTitle": "Terms & privacy",
-      "subtitle": "Terms and conditions and privacy policy for Gold Standard Jewellers and Precious Metals Company (Kuwait).",
+      "subtitle": "Terms and Privacy Policy for Gold Standard Precious Metals Company (Kuwait).",
       "contactHint": "Questions about these terms?",
       "dataDeletionLink": "Data deletion instructions",
       "contactLink": "Contact us"
@@ -95,7 +96,7 @@
     "ctaSubtitle": "Buy investment-grade gold today at live market prices.",
     "ctaBuyGold": "Buy gold today",
     "ctaPriceAlert": "View live prices",
-    "tagline": "Certified investment gold in Kuwait — live KWD pricing, insured delivery, guaranteed buyback.",
+    "tagline": "Kuwait’s investment bullion company — the investment arm of Sultan Gold. Certified bars and coins with transparent pricing.",
     "followUs": "Follow us",
     "instagramHandle": "@goldstandard.kw",
     "getTheApp": "Get the app",
@@ -105,7 +106,9 @@
     "hoursLabel": "Store hours",
     "hoursWeekday": "Sat–Thu · 9:00 AM – 9:00 PM",
     "hoursFriday": "Fri · 2:00 PM – 9:00 PM",
-    "allRightsReserved": "All rights reserved."
+    "allRightsReserved": "All rights reserved.",
+    "trading": "Trading",
+    "tradingDesc": "Trading desk — coming soon"
   },
   "home": {
     "liveGoldPrices": "Live Gold Prices Available",
@@ -211,7 +214,7 @@
     "scrollBack": "Scroll back",
     "scrollForward": "Scroll forward",
     "categories": "Categories",
-    "categoriesSub": "Shop coins, bars, and jewelry by collection.",
+    "categoriesSub": "Shop investment coins and bars by collection.",
     "vaultCollections": "Vault Collections",
     "newAcquisitions": "New Acquisitions",
     "newAcquisitionsSub": "Freshly sourced bullion and coins",
@@ -225,8 +228,8 @@
     "browseByCategory": "Browse by category",
     "testimonials": "Testimonials",
     "whatCustomersSay": "What our customers say",
-    "heroTitle": "Premium Gold & Jewelry",
-    "heroSubtitle": "Discover our exquisite collection of gold jewelry crafted with precision. Transparent pricing based on live gold rates, trusted by thousands in Kuwait.",
+    "heroTitle": "Investment Gold Bullion",
+    "heroSubtitle": "Certified investment bars and coins at live market prices — insured delivery and clear authenticity assurance for Kuwait investors.",
     "heroBrandLine": "Gold Standard",
     "heroLiveKuwaitBadge": "LIVE · KUWAIT",
     "heroCertifiedBadge": "CERTIFIED · KUWAIT",
@@ -375,9 +378,9 @@
       "googleRating": "Google rating"
     },
     "securityTrust": {
-      "kicker": "Security",
-      "title": "Built for how Kuwait buys gold",
-      "body": "Every order ships insured, every piece is MOCI-stamped, and every payment runs through secure KNET. Compliance isn't a page on our site — it's how Gold Standard operates.",
+      "kicker": "Authenticity & security",
+      "title": "Authenticity & security, guaranteed",
+      "body": "Certainty through a multi-layer security fingerprint that combines physical verification and decentralized checks — lasting confidence for the modern bullion investor.",
       "items": {
         "insuredShipping": "Fully insured shipping",
         "mociHallmark": "MOCI hallmark & purity stamp",
@@ -385,7 +388,38 @@
         "licensedDealer": "Licensed Kuwait dealer",
         "serialCatalog": "Serial-tracked product catalog",
         "livePricing": "Live transparent KWD pricing"
-      }
+      },
+      "verifyCtaTitle": "Confirm authenticity in seconds",
+      "verifyCtaBody": "Scan the QR or enter the serial from your bar or packaging on our authenticity page.",
+      "verifyCta": "Verify a product",
+      "methods": {
+        "qr": {
+          "title": "Unique serialized QR",
+          "description": "Every investment piece carries a unique serial identity and QR you can scan on our website to confirm registration in our official catalog."
+        },
+        "blockchain": {
+          "title": "Digital Ownership Record",
+          "description": "Ownership record secured by blockchain technology — every investment piece is linked to a secure digital ownership record we are building on-chain.",
+          "badge": "In development"
+        },
+        "hologram": {
+          "title": "Security hologram seal",
+          "description": "Premium packaging carries a holographic mark engineered to resist tampering — a first visual check that the bar is genuine."
+        },
+        "ministry": {
+          "title": "Ministry stamp on the gold",
+          "description": "Gold is tested and stamped under Kuwait’s Ministry of Commerce and Industry — Precious Metals Department — confirming karat before sale."
+        },
+        "receipt": {
+          "title": "Official stamped receipt",
+          "description": "Your purchase includes a Gold Standard stamped receipt — clear documentary proof for custody, buyback, and personal or institutional records."
+        }
+      },
+      "credentialsKicker": "Licensed credentials",
+      "credentialsBody": "The same marks of trust you expect from an investment bullion house — official hallmarking, secure payments, insured delivery, and a clear commercial licence.",
+      "methodsKicker": "How you verify your bullion",
+      "methodsTitle": "Five layers of authenticity",
+      "methodsBody": "Each bar and investment piece is designed so you can confirm what you own — independently, quickly, and with a lasting paper trail."
     },
     "faq": {
       "kicker": "FAQ",
@@ -422,7 +456,7 @@
     "ourBranchesDesc": "Visit any of our branches across Kuwait for personalized service",
     "viewAllBranches": "View All Branches",
     "readyToTrade": "Start shopping gold with confidence",
-    "readyToTradeDesc": "Create a free account to follow live rates, save alerts, and unlock member benefits on coins, bars, and jewelry.",
+    "readyToTradeDesc": "Create a free account to follow live rates, save alerts, and unlock member benefits on investment coins and bars.",
     "readyKicker": "Get started",
     "createAccount": "Create account",
     "contactSales": "Contact Sales",
@@ -564,21 +598,21 @@
     "completingSignIn": "Completing sign-in…",
     "productFallback": "Product",
     "breadcrumb": "Breadcrumb",
-    "logoAlt": "Gold & Jewelry Trading Co. logo",
+    "logoAlt": "Gold Standard — investment bullion logo",
     "brandName": "Gold Standard",
-    "defaultDocumentTitle": "Gold Standard — Certified Gold & Jewelry · Kuwait",
+    "defaultDocumentTitle": "Gold Standard — Investment Gold Bullion · Kuwait",
     "instagram": "Instagram",
     "dismissSignInPrompt": "Dismiss sign-in prompt",
     "skipToContent": "Skip to main content"
   },
   "seo": {
     "default": {
-      "title": "Gold Standard — Certified Gold & Jewelry · Kuwait",
-      "description": "Buy certified MOCI-hallmarked gold in Kuwait at live market prices. Insured delivery, buyback, and transparent KWD pricing."
+      "title": "Gold Standard — Investment Gold Bullion · Kuwait",
+      "description": "Kuwait investment bullion company. Certified gold bars and coins at live KWD prices, insured delivery, authenticity verification, and buyback."
     },
     "home": {
-      "title": "Gold Standard — Certified Gold & Jewelry · Kuwait",
-      "description": "Kuwait’s trusted gold dealer. Shop 999.9 fine gold, track live prices, and get insured delivery with buyback guarantees."
+      "title": "Gold Standard — Investment Gold Bullion · Kuwait",
+      "description": "The investment arm of Sultan Gold. Certified bars and coins, live prices, insured delivery, and multi-layer authenticity assurance."
     },
     "prices": {
       "title": "Live Gold Prices Kuwait · Buy & Sell KWD/g | Gold Standard",
@@ -590,11 +624,11 @@
     },
     "products": {
       "title": "Shop Certified Gold Products | Gold Standard Kuwait",
-      "description": "Browse MOCI-hallmarked gold bars and jewelry. Live KWD pricing, insured shipping, and authenticated products."
+      "description": "Browse MOCI-hallmarked investment gold bars and coins. Live KWD pricing, insured shipping, and authenticated products."
     },
     "about": {
-      "title": "About Gold Standard · Licensed Gold Dealer Kuwait",
-      "description": "Learn about Gold Standard — a licensed Kuwait gold and jewelry trading company with MOCI hallmarking and insured delivery."
+      "title": "About Gold Standard · Investment Bullion Company Kuwait",
+      "description": "Gold Standard is a Kuwait investment bullion company — the investment arm of Sultan Gold — manufacturing and supplying high-purity bars, coins, and institutional solutions."
     },
     "contact": {
       "title": "Contact Gold Standard Kuwait",
@@ -615,6 +649,10 @@
     "app": {
       "title": "Account | Gold Standard",
       "description": "Gold Standard account area."
+    },
+    "trading": {
+      "title": "Gold Trading Desk · Coming Soon | Gold Standard",
+      "description": "Gold Standard trading desk is under development. Live rates, custody, and institutional-grade tools launching soon in Kuwait."
     }
   },
   "priceReminder": {
@@ -894,9 +932,9 @@
   "authenticity": {
     "eyebrow": "Authenticity check",
     "pageTitle": "Verify product data and authenticity",
-    "pageSubtitle": "Scan the Gold Standard product QR to confirm this item is registered in our official catalog.",
-    "missingCodeTitle": "No verification code",
-    "missingCodeBody": "Open this page by scanning the product QR label, or use the full verification link printed with your item.",
+    "pageSubtitle": "Enter the serial from your piece, or scan the Gold Standard QR, to confirm it is registered in our official catalog.",
+    "missingCodeTitle": "Enter a verification code",
+    "missingCodeBody": "Type the serial or QR code from your product below, or open the full verification link printed with your item.",
     "browseProducts": "Browse products",
     "notFoundTitle": "Product not verified",
     "notFoundBody": "This code is not in the Gold Standard registry. Check the QR label or contact our team if you believe this is an error.",
@@ -919,7 +957,13 @@
     "printCertificate": "Print certificate",
     "certificateAfterPurchase": "The downloadable certificate is included with your purchased piece — scan the QR on your physical label after delivery.",
     "registryOnlyNote": "This check confirms catalog registration only. It is not proof of purchase.",
-    "footerNote": "This check confirms catalog registration only. For purchase, pricing, and warranty questions, contact Gold Standard directly."
+    "footerNote": "This check confirms catalog registration only. For purchase, pricing, and warranty questions, contact Gold Standard directly.",
+    "enterCodeTitle": "Verify your gold",
+    "enterCodeBody": "Enter the serial number or QR code printed on your bar, coin, or packaging. You can also open this page by scanning the product QR.",
+    "codeLabel": "Serial or verification code",
+    "codePlaceholder": "e.g. GS-24K-001234 or scan code",
+    "codeHint": "Use the exact code from the product label or certificate — letters and numbers as printed.",
+    "submitCode": "Verify now"
   },
   "productDetail": {
     "notFound": "Product not found",
@@ -952,15 +996,16 @@
     "certified": "Certified",
     "trustKicker": "Buy with confidence",
     "trustTitle": "Certified, insured & registered",
-    "trustBody": "Every piece is listed in our official catalog with clear karat and weight. Verify the serial before you buy.",
+    "trustBody": "Every piece includes a Digital Ownership Record secured by blockchain technology, with clear karat, weight, and serial verification.",
     "verifyCta": "Check registry status",
-    "verifyHint": "Confirm this piece is listed in our official catalog. The verification certificate is issued with your physical product after purchase.",
-    "calculatePriceFailed": "Failed to calculate price"
+    "verifyHint": "Confirm this piece is listed in our official catalog and linked to its Digital Ownership Record.",
+    "calculatePriceFailed": "Failed to calculate price",
+    "authenticityAnchor": "Authenticity assurance"
   },
   "cartPage": {
     "kicker": "Cart",
     "emptyTitle": "Your cart is empty",
-    "emptyDesc": "Browse certified coins, bars, and jewelry — then add pieces here to checkout securely.",
+    "emptyDesc": "Browse certified investment coins and bars — then add pieces here to checkout securely.",
     "continueShopping": "Continue shopping",
     "pageTitle": "Shopping cart",
     "itemsCount": "{{count}} items",
@@ -1197,7 +1242,7 @@
     "needHelp": "Need help right now?",
     "links": {
       "home": "Home",
-      "shop": "Shop gold & jewelry",
+      "shop": "Shop investment gold",
       "prices": "Live gold prices",
       "verify": "Verify product authenticity",
       "contact": "Contact our team"
@@ -1264,17 +1309,17 @@
     "openNewTab": "Open in new tab"
   },
   "aboutPage": {
-    "kicker": "Gold Standard",
+    "kicker": "Investment bullion",
     "title": "About us",
-    "hero": "Gold Standard is a Kuwait gold and jewelry house for certified coins, bars, and jewelry — with live KWD pricing, secure checkout, and clear making charges.",
-    "ctaShop": "Browse the shop",
+    "hero": "Gold Standard is a Kuwait company specialized in manufacturing and supplying high-purity investment gold products. We are the investment arm of Sultan Gold, focused on bars, coins, and institutional bullion solutions — not traditional jewellery.",
+    "ctaShop": "Browse investment products",
     "ctaContact": "Contact us",
-    "storyKicker": "What we offer",
-    "storyTitle": "Gold shopping built for Kuwait today",
-    "storyBody": "We bring traditional bullion and jewelry craft together with a modern storefront: follow live rates, shop online, and get insured delivery across Kuwait — with the same focus on purity and fair pricing in every order.",
+    "storyKicker": "Who we are",
+    "storyTitle": "The investment arm of Sultan Gold",
+    "storyBody": "We draw on advanced industrial capability inside Sultan Gold workshops and factories, where investment bars, coins, and custom gold products are designed and produced to high standards of purity, precision, and transparency — built for wealth preservation, not jewellery fashion.",
     "focus": {
       "coins": {
-        "title": "Coins, bars & jewelry",
+        "title": "Coins, bars ",
         "description": "Certified pieces with clear karat, weight, and authenticity you can verify."
       },
       "prices": {
@@ -1284,17 +1329,29 @@
       "clubs": {
         "title": "Member clubs",
         "description": "Invite-based clubs unlock member buy rates and shared offers at checkout."
+      },
+      "parent": {
+        "title": "Parent company",
+        "description": "Sultan Gold — industrial expertise and production infrastructure behind every piece."
+      },
+      "manufacture": {
+        "title": "Made in-house",
+        "description": "Design and manufacturing inside Sultan Gold facilities, with disciplined quality control."
+      },
+      "specialty": {
+        "title": "Investment specialty",
+        "description": "Bars, coins, OEM / private label, and institutional supply — clarity over ornament."
       }
     },
-    "valuesKicker": "How we work",
-    "valuesTitle": "What you can count on",
-    "valuesIntro": "Four principles guide every product page, price, and delivery.",
+    "valuesKicker": "Quality & trust",
+    "valuesTitle": "Trust you can verify",
+    "valuesIntro": "From raw material selection through manufacturing, inspection, and packaging, we follow investment-bullion standards — with transparent pricing and authenticity you can check.",
     "missionKicker": "Mission",
     "missionTitle": "Our mission",
-    "missionBody": "Make buying gold in Kuwait simple and trustworthy — live prices, certified products, and secure delivery, without hidden fees.",
+    "missionBody": "Deliver reliable investment gold solutions for individuals and institutions — combining purity, documentation, and practical tradability.",
     "visionKicker": "Vision",
     "visionTitle": "Our vision",
-    "visionBody": "Be Kuwait’s most trusted place to shop gold online and in person — clear rates, quality pieces, and service that respects how people buy bullion and jewelry today.",
+    "visionBody": "To be among the Gulf’s leading investment-bullion manufacturers and suppliers — offering integrated solutions that combine global quality standards, modern verification technology, and lasting trust. At Gold Standard we do not only produce gold — we set a higher standard for confidence in physical investment.",
     "ctaKicker": "Next step",
     "ctaTitle": "See live prices or visit a branch",
     "ctaBody": "Check today’s rates in KWD, or find a Gold Standard location near you.",
@@ -1302,13 +1359,13 @@
     "ctaBranches": "Our branches",
     "licenceKicker": "Credentials",
     "licenceTitle": "Licensed in Kuwait",
-    "licenceBody": "Gold Standard Jewellers and Precious Metals Company operates as a licensed precious-metals and jewellery business in Kuwait. Gold sold through our shop is hallmarked and stamped under Ministry of Commerce and Industry (MOCI) rules — tested by the Precious Metals Department before retail.",
+    "licenceBody": "Gold Standard operates as a licensed precious-metals business in Kuwait. Investment gold sold through our channels is tested and stamped under Ministry of Commerce and Industry (MOCI) Precious Metals Department rules before retail — Licence No. 279/2026.",
     "licenceViewDocument": "View commercial licence",
     "licenceContactForCopy": "For a copy of our commercial registration, contact us at info@goldstandardkw.com or visit any branch.",
     "licenceMociTitle": "MOCI hallmark & stamp",
     "licenceMociBody": "Under Kuwait law, gold and precious metals must be tested and stamped by the Ministry of Commerce and Industry — Precious Metals Department (ختم المعادن الثمينة). The official stamp confirms karat purity and protects buyers from unstamped or counterfeit pieces.",
-    "licenceTradeTitle": "Licensed dealer",
-    "licenceTradeBody": "We trade coins, bars, and jewellery with transparent live KWD pricing, secure KNET checkout, insured delivery, and product verification through our official catalog.",
+    "licenceTradeTitle": "Licensed investment bullion dealer",
+    "licenceTradeBody": "We supply coins and bars with transparent live KWD pricing, secure KNET checkout, insured delivery, and product verification through our official catalog and authenticity tools.",
     "statYears": "Years of Experience",
     "statBranches": "Branches",
     "statCustomers": "Happy Customers",
@@ -1316,15 +1373,15 @@
     "v": {
       "transparency": {
         "title": "Transparent pricing",
-        "description": "Live rates and making charges shown clearly — so you know what you pay before checkout."
+        "description": "Live rates and charges shown clearly — so institutions and investors know the number before they commit."
       },
       "quality": {
         "title": "Certified purity",
-        "description": "Coins, bars, and jewelry checked for karat and authenticity before they reach you."
+        "description": "Bars and coins checked for karat and authenticity before they reach you."
       },
       "service": {
-        "title": "Customer care",
-        "description": "Support for orders, clubs, and product questions during store hours."
+        "title": "Institutional care",
+        "description": "Support for orders, wholesale programmes, and product documentation during business hours."
       },
       "delivery": {
         "title": "Insured delivery",
@@ -1369,6 +1426,32 @@
         "title": "Innovation",
         "description": "Introduced AI-powered price forecasting"
       }
+    },
+    "offeringsKicker": "What we produce",
+    "offeringsTitle": "Investment products & solutions",
+    "offeringsIntro": "We do more than sell gold — we manufacture, document, and supply investment bullion for individuals and institutions.",
+    "offerings": {
+      "bars": "Investment gold bars",
+      "coins": "Gold coins & investment pieces",
+      "custom": "Custom institutional bars",
+      "privateLabel": "Private-label manufacturing (OEM)",
+      "wholesale": "Wholesale supply programmes",
+      "certification": "Authentication & documentation",
+      "packaging": "Professional packaging & certificates",
+      "buyback": "Buyback programmes under policy"
+    },
+    "clientsKicker": "Who we serve",
+    "clientsTitle": "Built for investors and institutions",
+    "clientsIntro": "Our clients are not limited to retail shoppers. We support a wide spectrum of wealth and market participants.",
+    "clients": {
+      "individuals": "Individual investors",
+      "banks": "Banks & financial institutions",
+      "investment": "Investment & asset managers",
+      "corporate": "Corporate & industrial firms",
+      "dealers": "Gold traders & bullion distributors",
+      "government": "Government & semi-government entities",
+      "familyOffices": "Family offices & wealth desks",
+      "partners": "Private-label & manufacturing partners"
     }
   },
   "auth": {
@@ -1488,7 +1571,8 @@
         "resetSuccess": "Password reset. You can sign in now.",
         "resetFailed": "Could not reset password. Try again."
       }
-    }
+    },
+    "authTransitionHint": "Securing your session — this may take a moment on slower connections."
   },
   "cart": {
     "cart": "Cart",
@@ -2086,8 +2170,8 @@
         "rowCount": "Row count",
         "reference": "Reference",
         "generating": "Building document…",
-        "brandName": "Gold & Jewelry Trading Co.",
-        "brandTagline": "Your trusted partner for gold and jewelry trading in Kuwait. We offer the finest quality products with transparent pricing.",
+        "brandName": "Gold Standard Trading Company",
+        "brandTagline": "Your trusted partner for investment gold bullion in Kuwait. Premium products with transparent pricing.",
         "websiteLabel": "Website",
         "websiteUrl": "https://www.goldstandardkw.com",
         "brandAddress": "Gold Standard · No. 147, Central Gold Market, 1st Floor, Kuwait City 85951",
@@ -2138,5 +2222,50 @@
         "downloadFailed": "Could not build the Word file. Please try again."
       }
     }
+  },
+  "tradingPage": {
+    "badge": "Under development",
+    "title": "Trading desk — coming soon",
+    "subtitle": "We are preparing a professional gold trading experience — live market tools, secure custody options, and institutional-grade controls — built on the trading infrastructure already in progress at Gold Standard.",
+    "countdownLabel": "Estimated public launch",
+    "countdownReady": "Launch window reached — final checks in progress",
+    "launchDate": "Target date: {{date}}",
+    "units": {
+      "days": "Days",
+      "hours": "Hours",
+      "minutes": "Min",
+      "seconds": "Sec"
+    },
+    "ctaShop": "Shop investment gold",
+    "ctaNotify": "Talk to our desk",
+    "pillarsKicker": "What we are building",
+    "pillarsTitle": "A trading experience worthy of bullion",
+    "pillarsBody": "Designed for serious investors and institutions — not speculation theatre. Clear pricing, controlled access, and documentation you can rely on.",
+    "pillars": {
+      "live": {
+        "title": "Market-linked execution",
+        "description": "Transparent rates and order flows aligned with live gold markets in Kuwait."
+      },
+      "custody": {
+        "title": "Custody & settlement",
+        "description": "Secure handling paths for physical and vaulted positions as features roll out."
+      },
+      "compliance": {
+        "title": "Licensed discipline",
+        "description": "Built within Gold Standard’s licensed precious-metals framework and audit-ready processes."
+      }
+    },
+    "noteKicker": "Transparency",
+    "noteTitle": "Why trading is not live yet",
+    "noteBody": "Core trading logic is already under development. We will open the public desk only when pricing, custody, and compliance flows meet the same standard we apply to physical bullion."
+  },
+  "digitalOwnership": {
+    "kicker": "Blockchain secured",
+    "badge": "Digital Ownership Record",
+    "title": "Digital Ownership Record",
+    "securedBy": "Ownership Record Secured by Blockchain Technology",
+    "body": "The ownership record is protected using blockchain technology.",
+    "certificateBody": "This ownership certificate is linked to a secure digital ownership record protected with blockchain technology.",
+    "verifyLink": "Verify ownership record"
   }
 }

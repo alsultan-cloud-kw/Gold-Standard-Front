@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { suppressSignInNudge } from '@/lib/signInNudgeGate'
 
 export const LOGIN_SUCCESS_PENDING_KEY = 'gs_login_success_pending'
 
@@ -9,6 +10,7 @@ type AuthToastCopy = {
 
 /** Call when JWT is stored — toast fires on the destination route (after redirect). */
 export function markLoginSuccessPending() {
+  suppressSignInNudge()
   try {
     sessionStorage.setItem(LOGIN_SUCCESS_PENDING_KEY, '1')
   } catch {

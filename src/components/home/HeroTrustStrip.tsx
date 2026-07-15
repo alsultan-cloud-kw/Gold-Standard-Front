@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { GS_BUSINESS } from '@/constants/businessCredentials'
 import { HeroTrustIcon, type HeroTrustIconId } from '@/components/home/HeroTrustIcon'
+import { cn } from '@/lib/utils'
 
 const TRUST_ITEMS: ReadonlyArray<{
   id: HeroTrustIconId
@@ -15,11 +16,24 @@ const TRUST_ITEMS: ReadonlyArray<{
   { id: 'buyback', labelKey: 'home.heroTrust.buyback' },
 ]
 
-export function HeroTrustStrip() {
+type HeroTrustStripProps = {
+  /** `hero` = under hero with top border; `embedded` = inside another section */
+  variant?: 'hero' | 'embedded'
+  className?: string
+}
+
+export function HeroTrustStrip({ variant = 'hero', className }: HeroTrustStripProps) {
   const { t } = useTranslation()
 
   return (
-    <div className="hero-trust-strip mt-5 border-t border-black/5 pt-4 sm:mt-12 sm:pt-7">
+    <div
+      className={cn(
+        'hero-trust-strip',
+        variant === 'hero' && 'mt-5 border-t border-black/5 pt-4 sm:mt-12 sm:pt-7',
+        variant === 'embedded' && 'mt-0 border-0 pt-0',
+        className,
+      )}
+    >
       <ul className="hero-trust-strip__list grid grid-cols-2 gap-x-3 gap-y-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6 xl:gap-5">
         {TRUST_ITEMS.map((item) => (
           <li key={item.id} className="hero-trust-strip__item flex min-w-0 items-start gap-2 sm:gap-3">

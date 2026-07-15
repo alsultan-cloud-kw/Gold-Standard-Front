@@ -1,13 +1,20 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { authApi } from '../services/api'
 import type { User, CustomerProfile } from '../types'
 import { markLoginSuccessPending } from '@/lib/authToast'
+import {
+  clearSignInNudgeSuppress,
+  suppressSignInNudge,
+} from '@/lib/signInNudgeGate'
 
 interface AuthContextType {
   user: User | null
   profile: CustomerProfile | null
   isAuthenticated: boolean
   isLoading: boolean
+  /** Clerk OAuth → Django JWT exchange in progress */
+  isClerkSyncing: boolean
+  setClerkSyncing: (value: boolean) => void
   login: (credentials: {
     email?: string
     phone_number?: string
@@ -26,6 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<CustomerProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClerkSyncing, setClerkSyncingState] = useState(false)
+
+  const setClerkSyncing = useCallback((value: boolean) => {
+    setClerkSyncingState(value)
+    if (value) suppressSignInNudge()
+  }, [])
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -46,7 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const userData = await authApi.getMe()
-      if (!settled) setUser(userData as User)
+      if (!settled) {
+        setUser(userData as User)
+        suppressSignInNudge()
+      }
     } catch (error) {
       const status = (error as { response?: { status?: number } })?.response?.status
       console.error('Failed to fetch user:', error)
@@ -75,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.login(credentials)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
+    suppressSignInNudge()
     const nextUser = response.user as User
     setUser(nextUser)
     setIsLoading(false)
@@ -86,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.clerkLogin(clerkSessionToken)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
+    suppressSignInNudge()
     const nextUser = response.user as User
     setUser(nextUser)
     setIsLoading(false)
@@ -97,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.register(data)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
+    suppressSignInNudge()
     const nextUser = response.user as User
     setUser(nextUser)
     setIsLoading(false)
@@ -112,6 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('refresh_token')
     setUser(null)
     setProfile(null)
+    setClerkSyncingState(false)
+    clearSignInNudgeSuppress()
   }
 
   const updateUser = async (data: unknown) => {
@@ -131,6 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         isAuthenticated: !!user,
         isLoading,
+        isClerkSyncing,
+        setClerkSyncing,
         login,
         loginWithClerk,
         register,

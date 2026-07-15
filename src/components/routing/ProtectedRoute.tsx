@@ -57,7 +57,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
  * Redirects signed-in users away — prevents duplicate login errors.
  */
 export function GuestOnlyRoute() {
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading, isClerkSyncing, user } = useAuth()
   const { isSignedIn, isLoaded: clerkLoaded, signOut } = useClerkAuth()
   const [searchParams] = useSearchParams()
   const [clerkSyncTimedOut, setClerkSyncTimedOut] = useState(false)
@@ -79,7 +79,7 @@ export function GuestOnlyRoute() {
     return <AuthLoadingFallback />
   }
 
-  if (isSignedIn && !isAuthenticated && !clerkSyncTimedOut) {
+  if (isClerkSyncing || (isSignedIn && !isAuthenticated && !clerkSyncTimedOut)) {
     return <AuthLoadingFallbackCompleting />
   }
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
@@ -149,12 +150,14 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
     if (!chartExpanded) return
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    document.documentElement.setAttribute('data-chart-expanded', 'true')
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setChartExpanded(false)
     }
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = prevOverflow
+      document.documentElement.removeAttribute('data-chart-expanded')
       window.removeEventListener('keydown', onKey)
     }
   }, [chartExpanded])
@@ -426,41 +429,14 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
 
   if (!rates?.succeeded) return null
 
-  return (
-    <>
-      {chartExpanded ? (
-        <button
-          type="button"
-          aria-label={t('home.chart.collapseChart')}
-          className="fixed inset-0 z-[110] cursor-default bg-[#0B0F19]/45 backdrop-blur-[2px]"
-          onClick={() => setChartExpanded(false)}
-        />
-      ) : null}
-
-      {/* Always-visible close control when expanded (mobile accessibility) */}
-      {chartExpanded ? (
-        <button
-          type="button"
-          onClick={() => setChartExpanded(false)}
-          aria-label={t('home.chart.collapseChart')}
-          title={t('home.chart.closeChart')}
-          className="fixed z-[130] inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#0B0F19] shadow-[0_10px_30px_-10px_rgba(11,15,25,0.55)] transition hover:bg-[#ECFCCB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/70 sm:hidden"
-          style={{
-            top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-            insetInlineEnd: 'max(0.75rem, env(safe-area-inset-right, 0px))',
-          }}
-        >
-          <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-        </button>
-      ) : null}
-
-      <div
-        className={cn(
-          'metal-chart-panel relative overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm',
-          chartExpanded &&
-            'fixed inset-3 z-[120] m-0 flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-y-auto rounded-2xl border-black/15 shadow-2xl sm:inset-6',
-        )}
-      >
+  const chartPanel = (
+    <div
+      className={cn(
+        'metal-chart-panel relative overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm',
+        chartExpanded &&
+          'fixed inset-3 z-[200] m-0 flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-2xl border-black/15 shadow-2xl sm:inset-6',
+      )}
+    >
       <div
         className="pointer-events-none absolute inset-0 opacity-70"
         aria-hidden
@@ -470,9 +446,14 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
         }}
       />
 
-      <div className="relative p-3 sm:p-6 lg:p-8">
+      <div
+        className={cn(
+          'relative p-3 sm:p-6 lg:p-8',
+          chartExpanded && 'flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain',
+        )}
+      >
         {chartExpanded ? (
-          <div className="sticky top-0 z-20 -mx-3 mb-4 flex items-center justify-between gap-3 border-b border-black/10 bg-white/95 px-3 py-2.5 backdrop-blur-sm sm:-mx-6 sm:mb-5 sm:px-6 sm:py-3 lg:-mx-8 lg:px-8">
+          <div className="sticky top-0 z-30 -mx-3 mb-4 flex items-center justify-between gap-3 border-b border-black/10 bg-white/95 px-3 py-2.5 backdrop-blur-sm sm:-mx-6 sm:mb-5 sm:px-6 sm:py-3 lg:-mx-8 lg:px-8">
             <p className="min-w-0 truncate text-sm font-semibold text-[#0B0F19]">
               {t('home.chart.expandedTitle')}
             </p>
@@ -600,7 +581,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-2.5">
             <div
               className="inline-flex rounded-lg border border-black/10 bg-[#F4F4F5] p-0.5"
               role="group"
@@ -675,7 +656,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
           </div>
         </div>
 
-        <div className="mb-3 sm:mb-4">
+        <div className="mb-4">
           <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-wide text-[#94A3B8] sm:mb-2 sm:text-[10px]">
             {t('home.chart.longRangeLabel')}
           </p>
@@ -694,7 +675,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
                   onClick={() => setChartRange(key)}
                   className={`shrink-0 cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 sm:px-3 sm:py-1.5 sm:text-xs md:text-sm ${
                     on
-                      ? 'bg-[#ECFCCB] text-[#3F6F00] shadow-sm'
+                      ? 'bg-[#E4E4E7] text-[#0B0F19] shadow-sm'
                       : 'text-[#64748B] hover:bg-[#F4F4F5] hover:text-[#0B0F19]'
                   }`}
                 >
@@ -817,6 +798,22 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
         </div>
       </div>
     </div>
-    </>
   )
+
+  if (chartExpanded && typeof document !== 'undefined') {
+    return createPortal(
+      <>
+        <button
+          type="button"
+          aria-label={t('home.chart.collapseChart')}
+          className="fixed inset-0 z-[190] cursor-default bg-[#0B0F19]/45 backdrop-blur-[2px]"
+          onClick={() => setChartExpanded(false)}
+        />
+        {chartPanel}
+      </>,
+      document.body,
+    )
+  }
+
+  return chartPanel
 }

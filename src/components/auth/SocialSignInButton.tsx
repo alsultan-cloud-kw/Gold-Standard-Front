@@ -9,6 +9,7 @@ import {
   type ClerkOAuthProvider,
 } from '@/lib/clerkOAuth'
 import { getLastAuthMethod, setLastAuthMethod } from '@/lib/lastAuthMethod'
+import { suppressSignInNudge } from '@/lib/signInNudgeGate'
 
 type SocialSignInButtonProps = {
   provider: ClerkOAuthProvider
@@ -77,6 +78,7 @@ export default function SocialSignInButton({
     }
 
     setBusy(true)
+    suppressSignInNudge()
     try {
       const { redirectUrl, redirectUrlComplete } = buildClerkOAuthUrls(redirectComplete)
       const params = {

@@ -13,10 +13,10 @@ const testimonials = [
   {
     id: 2,
     name: 'Fatima Hassan',
-    role: 'Jewelry Enthusiast',
+    role: 'Gold Investor',
     avatar: 'FH',
     rating: 5,
-    text: 'The quality of their jewelry is exceptional. I bought a 22K gold necklace and the craftsmanship is beautiful. The staff was very helpful in explaining the pricing.',
+    text: 'The quality of their investment bars is exceptional. I bought a hallmarked bar and the documentation was clear. The team was very helpful in explaining the pricing.',
   },
   {
     id: 3,

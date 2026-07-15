@@ -22,9 +22,11 @@ import SsoCallbackPage from './pages/SsoCallbackPage'
 import ClerkAuthBridge from './components/auth/ClerkAuthBridge'
 import AuthSuccessNotifier from './components/auth/AuthSuccessNotifier'
 import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
+import AuthTransitionOverlay from './components/auth/AuthTransitionOverlay'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UserDashboard from './pages/UserDashboard'
 import AboutPage from './pages/AboutPage'
+import TradingComingSoonPage from './pages/TradingComingSoonPage'
 import ContactPage from './pages/ContactPage'
 import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
@@ -101,6 +103,7 @@ function App() {
             <RouteSeo />
             <MarketingVisitTracker />
             <GoogleOneTapPrompt />
+            <AuthTransitionOverlay />
             <div className="min-h-screen bg-siteBg">
               <SkipToContentLink />
               <Navbar />
@@ -137,6 +140,7 @@ function App() {
                     }
                   />
                   <Route path="/about" element={<AboutPage />} />
+                  <Route path="/trading" element={<TradingComingSoonPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/branches" element={<BranchesPage />} />
                   <Route path="/prices" element={<PricesPage />} />

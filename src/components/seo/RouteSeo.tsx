@@ -40,6 +40,10 @@ const PUBLIC_ROUTES: Array<{ match: (path: string) => boolean; seo: PageSeo }> =
     seo: { titleKey: 'seo.about.title', descKey: 'seo.about.description', path: '/about' },
   },
   {
+    match: (p) => p === '/trading',
+    seo: { titleKey: 'seo.trading.title', descKey: 'seo.trading.description', path: '/trading' },
+  },
+  {
     match: (p) => p === '/contact',
     seo: { titleKey: 'seo.contact.title', descKey: 'seo.contact.description', path: '/contact' },
   },

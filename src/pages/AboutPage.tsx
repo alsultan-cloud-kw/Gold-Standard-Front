@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   Award,
+  Building2,
+  Factory,
+  Landmark,
+  Package,
   Shield,
-  TrendingUp,
   Truck,
   Users,
   Scale,
@@ -12,6 +15,28 @@ import {
 import { GS_BUSINESS } from '@/constants/businessCredentials'
 import { HeroTrustIcon } from '@/components/home/HeroTrustIcon'
 import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
+
+const OFFERINGS = [
+  'bars',
+  'coins',
+  'custom',
+  'privateLabel',
+  'wholesale',
+  'certification',
+  'packaging',
+  'buyback',
+] as const
+
+const CLIENTS = [
+  'individuals',
+  'banks',
+  'investment',
+  'corporate',
+  'dealers',
+  'government',
+  'familyOffices',
+  'partners',
+] as const
 
 const PILLARS = [
   { id: 'transparency', icon: Scale },
@@ -21,9 +46,9 @@ const PILLARS = [
 ] as const
 
 const FOCUS = [
-  { id: 'coins', icon: Shield },
-  { id: 'prices', icon: TrendingUp },
-  { id: 'clubs', icon: Users },
+  { id: 'parent', icon: Building2 },
+  { id: 'manufacture', icon: Factory },
+  { id: 'specialty', icon: Package },
 ] as const
 
 export default function AboutPage() {
@@ -31,7 +56,6 @@ export default function AboutPage() {
 
   return (
     <div className="storefront-static-page min-h-screen">
-      {/* Hero */}
       <section className="relative overflow-hidden border-b border-black/5 bg-white">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/40 via-white to-white" />
@@ -43,29 +67,28 @@ export default function AboutPage() {
           <h1 className="store-display-title max-w-4xl text-[#0B0F19]">
             {t('aboutPage.title')}
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#64748B] sm:text-lg">
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-[#64748B] sm:text-lg">
             {t('aboutPage.hero')}
           </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link
-                  to="/products"
-                  className="gold-button inline-flex w-full items-center justify-center gap-2 shadow-md sm:w-auto"
-                >
-                  {t('aboutPage.ctaShop')}
-                  <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                </Link>
-                <Link
-                  to="/contact"
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-black/10 bg-white px-6 py-3 font-semibold text-[#0B0F19] transition-colors hover:bg-[#F4F4F5] sm:w-auto"
-                >
-                  {t('aboutPage.ctaContact')}
-                </Link>
-              </div>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              to="/products"
+              className="gold-button inline-flex w-full items-center justify-center gap-2 shadow-md sm:w-auto"
+            >
+              {t('aboutPage.ctaShop')}
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-black/10 bg-white px-6 py-3 font-semibold text-[#0B0F19] transition-colors hover:bg-[#F4F4F5] sm:w-auto"
+            >
+              {t('aboutPage.ctaContact')}
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* What we do */}
       <section className="border-b border-black/5 bg-white">
         <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
@@ -109,7 +132,57 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Pillars */}
+      <section className="border-b border-black/5 bg-[#F9F9FA]">
+        <div className="page-shell page-section--roomy">
+          <div className="mb-8 max-w-2xl">
+            <p className="page-kicker">{t('aboutPage.offeringsKicker')}</p>
+            <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
+              {t('aboutPage.offeringsTitle')}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('aboutPage.offeringsIntro')}
+            </p>
+          </div>
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {OFFERINGS.map((id) => (
+              <li
+                key={id}
+                className="rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-semibold text-[#0B0F19]"
+              >
+                {t(`aboutPage.offerings.${id}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="border-b border-black/5 bg-white">
+        <div className="page-shell page-section--roomy">
+          <div className="mb-8 max-w-2xl">
+            <p className="page-kicker">{t('aboutPage.clientsKicker')}</p>
+            <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
+              {t('aboutPage.clientsTitle')}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('aboutPage.clientsIntro')}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {CLIENTS.map((id) => (
+              <div
+                key={id}
+                className="flex items-start gap-2.5 rounded-xl border border-black/10 bg-[#F9F9FA] px-3.5 py-3"
+              >
+                <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-[#3F6F00]" strokeWidth={1.75} aria-hidden />
+                <span className="text-sm font-medium leading-snug text-[#0B0F19]">
+                  {t(`aboutPage.clients.${id}`)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-[#F9F9FA]">
         <div className="page-shell page-section--roomy">
           <div className="mb-8 max-w-2xl">
@@ -148,7 +221,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Mission / Vision */}
       <section className="border-t border-black/5 bg-white">
         <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -176,7 +248,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Commercial licence & MOCI compliance */}
       <section id="commercial-licence" className="scroll-mt-28 border-b border-black/5 bg-white">
         <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
@@ -212,7 +283,9 @@ export default function AboutPage() {
               </div>
               <div className="about-trust-card rounded-2xl border border-black/10 bg-[var(--site-bg-muted)] p-4 sm:p-5">
                 <div className="flex items-start gap-3 sm:gap-4">
-                  <HeroTrustIcon id="licence" size="md" className="mt-0.5" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                    <Shield className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-[#0B0F19] sm:text-base">
                       {t('aboutPage.licenceTradeTitle')}
@@ -233,7 +306,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Bottom CTA */}
       <section className="storefront-static-page__tail pb-14 sm:pb-16">
         <div className="page-shell">
           <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] px-5 py-8 sm:px-10 sm:py-12">

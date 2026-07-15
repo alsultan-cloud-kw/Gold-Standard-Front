@@ -30,6 +30,7 @@ export default function Footer() {
     { nameKey: 'footer.prices', to: '/prices' },
     { nameKey: 'footer.companyPrices', to: '/company-prices' },
     { nameKey: 'footer.verifyAuthenticity', to: '/verify' },
+    { nameKey: 'footer.trading', to: '/trading' },
   ]
 
   const companyLinks: CompanyLink[] = [

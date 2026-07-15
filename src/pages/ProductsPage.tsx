@@ -18,6 +18,7 @@ import { productUnitPrice, formatKwd } from '../utils/productPrice'
 import { formatProductCaratLabel } from '../utils/productCaratLabel'
 import { useCart } from '../contexts/CartContext'
 import { ProductStockBadge, ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
+import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
 import { PriceRangeFilter } from '@/components/products/PriceRangeFilter'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -41,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'weight-asc' | 'weight-desc' | 'newest'
 type ViewMode = 'grid' | 'list'
@@ -72,6 +74,8 @@ function FilterPanel({
   onClear,
   activeFilterCount,
   showHeading = true,
+  /** Desktop sticky sidebar: constrain height + internal scroll so long lists never blow the page */
+  constrained = false,
 }: {
   category: string | null
   categoryList: Category[]
@@ -89,14 +93,15 @@ function FilterPanel({
   onClear: () => void
   activeFilterCount: number
   showHeading?: boolean
+  constrained?: boolean
 }) {
   const { t } = useTranslation()
 
   return (
-    <div className="flex h-full flex-col">
+    <div className={cn('flex min-h-0 flex-col', constrained && 'h-full')}>
       {showHeading ? (
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div>
+        <div className="mb-4 flex shrink-0 items-center justify-between gap-3 sm:mb-5">
+          <div className="min-w-0">
             <h3 className="type-card-title text-[#0B0F19]">
               {t('productsPage.filtersHeading')}
             </h3>
@@ -110,14 +115,14 @@ function FilterPanel({
             <button
               type="button"
               onClick={onClear}
-              className="text-xs font-semibold text-[#3F6F00] transition-colors hover:text-[#2d5200]"
+              className="shrink-0 text-xs font-semibold text-[#3F6F00] transition-colors hover:text-[#2d5200]"
             >
               {t('productsPage.clearAll')}
             </button>
           ) : null}
         </div>
       ) : activeFilterCount > 0 ? (
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
           <p className="text-xs text-[#64748B]">
             {t('productsPage.activeFiltersCount', { count: activeFilterCount })}
           </p>
@@ -131,16 +136,33 @@ function FilterPanel({
         </div>
       ) : null}
 
-      <div className="space-y-7 overflow-y-auto pe-1">
-        <section>
+      <div
+        className={cn(
+          'space-y-7 pe-1',
+          constrained
+            ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]'
+            : 'overflow-visible',
+        )}
+      >
+        <section className="min-w-0">
           <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.categories')}
           </h4>
-          <div className="flex flex-col gap-1.5">
+          <div
+            className={cn(
+              'filter-panel__option-list flex flex-col gap-1.5',
+              // Cap category growth so karat / metal / price stay reachable as catalog expands
+              'max-h-[min(40vh,17.5rem)] overflow-y-auto overscroll-contain pe-0.5',
+            )}
+            role="listbox"
+            aria-label={t('productsPage.categories')}
+          >
             <button
               type="button"
+              role="option"
+              aria-selected={!category}
               onClick={() => onCategory('')}
-              className={`filter-panel__option rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
+              className={`filter-panel__option shrink-0 rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
                 !category
                   ? 'bg-[#0B0F19] text-white'
                   : 'bg-[#F4F4F5] text-[#0B0F19] hover:bg-[#ECFCCB]/70'
@@ -154,21 +176,23 @@ function FilterPanel({
                 <button
                   key={cat.id}
                   type="button"
+                  role="option"
+                  aria-selected={active}
                   onClick={() => onCategory(active ? '' : cat.slug)}
-                  className={`filter-panel__option rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
+                  className={`filter-panel__option shrink-0 rounded-xl px-3.5 py-2.5 text-start text-sm font-medium transition-colors ${
                     active
                       ? 'bg-[#0B0F19] text-white'
                       : 'bg-[#F4F4F5] text-[#0B0F19] hover:bg-[#ECFCCB]/70'
                   }`}
                 >
-                  {categoryLabel(cat)}
+                  <span className="line-clamp-2 break-words">{categoryLabel(cat)}</span>
                 </button>
               )
             })}
           </div>
         </section>
 
-        <section>
+        <section className="min-w-0">
           <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.goldCarat')}
           </h4>
@@ -194,11 +218,11 @@ function FilterPanel({
           </div>
         </section>
 
-        <section>
+        <section className="min-w-0">
           <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.metalType')}
           </h4>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex max-h-[min(28vh,11rem)] flex-wrap content-start gap-2 overflow-y-auto overscroll-contain pe-0.5">
             {METAL_OPTIONS.map((metal) => {
               const active = selectedMetals.includes(metal)
               return (
@@ -207,7 +231,7 @@ function FilterPanel({
                   type="button"
                   onClick={() => onToggleMetal(metal)}
                   aria-pressed={active}
-                  className={`filter-panel__chip rounded-full border px-3.5 py-2 text-sm font-semibold capitalize transition-colors ${
+                  className={`filter-panel__chip shrink-0 rounded-full border px-3.5 py-2 text-sm font-semibold capitalize transition-colors ${
                     active
                       ? 'border-[#0B0F19] bg-[#0B0F19] text-white'
                       : 'border-black/10 bg-white text-[#475569] hover:border-black/20'
@@ -220,7 +244,7 @@ function FilterPanel({
           </div>
         </section>
 
-        <section>
+        <section className="min-w-0">
           <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.priceRange')}
           </h4>
@@ -597,7 +621,7 @@ export default function ProductsPage() {
             </button>
 
             {activeFilterCount > 0 ? (
-              <div className="flex max-w-full flex-wrap items-center gap-1.5">
+              <div className="flex max-h-[4.75rem] max-w-full flex-wrap items-center gap-1.5 overflow-y-auto overscroll-contain pe-0.5 sm:max-h-[6.5rem]">
                 {search ? (
                   <FilterChip
                     label={`${t('productsPage.searchChip')}: ${search}`}
@@ -707,9 +731,9 @@ export default function ProductsPage() {
 
         <div className="flex gap-8">
           {/* Desktop sidebar — always visible */}
-          <aside className="hidden w-72 shrink-0 lg:block">
-            <div className="sticky top-[var(--nav-offset,7.25rem)] rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
-              <FilterPanel {...filterProps} />
+          <aside className="hidden w-72 shrink-0 self-start lg:block xl:w-80">
+            <div className="sticky top-[calc(var(--nav-offset,7.25rem)+0.5rem)] flex max-h-[calc(100dvh-var(--nav-offset,7.25rem)-1.25rem)] flex-col overflow-hidden rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+              <FilterPanel {...filterProps} constrained />
             </div>
           </aside>
 
@@ -920,6 +944,13 @@ function ProductCard({
               {specParts.length ? (
                 <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[#64748B]">{specParts.join(' · ')}</p>
               ) : null}
+              <div className="mt-1">
+                <DigitalOwnershipBadge
+                  variant="compact"
+                  verifyCode={product.serial_number || product.sku || null}
+                  to={`/products/${product.slug}#product-authenticity`}
+                />
+              </div>
               {!outOfStock ? (
                 <div className="mt-1">
                   <ProductStockStatusLabel product={product} className="text-[9px]" />
@@ -996,6 +1027,13 @@ function ProductCard({
               {specParts.length ? (
                 <p className="mt-1.5 text-xs text-[#64748B]">{specParts.join(' · ')}</p>
               ) : null}
+              <div className="mt-2">
+                <DigitalOwnershipBadge
+                  variant="compact"
+                  verifyCode={product.serial_number || product.sku || null}
+                  to={`/products/${product.slug}#product-authenticity`}
+                />
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-3">
@@ -1077,6 +1115,14 @@ function ProductCard({
         ) : (
           <p className="mt-0.5 min-h-[1.25rem] sm:min-h-[1rem]" aria-hidden />
         )}
+
+        <div className="mt-1.5">
+          <DigitalOwnershipBadge
+            variant="compact"
+            verifyCode={product.serial_number || product.sku || null}
+            to={`/products/${product.slug}#product-authenticity`}
+          />
+        </div>
 
         <div className="mt-1.5 flex flex-col gap-1 sm:gap-1.5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5">
