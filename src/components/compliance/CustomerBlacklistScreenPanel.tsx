@@ -172,12 +172,18 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
             </div>
           </div>
           {totalIndexed != null && totalIndexed > 0 ? (
-            <div className="shrink-0 rounded-xl border border-[#85E307]/25 bg-[#85E307]/10 px-3 py-2 text-end">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#85E307]/80">
+            <div
+              className="shrink-0 overflow-hidden rounded-2xl border border-[#85E307]/40 bg-[#0B0F19] px-4 py-3 text-end ring-1 ring-[#85E307]/20"
+              aria-label={`${t('customerScreening.indexLabel')}: ${totalIndexed.toLocaleString(isAr ? 'ar-KW' : 'en-US')}`}
+            >
+              <p className="text-[11px] font-semibold leading-snug text-white/70">
                 {t('customerScreening.indexLabel')}
               </p>
-              <p className="text-lg font-bold tabular-nums text-[#ECFCCB]">
+              <p className="mt-1.5 font-mono text-3xl font-bold leading-none tracking-tight tabular-nums text-[#85E307]">
                 {totalIndexed.toLocaleString(isAr ? 'ar-KW' : 'en-US')}
+              </p>
+              <p className="mt-1.5 text-[10px] font-medium text-white/45">
+                {t('customerScreening.indexHint')}
               </p>
             </div>
           ) : null}

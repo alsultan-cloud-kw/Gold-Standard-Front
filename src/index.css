@@ -3894,9 +3894,9 @@ html[dir='rtl'] .gs-app-loader__trust {
 }
 
 /*
- * Sticky top chrome (Burgan-style): in document flow, sticks on scroll.
- * No fixed positioning / no main padding spacer — height is naturally accounted for.
- * Zoom & larger text grow the bar; --nav-offset tracks real height for scroll-margin / overlays.
+ * Fixed top chrome — always pinned to the viewport.
+ * A sibling .site-chrome-top-spacer uses --nav-offset so page content is not covered.
+ * (Sticky + body scroll-lock from Radix menus made the bar vanish at the footer.)
  */
 .site-chrome-top {
   box-sizing: border-box;
@@ -3908,6 +3908,12 @@ html[dir='rtl'] .gs-app-loader__trust {
   /* Do NOT overflow-x clip here — desktop price dropdowns / menus must escape */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+}
+
+.site-chrome-top-spacer {
+  width: 100%;
+  /* Fallback before first ResizeObserver paint */
+  min-height: 5.75rem;
 }
 
 .site-chrome-top .page-shell {

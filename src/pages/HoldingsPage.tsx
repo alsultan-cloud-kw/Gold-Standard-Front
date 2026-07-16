@@ -7,14 +7,23 @@ import {
   Gauge,
   Layers,
   Lock,
+  Minus,
+  Plus,
   Sparkles,
   Target,
   TrendingUp,
   Vault,
   Zap,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   caratGramTotals,
   getDefaultPreviewCarat,
@@ -25,6 +34,10 @@ import { cn } from '@/lib/utils'
 const MIN_GRAMS = 5
 const MAX_GRAMS = 1000
 const GRAM_PRESETS = [5, 10, 25, 50, 100, 250, 500, 1000] as const
+const TARGET_OFFSETS = [-0.5, -0.25, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1] as const
+const TARGET_FINE_STEP = 0.001
+
+type BuyMode = 'instant' | 'target'
 
 function formatKwd(value: number | null, locale: string): string {
   if (value == null || !Number.isFinite(value)) return '—'
@@ -40,43 +53,99 @@ function formatGrams(value: number, locale: string): string {
   }).format(value)
 }
 
+function parseGramsText(text: string): number | null {
+  const cleaned = text.replace(/[^\d.]/g, '')
+  if (!cleaned) return null
+  const n = Number(cleaned)
+  return Number.isFinite(n) ? n : null
+}
+
 export default function HoldingsPage() {
   const { t, i18n } = useTranslation()
   const isRtl = i18n.dir() === 'rtl'
   const { data: rates, isLoading: ratesLoading } = useEnrichedPublicRates(20_000)
 
   const [grams, setGrams] = useState(25)
+  const [gramsText, setGramsText] = useState('25')
   const [targetPrice, setTargetPrice] = useState('')
-  const [showTargetPanel, setShowTargetPanel] = useState(false)
+  const [buyMode, setBuyMode] = useState<BuyMode>('instant')
+  const [comingSoonModal, setComingSoonModal] = useState<BuyMode | null>(null)
 
   const carat24 = useMemo(() => getDefaultPreviewCarat(rates), [rates])
   const buyPerGram = numOrNull(carat24?.buyTotal)
   const sellPerGram = numOrNull(carat24?.sellTotal)
 
-  const clampedGrams = Math.min(MAX_GRAMS, Math.max(MIN_GRAMS, grams))
+  const parsedGrams = parseGramsText(gramsText)
+  const gramsTooLow = parsedGrams != null && parsedGrams < MIN_GRAMS
+  const gramsTooHigh = parsedGrams != null && parsedGrams > MAX_GRAMS
+  const gramsValid =
+    parsedGrams != null && parsedGrams >= MIN_GRAMS && parsedGrams <= MAX_GRAMS
+  const effectiveGrams = gramsValid ? parsedGrams : grams
+
   const totals = useMemo(
-    () => caratGramTotals(carat24, clampedGrams),
-    [carat24, clampedGrams],
+    () => caratGramTotals(carat24, effectiveGrams),
+    [carat24, effectiveGrams],
   )
 
   const targetNum = numOrNull(targetPrice)
   const targetValid =
-    targetNum != null && buyPerGram != null && targetNum > 0 && targetNum < buyPerGram
+    gramsValid &&
+    targetNum != null &&
+    buyPerGram != null &&
+    targetNum > 0 &&
+    targetNum < buyPerGram
 
-  const notifyComingSoon = (mode: 'instant' | 'target') => {
-    toast.info(t(`holdingsPage.toasts.${mode}`), {
-      description: t('holdingsPage.toasts.description'),
-      duration: 5000,
-    })
+  const setGramsValue = (value: number) => {
+    setGrams(value)
+    setGramsText(String(value))
+  }
+
+  const openComingSoonModal = (mode: BuyMode) => {
+    setComingSoonModal(mode)
   }
 
   const onGramInput = (raw: string) => {
-    const n = Number(raw.replace(/[^\d.]/g, ''))
-    if (!Number.isFinite(n)) return
-    setGrams(Math.min(MAX_GRAMS, Math.max(MIN_GRAMS, n)))
+    const cleaned = raw.replace(/[^\d.]/g, '')
+    setGramsText(cleaned)
+    const n = parseGramsText(cleaned)
+    if (n != null && n >= MIN_GRAMS && n <= MAX_GRAMS) {
+      setGrams(n)
+    }
   }
 
-  const sliderPct = ((clampedGrams - MIN_GRAMS) / (MAX_GRAMS - MIN_GRAMS)) * 100
+  const onGramBlur = () => {
+    const n = parseGramsText(gramsText)
+    if (n == null) {
+      setGramsValue(grams)
+      return
+    }
+    setGramsValue(Math.min(MAX_GRAMS, Math.max(MIN_GRAMS, n)))
+  }
+
+  const formatTargetInput = (value: number) =>
+    Math.max(0, value).toFixed(3)
+
+  const setTargetFromLive = (offset = 0) => {
+    if (buyPerGram == null) return
+    setTargetPrice(formatTargetInput(buyPerGram + offset))
+  }
+
+  const nudgeTarget = (delta: number) => {
+    const base = targetNum ?? buyPerGram ?? 0
+    setTargetPrice(formatTargetInput(base + delta))
+  }
+
+  const selectTargetMode = () => {
+    setBuyMode('target')
+    if (!targetPrice && buyPerGram != null) {
+      setTargetPrice(formatTargetInput(buyPerGram - 0.05))
+    }
+  }
+
+  const sliderPct = ((effectiveGrams - MIN_GRAMS) / (MAX_GRAMS - MIN_GRAMS)) * 100
+  const gramsInputInvalid = gramsText !== '' && !gramsValid
+  const instantActive = buyMode === 'instant'
+  const targetActive = buyMode === 'target'
 
   return (
     <div className="min-h-screen bg-[var(--site-bg)]" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -144,7 +213,7 @@ export default function HoldingsPage() {
                       <span className="ms-1 text-sm font-semibold text-[#64748B]">KWD</span>
                     </p>
                     <p className="mt-1 text-[11px] text-[#94A3B8]">
-                      {formatGrams(clampedGrams, i18n.language)} {t('holdingsPage.gramsUnit')}
+                      {formatGrams(effectiveGrams, i18n.language)} {t('holdingsPage.gramsUnit')}
                     </p>
                   </div>
                 </div>
@@ -159,23 +228,30 @@ export default function HoldingsPage() {
                     min={MIN_GRAMS}
                     max={MAX_GRAMS}
                     step={1}
-                    value={clampedGrams}
-                    onChange={(e) => setGrams(Number(e.target.value))}
+                    value={effectiveGrams}
+                    onChange={(e) => setGramsValue(Number(e.target.value))}
                     className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-[#E8EBE3] accent-[#85E307]"
                     style={{
                       background: `linear-gradient(to right, #85E307 0%, #85E307 ${sliderPct}%, #E8EBE3 ${sliderPct}%, #E8EBE3 100%)`,
                     }}
                     aria-valuemin={MIN_GRAMS}
                     aria-valuemax={MAX_GRAMS}
-                    aria-valuenow={clampedGrams}
+                    aria-valuenow={effectiveGrams}
                   />
                   <div className="relative w-28 shrink-0">
                     <input
                       type="text"
                       inputMode="decimal"
-                      value={clampedGrams}
+                      value={gramsText}
                       onChange={(e) => onGramInput(e.target.value)}
-                      className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-end font-mono text-sm font-bold text-[#0B0F19] outline-none focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25"
+                      onBlur={onGramBlur}
+                      aria-invalid={gramsInputInvalid}
+                      className={cn(
+                        'w-full rounded-xl border bg-white px-3 py-2 text-end font-mono text-sm font-bold outline-none',
+                        gramsInputInvalid
+                          ? 'border-red-400 text-red-700 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                          : 'border-black/10 text-[#0B0F19] focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25',
+                      )}
                       aria-label={t('holdingsPage.gramsLabel')}
                     />
                     <span className="pointer-events-none absolute start-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-[#94A3B8]">
@@ -184,19 +260,29 @@ export default function HoldingsPage() {
                   </div>
                 </div>
 
-                <p className="mb-3 text-xs text-[#94A3B8]">
-                  {t('holdingsPage.gramsRange', { min: MIN_GRAMS, max: MAX_GRAMS })}
-                </p>
+                {gramsTooLow ? (
+                  <p className="mb-3 text-xs font-semibold text-red-600">
+                    {t('holdingsPage.gramsTooLow', { min: MIN_GRAMS })}
+                  </p>
+                ) : gramsTooHigh ? (
+                  <p className="mb-3 text-xs font-semibold text-red-600">
+                    {t('holdingsPage.gramsTooHigh', { max: MAX_GRAMS })}
+                  </p>
+                ) : (
+                  <p className="mb-3 text-xs text-[#94A3B8]">
+                    {t('holdingsPage.gramsRange', { min: MIN_GRAMS, max: MAX_GRAMS })}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap gap-2">
                   {GRAM_PRESETS.map((preset) => (
                     <button
                       key={preset}
                       type="button"
-                      onClick={() => setGrams(preset)}
+                      onClick={() => setGramsValue(preset)}
                       className={cn(
                         'rounded-lg border px-3 py-1.5 text-xs font-semibold transition',
-                        clampedGrams === preset
+                        effectiveGrams === preset && gramsValid
                           ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
                           : 'border-black/10 text-[#64748B] hover:border-black/20',
                       )}
@@ -209,69 +295,185 @@ export default function HoldingsPage() {
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={() => notifyComingSoon('instant')}
-                    className="group flex flex-col items-start gap-2 rounded-2xl bg-[#85E307] p-5 text-start transition hover:bg-[#9AF01A]"
+                    onClick={() => setBuyMode('instant')}
+                    className={cn(
+                      'group flex flex-col items-start gap-2 rounded-2xl p-5 text-start transition',
+                      instantActive
+                        ? 'bg-[#85E307] shadow-sm hover:bg-[#9AF01A]'
+                        : 'border border-black/10 bg-white hover:border-black/20',
+                    )}
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0B0F19]/10">
-                      <Zap className="h-4 w-4 text-[#0B0F19]" />
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-lg',
+                        instantActive ? 'bg-[#0B0F19]/10' : 'bg-[#F9F9FA] border border-black/8',
+                      )}
+                    >
+                      <Zap
+                        className={cn(
+                          'h-4 w-4',
+                          instantActive ? 'text-[#0B0F19]' : 'text-[#64748B]',
+                        )}
+                      />
                     </span>
                     <span className="text-base font-bold text-[#0B0F19]">
                       {t('holdingsPage.instantBuy')}
                     </span>
-                    <span className="text-xs leading-relaxed text-[#0B0F19]/70">
+                    <span
+                      className={cn(
+                        'text-xs leading-relaxed',
+                        instantActive ? 'text-[#0B0F19]/70' : 'text-[#64748B]',
+                      )}
+                    >
                       {t('holdingsPage.instantBuyHint')}
                     </span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setShowTargetPanel((v) => !v)}
+                    onClick={selectTargetMode}
                     className={cn(
-                      'group flex flex-col items-start gap-2 rounded-2xl border p-5 text-start transition',
-                      showTargetPanel
-                        ? 'border-[#85E307] bg-[#ECFCCB]/40'
-                        : 'border-black/10 bg-white hover:border-black/20',
+                      'group flex flex-col items-start gap-2 rounded-2xl p-5 text-start transition',
+                      targetActive
+                        ? 'bg-[#85E307] shadow-sm hover:bg-[#9AF01A]'
+                        : 'border border-black/10 bg-white hover:border-black/20',
                     )}
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0B0F19] text-[#85E307]">
-                      <Target className="h-4 w-4" />
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-lg',
+                        targetActive ? 'bg-[#0B0F19]/10' : 'bg-[#0B0F19] text-[#85E307]',
+                      )}
+                    >
+                      <Target
+                        className={cn(
+                          'h-4 w-4',
+                          targetActive ? 'text-[#0B0F19]' : 'text-[#85E307]',
+                        )}
+                      />
                     </span>
                     <span className="text-base font-bold text-[#0B0F19]">
                       {t('holdingsPage.targetBuy')}
                     </span>
-                    <span className="text-xs leading-relaxed text-[#64748B]">
+                    <span
+                      className={cn(
+                        'text-xs leading-relaxed',
+                        targetActive ? 'text-[#0B0F19]/70' : 'text-[#64748B]',
+                      )}
+                    >
                       {t('holdingsPage.targetBuyHint')}
                     </span>
                   </button>
                 </div>
 
-                {showTargetPanel ? (
+                {instantActive ? (
+                  <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#85E307]/30 bg-[#ECFCCB]/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-[#0B0F19]/80">{t('holdingsPage.instantPanelHint')}</p>
+                    <button
+                      type="button"
+                      disabled={!gramsValid}
+                      onClick={() => openComingSoonModal('instant')}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-5 py-3 text-sm font-bold text-[#85E307] transition enabled:hover:bg-[#1a2233] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {t('holdingsPage.instantCta')}
+                      <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                    </button>
+                  </div>
+                ) : null}
+
+                {targetActive ? (
                   <div className="mt-4 rounded-xl border border-[#85E307]/30 bg-[#ECFCCB]/25 p-4">
                     <label className="mb-1.5 block text-sm font-semibold text-[#0B0F19]">
                       {t('holdingsPage.targetPriceLabel')}
                     </label>
+
+                    {buyPerGram != null ? (
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setTargetFromLive(0)}
+                          className="rounded-lg border border-[#85E307]/40 bg-white px-3 py-1.5 text-xs font-bold text-[#3F6F00] transition hover:bg-[#ECFCCB]"
+                        >
+                          {t('holdingsPage.useLivePrice')}
+                        </button>
+                        <span className="text-[11px] text-[#64748B]">
+                          {t('holdingsPage.livePriceRef', {
+                            price: formatKwd(buyPerGram, i18n.language),
+                          })}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <p className="mb-2 text-[11px] font-semibold text-[#64748B]">
+                      {t('holdingsPage.adjustFromLive')}
+                    </p>
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {TARGET_OFFSETS.map((offset) => (
+                        <button
+                          key={offset}
+                          type="button"
+                          disabled={buyPerGram == null}
+                          onClick={() => setTargetFromLive(offset)}
+                          className={cn(
+                            'rounded-lg border px-2.5 py-1.5 font-mono text-xs font-bold tabular-nums transition disabled:cursor-not-allowed disabled:opacity-40',
+                            offset < 0
+                              ? 'border-[#3F6F00]/25 bg-white text-[#3F6F00] hover:bg-[#ECFCCB]'
+                              : 'border-amber-300/60 bg-white text-amber-800 hover:bg-amber-50',
+                          )}
+                        >
+                          {offset > 0 ? '+' : ''}
+                          {offset.toFixed(offset % 0.01 === 0 ? 2 : 3)}
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                       <div className="relative flex-1">
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={targetPrice}
-                          onChange={(e) => setTargetPrice(e.target.value.replace(/[^\d.]/g, ''))}
-                          placeholder={
-                            buyPerGram != null
-                              ? String((buyPerGram * 0.98).toFixed(3))
-                              : '0.000'
-                          }
-                          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 font-mono text-sm text-[#0B0F19] outline-none focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25"
-                        />
-                        <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#94A3B8]">
-                          KWD/g
-                        </span>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-semibold text-[#64748B]">
+                            {t('holdingsPage.targetInputLabel')}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => nudgeTarget(-TARGET_FINE_STEP)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-[#0B0F19] transition hover:border-black/20"
+                              aria-label={t('holdingsPage.decreasePrice')}
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => nudgeTarget(TARGET_FINE_STEP)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-[#0B0F19] transition hover:border-black/20"
+                              aria-label={t('holdingsPage.increasePrice')}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={targetPrice}
+                            onChange={(e) => setTargetPrice(e.target.value.replace(/[^\d.]/g, ''))}
+                            placeholder={
+                              buyPerGram != null
+                                ? formatTargetInput(buyPerGram - 0.05)
+                                : '0.000'
+                            }
+                            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 font-mono text-sm text-[#0B0F19] outline-none focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25"
+                          />
+                          <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#94A3B8]">
+                            KWD/g
+                          </span>
+                        </div>
                       </div>
                       <button
                         type="button"
                         disabled={!targetValid}
-                        onClick={() => notifyComingSoon('target')}
+                        onClick={() => openComingSoonModal('target')}
                         className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-5 py-3 text-sm font-bold text-[#85E307] transition enabled:hover:bg-[#1a2233] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {t('holdingsPage.setTargetCta')}
@@ -335,7 +537,7 @@ export default function HoldingsPage() {
                     {t('holdingsPage.previewLabel')}
                   </p>
                   <p className="mt-2 font-mono text-xl font-bold tabular-nums">
-                    +{formatGrams(clampedGrams, i18n.language)} g
+                    +{formatGrams(effectiveGrams, i18n.language)} g
                   </p>
                   <p className="mt-1 text-[11px] text-white/45">{t('holdingsPage.previewHint')}</p>
                 </div>
@@ -368,6 +570,36 @@ export default function HoldingsPage() {
           </aside>
         </div>
       </div>
+
+      <Dialog
+        open={comingSoonModal != null}
+        onOpenChange={(open) => {
+          if (!open) setComingSoonModal(null)
+        }}
+      >
+        <DialogContent
+          className="border-black/10 bg-white text-[#0B0F19] sm:max-w-md"
+          dir={isRtl ? 'rtl' : 'ltr'}
+        >
+          <DialogHeader className={cn(isRtl ? 'text-right sm:text-right' : 'text-left')}>
+            <DialogTitle className="text-base font-bold leading-snug text-[#0B0F19]">
+              {comingSoonModal != null ? t(`holdingsPage.toasts.${comingSoonModal}`) : ''}
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed text-[#64748B]">
+              {t('holdingsPage.toasts.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className={cn(isRtl ? 'sm:justify-start' : 'sm:justify-end')}>
+            <button
+              type="button"
+              onClick={() => setComingSoonModal(null)}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-[#0B0F19] px-5 py-3 text-sm font-bold text-[#85E307] transition hover:bg-[#1a2233] sm:w-auto"
+            >
+              {t('holdingsPage.comingSoonModal.confirm')}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

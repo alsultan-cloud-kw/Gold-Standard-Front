@@ -776,9 +776,10 @@ function ProfileTab() {
       {kycIncomplete ? (
         <div
           role="status"
-          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950"
         >
-          {t('auth.kyc.incompleteBanner')}
+          <p className="font-semibold">{t('auth.kyc.incompleteBanner')}</p>
+          <p className="mt-1 text-amber-900/80">{t('auth.kyc.incompleteShopHint')}</p>
         </div>
       ) : null}
 

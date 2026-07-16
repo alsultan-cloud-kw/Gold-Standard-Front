@@ -18,6 +18,7 @@ import { AuthFlowShell } from '../components/auth/AuthFlowShell'
 import { AuthSupportFooter } from '../components/auth/AuthSupportFooter'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
+import { getSafeUserErrorMessage } from '@/utils/apiErrors'
 import { cn } from '@/lib/utils'
 
 type Step = 'request' | 'otp' | 'password'
@@ -111,6 +112,7 @@ export default function ForgotPasswordPage() {
         ?.data
       const status = (err as { response?: { status?: number } })?.response?.status
       const normalizedErr = String(data?.error || '').toLowerCase()
+      // Do not reveal whether the account exists
       if (status === 404 || normalizedErr.includes('user not found')) {
         toast.success(t('auth.forgotPasswordPage.toasts.resetSent'))
         setStep('otp')
@@ -118,10 +120,10 @@ export default function ForgotPasswordPage() {
         toast.error(t('auth.captchaFailed'))
       } else if (status === 503) {
         toast.error(t('auth.forgotPasswordPage.toasts.sendFailed'))
-      } else if (data?.error) {
-        toast.error(data.error)
       } else {
-        toast.error(t('auth.forgotPasswordPage.toasts.requestFailed'))
+        toast.error(
+          getSafeUserErrorMessage(err, t, t('auth.forgotPasswordPage.toasts.requestFailed')),
+        )
       }
     } finally {
       setIsLoading(false)

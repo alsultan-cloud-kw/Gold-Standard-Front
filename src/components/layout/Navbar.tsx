@@ -133,9 +133,9 @@ export default function Navbar() {
   }, [isMenuOpen])
 
   /**
-   * Sticky (not fixed) chrome sits in document flow — no main padding hack.
-   * Still publish --nav-offset for scroll-margin, toasts, and sticky side panels
-   * when zoom / text size / open menus change the real header height.
+   * Fixed top chrome — stays visible even when Radix scroll-lock runs
+   * (profile menu / sheets). Publish --nav-offset for the spacer, scroll-margin,
+   * toasts, and sticky side panels when zoom / menus change real height.
    */
   useEffect(() => {
     const el = topChromeRef.current
@@ -209,7 +209,7 @@ export default function Navbar() {
     <>
     <nav
       ref={topChromeRef}
-      className="site-chrome-top sticky top-0 z-50 w-full border-b border-black/5 bg-[var(--site-bg)]"
+      className="site-chrome-top fixed inset-x-0 top-0 z-50 w-full border-b border-black/5 bg-[var(--site-bg)]"
     >
       <GoldPriceTicker />
 
@@ -282,7 +282,7 @@ export default function Navbar() {
                 <User className="h-5 w-5 opacity-40" strokeWidth={1.75} aria-hidden />
               </span>
             ) : isAuthenticated ? (
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className={iconBtnClass} aria-label={t('nav.dashboard')}>
                     <User className="h-5 w-5" strokeWidth={1.75} />
@@ -290,7 +290,9 @@ export default function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-52 border-black/10 bg-white"
+                  sideOffset={8}
+                  collisionPadding={12}
+                  className="z-[100] w-52 border-black/10 bg-white"
                 >
                   <div className="border-b border-black/10 px-3 py-2">
                     <p className="text-sm font-medium text-[#0C1512]">{user?.full_name}</p>
@@ -468,6 +470,12 @@ export default function Navbar() {
         </div>
       ) : null}
     </nav>
+    {/* Reserves document flow space for fixed top chrome (height tracked via --nav-offset). */}
+    <div
+      className="site-chrome-top-spacer pointer-events-none"
+      style={{ height: 'var(--nav-offset, 5.75rem)' }}
+      aria-hidden
+    />
 
     <Sheet open={isReminderOpen} onOpenChange={setIsReminderOpen}>
       <SheetContent

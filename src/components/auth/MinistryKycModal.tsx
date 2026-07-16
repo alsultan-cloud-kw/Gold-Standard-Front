@@ -294,6 +294,20 @@ export function MinistryKycModal({
             >
               {t('auth.kyc.ministry.startNow')}
             </button>
+            {!required && onClose ? (
+              <button
+                type="button"
+                onClick={() => onClose()}
+                className="mt-3 w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#64748B] transition hover:border-black/20 hover:text-[#0B0F19]"
+              >
+                {t('auth.kyc.skipForNow')}
+              </button>
+            ) : null}
+            {!required ? (
+              <p className="mt-3 max-w-sm text-xs leading-relaxed text-[#94A3B8]">
+                {t('auth.kyc.skipHint')}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

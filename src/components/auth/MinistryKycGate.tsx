@@ -12,6 +12,8 @@ import {
 import { DEFAULT_MOCI_KYC_QUESTIONS } from '@/lib/defaultMociKycQuestions'
 import type { CustomerProfile } from '@/types'
 
+const SKIP_STORAGE_PREFIX = 'gs.mociKyc.skipped.'
+
 function asSingleProfile(data: unknown): CustomerProfile | null {
   if (!data) return null
   if (Array.isArray(data)) {
@@ -62,15 +64,35 @@ function answersLookComplete(
   return true
 }
 
+function readSkipped(userId: string | number | undefined): boolean {
+  if (userId == null) return false
+  try {
+    return sessionStorage.getItem(`${SKIP_STORAGE_PREFIX}${userId}`) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeSkipped(userId: string | number | undefined, value: boolean) {
+  if (userId == null) return
+  try {
+    const key = `${SKIP_STORAGE_PREFIX}${userId}`
+    if (value) sessionStorage.setItem(key, '1')
+    else sessionStorage.removeItem(key)
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
- * Blocks authenticated customers until Ministry KYC answers are complete.
- * Built-in MOCI questions (not hub CMS). Falls back to local defaults if API is empty.
+ * Soft reminder for Ministry KYC — does not block shopping or checkout.
+ * Returning customers can dismiss and buy; profile banner still asks them to finish later.
  */
 export default function MinistryKycGate() {
   const { t } = useTranslation()
   const { user, isAuthenticated, isLoading, isClerkSyncing } = useAuth()
   const queryClient = useQueryClient()
-  const [dismissed, setDismissed] = useState(false)
+  const [dismissed, setDismissed] = useState(() => readSkipped(user?.id))
   const [saving, setSaving] = useState(false)
 
   const enabled = isAuthenticated && !!user && !isLoading && !isClerkSyncing
@@ -99,15 +121,30 @@ export default function MinistryKycGate() {
     if (!enabled || !profileFetched || !profile || questions.length === 0) return false
     if (profile.kyc_registration_complete === true) return false
     if (profile.kyc_registration_complete === false) return true
-    // Older API without the flag: require answers for all built-in questions.
     return !answersLookComplete(profile.kyc_registration_answers, questions)
   }, [enabled, profileFetched, profile, questions])
 
   useEffect(() => {
-    if (incomplete) setDismissed(false)
-  }, [incomplete, user?.id])
+    setDismissed(readSkipped(user?.id))
+  }, [user?.id])
+
+  useEffect(() => {
+    if (profile?.kyc_registration_complete === true) {
+      writeSkipped(user?.id, false)
+      setDismissed(false)
+    }
+  }, [profile?.kyc_registration_complete, user?.id])
 
   const open = incomplete && !dismissed
+
+  const dismissForShopping = useCallback(() => {
+    writeSkipped(user?.id, true)
+    setDismissed(true)
+    toast.info(t('auth.kyc.skippedToast'), {
+      id: 'moci-kyc-skipped',
+      duration: 4500,
+    })
+  }, [t, user?.id])
 
   const onSubmit = useCallback(
     async (answers: KycAnswerMap) => {
@@ -120,6 +157,7 @@ export default function MinistryKycGate() {
         await accountsApi.updateProfile(profile.id, {
           kyc_registration_answers: answers,
         })
+        writeSkipped(user?.id, false)
         await queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
         toast.success(t('auth.kyc.savedToast'))
       } catch (err) {
@@ -129,7 +167,7 @@ export default function MinistryKycGate() {
         setSaving(false)
       }
     },
-    [profile?.id, queryClient, t],
+    [profile?.id, queryClient, t, user?.id],
   )
 
   if (!open) return null
@@ -145,12 +183,12 @@ export default function MinistryKycGate() {
   return (
     <MinistryKycModal
       open
-      required
+      required={false}
       questions={questions}
       initialAnswers={initial}
       saving={saving}
       onSubmit={onSubmit}
-      onClose={() => setDismissed(true)}
+      onClose={dismissForShopping}
     />
   )
 }

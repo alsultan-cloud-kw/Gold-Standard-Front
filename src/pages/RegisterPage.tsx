@@ -18,7 +18,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { STOREFRONT_USER_ROLES, type StorefrontUserRole } from '../constants/storefrontRoles'
-import { formatApiErrorMessage } from '../utils/apiErrors'
+import { getSafeUserErrorMessage } from '../utils/apiErrors'
 import { safeAppNextPath } from '../utils/safeNextPath'
 import { resolvePostAuthPath } from '../utils/authRedirect'
 import { RegionSelectField } from '@/components/auth/RegionSelectField'
@@ -175,7 +175,7 @@ export default function RegisterPage() {
       if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
         toast.error(t('auth.captchaFailed'))
       } else {
-        toast.error(formatApiErrorMessage(error, t('auth.registerFailed')))
+        toast.error(getSafeUserErrorMessage(error, t, t('auth.registerFailed')))
       }
     } finally {
       setIsLoading(false)

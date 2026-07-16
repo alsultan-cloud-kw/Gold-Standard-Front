@@ -13,6 +13,7 @@ import { AuthSupportFooter } from '../components/auth/AuthSupportFooter'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { getLastAuthMethod, setLastAuthMethod } from '@/lib/lastAuthMethod'
 import { GS_CONTACT } from '@/constants/contact'
+import { getSafeUserErrorMessage } from '../utils/apiErrors'
 import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
@@ -84,7 +85,7 @@ export default function LoginPage() {
             : t('auth.accountInactive'),
         )
       } else {
-        toast.error(t('auth.invalidCredentials'))
+        toast.error(getSafeUserErrorMessage(err, t, t('auth.invalidCredentials')))
       }
     } finally {
       setIsLoading(false)

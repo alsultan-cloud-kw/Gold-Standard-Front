@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 
-/** Guest / unverified customers cannot purchase. */
+/** Guests cannot purchase. Signed-in customers may shop even if profile/KYC is incomplete. */
 export function usePurchaseAuth() {
   const { isAuthenticated, isLoading, isClerkSyncing, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
 
-  /** Explicitly unverified (API sent false). Missing flag treated as OK for older payloads. */
+  /** Explicitly unverified (API sent false). Soft signal only — does not block purchase. */
   const needsVerification = Boolean(user && user.is_verified === false)
   const authPending = isLoading || isClerkSyncing
 
@@ -25,7 +25,7 @@ export function usePurchaseAuth() {
 
   /**
    * Returns true if the user may purchase.
-   * Guests → login (with return path). Unverified → toast + dashboard.
+   * Guests → login (with return path). Profile / KYC incompleteness does not block.
    */
   const ensureCanPurchase = useCallback(
     (nextPath?: string): boolean => {
@@ -40,18 +40,9 @@ export function usePurchaseAuth() {
         return false
       }
 
-      if (needsVerification) {
-        toast.error(t('auth.verificationRequiredToBuy'), {
-          id: 'purchase-verify-required',
-          description: t('auth.verificationRequiredToBuyDesc'),
-        })
-        navigate('/dashboard?tab=profile')
-        return false
-      }
-
       return true
     },
-    [authPending, isAuthenticated, needsVerification, navigate, loginHref, t],
+    [authPending, isAuthenticated, navigate, loginHref, t],
   )
 
   return {

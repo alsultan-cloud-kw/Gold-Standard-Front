@@ -827,31 +827,6 @@ export default function CheckoutPage() {
     )
   }
 
-  if (needsVerification) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
-        <div className="max-w-md rounded-2xl border border-black/8 bg-white p-8 text-center">
-          <Lock className="mx-auto mb-4 h-10 w-10 text-[#3F6F00]" />
-          <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('auth.verificationRequiredToBuy')}</h1>
-          <p className="mb-6 text-sm leading-relaxed text-[#64748B]">
-            {t('auth.verificationRequiredToBuyDesc')}
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link to="/dashboard?tab=profile" className={checkoutPrimaryBtnClass}>
-              {t('auth.goToProfile')}
-            </Link>
-            <Link
-              to="/cart"
-              className="inline-flex items-center justify-center rounded-xl border border-black/10 px-5 py-3 text-sm font-semibold text-[#64748B] transition hover:bg-[#F9F9FA]"
-            >
-              {t('nav.cart')}
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (cart.items.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F9F9FA] px-4 py-16">
@@ -884,6 +859,21 @@ export default function CheckoutPage() {
           {t('checkoutPage.title')}
         </h1>
         <p className="mb-2 text-sm text-[#64748B] sm:mb-4 sm:text-base">{t('checkoutPage.trustNote')}</p>
+
+        {needsVerification ? (
+          <div
+            role="status"
+            className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          >
+            <p className="font-semibold">{t('auth.verificationRequiredToBuy')}</p>
+            <p className="mt-1 text-amber-900/80">
+              {t('auth.kyc.incompleteShopHint')}{' '}
+              <Link to="/dashboard?tab=profile" className="font-semibold underline underline-offset-2">
+                {t('auth.goToProfile')}
+              </Link>
+            </p>
+          </div>
+        ) : null}
 
         <CheckoutStepIndicator labels={stepLabels} step={step} />
 
