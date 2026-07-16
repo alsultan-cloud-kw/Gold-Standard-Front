@@ -1,17 +1,14 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Radio } from 'lucide-react'
-import { buildTickerReel, type TickerItem } from '@/lib/screeningTicker'
+import { buildTickerReel } from '@/lib/screeningTicker'
 
 type Props = {
   sampleNames: string[]
+  loading?: boolean
 }
 
-function kindLabel(kind: TickerItem['kind'], t: (k: string) => string): string {
-  return t(`customerScreening.ticker.kinds.${kind}`)
-}
-
-export function ScreeningLiveTicker({ sampleNames }: Props) {
+export function ScreeningLiveTicker({ sampleNames, loading = false }: Props) {
   const { t } = useTranslation()
 
   const reel = useMemo(() => {
@@ -20,13 +17,14 @@ export function ScreeningLiveTicker({ sampleNames }: Props) {
     return [...base, ...base]
   }, [sampleNames])
 
-  if (reel.length === 0) return null
+  const showPlaceholder = reel.length === 0
 
   return (
     <div
       className="relative z-20 overflow-hidden border-b border-black/[0.07] bg-[#0B0F19] text-white"
       role="status"
       aria-live="off"
+      aria-busy={loading && showPlaceholder}
       aria-label={t('customerScreening.ticker.aria')}
     >
       <div className="flex items-stretch">
@@ -42,25 +40,29 @@ export function ScreeningLiveTicker({ sampleNames }: Props) {
         </div>
 
         <div className="relative min-w-0 flex-1 overflow-hidden py-2.5">
-          <div className="gs-screening-marquee flex w-max gap-8 whitespace-nowrap pe-8 ps-4">
-            {reel.map((item, idx) => (
-              <span
-                key={`${item.id}-${idx}`}
-                className="inline-flex items-center gap-2 text-sm sm:text-[15px]"
-              >
-                <span className="font-bold uppercase tracking-[0.12em] text-[#85E307]">
-                  {kindLabel(item.kind, t)}
+          {showPlaceholder ? (
+            <div className="flex items-center gap-3 px-4 text-sm text-white/55">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#85E307]" />
+              {t('customerScreening.ticker.loading')}
+            </div>
+          ) : (
+            <div className="gs-screening-marquee flex w-max gap-10 whitespace-nowrap pe-8 ps-4">
+              {reel.map((item, idx) => (
+                <span
+                  key={`${item.id}-${idx}`}
+                  className="inline-flex items-center gap-3 text-sm sm:text-[15px]"
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#85E307]/90">
+                    {t('customerScreening.ticker.record')}
+                  </span>
+                  <span className="font-medium text-white/90">{item.name}</span>
+                  <span className="text-white/20" aria-hidden>
+                    ◆
+                  </span>
                 </span>
-                <span className="text-white/25" aria-hidden>
-                  ·
-                </span>
-                <span className="font-medium text-white/90">{item.name}</span>
-                <span className="text-white/20" aria-hidden>
-                  ◆
-                </span>
-              </span>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

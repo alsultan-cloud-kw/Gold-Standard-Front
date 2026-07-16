@@ -1,6 +1,7 @@
 /** Live ticker + session memory for /gs-kyc screening console */
 
 const SESSION_KEY = 'gs.kyc.screening.session.v1'
+const TICKER_CACHE_KEY = 'gs.kyc.screening.tickerCache.v1'
 
 export type ScreeningSessionState = {
   lastQuery: string
@@ -9,9 +10,14 @@ export type ScreeningSessionState = {
   dayKey: string
 }
 
+export type TickerCache = {
+  sampleNames: string[]
+  totalIndexed: number | null
+  savedAt: number
+}
+
 export type TickerItem = {
   id: string
-  kind: 'indexed' | 'synced' | 'screened' | 'cleared' | 'flagged'
   name: string
 }
 
@@ -21,11 +27,19 @@ function todayKey(): string {
 
 function readJson<T>(key: string): T | null {
   try {
-    const raw = sessionStorage.getItem(key) ?? localStorage.getItem(key)
+    const raw = localStorage.getItem(key) ?? sessionStorage.getItem(key)
     if (!raw) return null
     return JSON.parse(raw) as T
   } catch {
     return null
+  }
+}
+
+function writeLocal<T>(key: string, value: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* private mode */
   }
 }
 
@@ -65,17 +79,37 @@ export function bumpScreensToday(): number {
   return screensToday
 }
 
+/** Instant first paint — last good sample from this browser */
+export function loadTickerCache(): TickerCache {
+  const saved = readJson<TickerCache>(TICKER_CACHE_KEY)
+  if (!saved || !Array.isArray(saved.sampleNames)) {
+    return { sampleNames: [], totalIndexed: null, savedAt: 0 }
+  }
+  return {
+    sampleNames: saved.sampleNames.filter((n) => typeof n === 'string' && n.trim()).slice(0, 40),
+    totalIndexed: typeof saved.totalIndexed === 'number' ? saved.totalIndexed : null,
+    savedAt: typeof saved.savedAt === 'number' ? saved.savedAt : 0,
+  }
+}
+
+export function saveTickerCache(sampleNames: string[], totalIndexed: number | null): void {
+  const names = [...new Set(sampleNames.map((n) => n.trim()).filter(Boolean))].slice(0, 40)
+  if (names.length === 0 && totalIndexed == null) return
+  writeLocal(TICKER_CACHE_KEY, {
+    sampleNames: names,
+    totalIndexed,
+    savedAt: Date.now(),
+  } satisfies TickerCache)
+}
+
 /**
- * Marquee from a small random sample of real registry names only.
- * Do not inject the full index count into the scroll — that belongs in metrics.
+ * Marquee from a small random sample of real registry names.
+ * No fake status tags (screened/cleared/synced…) — those look staged.
  */
 export function buildTickerReel(sampleNames: string[]): TickerItem[] {
-  const kinds: TickerItem['kind'][] = ['indexed', 'synced', 'screened', 'cleared', 'flagged']
   const unique = [...new Set(sampleNames.map((n) => n.trim()).filter(Boolean))]
-
   return unique.map((name, i) => ({
     id: `reg-${i}-${name.slice(0, 12)}`,
-    kind: kinds[i % kinds.length],
     name,
   }))
 }

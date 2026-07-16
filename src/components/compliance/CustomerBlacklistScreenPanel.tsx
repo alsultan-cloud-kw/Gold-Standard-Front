@@ -21,6 +21,10 @@ import {
   loadScreeningSession,
   saveScreeningSession,
 } from '@/lib/screeningTicker'
+import { sanitizeScreeningName } from '@/lib/screeningNameValidation'
+import { pushScreenHistory, toggleWatchlistName } from '@/lib/screeningConsoleStorage'
+import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
+import { isTurnstileConfigured } from '@/lib/turnstile'
 
 type ScreeningReport = {
   queriedAt: Date
@@ -55,20 +59,40 @@ function formatCount(n: number): string {
 type Props = {
   totalIndexed: number | null
   onScreenComplete?: () => void
+  focusToken?: number
+  seedQuery?: string
 }
 
-export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }: Props) {
+export function CustomerBlacklistScreenPanel({
+  totalIndexed,
+  onScreenComplete,
+  focusToken = 0,
+  seedQuery = '',
+}: Props) {
   const { t } = useTranslation()
-  const [query, setQuery] = useState(() => loadScreeningSession().lastQuery || '')
+  const [query, setQuery] = useState(() => seedQuery || loadScreeningSession().lastQuery || '')
   const [checking, setChecking] = useState(false)
   const [scanStep, setScanStep] = useState(0)
   const [scanProgress, setScanProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [report, setReport] = useState<ScreeningReport | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const searchIconRef = useRef<HTMLSpanElement>(null)
   const overlayIconRef = useRef<HTMLDivElement>(null)
   const radarRef = useRef<HTMLDivElement>(null)
+
+  const clearTurnstile = useCallback(() => {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }, [])
+
+  useEffect(() => {
+    if (!focusToken) return
+    if (seedQuery) setQuery(seedQuery)
+    inputRef.current?.focus()
+  }, [focusToken, seedQuery])
 
   useEffect(() => {
     if (!checking) return
@@ -162,22 +186,33 @@ export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }:
   }, [checking])
 
   const runScreening = useCallback(async () => {
-    const trimmed = query.trim()
-    if (!trimmed || checking) return
+    const { clean, error: nameErr } = sanitizeScreeningName(query)
+    if (nameErr || !clean) {
+      setError(t(`customerScreening.validation.${nameErr || 'name_required'}`))
+      return
+    }
+    if (checking) return
+    if (isTurnstileConfigured && !turnstileToken) {
+      setError(t('customerScreening.captchaRequired'))
+      return
+    }
 
     setChecking(true)
     setError(null)
     setReport(null)
     setScanProgress(12)
-    saveScreeningSession({ lastQuery: trimmed })
+    saveScreeningSession({ lastQuery: clean })
 
     try {
-      const json = await blacklistScreeningApi.checkName(trimmed)
+      const json = await blacklistScreeningApi.checkName(clean, turnstileToken || undefined)
       if (json && typeof json === 'object' && 'ok' in json && json.ok === false) {
+        const code = json.error || ''
+        if (code === 'captcha_failed') throw new Error(t('customerScreening.captchaFailed'))
+        if (code.startsWith('name_')) throw new Error(t(`customerScreening.validation.${code}`))
         throw new Error(
-          json.error === 'screening_unavailable'
+          code === 'screening_unavailable'
             ? t('customerScreening.unavailable')
-            : json.error || t('customerScreening.checkFailed'),
+            : code || t('customerScreening.checkFailed'),
         )
       }
       const result: BlacklistCheckResponse = {
@@ -201,28 +236,47 @@ export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }:
                 },
               ]
             : [],
+        referenceId: json.referenceId,
       }
       setScanProgress(100)
       await new Promise((r) => window.setTimeout(r, 320))
-      const referenceId = makeReferenceId()
+      const referenceId = (json.referenceId || makeReferenceId()).trim()
       setReport({
         queriedAt: new Date(),
         referenceId,
-        query: trimmed,
+        query: clean,
         result,
       })
+      pushScreenHistory({
+        referenceId,
+        query: clean,
+        matched: result.matched,
+        matchType: result.matchType,
+        similarityScore: result.similarityScore,
+        matchedNames: result.matches.map((m) => m.originalName),
+        at: new Date().toISOString(),
+      })
       bumpScreensToday()
-      saveScreeningSession({ lastQuery: trimmed, lastReferenceId: referenceId })
+      saveScreeningSession({ lastQuery: clean, lastReferenceId: referenceId })
+      clearTurnstile()
       onScreenComplete?.()
     } catch (e) {
+      clearTurnstile()
       const axiosErr =
         e && typeof e === 'object' && 'response' in e
-          ? (e as { response?: { status?: number; data?: { error?: string } }; message?: string })
+          ? (e as {
+              response?: { status?: number; data?: { error?: string; detail?: string } }
+              message?: string
+            })
           : undefined
       const status = axiosErr?.response?.status
       const code = axiosErr?.response?.data?.error
       if (status === 404) {
         setError(t('customerScreening.endpointUnavailable'))
+      } else if (code === 'captcha_failed') {
+        setError(t('customerScreening.captchaFailed'))
+      } else if (code && code.startsWith('name_')) {
+        setError(t(`customerScreening.validation.${code}`))
       } else if (code === 'screening_unavailable' || status === 503) {
         setError(t('customerScreening.unavailable'))
       } else if (e instanceof Error && !/^Request failed with status code \d+$/i.test(e.message)) {
@@ -233,7 +287,7 @@ export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }:
     } finally {
       setChecking(false)
     }
-  }, [checking, onScreenComplete, query, t])
+  }, [checking, clearTurnstile, onScreenComplete, query, t, turnstileToken])
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -399,17 +453,25 @@ export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }:
                     id="customer-screening-query"
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      setQuery(e.target.value)
+                      if (error) setError(null)
+                    }}
                     placeholder={t('customerScreening.placeholder')}
                     disabled={checking}
                     autoComplete="off"
                     spellCheck={false}
+                    maxLength={120}
                     className="w-full rounded-[1rem] border border-transparent bg-white py-4 text-lg font-medium text-[#0B0F19] outline-none transition placeholder:font-normal placeholder:text-[#94A3B8] focus:border-[#85E307] focus:ring-4 focus:ring-[#85E307]/20 disabled:opacity-60 ps-12 pe-4 sm:py-5 sm:text-xl sm:ps-14"
                   />
                 </div>
                 <button
                   type="submit"
-                  disabled={checking || !query.trim()}
+                  disabled={
+                    checking ||
+                    !query.trim() ||
+                    (isTurnstileConfigured && !turnstileToken)
+                  }
                   className="inline-flex min-h-[3.5rem] min-w-[11rem] items-center justify-center gap-2 rounded-[1rem] bg-[#0B0F19] px-6 text-base font-bold text-[#85E307] transition hover:bg-[#161c2c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:text-lg"
                 >
                   {checking ? (
@@ -429,6 +491,18 @@ export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }:
             <p className="text-sm leading-relaxed text-[#64748B] sm:text-base">
               {t('customerScreening.hint')}
             </p>
+            {isTurnstileConfigured ? (
+              <div className="pt-1">
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  onToken={setTurnstileToken}
+                  onExpire={clearTurnstile}
+                  onError={clearTurnstile}
+                  theme="light"
+                />
+                <p className="mt-2 text-xs text-[#94A3B8]">{t('customerScreening.captchaHint')}</p>
+              </div>
+            ) : null}
           </form>
 
           {error ? (
@@ -576,18 +650,29 @@ export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }:
                     <FileText className="h-4 w-4" aria-hidden />
                     {t('customerScreening.reportFooter')}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReport(null)
-                      setQuery('')
-                      saveScreeningSession({ lastQuery: '' })
-                      inputRef.current?.focus()
-                    }}
-                    className="text-base font-bold text-[#3F6F00] transition hover:text-[#0B0F19]"
-                  >
-                    {t('customerScreening.newSearch')}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleWatchlistName(report.query)
+                      }}
+                      className="text-sm font-semibold text-[#64748B] transition hover:text-[#0B0F19]"
+                    >
+                      {t('customerScreening.saveWatchlist')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReport(null)
+                        setQuery('')
+                        saveScreeningSession({ lastQuery: '' })
+                        inputRef.current?.focus()
+                      }}
+                      className="text-base font-bold text-[#3F6F00] transition hover:text-[#0B0F19]"
+                    >
+                      {t('customerScreening.newSearch')}
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>

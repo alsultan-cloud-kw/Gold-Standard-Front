@@ -12,6 +12,9 @@ export type BlacklistCheckResponse = {
   similarityScore: number | null
   normalizedName: string
   matches: BlacklistMatchHit[]
+  referenceId?: string
+  ok?: boolean
+  error?: string
 }
 
 export const blacklistScreeningApi = {
@@ -24,8 +27,12 @@ export const blacklistScreeningApi = {
       error?: string
     }>('/accounts/blacklist/stats/'),
 
-  checkName: (name: string) =>
-    apiService.post<
-      BlacklistCheckResponse & { ok: boolean; error?: string; matches?: BlacklistMatchHit[] }
-    >('/accounts/blacklist/check/', { name }),
+  checkName: (name: string, turnstileToken?: string) =>
+    apiService.post<BlacklistCheckResponse & { ok?: boolean; error?: string; detail?: string }>(
+      '/accounts/blacklist/check/',
+      {
+        name,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      },
+    ),
 }

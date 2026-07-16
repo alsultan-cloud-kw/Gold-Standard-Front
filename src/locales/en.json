@@ -1790,13 +1790,8 @@
       "live": "Live",
       "aria": "Live registry activity ticker",
       "registrySize": "{{size}} names indexed",
-      "kinds": {
-        "indexed": "Indexed",
-        "synced": "Synced",
-        "screened": "Screened",
-        "cleared": "Cleared",
-        "flagged": "Review"
-      }
+      "record": "Registry",
+      "loading": "Connecting to registry…"
     },
     "features": {
       "search": {
@@ -1852,7 +1847,47 @@
     "checkFailed": "Screening failed. Try again.",
     "unavailable": "Service temporarily unavailable.",
     "endpointUnavailable": "Screening is not live on the server yet. Please try again later or contact support.",
-    "attribution": "Sanctions data supported by OpenSanctions (Berlin, Germany)."
+    "attribution": "Sanctions data supported by OpenSanctions (Berlin, Germany).",
+    "captchaRequired": "Complete the security check before screening.",
+    "captchaFailed": "Security check failed. Refresh and try again.",
+    "captchaHint": "Protected by Cloudflare Turnstile — each screen is logged securely.",
+    "saveWatchlist": "Save to watchlist",
+    "validation": {
+      "name_required": "Enter a full legal name.",
+      "name_too_short": "Name is too short.",
+      "name_too_long": "Name is too long (max 120 characters).",
+      "name_invalid": "Use letters and spaces only — no codes or symbols.",
+      "name_malicious": "That input was blocked for security."
+    },
+    "console": {
+      "brand": "GS Screening Pro",
+      "brandSub": "Gold Standard · Kuwait",
+      "dbActive": "Database active",
+      "recordsSynced": "{{size}} records synced",
+      "recordsPending": "Connecting…",
+      "newVerification": "New verification",
+      "navAria": "Screening console sections",
+      "sidebarFooter": "Free counter tool · AML name screening",
+      "nav": {
+        "overview": "Overview",
+        "screening": "Live screening",
+        "history": "Screen history",
+        "watchlist": "Entity watchlist",
+        "reporting": "Reporting"
+      },
+      "historyTitle": "Screen history",
+      "historyBody": "Stored in this browser for your session workflow. Server also keeps a secure audit log with Turnstile verification.",
+      "historyEmpty": "No screens yet — run a live verification to start your history.",
+      "historyMatched": "Match / review",
+      "historyClear": "Clear",
+      "rescreen": "Screen again",
+      "watchTitle": "Entity watchlist",
+      "watchBody": "Names you save here stay on this device for quick re-checks.",
+      "watchEmpty": "Watchlist is empty — save a name from a screening result.",
+      "reportTitle": "Reporting",
+      "reportBody": "Export packs and branch-level reports are coming next. Every live screen is already written to Gold Standard’s secure Django audit log.",
+      "reportNote": "Need a formal compliance export today? Contact the company — we can pull your reference IDs from the audit trail."
+    }
   },
   "publicKyc": {
     "kicker": "Business tool · Kuwait",
