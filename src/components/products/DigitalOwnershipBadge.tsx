@@ -15,8 +15,8 @@ type Props = {
 }
 
 /**
- * Shared “Digital Ownership Record” mark — blockchain-secured ownership language
- * for product cards, PDP, and authenticity surfaces.
+ * Shared “Digital Ownership Record” mark — customer-facing ownership language
+ * (blockchain as the securing technology, not the product name).
  */
 export function DigitalOwnershipBadge({
   variant = 'compact',
@@ -63,7 +63,7 @@ export function DigitalOwnershipBadge({
               {t('digitalOwnership.title')}
             </p>
             <p className="mt-0.5 text-[10px] leading-snug text-[#64748B] sm:text-[11px]">
-              {t('digitalOwnership.securedBy')}
+              {t('digitalOwnership.body')}
             </p>
           </div>
         </div>
@@ -95,6 +95,21 @@ export function DigitalOwnershipBadge({
         {t('digitalOwnership.securedBy')}
       </p>
       <p className="mt-2 text-sm leading-relaxed text-[#64748B]">
+        {t('digitalOwnership.whatBody')}
+      </p>
+      <ul className="mt-4 space-y-3 border-t border-[#3F6F00]/15 pt-4">
+        {(['tokenize', 'transparency', 'ledger'] as const).map((key) => (
+          <li key={key}>
+            <p className="text-sm font-bold text-[#0B0F19]">
+              {t(`digitalOwnership.pillars.${key}.title`)}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-[#64748B]">
+              {t(`digitalOwnership.pillars.${key}.body`)}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-sm leading-relaxed text-[#64748B]">
         {t('digitalOwnership.certificateBody')}
       </p>
       <Link

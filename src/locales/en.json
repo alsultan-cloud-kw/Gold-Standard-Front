@@ -239,10 +239,22 @@
     "heroSubtitle": "Certified investment bars and coins at live market prices — insured delivery and clear authenticity assurance for Kuwait investors.",
     "heroBrandLine": "Gold Standard",
     "heroLiveKuwaitBadge": "LIVE · KUWAIT",
-    "heroCertifiedBadge": "CERTIFIED · KUWAIT",
-    "heroHeadlineLead": "Invest in gold.",
-    "heroHeadlineAccent": "Not uncertainty.",
-    "heroSubtext": "Certified gold bars and investment coins at live market prices — in Kuwait.",
+    "heroCertifiedBadge": "Verification stack · Gulf",
+    "heroHeadline": "The first company in the Gulf to deliver a <accent>multi-layer verification system</accent> for investment bullion.",
+    "heroHeadlineLead": "The first company in the Gulf to deliver a",
+    "heroHeadlineAccent": "multi-layer verification system",
+    "heroHeadlineTrail": "for investment bullion.",
+    "heroSubtext": "We combine manufacturing, digital verification, ownership record, company stamp, security hologram, unique serial, and Ministry of Commerce hallmarking — so every step of investing in gold can be checked.",
+    "heroTrustLine": "MOCI hallmark · Unique serial · Ownership record",
+    "heroOrbit": {
+      "ariaLabel": "Six verification layers around the bar",
+      "blockchain": "Digital Ownership Record",
+      "qr": "Unique QR",
+      "hologram": "Hologram",
+      "companyStamp": "Company stamp",
+      "ministry": "MOCI hallmark",
+      "receipt": "Official receipt"
+    },
     "heroKicker": "Gold coins, minted bars, and live bullion rates — together in Kuwait.",
     "heroIntro": "Shop certified gold coins and investment bars with transparent live pricing and follow the market in real time under Gold Standard.",
     "heroCardBullionTitle": "Coins & bars",
@@ -407,7 +419,7 @@
         },
         "blockchain": {
           "title": "Digital Ownership Record",
-          "description": "The first bullion documentation solution of its kind in Kuwait — every investment piece can be linked to a Digital Ownership Record secured by blockchain technology, beyond paper alone.",
+          "description": "Eligible investment pieces can be linked to a Digital Ownership Record — a digital trail of ownership protected with blockchain technology. It works like a shared electronic ledger: once recorded under the system’s rules, entries are designed so they cannot be quietly altered or forged, which supports clearer verification when you buy, hold, or sell.",
           "badge": "Kuwait pioneer"
         },
         "hologram": {
@@ -433,10 +445,22 @@
       "methodsTitle": "Six layers of authenticity",
       "methodsBody": "Each bar and investment piece is designed so you can confirm what you own — independently, quickly, and with a lasting paper and digital trail."
     },
+    "sharia": {
+      "kicker": "Sharia compliant",
+      "title": "Compliant with Islamic Sharia principles",
+      "body": "We organise buy and sell operations in line with Islamic Sharia principles, with ownership documentation and secure custody of gold until pickup or insured delivery, according to the terms and conditions.",
+      "sealAlt": "Shariah Compliant seal — متوافق مع أحكام الشريعة الإسلامية",
+      "ctaShop": "Browse the shop",
+      "ctaAbout": "Learn more about us"
+    },
     "faq": {
       "kicker": "FAQ",
       "title": "Common questions",
       "items": {
+        "digitalOwnership": {
+          "q": "What is the Digital Ownership Record?",
+          "a": "It is Gold Standard’s way to document eligible physical bullion digitally. Your gold remains metal you can hold; the record links it to a protected digital trail secured with blockchain technology — like a shared ledger that is hard for any one party to rewrite — so ownership is clearer to verify when you buy, hold, or sell."
+        },
         "certified": {
           "q": "Is the gold certified?",
           "a": "Yes — every bar, coin, and piece is sold with clear karat and weight, MOCI precious-metals hallmarking where required, the Gold Standard company stamp, a serial number in our official catalog, and a Digital Ownership Record. Scan the product QR or visit our verify page to confirm registration before you buy."
@@ -640,7 +664,7 @@
     },
     "companyPrices": {
       "title": "Company Gold Sell Rates by Karat | Gold Standard Kuwait",
-      "description": "Desk-ready sell rates by karat for company and counter use. Live market-linked KWD/g board from Gold Standard Kuwait."
+      "description": "Apply to list your company and unlock the sell-by-karat desk board from Gold Standard Kuwait."
     },
     "products": {
       "title": "Shop Certified Gold Products | Gold Standard Kuwait",
@@ -901,10 +925,58 @@
   },
   "companyPricesPage": {
     "kicker": "Desk board",
-    "subtitle": "Simplified sell-only karat view for internal counter use — not a separate public price list.",
+    "subtitle": "Simplified sell-only karat view for approved company counters.",
     "boardTitle": "Sell rates by karat",
     "karatLabel": "Karat",
-    "disclaimer": "Company board rates are indicative. Confirm the live sell price before quoting a customer."
+    "disclaimer": "Company board rates are indicative. Confirm the live sell price before quoting a customer.",
+    "gate": {
+      "checking": "Checking desk access…",
+      "badge": "Company access · by request",
+      "headline": "Company price board — approved businesses only",
+      "subtext": "Apply to list your company and unlock the sell-by-karat desk board. Applications are reviewed manually and activated from admin.",
+      "pillars": {
+        "verified": "Listed after admin review",
+        "live": "Sell rates tied to live market",
+        "b2b": "For partner counters — not a public list"
+      },
+      "whyTitle": "Why this board?",
+      "whyBody": "The desk board is for sales teams and partner companies. Access is granted after we verify business name and official company email.",
+      "steps": {
+        "apply": "Submit the form with business name and company email.",
+        "review": "Admin reviews, then activates or deactivates access.",
+        "access": "Sign in with the same company email to open the board."
+      },
+      "loginHint": "After approval, open the board with an account on the company email.",
+      "loginCta": "Sign in",
+      "formTitle": "Request company listing",
+      "formHint": "Most important fields: business name and official company email.",
+      "fields": {
+        "businessName": "Business name",
+        "companyEmail": "Official company email",
+        "contactName": "Contact name",
+        "phone": "Phone",
+        "license": "Commercial licence no.",
+        "message": "Note (optional)"
+      },
+      "submit": "Submit listing request",
+      "submitPending": "Application under review",
+      "submitting": "Submitting…",
+      "successSubmitted": "Request received. We will review and activate access from admin.",
+      "successAlreadyPending": "Your request is already on file and still under review.",
+      "successAlreadyActive": "Your company access is active. Sign in with that email to open the board.",
+      "statusPendingTitle": "Application under review",
+      "statusPendingBody": "We received «{{name}}». Access unlocks after admin approval and activation.",
+      "statusInactiveTitle": "Access currently deactivated",
+      "statusInactiveBody": "Your listing exists but desk access is off. Contact us or resubmit for review.",
+      "statusRejectedTitle": "Previous application not approved",
+      "statusRejectedBody": "You can update details and resubmit for a new review.",
+      "errors": {
+        "businessName": "Enter the business name.",
+        "companyEmail": "Enter a valid official company email.",
+        "captcha": "Complete the security check and try again.",
+        "generic": "Could not submit the request. Please try again."
+      }
+    }
   },
   "productsPage": {
     "allProducts": "All products",
@@ -1390,8 +1462,8 @@
         "body": "Kuwait’s first stack to combine a Digital Ownership Record, security hologram seal, company stamp, and serial tracking — an investment experience you can verify at every step."
       },
       "sharia": {
-        "title": "Sharia-aligned constructive possession",
-        "body": "We structure transactions with constructive possession principles so ownership transfers in a Sharia-valid manner, with insured custody until pickup or insured delivery — documented in our terms."
+        "title": "Compliant with Islamic Sharia principles",
+        "body": "We organise buy and sell operations in line with Islamic Sharia principles, with ownership documentation and secure custody of gold until pickup or insured delivery, according to the terms and conditions."
       },
       "reach": {
         "title": "Clients we serve",
@@ -1403,7 +1475,7 @@
     "securityKicker": "Our advantage",
     "securityTitle": "The most complete bullion security stack in Kuwait",
     "securityIntro": "We built Gold Standard around verification you can repeat — not promises you cannot check. That means combining every protection layer that makes sense for physical gold: official hallmarking, our company stamp, holographic seals, serialised QR, stamped receipts, and a Digital Ownership Record.",
-    "securityLead": "Gold Standard was the first in Kuwait to bring this full security model to investment bullion — including the Digital Ownership Record secured by blockchain technology, so ownership is documented beyond the counter.",
+    "securityLead": "Gold Standard was the first in Kuwait to bring this full security model to investment bullion — including a Digital Ownership Record protected with blockchain technology: physical gold linked to a shared digital ledger designed so ownership trails are hard to rewrite quietly.",
     "securityLandingLink": "See layers on homepage",
     "focus": {
       "coins": {
@@ -2674,12 +2746,28 @@
     }
   },
   "digitalOwnership": {
-    "kicker": "Blockchain secured",
+    "kicker": "Documented ownership",
     "badge": "Digital Ownership Record",
     "title": "Digital Ownership Record",
-    "securedBy": "Ownership Record Secured by Blockchain Technology",
-    "body": "The ownership record is protected using blockchain technology.",
-    "certificateBody": "This ownership certificate is linked to a secure digital ownership record protected with blockchain technology.",
-    "verifyLink": "Verify ownership record"
+    "securedBy": "Your ownership record is protected with blockchain technology.",
+    "body": "At Gold Standard, physical investment gold can be linked to a Digital Ownership Record — a lasting digital trail of what you own, secured with blockchain technology.",
+    "certificateBody": "This certificate connects to a Digital Ownership Record: a secure digital trail for your piece, protected with blockchain technology beyond paper alone.",
+    "verifyLink": "Verify ownership record",
+    "whatTitle": "What is the Digital Ownership Record at Gold Standard?",
+    "whatBody": "It is how we document eligible bullion digitally. Your physical piece stays gold you can hold; the record links that piece to a protected digital trail so ownership is clearer to verify over time.",
+    "pillars": {
+      "tokenize": {
+        "title": "From physical gold to a digital record",
+        "body": "Eligible bars and pieces can be linked to a Digital Ownership Record — turning documented physical ownership into a digital entry you can check, without replacing the metal itself."
+      },
+      "transparency": {
+        "title": "Clarity for every step",
+        "body": "The record helps keep a precise trail of registration and related activity, so buying, holding, and later selling rest on documented ownership — not memory or a receipt alone."
+      },
+      "ledger": {
+        "title": "A shared ledger, hard to rewrite",
+        "body": "Think of blockchain as a distributed electronic ledger: once an entry is recorded under the system’s rules, it is designed so no single party can quietly alter or forge what was written."
+      }
+    }
   }
 }

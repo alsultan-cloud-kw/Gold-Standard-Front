@@ -1,6 +1,7 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import gsap from 'gsap'
 import {
   ArrowRight,
   ScanLine,
@@ -23,6 +24,8 @@ import CategoryGrid from '@/components/sections/CategoryGrid'
 import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
 import { HomeProductCard } from '@/components/home/HomeProductCard'
 import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
+import { HeroBullionNetwork } from '@/components/home/HeroBullionNetwork'
+import { HeroBullionVerifyOrbit } from '@/components/home/HeroBullionVerifyOrbit'
 import {
   BullionStartSlot,
   HeroBullionScroll,
@@ -33,10 +36,12 @@ import { WealthProtectionSection } from '@/components/home/WealthProtectionSecti
 import { SultanGoldTrustStats } from '@/components/home/SultanGoldTrustStats'
 import { InvestorsClubSection } from '@/components/home/InvestorsClubSection'
 import { SecurityTrustSection } from '@/components/home/SecurityTrustSection'
+import { ShariaCompliantSection } from '@/components/home/ShariaCompliantSection'
 import { HomeFaqSection } from '@/components/home/HomeFaqSection'
 
 export default function HomePage() {
   const { t } = useTranslation()
+  const heroRef = useRef<HTMLDivElement | null>(null)
   const bullionHeroRef = useRef<HTMLDivElement | null>(null)
   const bullionTrustRef = useRef<HTMLDivElement | null>(null)
   const bullionFinalRef = useRef<HTMLDivElement | null>(null)
@@ -45,6 +50,52 @@ export default function HomePage() {
     () => [bullionHeroRef, bullionTrustRef, bullionFinalRef],
     [],
   )
+
+  useEffect(() => {
+    const root = heroRef.current
+    if (!root) return
+
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference) and (min-width: 640px)', () => {
+      const ctx = gsap.context(() => {
+        const tl = gsap.timeline({
+          defaults: { ease: 'power2.out', duration: 0.55 },
+        })
+        tl.from('.home-hero-headline__line', {
+          autoAlpha: 0,
+          y: 22,
+          stagger: 0.09,
+        })
+          .from('.home-hero-sub', { autoAlpha: 0, y: 16, duration: 0.45 }, '-=0.28')
+          .from('.home-hero-cta', { autoAlpha: 0, y: 14, duration: 0.4 }, '-=0.22')
+          .from('.home-hero-trust-line', { autoAlpha: 0, y: 10, duration: 0.35 }, '-=0.2')
+          .from(
+            '.home-hero-visual',
+            { autoAlpha: 0, y: 18, scale: 0.97, duration: 0.65 },
+            '-=0.5',
+          )
+          .from('.hero-trust-strip', { autoAlpha: 0, y: 12, duration: 0.4 }, '-=0.3')
+      }, root)
+      return () => ctx.revert()
+    })
+
+    mm.add('(prefers-reduced-motion: no-preference) and (max-width: 639px)', () => {
+      const ctx = gsap.context(() => {
+        const tl = gsap.timeline({
+          defaults: { ease: 'power2.out', duration: 0.42 },
+        })
+        tl.from('.home-hero-visual', { autoAlpha: 0, y: 14, scale: 0.98, duration: 0.5 })
+          .from('.home-hero-headline__line', { autoAlpha: 0, y: 12, stagger: 0.06 }, '-=0.22')
+          .from('.home-hero-sub', { autoAlpha: 0, y: 10, duration: 0.35 }, '-=0.18')
+          .from('.home-hero-cta', { autoAlpha: 0, y: 8, duration: 0.32 }, '-=0.15')
+          .from('.home-hero-trust-line', { autoAlpha: 0, duration: 0.28 }, '-=0.12')
+          .from('.hero-trust-strip', { autoAlpha: 0, y: 8, duration: 0.32 }, '-=0.1')
+      }, root)
+      return () => ctx.revert()
+    })
+
+    return () => mm.revert()
+  }, [])
 
   const { data: featuredProducts } = useQuery({
     queryKey: ['featuredProducts'],
@@ -81,57 +132,71 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--site-bg)] flex flex-col lg:block">
       <div className="order-1 lg:order-none">
-        <section className="home-section home-section--hero relative overflow-hidden border-b border-black/5">
+        <section className="home-section home-section--hero relative overflow-x-clip border-b border-black/5">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/25 via-[var(--site-bg)] to-[var(--site-bg)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_100%_0%,rgba(133,227,7,0.06),transparent_55%)]" />
         </div>
 
-        <div className="home-section-inner relative z-10">
+        <div className="home-section-inner relative z-10" ref={heroRef}>
           <div className="home-hero">
             <div className="home-hero-intro">
-              <div className="home-hero-badge mb-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#3F6F00]/15 bg-[#ECFCCB]/80 px-2.5 py-1 sm:mb-4 sm:gap-2 sm:px-3 sm:py-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#3F6F00] sm:h-2 sm:w-2" aria-hidden />
-                <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#3F6F00] sm:text-xs sm:tracking-[0.12em]">
-                  {t('home.heroCertifiedBadge')}
+              <h1 className="home-hero-headline">
+                <span className="home-hero-headline__line home-hero-headline__line--lead">
+                  {t('home.heroHeadlineLead')}
                 </span>
-              </div>
-
-              <h1 className="type-display type-display--stack text-[#0C1512]">
-                <span>{t('home.heroHeadlineLead')}</span>
-                <span className="text-[#3F6F00]">{t('home.heroHeadlineAccent')}</span>
+                <span className="home-hero-headline__line home-hero-headline__line--accent">
+                  {t('home.heroHeadlineAccent')}
+                </span>
+                <span className="home-hero-headline__line home-hero-headline__line--trail">
+                  {t('home.heroHeadlineTrail')}
+                </span>
               </h1>
-            </div>
 
-            <div className="home-hero-body">
-              <div className="home-hero-copy">
-                <p className="type-lead max-w-xl lg:text-lg">{t('home.heroSubtext')}</p>
+              <p className="home-hero-sub">{t('home.heroSubtext')}</p>
 
-                <div className="home-hero-cta">
-                  <Link to="/products" className="ds-btn-accent home-hero-cta-btn inline-flex items-center justify-center gap-1.5">
-                    {t('home.heroBuyGold')}
-                    <ArrowRight className="h-4 w-4 shrink-0 sm:h-5 sm:w-5 rtl:rotate-180" aria-hidden />
+              <div className="home-hero-cta">
+                <Link to="/products" className="ds-btn-accent home-hero-cta-btn">
+                  <span className="home-hero-cta-btn__label">{t('home.heroBuyGold')}</span>
+                  <ArrowRight className="home-hero-cta-btn__icon" aria-hidden />
+                </Link>
+                <Link to="/prices" className="ds-btn-primary home-hero-cta-btn">
+                  <span className="home-hero-cta-btn__label">{t('home.heroViewLivePrice')}</span>
+                </Link>
+                {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                  <Link
+                    to="/trade-gold"
+                    className="ds-btn-secondary home-hero-cta-btn home-hero-cta-btn--wide"
+                  >
+                    <span className="home-hero-cta-btn__label">{t('nav.tradeGold')}</span>
                   </Link>
-                  <Link to="/prices" className="ds-btn-primary home-hero-cta-btn inline-flex items-center justify-center gap-1.5">
-                    {t('home.heroViewLivePrice')}
-                  </Link>
-                  {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
-                    <Link
-                      to="/trade-gold"
-                      className="ds-btn-secondary home-hero-cta-btn home-hero-cta-btn--wide inline-flex items-center justify-center gap-1.5"
-                    >
-                      {t('nav.tradeGold')}
-                    </Link>
-                  ) : null}
-                </div>
+                ) : null}
               </div>
+
+              <p className="home-hero-trust-line">{t('home.heroTrustLine')}</p>
             </div>
 
             <div className="home-hero-visual">
-              <div className="home-hero-bullion-shell">
-                <div className="home-hero-bullion-core">
+              <div className="home-hero-bullion-stage">
+                <div className="home-hero-bullion-stage__bg" aria-hidden="true" />
+                <div className="home-hero-bullion-stage__glow" aria-hidden="true" />
+                <div className="home-hero-bullion-stage__hex" aria-hidden="true">
+                  <svg viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      className="home-hero-bullion-stage__hex-path"
+                      d="M100 8 L184 54 L184 166 L100 212 L16 166 L16 54 Z"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <HeroBullionNetwork />
+                <div className="home-hero-bullion-stage__dust" aria-hidden="true" />
+                <div className="home-hero-bullion-stage__core">
                   <BullionStartSlot slotRef={bullionHeroRef} className="home-hero-bullion-slot" />
                 </div>
+                <HeroBullionVerifyOrbit />
               </div>
             </div>
           </div>
@@ -152,6 +217,10 @@ export default function HomePage() {
       {/* Trust credentials + bullion verification — early on the page */}
       <div className="order-3 lg:order-none">
         <SecurityTrustSection />
+      </div>
+
+      <div className="order-3 lg:order-none">
+        <ShariaCompliantSection />
       </div>
 
       <div className="order-8 lg:order-none">

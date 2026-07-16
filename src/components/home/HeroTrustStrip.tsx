@@ -29,7 +29,7 @@ export function HeroTrustStrip({ variant = 'hero', className }: HeroTrustStripPr
     <div
       className={cn(
         'hero-trust-strip',
-        variant === 'hero' && 'mt-5 border-t border-black/5 pt-4 sm:mt-12 sm:pt-7',
+        variant === 'hero' && 'mt-4 border-t border-black/5 pt-3.5 sm:mt-12 sm:pt-7',
         variant === 'embedded' && 'mt-0 border-0 pt-0',
         className,
       )}

@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw, ArrowRight, Building2, Scale } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { adminApi, type DaralsabaekPublicRatesResponse } from '../services/api'
+import { companyDeskApi } from '../services/companyDeskApi'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
@@ -12,6 +13,7 @@ import { buildPublicRatesPricing, normalizeCaratKey } from '@/utils/publicStoref
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { isStaffRole } from '@/utils/authRedirect'
+import CompanyPricesGateLanding from '@/components/company/CompanyPricesGateLanding'
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
@@ -31,17 +33,35 @@ function karatDescKey(key: string) {
 }
 
 /**
- * Company / wholesale-style board — sell rates per karat, large type for desk use.
+ * Company / wholesale-style board — gated by staff role or approved company desk listing.
+ * Locked visitors see a mini landing + application form.
  */
 export default function CompanyPricesPage() {
   const { t } = useTranslation()
   const { user, isLoading: authLoading } = useAuth()
+  const staff = isStaffRole(user?.role)
+
+  const {
+    data: access,
+    isLoading: accessLoading,
+    refetch: refetchAccess,
+  } = useQuery({
+    queryKey: ['companyDeskAccess', user?.id ?? 'anon', user?.email ?? ''],
+    queryFn: () => companyDeskApi.getAccess(),
+    enabled: !authLoading && !staff,
+    staleTime: 30_000,
+    retry: 1,
+  })
+
+  const hasAccess = staff || !!access?.has_access
+  const gateReady = !authLoading && (staff || !accessLoading)
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['daralsabaekPublicRates'],
     queryFn: adminApi.getDaralsabaekPublicRates,
-    refetchInterval: 20_000,
+    refetchInterval: hasAccess ? 20_000 : false,
     retry: 1,
+    enabled: hasAccess,
   })
 
   const res = data as DaralsabaekPublicRatesResponse | undefined
@@ -62,17 +82,28 @@ export default function CompanyPricesPage() {
     [trendEntries],
   )
 
-  const { resolveDir } = usePublicRateTrends(!!res?.succeeded, trendEntries, entriesKey)
+  const { resolveDir } = usePublicRateTrends(!!res?.succeeded && hasAccess, trendEntries, entriesKey)
 
   const ounceTrendDir = (() => {
     const ounceCarat = carats.find((c) => normalizeTrendKey(c.key) === '24')
     return ounceCarat ? resolveDir(ounceCarat.key) : null
   })()
 
-  const showBoard = !isLoading && res?.succeeded && carats.length > 0
+  const showBoard = hasAccess && !isLoading && res?.succeeded && carats.length > 0
 
-  if (!authLoading && !isStaffRole(user?.role)) {
-    return <Navigate to="/prices" replace />
+  if (!gateReady) {
+    return <AppLoadingScreen message={t('companyPricesPage.gate.checking')} className="min-h-screen" />
+  }
+
+  if (!hasAccess) {
+    return (
+      <CompanyPricesGateLanding
+        access={access ?? null}
+        onApplied={() => {
+          void refetchAccess()
+        }}
+      />
+    )
   }
 
   return (
@@ -95,6 +126,11 @@ export default function CompanyPricesPage() {
               <p className="mt-2 max-w-xl text-xs leading-relaxed text-white/65 sm:mt-3 sm:text-base">
                 {t('companyPricesPage.subtitle')}
               </p>
+              {access?.business_name ? (
+                <p className="mt-2 text-xs text-white/45 sm:text-sm">
+                  {access.business_name}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -123,7 +159,7 @@ export default function CompanyPricesPage() {
                   <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#85E307] sm:mb-1 sm:text-[11px] sm:tracking-[0.18em]">
                     {t('pricesPage.ounceTitle')}
                   </p>
-                  {res.updateIntervalInSeconds != null ? (
+                  {res?.updateIntervalInSeconds != null ? (
                     <p className="text-[9px] text-white/40 sm:text-xs">
                       {t('pricesPage.updateEvery', { seconds: res.updateIntervalInSeconds })}
                     </p>

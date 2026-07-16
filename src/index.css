@@ -77,8 +77,8 @@
     --space-section-compact-top: clamp(1.75rem, 3vw, 2.5rem);
     --space-section-compact-bottom: clamp(2rem, 3.4vw, 2.75rem);
     --space-section-gap: clamp(1.5rem, 2.5vw, 2.25rem);
-    --space-section-hero-top: clamp(2.5rem, 5vw, 4.5rem);
-    --space-section-hero-bottom: clamp(2.25rem, 4vw, 3.5rem);
+    --space-section-hero-top: clamp(1.75rem, 3.5vw, 3rem);
+    --space-section-hero-bottom: clamp(1.5rem, 3vw, 2.5rem);
     --space-section-header: clamp(1.5rem, 2.4vw, 2rem);
     --space-block: clamp(1.5rem, 2.8vw, 2.5rem);
     --space-stack: clamp(2rem, 3.5vw, 3rem);
@@ -405,14 +405,12 @@
     padding-block: var(--space-section-hero-top) var(--space-section-hero-bottom);
   }
 
-  /* Hero — intro + copy on one side; bullion lifts to share the headline row on large screens */
+  /* Hero — split: copy+CTAs | product visual */
   .home-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.14fr) minmax(5.5rem, 0.68fr);
-    grid-template-areas:
-      'intro intro'
-      'copy visual';
-    gap: clamp(0.875rem, 2.5vw, 1.75rem) clamp(0.625rem, 3vw, 1.125rem);
+    grid-template-columns: minmax(0, 1.2fr) minmax(7rem, 0.72fr);
+    grid-template-areas: 'intro visual';
+    gap: clamp(0.75rem, 2vw, 1.5rem) clamp(1rem, 3vw, 2.25rem);
     align-items: center;
     min-width: 0;
   }
@@ -420,23 +418,116 @@
   .home-hero-intro {
     grid-area: intro;
     min-width: 0;
-  }
-
-  .home-hero-body {
-    grid-area: copy;
-    display: block;
-    min-width: 0;
-  }
-
-  .home-hero-copy {
     display: flex;
-    min-width: 0;
     flex-direction: column;
-    gap: clamp(0.625rem, 2.2vw, 1.25rem);
+    align-items: flex-start;
   }
 
-  .home-hero-copy .type-lead {
+  /* Big clear claim — use available width (taste) */
+  .home-hero-headline {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.06em;
+    width: 100%;
+    max-width: none;
+    color: #0c1512;
+    font-size: clamp(2.35rem, 2.8vw + 1.2rem, 4.25rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  html[dir='rtl'] .home-hero-headline {
+    font-weight: 700;
+    line-height: 1.22;
+    letter-spacing: 0;
+  }
+
+  .home-hero-headline__line {
+    display: block;
+    max-width: 100%;
+  }
+
+  .home-hero-headline__line--lead {
+    font-size: 0.52em;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: #334155;
+  }
+
+  html[dir='rtl'] .home-hero-headline__line--lead {
+    font-size: 0.55em;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
+
+  .home-hero-headline__line--accent {
+    font-size: 1em;
+    font-weight: 800;
+    line-height: 1.12;
+    color: #3f6f00;
+    letter-spacing: -0.02em;
+  }
+
+  html[dir='rtl'] .home-hero-headline__line--accent {
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.22;
+  }
+
+  .home-hero-headline__line--trail {
+    font-size: 0.92em;
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: #3f6f00;
+  }
+
+  html[dir='rtl'] .home-hero-headline__line--trail {
+    font-size: 0.94em;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.22;
+  }
+
+  .home-hero-sub {
+    margin: clamp(0.85rem, 1.8vw, 1.15rem) 0 0;
+    max-width: min(100%, 48rem);
+    font-size: clamp(1rem, 0.35vw + 0.92rem, 1.1875rem);
+    font-weight: 400;
+    line-height: 1.65;
+    color: #334155;
+    text-wrap: pretty;
+  }
+
+  html[dir='rtl'] .home-hero-sub {
+    line-height: 1.78;
+    max-width: min(100%, 46rem);
+  }
+
+  .home-hero-intro .home-hero-cta {
+    margin-top: clamp(1.15rem, 2.4vw, 1.6rem);
+    width: 100%;
+  }
+
+  .home-hero-trust-line {
+    margin: 0.75rem 0 0;
+    max-width: 40rem;
+    font-size: clamp(0.75rem, 0.15vw + 0.7rem, 0.875rem);
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    color: #64748b;
+  }
+
+  html[dir='rtl'] .home-hero-trust-line {
+    letter-spacing: 0;
+    line-height: 1.55;
   }
 
   .home-hero-visual {
@@ -447,34 +538,263 @@
     width: 100%;
   }
 
-  .home-hero-bullion-shell {
-    padding: clamp(0.3rem, 1.2vw, 0.5rem);
-    border: 1px solid rgba(63, 111, 0, 0.1);
-    border-radius: clamp(1rem, 3.5vw, 1.375rem);
-    background: linear-gradient(
-      165deg,
-      rgba(236, 252, 203, 0.62) 0%,
-      rgba(236, 252, 203, 0.14) 58%,
-      transparent 100%
+  /* Light stage: soft mint glow + clear mesh + orbit chips */
+  .home-hero-bullion-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: visible;
+    width: 100%;
+    max-width: 26rem;
+    margin-inline: auto;
+    min-height: clamp(16rem, 48vw, 22rem);
+    padding-inline: clamp(1.25rem, 4vw, 2rem);
+    padding-block: clamp(1.5rem, 4vw, 2.25rem);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .home-hero-bullion-stage__bg {
+    position: absolute;
+    inset: 8% 4% 6%;
+    z-index: 0;
+    border-radius: clamp(1.25rem, 4vw, 2rem);
+    background:
+      radial-gradient(ellipse 85% 75% at 50% 45%, rgba(236, 252, 203, 0.95) 0%, rgba(247, 249, 245, 0.5) 55%, transparent 78%),
+      linear-gradient(180deg, rgba(236, 252, 203, 0.35) 0%, transparent 70%);
+  }
+
+  .home-hero-bullion-stage__glow {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 44%;
+    width: 92%;
+    height: 92%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(163, 230, 53, 0.38) 0%,
+      rgba(133, 227, 7, 0.18) 32%,
+      rgba(236, 252, 203, 0.12) 55%,
+      transparent 72%
     );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.72),
-      0 14px 36px -22px rgba(63, 111, 0, 0.28);
+    pointer-events: none;
   }
 
-  .home-hero-bullion-core {
+  /* Soft hex frame (static) */
+  .home-hero-bullion-stage__hex {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 46%;
+    width: 88%;
+    max-width: 18rem;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    color: #65a30d;
+    opacity: 0.5;
+    pointer-events: none;
+    filter: drop-shadow(0 0 12px rgba(133, 227, 7, 0.28));
+  }
+
+  .home-hero-bullion-stage__hex svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .home-hero-bullion-stage__hex-path {
+    fill: rgba(133, 227, 7, 0.05);
+  }
+
+  /* Subtle blockchain mesh — behind product */
+  .home-hero-bullion-stage__chain {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 46%;
+    width: 108%;
+    max-width: 22rem;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    pointer-events: none;
+    opacity: 0.72;
+  }
+
+  .home-hero-bullion-stage__chain .hero-chain {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .hero-chain__link {
+    stroke: #65a30d;
+    stroke-width: 0.85;
+    stroke-linecap: round;
+    opacity: 0.28;
+  }
+
+  .hero-chain__node {
+    fill: #84cc16;
+    opacity: 0.38;
+    filter: drop-shadow(0 0 3px rgba(132, 204, 22, 0.35));
+  }
+
+  .hero-chain__packet {
+    fill: #3f6f00;
+    opacity: 0;
+    filter: drop-shadow(0 0 4px rgba(133, 227, 7, 0.55));
+  }
+
+  /*
+   * Verification orbit — 3×3 grid, center open for the bar.
+   * DOM order: receipt | blockchain | qr / ministry | (gap) | hologram / …companyStamp bottom.
+   */
+  .hero-orbit {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'receipt blockchain qr'
+      'ministry center hologram'
+      '. companyStamp .';
+    align-items: center;
+    justify-items: center;
+    gap: 0.35rem 0.4rem;
+    margin: 0;
+    padding: 0.15rem;
+    list-style: none;
+    pointer-events: none;
+  }
+
+  .hero-orbit__slot {
+    position: relative;
+    z-index: 6;
+    pointer-events: auto;
+    min-width: 0;
+  }
+
+  .hero-orbit__slot--receipt { grid-area: receipt; justify-self: start; align-self: start; }
+  .hero-orbit__slot--blockchain { grid-area: blockchain; justify-self: center; align-self: start; }
+  .hero-orbit__slot--qr { grid-area: qr; justify-self: end; align-self: start; }
+  .hero-orbit__slot--ministry { grid-area: ministry; justify-self: start; align-self: center; }
+  .hero-orbit__slot--hologram { grid-area: hologram; justify-self: end; align-self: center; }
+  .hero-orbit__slot--companyStamp { grid-area: companyStamp; justify-self: center; align-self: end; }
+
+  .hero-orbit__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 11rem;
+    padding: 0.4rem 0.65rem 0.4rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(63, 111, 0, 0.22);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 18px rgba(12, 21, 18, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .hero-orbit__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: 999px;
+    background: rgba(133, 227, 7, 0.16);
+    color: #3f6f00;
+    flex: 0 0 auto;
+  }
+
+  .hero-orbit__icon svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .hero-orbit__label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #0c1512;
+    white-space: nowrap;
     overflow: hidden;
-    border-radius: calc(clamp(1rem, 3.5vw, 1.375rem) - 5px);
-    background: rgba(255, 255, 255, 0.42);
+    text-overflow: ellipsis;
   }
 
-  /* Slot sizes use rem/clamp — not vh — so zoom / larger text keep the bar visible */
+  html[dir='rtl'] .hero-orbit__label {
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-hero-bullion-stage__chain {
+      opacity: 0.45;
+    }
+
+    .hero-chain__link {
+      stroke-dasharray: none;
+      opacity: 0.2;
+    }
+
+    .hero-chain__node {
+      opacity: 0.28;
+    }
+
+    .hero-chain__packet {
+      display: none;
+    }
+  }
+
+  .home-hero-bullion-stage__dust {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.18;
+    background-image:
+      radial-gradient(1px 1px at 22% 30%, rgba(63, 111, 0, 0.3), transparent),
+      radial-gradient(1.2px 1.2px at 70% 24%, rgba(133, 227, 7, 0.35), transparent),
+      radial-gradient(1px 1px at 58% 70%, rgba(63, 111, 0, 0.2), transparent);
+    background-size: 100% 100%;
+  }
+
+  .home-hero-bullion-stage__core {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    padding: clamp(0.5rem, 2vw, 1rem);
+  }
+
+  .home-hero-bullion-stage__core .home-hero-bullion-slot,
   .home-hero-bullion-core .home-hero-bullion-slot {
     margin-inline: auto;
     width: 100%;
-    max-width: 11rem;
-    height: clamp(7.25rem, 34vw, 11rem);
-    min-height: 7.25rem;
+    max-width: 12rem;
+    height: clamp(9rem, 40vw, 14rem);
+    min-height: 9rem;
+  }
+
+  .home-hero-bullion-stage__core .home-hero-bullion-slot img {
+    height: 96%;
+    width: auto;
+    max-width: 100%;
+    filter: drop-shadow(0 16px 28px rgba(63, 111, 0, 0.16))
+      drop-shadow(0 4px 12px rgba(12, 21, 18, 0.08));
+  }
+
+  .home-hero-bullion-shell,
+  .home-hero-bullion-core {
+    display: contents;
   }
 
   .home-hero-cta {
@@ -484,13 +804,39 @@
   }
 
   .home-hero-cta-btn {
-    width: 100%;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
     justify-content: center;
-    padding: 0.5625rem 0.75rem;
-    font-size: 0.75rem;
+    flex-wrap: nowrap;
+    gap: 0.625rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
     line-height: 1.2;
     border-radius: 0.625rem;
     transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .home-hero-cta-btn__label {
+    display: inline-block;
+    min-width: 0;
+    max-width: 100%;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .home-hero-cta-btn__icon {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    transform: none;
+  }
+
+  html[dir='rtl'] .home-hero-cta-btn__icon {
+    transform: rotate(180deg);
   }
 
   .home-hero-cta-btn:active {
@@ -514,20 +860,59 @@
   @media (min-width: 640px) {
     .home-hero {
       grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.88fr);
-      grid-template-areas:
-        'intro visual'
-        'copy visual';
+      grid-template-areas: 'intro visual';
       gap: clamp(1rem, 2vw, 1.5rem) clamp(1.5rem, 3.5vw, 2.5rem);
       align-items: start;
     }
 
     .home-hero-visual {
       align-self: start;
-      max-width: 20rem;
-      /* Nudge up so the bar balances the badge + headline block */
+      max-width: 24rem;
       margin-top: 0.15rem;
     }
 
+    .home-hero-bullion-stage {
+      max-width: 24rem;
+      aspect-ratio: auto;
+      min-height: clamp(18rem, 40vw, 24rem);
+      padding-inline: 1.75rem;
+      padding-block: 2rem;
+    }
+
+    /* Tablet / narrow desktop column — keep chips off the bar face */
+    .hero-orbit {
+      grid-template-columns: minmax(4.5rem, 1fr) minmax(0, 1.2fr) minmax(4.5rem, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'receipt blockchain qr'
+        'ministry center hologram'
+        '. companyStamp .';
+      gap: 0.4rem 0.35rem;
+      padding: 0.2rem;
+    }
+
+    .hero-orbit__slot--ministry,
+    .hero-orbit__slot--hologram {
+      align-self: center;
+    }
+
+    .hero-orbit__slot--companyStamp {
+      align-self: end;
+    }
+
+    .hero-orbit__chip {
+      max-width: 8.5rem;
+    }
+
+    .hero-orbit__slot--blockchain .hero-orbit__chip {
+      max-width: 10rem;
+    }
+
+    .home-hero-sub {
+      max-width: 40rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
     .home-hero-bullion-core .home-hero-bullion-slot {
       height: clamp(14rem, 32vw, 20rem);
       min-height: 14rem;
@@ -547,6 +932,11 @@
       border-radius: 0.5rem;
     }
 
+    .home-hero-cta-btn__icon {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
     .home-hero-cta-btn--wide {
       width: auto;
     }
@@ -556,24 +946,173 @@
     }
   }
 
+  /* Tablet / small laptop — 3 above + 3 below so chips never cover the bar */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .home-hero-bullion-stage {
+      min-height: clamp(22rem, 52vw, 28rem);
+      padding-inline: 0.75rem;
+      padding-block: 0.5rem;
+    }
+
+    .home-hero-bullion-stage__core {
+      padding-block: 2.35rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
+    .home-hero-bullion-core .home-hero-bullion-slot {
+      max-width: min(100%, 16rem);
+      height: clamp(13rem, 36vw, 18rem);
+      min-height: 13rem;
+    }
+
+    .hero-orbit {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: auto minmax(14rem, 1fr) auto;
+      grid-template-areas:
+        'receipt blockchain qr'
+        '. . .'
+        'ministry companyStamp hologram';
+    }
+
+    .hero-orbit__slot--receipt,
+    .hero-orbit__slot--blockchain,
+    .hero-orbit__slot--qr {
+      align-self: start;
+      justify-self: center;
+    }
+
+    .hero-orbit__slot--ministry,
+    .hero-orbit__slot--companyStamp,
+    .hero-orbit__slot--hologram {
+      align-self: end;
+      justify-self: center;
+    }
+
+    .hero-orbit__slot--receipt,
+    .hero-orbit__slot--ministry {
+      justify-self: start;
+    }
+
+    .hero-orbit__slot--qr,
+    .hero-orbit__slot--hologram {
+      justify-self: end;
+    }
+  }
+
   @media (min-width: 1024px) {
+    .home-section--hero .home-section-inner {
+      padding-inline: clamp(1.25rem, 2.5vw, 2rem);
+    }
+
     .home-hero {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-      gap: clamp(1.5rem, 3vw, 2.5rem) clamp(2.5rem, 4vw, 4rem);
-      align-items: start;
+      /* Visual column wide enough for orbit chips */
+      grid-template-columns: minmax(0, 1.1fr) minmax(20rem, 1.05fr);
+      gap: 1.25rem 1.5rem;
+      align-items: center;
     }
 
     .home-hero-visual {
-      max-width: 28rem;
-      align-self: start;
+      max-width: none;
+      width: 100%;
+      align-self: center;
       margin-top: 0;
       transform: none;
+      justify-self: stretch;
     }
 
-    .home-hero-bullion-core .home-hero-bullion-slot {
-      height: clamp(22rem, 34vw, 30rem);
-      min-height: 22rem;
+    .home-hero-bullion-stage {
+      max-width: none;
+      width: 100%;
+      min-height: clamp(26rem, 36vw, 36rem);
+      padding-inline: 2.5rem;
+      padding-block: 2.5rem;
+    }
+
+    .home-hero-bullion-stage__hex {
+      width: 92%;
+      max-width: 26rem;
+    }
+
+    .home-hero-bullion-stage__chain {
+      width: 110%;
       max-width: 28rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
+    .home-hero-bullion-core .home-hero-bullion-slot {
+      height: clamp(20rem, 30vw, 30rem);
+      min-height: 20rem;
+      max-width: min(100%, 26rem);
+    }
+
+    /* Large screens: true orbit around the bar again */
+    .hero-orbit {
+      grid-template-columns: minmax(5.5rem, 1fr) minmax(0, 1.25fr) minmax(5.5rem, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'receipt blockchain qr'
+        'ministry center hologram'
+        '. companyStamp .';
+      gap: 0.5rem 0.65rem;
+      padding: 0.35rem;
+    }
+
+    .hero-orbit__slot--ministry,
+    .hero-orbit__slot--hologram {
+      align-self: center;
+    }
+
+    .hero-orbit__slot--companyStamp {
+      align-self: end;
+    }
+
+    .hero-orbit__chip {
+      max-width: 11rem;
+      padding: 0.45rem 0.75rem 0.45rem 0.5rem;
+    }
+
+    .hero-orbit__label {
+      font-size: 0.75rem;
+    }
+
+    .hero-orbit__icon {
+      width: 1.85rem;
+      height: 1.85rem;
+    }
+
+    .hero-orbit__icon svg {
+      width: 1.05rem;
+      height: 1.05rem;
+    }
+
+    .home-hero-headline {
+      max-width: none;
+      font-size: clamp(3rem, 3.6vw, 5rem);
+    }
+
+    html[dir='rtl'] .home-hero-headline {
+      max-width: none;
+    }
+
+    .home-hero-sub {
+      font-size: clamp(1.125rem, 0.85vw + 0.55rem, 1.375rem);
+      line-height: 1.65;
+      max-width: min(100%, 52rem);
+    }
+
+    html[dir='rtl'] .home-hero-sub {
+      line-height: 1.78;
+    }
+
+    .home-hero-trust-line {
+      font-size: clamp(0.875rem, 0.35vw + 0.65rem, 1rem);
+      max-width: min(100%, 52rem);
+    }
+
+    .home-hero-cta-btn {
+      min-height: 3rem;
+      padding: 0.875rem 1.5rem;
+      font-size: 1rem;
     }
 
     .home-hero-intro .type-display {
@@ -583,20 +1122,84 @@
 
   @media (min-width: 1440px) {
     .home-hero {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 1fr);
+      gap: 1.5rem 1.75rem;
     }
 
     .home-hero-visual {
-      max-width: 32rem;
+      max-width: none;
     }
 
+    .home-hero-bullion-stage {
+      max-width: none;
+      min-height: clamp(30rem, 38vw, 42rem);
+    }
+
+    .home-hero-bullion-stage__chain {
+      max-width: 38rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
     .home-hero-bullion-core .home-hero-bullion-slot {
-      height: clamp(26rem, 30vw, 34rem);
-      max-width: 32rem;
+      height: clamp(24rem, 32vw, 36rem);
+      max-width: min(100%, 32rem);
+    }
+
+    .home-hero-headline {
+      font-size: clamp(3.5rem, 4vw, 5.75rem);
+    }
+
+    html[dir='rtl'] .home-hero-headline {
+      max-width: none;
+    }
+
+    .home-hero-sub {
+      font-size: clamp(1.2rem, 0.7vw + 0.7rem, 1.45rem);
+      max-width: min(100%, 56rem);
+    }
+
+    .home-hero-trust-line {
+      font-size: 1.0625rem;
+    }
+
+    .home-hero-cta-btn {
+      min-height: 3.25rem;
+      padding: 1rem 1.75rem;
+      font-size: 1.0625rem;
     }
 
     .home-hero-intro .type-display {
       font-size: clamp(2.75rem, 3.2vw, 3.75rem);
+    }
+  }
+
+  @media (min-width: 1800px) {
+    .home-hero {
+      grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 1fr);
+      gap: 1.75rem 2rem;
+    }
+
+    .home-hero-headline {
+      font-size: clamp(4rem, 3.6vw, 6.25rem);
+    }
+
+    .home-hero-sub {
+      font-size: 1.5rem;
+      max-width: 60rem;
+    }
+
+    .home-hero-bullion-stage {
+      min-height: clamp(34rem, 38vw, 46rem);
+    }
+
+    .home-hero-bullion-stage__chain {
+      max-width: 42rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
+    .home-hero-bullion-core .home-hero-bullion-slot {
+      height: clamp(30rem, 34vw, 42rem);
+      max-width: min(100%, 36rem);
     }
   }
 
@@ -606,7 +1209,252 @@
     }
 
     .home-section--hero {
-      padding-block: clamp(1.5rem, 4vw, 2.25rem) clamp(1.25rem, 3.5vw, 2rem);
+      /* Room above hex so stage isn’t clipped under the fixed nav */
+      padding-block: clamp(1.35rem, 4vw, 2rem) clamp(1.25rem, 3.5vw, 1.75rem);
+      overflow-x: clip;
+      overflow-y: visible;
+    }
+
+    .home-section--hero .home-section-inner {
+      padding-inline: max(1rem, var(--page-gutter));
+    }
+
+    /*
+     * Mobile hero (responsive-beast-max + taste):
+     * product visual first → bold claim → body → full-width 44px CTAs
+     */
+    .home-hero {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'visual'
+        'intro';
+      gap: clamp(1rem, 3.5vw, 1.35rem);
+      align-items: stretch;
+    }
+
+    .home-hero-intro {
+      width: 100%;
+      align-items: stretch;
+      padding-inline: 0.125rem;
+    }
+
+    .home-hero-visual {
+      max-width: min(24rem, 96vw);
+      width: 100%;
+      margin-inline: auto;
+      margin-top: 0.35rem;
+      justify-self: center;
+      padding-block: 0.25rem;
+      overflow: visible;
+    }
+
+    .home-hero-bullion-stage {
+      max-width: none;
+      width: 100%;
+      /* Tall enough for: chip row · larger bar · chip row */
+      min-height: clamp(23rem, 82vw, 30rem);
+      padding-inline: 0.35rem;
+      padding-block: 0.35rem;
+      overflow: visible;
+    }
+
+    .home-hero-bullion-stage__hex {
+      width: 86%;
+      max-width: 17rem;
+      top: 50%;
+      opacity: 0.42;
+    }
+
+    .home-hero-bullion-stage__chain {
+      width: 98%;
+      max-width: 18.5rem;
+      top: 50%;
+      opacity: 0.58;
+    }
+
+    .hero-chain__link {
+      stroke-width: 0.75;
+      opacity: 0.22;
+    }
+
+    .hero-chain__node {
+      opacity: 0.32;
+    }
+
+    .home-hero-bullion-stage__core {
+      /* Keep bar in the empty middle band between chip rows */
+      padding: 2.35rem 0.25rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
+    .home-hero-bullion-core .home-hero-bullion-slot {
+      max-width: min(100%, 15.5rem);
+      height: clamp(12.5rem, 52vw, 17rem);
+      min-height: 12.5rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot img {
+      height: 98%;
+    }
+
+    /*
+     * Mobile orbit: 3 chips above the bar, 3 below — never over the product.
+     */
+    .hero-orbit {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: auto minmax(13.5rem, 1fr) auto;
+      grid-template-areas:
+        'receipt blockchain qr'
+        '. . .'
+        'ministry companyStamp hologram';
+      gap: 0.4rem 0.35rem;
+      padding: 0.15rem 0.2rem;
+      align-items: stretch;
+    }
+
+    .hero-orbit__slot--receipt,
+    .hero-orbit__slot--blockchain,
+    .hero-orbit__slot--qr {
+      align-self: start;
+      justify-self: center;
+    }
+
+    .hero-orbit__slot--ministry,
+    .hero-orbit__slot--companyStamp,
+    .hero-orbit__slot--hologram {
+      align-self: end;
+      justify-self: center;
+    }
+
+    .hero-orbit__slot--receipt { justify-self: start; }
+    .hero-orbit__slot--qr { justify-self: end; }
+    .hero-orbit__slot--ministry { justify-self: start; }
+    .hero-orbit__slot--hologram { justify-self: end; }
+
+    .hero-orbit__chip {
+      width: max-content;
+      max-width: min(100%, 7.5rem);
+      gap: 0.25rem;
+      padding: 0.3rem 0.4rem 0.3rem 0.28rem;
+      box-shadow: 0 4px 12px rgba(12, 21, 18, 0.1);
+    }
+
+    .hero-orbit__slot--blockchain .hero-orbit__chip {
+      max-width: min(100%, 8.75rem);
+    }
+
+    .hero-orbit__icon {
+      width: 1.3rem;
+      height: 1.3rem;
+    }
+
+    .hero-orbit__icon svg {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    .hero-orbit__label {
+      font-size: 0.5625rem;
+      letter-spacing: 0;
+    }
+
+    .home-hero-headline {
+      max-width: none;
+      width: 100%;
+      font-size: clamp(1.65rem, 6.4vw + 0.15rem, 2.15rem);
+      line-height: 1.22;
+      gap: 0.12em;
+      padding-inline: 0.05rem;
+    }
+
+    html[dir='rtl'] .home-hero-headline {
+      line-height: 1.34;
+    }
+
+    .home-hero-headline__line {
+      overflow-wrap: anywhere;
+      text-wrap: pretty;
+    }
+
+    .home-hero-headline__line--lead {
+      font-size: 0.5em;
+      color: #334155;
+    }
+
+    html[dir='rtl'] .home-hero-headline__line--lead {
+      font-size: 0.52em;
+    }
+
+    .home-hero-headline__line--trail {
+      font-size: 0.9em;
+    }
+
+    .home-hero-sub {
+      margin-top: 0.85rem;
+      max-width: none;
+      font-size: max(1rem, 0.95rem);
+      line-height: 1.65;
+      color: #334155;
+      padding-inline: 0.05rem;
+    }
+
+    html[dir='rtl'] .home-hero-sub {
+      line-height: 1.78;
+      font-size: max(1rem, 0.95rem);
+    }
+
+    .home-hero-intro .home-hero-cta {
+      margin-top: 1.15rem;
+      flex-direction: column;
+      gap: 0.625rem;
+      width: 100%;
+    }
+
+    .home-hero-cta-btn {
+      width: 100%;
+      min-height: 2.75rem;
+      padding: 0.8rem 1.15rem;
+      font-size: 0.9375rem;
+      border-radius: 0.75rem;
+      gap: 0.75rem;
+    }
+
+    .home-hero-cta-btn__label {
+      white-space: nowrap;
+    }
+
+    .home-hero-cta-btn__icon {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    .home-hero-cta-btn--wide {
+      width: 100%;
+    }
+
+    .home-hero-trust-line {
+      margin-top: 0.8rem;
+      max-width: none;
+      font-size: max(0.8125rem, 0.75rem);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      padding-inline: 0.05rem;
+    }
+
+    .home-section--hero .hero-trust-strip {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+    }
+
+    .home-section--hero .hero-trust-strip__label {
+      font-size: 0.6875rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    html[dir='rtl'] .home-section--hero .hero-trust-strip__label {
+      font-size: 0.75rem;
+      line-height: 1.4;
     }
 
     .home-hero-intro .type-display {
@@ -790,12 +1638,13 @@
 
     .home-hero {
       grid-template-columns: minmax(0, 1.2fr) minmax(5rem, 0.55fr);
-      grid-template-areas: 'intro visual' 'copy visual';
+      grid-template-areas: 'intro visual';
       gap: 0.5rem 0.75rem;
       align-items: center;
     }
 
-    .home-hero-bullion-core .home-hero-bullion-slot {
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
+  .home-hero-bullion-core .home-hero-bullion-slot {
       max-width: 7.5rem;
       height: clamp(4.5rem, 42dvh, 7rem);
       min-height: 4.5rem;
@@ -847,11 +1696,76 @@
   }
 
   @media (max-width: 1023px) and (orientation: landscape) and (max-height: 420px) {
+    .home-section--hero {
+      padding-block: 0.65rem 0.75rem;
+    }
+
+    .home-hero {
+      grid-template-columns: minmax(0, 1.15fr) minmax(8rem, 0.75fr);
+      grid-template-areas: 'intro visual';
+      gap: 0.5rem 0.85rem;
+      align-items: center;
+    }
+
+    .home-hero-visual {
+      max-width: 10.5rem;
+      margin-inline: 0;
+      justify-self: end;
+    }
+
+    .home-hero-bullion-stage {
+      min-height: 8.5rem;
+    }
+
+    .home-hero-bullion-stage__core .home-hero-bullion-slot,
+    .home-hero-bullion-core .home-hero-bullion-slot {
+      height: 8rem;
+      min-height: 8rem;
+      max-width: 9.5rem;
+    }
+
+    .home-hero-headline {
+      font-size: clamp(1.25rem, 3.2vw, 1.75rem);
+      line-height: 1.15;
+    }
+
+    .home-hero-sub,
     .home-hero-copy .type-lead {
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      margin-top: 0.4rem;
+      font-size: 0.875rem;
+      line-height: 1.45;
+    }
+
+    .home-hero-intro .home-hero-cta {
+      margin-top: 0.55rem;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .home-hero-cta-btn {
+      width: auto;
+      min-height: 2.5rem;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.8125rem;
+    }
+
+    .home-hero-trust-line {
+      margin-top: 0.4rem;
+      font-size: 0.6875rem;
+      -webkit-line-clamp: 1;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .home-section--hero .hero-trust-strip {
+      margin-top: 0.55rem;
+      padding-top: 0.5rem;
     }
 
     .home-hero-trust-inline {
@@ -3972,6 +4886,25 @@ html[dir='rtl'] .gs-app-loader__trust {
   min-width: 0;
 }
 
+@media (max-width: 639px) {
+  .site-chrome-top .page-shell {
+    padding-inline: max(0.875rem, var(--page-gutter));
+  }
+
+  .navbar-main-row {
+    gap: 0.5rem;
+    padding-block: 0.35rem;
+  }
+
+  .navbar-actions {
+    gap: 0.125rem;
+  }
+
+  .navbar-logo img {
+    max-width: min(8.75rem, 40vw);
+  }
+}
+
 .navbar-desktop-links {
   overflow: visible;
 }
@@ -4053,37 +4986,132 @@ html[dir='rtl'] .gs-app-loader__trust {
 
 @media (max-width: 359px) {
   :root {
-    --page-gutter: 0.75rem;
+    --page-gutter: 0.875rem;
     --space-grid: 0.5rem;
+  }
+
+  .home-section--hero {
+    padding-block: 1.15rem 1.15rem;
+  }
+
+  .home-section--hero .home-section-inner {
+    padding-inline: 0.875rem;
   }
 
   .home-hero {
     grid-template-columns: 1fr;
     grid-template-areas:
-      'intro'
       'visual'
-      'copy';
-    gap: 0.75rem;
+      'intro';
+    gap: 0.9rem;
   }
 
   .home-hero-visual {
-    max-width: 12rem;
+    max-width: min(22rem, 96vw);
     margin-inline: auto;
+    padding-block: 0.25rem;
+  }
+
+  .home-hero-bullion-stage {
+    min-height: clamp(21rem, 88vw, 27rem);
+    padding-inline: 0.2rem;
+    padding-block: 0.25rem;
+  }
+
+  .home-hero-headline {
+    font-size: clamp(1.5rem, 6.8vw, 1.9rem);
+    line-height: 1.24;
+  }
+
+  html[dir='rtl'] .home-hero-headline {
+    line-height: 1.36;
+  }
+
+  .home-hero-headline__line--accent {
+    font-size: 0.96em;
+  }
+
+  .home-hero-sub {
+    font-size: 1rem;
+    line-height: 1.68;
+    margin-top: 0.7rem;
   }
 
   .home-hero-intro .type-display {
     font-size: clamp(1.2rem, 7vw, 1.55rem);
   }
 
+  .home-hero-bullion-stage__hex {
+    max-width: 15rem;
+    opacity: 0.4;
+  }
+
+  .home-hero-bullion-stage__chain {
+    max-width: 16.5rem;
+    opacity: 0.55;
+  }
+
+  .home-hero-bullion-stage__core {
+    padding-block: 2.15rem;
+  }
+
+  .home-hero-bullion-stage__core .home-hero-bullion-slot,
   .home-hero-bullion-core .home-hero-bullion-slot {
-    height: clamp(6.75rem, 46vw, 10rem);
-    min-height: 6.75rem;
-    max-width: 11rem;
+    height: clamp(11.5rem, 56vw, 15rem);
+    min-height: 11.5rem;
+    max-width: min(100%, 14rem);
+  }
+
+  .hero-orbit {
+    grid-template-rows: auto minmax(12.25rem, 1fr) auto;
+    gap: 0.35rem 0.25rem;
+  }
+
+  /* Ultra-narrow: keep labels but smaller; icon-only only if still tight */
+  .hero-orbit__chip {
+    max-width: min(100%, 6.5rem);
+    padding: 0.28rem 0.35rem 0.28rem 0.25rem;
+  }
+
+  .hero-orbit__slot--blockchain .hero-orbit__chip {
+    max-width: min(100%, 7.5rem);
+  }
+
+  .hero-orbit__label {
+    display: inline;
+    font-size: 0.5rem;
+  }
+
+  .hero-orbit__icon {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .hero-orbit__icon svg {
+    width: 0.7rem;
+    height: 0.7rem;
+  }
+
+  .home-hero-intro .home-hero-cta {
+    margin-top: 1rem;
+    gap: 0.55rem;
   }
 
   .home-hero-cta-btn {
-    padding: 0.625rem 0.75rem;
-    font-size: 0.8125rem;
+    min-height: 2.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    gap: 0.625rem;
+  }
+
+  /* Ultra-narrow: drop arrow so label never collides */
+  .home-hero-cta-btn__icon {
+    display: none;
+  }
+
+  .home-hero-trust-line {
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
   }
 }
 

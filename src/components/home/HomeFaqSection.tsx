@@ -9,6 +9,7 @@ import {
 import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
 
 const FAQ_ITEMS = [
+  'digitalOwnership',
   'certified',
   'livePricing',
   'buyback',
