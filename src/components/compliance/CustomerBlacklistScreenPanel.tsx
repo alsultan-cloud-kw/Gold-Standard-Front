@@ -132,16 +132,24 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
   const matchScore =
     report?.result.similarityScore != null
       ? Math.round(report.result.similarityScore * 100)
-      : report?.result.matched
+      : report?.result.matchType === 'exact'
         ? 100
         : 0
 
-  const matchTypeLabel =
-    report?.result.matchType === 'fuzzy'
+  const isExactMatch = report?.result.matchType === 'exact'
+  const isFuzzyMatch = report?.result.matchType === 'fuzzy'
+
+  const matchStatusLabel = report?.result.matched
+    ? isExactMatch
+      ? t('customerScreening.statusMatchExact')
+      : t('customerScreening.statusMatchFuzzy')
+    : t('customerScreening.statusClear')
+
+  const matchTypeLabel = isExactMatch
+    ? t('customerScreening.matchExact')
+    : isFuzzyMatch
       ? t('customerScreening.matchFuzzy')
-      : report?.result.matchType === 'exact'
-        ? t('customerScreening.matchExact')
-        : '—'
+      : '—'
 
   return (
     <section
@@ -274,9 +282,7 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
                       report.result.matched ? 'text-red-100' : 'text-[#ECFCCB]'
                     }`}
                   >
-                    {report.result.matched
-                      ? t('customerScreening.statusMatch')
-                      : t('customerScreening.statusClear')}
+                    {matchStatusLabel}
                   </p>
                 </div>
               </div>
@@ -308,20 +314,30 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
 
               {report.result.matched ? (
                 <div className="space-y-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                  <div className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="font-semibold text-red-100/90">
-                      {t('customerScreening.similarity')}
-                    </span>
-                    <span className="font-bold tabular-nums text-red-200">{matchScore}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-red-700 via-red-500 to-amber-400"
-                      style={{ width: `${Math.min(100, matchScore)}%` }}
-                    />
-                  </div>
+                  {isFuzzyMatch ? (
+                    <>
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="font-semibold text-red-100/90">
+                          {t('customerScreening.similarity')}
+                        </span>
+                        <span className="font-bold tabular-nums text-red-200">{matchScore}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-red-700 via-red-500 to-amber-400"
+                          style={{ width: `${Math.min(100, matchScore)}%` }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[11px] font-semibold text-red-100/90">
+                      {t('customerScreening.similarityExactNote')}
+                    </p>
+                  )}
                   <p className="text-[11px] leading-relaxed text-red-200/80">
-                    {t('customerScreening.matchAdvice')}
+                    {isExactMatch
+                      ? t('customerScreening.matchAdviceExact')
+                      : t('customerScreening.matchAdviceFuzzy')}
                   </p>
                 </div>
               ) : (
