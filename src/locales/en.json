@@ -26,9 +26,12 @@
     "location": "Central Gold Market, Kuwait City 85951",
     "customerPrices": "Customer prices",
     "companyPrices": "Company prices",
+    "deskPriceBoard": "Desk board",
+    "customerKyc": "Customer screening",
     "buyGold": "Buy gold",
     "cart": "Cart",
-    "trading": "Trading"
+    "trading": "Trading",
+    "holdings": "Holdings"
   },
   "legal": {
     "combined": {
@@ -108,14 +111,16 @@
     "hoursFriday": "Fri · 2:00 PM – 9:00 PM",
     "allRightsReserved": "All rights reserved.",
     "trading": "Trading",
-    "tradingDesc": "Trading desk — coming soon"
+    "tradingDesc": "Trading desk — coming soon",
+    "holdings": "Holdings",
+    "holdingsDesc": "Your metal wallet — build gold holdings"
   },
   "home": {
     "liveGoldPrices": "Live Gold Prices Available",
     "shopNow": "Shop Now",
     "viewPrices": "View Prices",
     "certifiedQuality": "Digital verification for every piece",
-    "certifiedQualityDesc": "Each piece carries its own serial number — scan or enter it on our verify page to confirm authenticity anytime.",
+    "certifiedQualityDesc": "Each piece carries its own serial number, company stamp, and Digital Ownership Record — scan or enter it on our verify page to confirm authenticity anytime.",
     "livePrices": "Guaranteed buyback",
     "livePricesDesc": "We buy your gold back whenever you want to sell, at rates published on the site — instant liquidity, no hidden conditions.",
     "metalTickerLabel": "Live gold rates",
@@ -235,7 +240,7 @@
     "heroCertifiedBadge": "CERTIFIED · KUWAIT",
     "heroHeadlineLead": "Invest in gold.",
     "heroHeadlineAccent": "Not uncertainty.",
-    "heroSubtext": "Buy certified gold bars and investment coins at live market prices — with fully insured delivery and a guaranteed buyback.",
+    "heroSubtext": "Certified gold bars and investment coins at live market prices — in Kuwait.",
     "heroKicker": "Gold coins, minted bars, and live bullion rates — together in Kuwait.",
     "heroIntro": "Shop certified gold coins and investment bars with transparent live pricing and follow the market in real time under Gold Standard.",
     "heroCardBullionTitle": "Coins & bars",
@@ -380,7 +385,8 @@
     "securityTrust": {
       "kicker": "Authenticity & security",
       "title": "Authenticity & security, guaranteed",
-      "body": "Certainty through a multi-layer security fingerprint that combines physical verification and decentralized checks — lasting confidence for the modern bullion investor.",
+      "body": "Gold Standard brings together every practical layer of bullion protection we can deploy — physical marks, holographic seals, serial tracking, and a Digital Ownership Record — so the modern investor gets lasting certainty, not guesswork.",
+      "advantageLead": "We were the first in Kuwait to combine a full security stack for investment bullion — including a Digital Ownership Record secured by blockchain technology, security hologram seals, and our own company stamp for an extra layer of trust you can verify.",
       "items": {
         "insuredShipping": "Fully insured shipping",
         "mociHallmark": "MOCI hallmark & purity stamp",
@@ -399,12 +405,16 @@
         },
         "blockchain": {
           "title": "Digital Ownership Record",
-          "description": "Ownership record secured by blockchain technology — every investment piece is linked to a secure digital ownership record we are building on-chain.",
-          "badge": "In development"
+          "description": "The first bullion documentation solution of its kind in Kuwait — every investment piece can be linked to a Digital Ownership Record secured by blockchain technology, beyond paper alone.",
+          "badge": "Kuwait pioneer"
         },
         "hologram": {
           "title": "Security hologram seal",
-          "description": "Premium packaging carries a holographic mark engineered to resist tampering — a first visual check that the bar is genuine."
+          "description": "Premium packaging carries a tamper-resistant holographic mark — a first visual check that the bar and seal are genuine before you scan or verify online."
+        },
+        "companyStamp": {
+          "title": "Gold Standard company stamp",
+          "description": "Every piece carries the Gold Standard company stamp alongside official hallmarking — a branded physical mark you can match to our catalog, receipts, and verify page."
         },
         "ministry": {
           "title": "Ministry stamp on the gold",
@@ -418,8 +428,8 @@
       "credentialsKicker": "Licensed credentials",
       "credentialsBody": "The same marks of trust you expect from an investment bullion house — official hallmarking, secure payments, insured delivery, and a clear commercial licence.",
       "methodsKicker": "How you verify your bullion",
-      "methodsTitle": "Five layers of authenticity",
-      "methodsBody": "Each bar and investment piece is designed so you can confirm what you own — independently, quickly, and with a lasting paper trail."
+      "methodsTitle": "Six layers of authenticity",
+      "methodsBody": "Each bar and investment piece is designed so you can confirm what you own — independently, quickly, and with a lasting paper and digital trail."
     },
     "faq": {
       "kicker": "FAQ",
@@ -427,7 +437,7 @@
       "items": {
         "certified": {
           "q": "Is the gold certified?",
-          "a": "Yes — every bar, coin, and piece is sold with clear karat and weight, MOCI precious-metals hallmarking where required, and a serial number in our official catalog. Scan the product QR or visit our verify page to confirm registration before you buy."
+          "a": "Yes — every bar, coin, and piece is sold with clear karat and weight, MOCI precious-metals hallmarking where required, the Gold Standard company stamp, a serial number in our official catalog, and a Digital Ownership Record. Scan the product QR or visit our verify page to confirm registration before you buy."
         },
         "livePricing": {
           "q": "How does live pricing work?",
@@ -618,6 +628,14 @@
       "title": "Live Gold Prices Kuwait · Buy & Sell KWD/g | Gold Standard",
       "description": "Live gold and precious metal buy/sell rates in Kuwaiti dinar. Interactive chart, karat board, and gram calculator — updated continuously."
     },
+    "customerKyc": {
+      "title": "Name screening · Gold Standard Kuwait",
+      "description": "Name screening by Gold Standard Kuwait. Sanctions data supported by OpenSanctions."
+    },
+    "mociKyc": {
+      "title": "MOCI customer due diligence questionnaire · Kuwait | Gold Standard",
+      "description": "Free Ministry of Commerce–aligned customer due diligence questionnaire for Kuwait businesses. Purpose of purchase, source of funds, PEP, and employment — print-ready for your records."
+    },
     "companyPrices": {
       "title": "Company Gold Sell Rates by Karat | Gold Standard Kuwait",
       "description": "Desk-ready sell rates by karat for company and counter use. Live market-linked KWD/g board from Gold Standard Kuwait."
@@ -653,6 +671,10 @@
     "trading": {
       "title": "Gold Trading Desk · Coming Soon | Gold Standard",
       "description": "Gold Standard trading desk is under development. Live rates, custody, and institutional-grade tools launching soon in Kuwait."
+    },
+    "holdings": {
+      "title": "Gold Holdings · Metal Wallet | Gold Standard",
+      "description": "Plan and build your gold holdings at live Kuwait rates — instant acquisition and target-price orders coming soon."
     }
   },
   "priceReminder": {
@@ -830,6 +852,16 @@
     "weightGrams": "Weight (grams)",
     "weightHint": "Enter grams — buy/sell totals below update instantly (KWD/g × grams).",
     "weightHintShort": "Totals update instantly",
+    "enterGramsLabel": "Enter quantity in grams",
+    "gramUnit": "g",
+    "calculatorUpdateNote": "Each card shows buy and sell totals for the weight you enter (KWD/g × grams).",
+    "calculatorActiveHint": "Totals below are for this weight — buy price is what you pay for gold; sell price is what you receive when selling gold.",
+    "calculatorIdleHint": "Enter grams to calculate totals for every karat and metal.",
+    "goldAccountTitle": "Gold account · {{karat}}",
+    "priceToBuyGold": "Buy price",
+    "priceToSellGold": "Sell price",
+    "priceToBuyGoldHint": "You pay · buy gold from us",
+    "priceToSellGoldHint": "You receive · sell gold to us",
     "weightCta": "See rates",
     "weightCtaDisabled": "Enter weight",
     "weightSeeAllKarats": "All karats for {{grams}} g →",
@@ -839,16 +871,16 @@
     "totalForWeight": "Total for {{grams}} g",
     "buy": "Buy",
     "sell": "Sell",
-    "customerPay": "You pay",
-    "customerReceive": "You receive",
+    "customerPay": "Buy price",
+    "customerReceive": "Sell price",
     "spreadTotal": "Spread {{value}} fils",
     "spreadPerGram": "Spread {{value}} fils/g",
     "perGramAbbr": "(KWD/g)",
     "liveBadge": "Live",
     "sellPerGram": "Sell · KWD/g",
     "buyPerGram": "Buy · KWD/g",
-    "sellHint": "You pay",
-    "buyHint": "You receive",
+    "sellHint": "Buy gold from us",
+    "buyHint": "Sell gold to us",
     "karatDesc": {
       "24K": "Pure gold",
       "22K": "22 karat gold",
@@ -863,7 +895,7 @@
   },
   "companyPricesPage": {
     "kicker": "Desk board",
-    "subtitle": "Large sell rates per karat for counter and company use — refreshed from the live market feed.",
+    "subtitle": "Simplified sell-only karat view for internal counter use — not a separate public price list.",
     "boardTitle": "Sell rates by karat",
     "karatLabel": "Karat",
     "disclaimer": "Company board rates are indicative. Confirm the live sell price before quoting a customer."
@@ -996,7 +1028,7 @@
     "certified": "Certified",
     "trustKicker": "Buy with confidence",
     "trustTitle": "Certified, insured & registered",
-    "trustBody": "Every piece includes a Digital Ownership Record secured by blockchain technology, with clear karat, weight, and serial verification.",
+    "trustBody": "Every piece includes a Digital Ownership Record secured by blockchain technology, the Gold Standard company stamp, security hologram seal, and clear karat, weight, and serial verification.",
     "verifyCta": "Check registry status",
     "verifyHint": "Confirm this piece is listed in our official catalog and linked to its Digital Ownership Record.",
     "calculatePriceFailed": "Failed to calculate price",
@@ -1311,12 +1343,62 @@
   "aboutPage": {
     "kicker": "Investment bullion",
     "title": "About us",
-    "hero": "Gold Standard is a Kuwait company specialized in manufacturing and supplying high-purity investment gold products. We are the investment arm of Sultan Gold, focused on bars, coins, and institutional bullion solutions — not traditional jewellery.",
+    "hero": "Gold Standard is a Kuwait investment bullion company — the investment arm of Sultan Gold — manufacturing and supplying high-purity bars, coins, and institutional solutions. We operate under a Ministry of Commerce commercial licence, with MOCI hallmarking, live digital pricing, and insured delivery across Kuwait.",
     "ctaShop": "Browse investment products",
     "ctaContact": "Contact us",
     "storyKicker": "Who we are",
-    "storyTitle": "The investment arm of Sultan Gold",
-    "storyBody": "We draw on advanced industrial capability inside Sultan Gold workshops and factories, where investment bars, coins, and custom gold products are designed and produced to high standards of purity, precision, and transparency — built for wealth preservation, not jewellery fashion.",
+    "storyTitle": "A Kuwait bullion company built for serious investors",
+    "storyBody": "Gold Standard was established to serve individuals, jewellers, banks, and institutions who want transparent, documented physical gold — not fashion jewellery.",
+    "story": {
+      "p1": "We are registered in the State of Kuwait under commercial licence No. 279/2026 issued by the Ministry of Commerce and Industry. Our legal name is Gold Standard Jewellers and Precious Metals Company, and we operate as the dedicated investment channel of Sultan Gold — one of Kuwait’s established gold manufacturing groups.",
+      "p2": "Investment bars, coins, and custom bullion are designed and produced inside Sultan Gold workshops and factories. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
+      "p3": "Our services centre on buying and selling precious metals with clarity: live KWD rates on the website, secure KNET checkout, product authentication, insured delivery within Kuwait, and buyback programmes under published policy. A digital metal wallet and target-price acquisition tools are rolling out for registered clients.",
+      "p4": "We structure sales with constructive possession principles aligned with Islamic finance, so ownership is documented even when physical delivery follows later. Our goal is a trusted environment where savings, trade, and long-term investment in bullion can happen with confidence — backed by manufacturing depth, regulatory compliance, and technology you can verify."
+    },
+    "profileKicker": "Company profile",
+    "profileTitle": "What defines Gold Standard",
+    "profileIntro": "We combine Kuwait regulatory compliance, Sultan Gold manufacturing heritage, and a modern digital storefront — so every bar and coin is traceable, priced transparently, and built for investment.",
+    "milestones": {
+      "kuwait": {
+        "title": "Established in Kuwait",
+        "body": "Gold Standard operates as a Kuwait precious-metals company serving the Central Gold Market and branches nationwide — focused on bullion, not traditional jewellery retail."
+      },
+      "licence": {
+        "title": "Ministry of Commerce licence",
+        "body": "Registered under commercial licence No. 279/2026 with the Ministry of Commerce and Industry — the legal foundation for our bullion trade and institutional supply activities."
+      },
+      "manufacturing": {
+        "title": "In-house bullion production",
+        "body": "As the investment arm of Sultan Gold, we manufacture bars, coins, and custom institutional pieces with disciplined quality control inside Sultan Gold facilities."
+      },
+      "moci": {
+        "title": "MOCI hallmark & inspection",
+        "body": "Investment gold is tested and stamped under Kuwait’s Precious Metals Department rules before sale — confirming karat purity and protecting buyers from unstamped or counterfeit pieces."
+      },
+      "digital": {
+        "title": "Digital storefront & live pricing",
+        "body": "Customers can browse certified products, see live KWD buy/sell rates, pay securely via KNET, and track orders online — with member clubs and institutional pricing where applicable."
+      },
+      "authenticity": {
+        "title": "Digital Ownership Record & verification layers",
+        "body": "Kuwait’s first stack to combine a Digital Ownership Record, security hologram seal, company stamp, and serial tracking — an investment experience you can verify at every step."
+      },
+      "sharia": {
+        "title": "Sharia-aligned constructive possession",
+        "body": "We structure transactions with constructive possession principles so ownership transfers in a Sharia-valid manner, with insured custody until pickup or insured delivery — documented in our terms."
+      },
+      "reach": {
+        "title": "Clients we serve",
+        "body": "From individual savers and family offices to jewellers, bullion dealers, banks, and corporate buyers — we support wealth preservation, inventory supply, and institutional programmes."
+      }
+    },
+    "digitalChannelTitle": "Shop and verify online",
+    "digitalChannelBody": "Browse MOCI-hallmarked investment products at live Kuwait rates, complete checkout with KNET, and verify authenticity from our official catalog — with metal holdings tools launching for registered accounts.",
+    "securityKicker": "Our advantage",
+    "securityTitle": "The most complete bullion security stack in Kuwait",
+    "securityIntro": "We built Gold Standard around verification you can repeat — not promises you cannot check. That means combining every protection layer that makes sense for physical gold: official hallmarking, our company stamp, holographic seals, serialised QR, stamped receipts, and a Digital Ownership Record.",
+    "securityLead": "Gold Standard was the first in Kuwait to bring this full security model to investment bullion — including the Digital Ownership Record secured by blockchain technology, so ownership is documented beyond the counter.",
+    "securityLandingLink": "See layers on homepage",
     "focus": {
       "coins": {
         "title": "Coins, bars ",
@@ -1348,10 +1430,10 @@
     "valuesIntro": "From raw material selection through manufacturing, inspection, and packaging, we follow investment-bullion standards — with transparent pricing and authenticity you can check.",
     "missionKicker": "Mission",
     "missionTitle": "Our mission",
-    "missionBody": "Deliver reliable investment gold solutions for individuals and institutions — combining purity, documentation, and practical tradability.",
+    "missionBody": "Deliver reliable investment gold for individuals and institutions — combining certified purity, transparent KWD pricing, documented ownership, insured delivery, and practical buyback under clear policy.",
     "visionKicker": "Vision",
     "visionTitle": "Our vision",
-    "visionBody": "To be among the Gulf’s leading investment-bullion manufacturers and suppliers — offering integrated solutions that combine global quality standards, modern verification technology, and lasting trust. At Gold Standard we do not only produce gold — we set a higher standard for confidence in physical investment.",
+    "visionBody": "To become the preferred choice for investors — individuals and companies — seeking distinguished bullion services in Kuwait and the Gulf: manufacturing depth, regulatory compliance, digital convenience, and trust that lasts beyond a single transaction.",
     "ctaKicker": "Next step",
     "ctaTitle": "See live prices or visit a branch",
     "ctaBody": "Check today’s rates in KWD, or find a Gold Standard location near you.",
@@ -1442,7 +1524,36 @@
     },
     "clientsKicker": "Who we serve",
     "clientsTitle": "Built for investors and institutions",
-    "clientsIntro": "Our clients are not limited to retail shoppers. We support a wide spectrum of wealth and market participants.",
+    "clientsIntro": "Our clients include savers building long-term positions, jewellers sourcing certified inventory, bullion desks, banks, corporate treasuries, and government-related entities — anyone who needs documented physical gold with professional service.",
+    "partnersKicker": "Strategic partners",
+    "partnersTitle": "Our partners",
+    "partnersIntro": "Gold Standard is built on trusted relationships — from legal counsel and manufacturing heritage to banking infrastructure that supports secure, Sharia-aligned commerce.",
+    "partnersNote": "We continue to expand our partner network across compliance, logistics, and institutional channels.",
+    "partnersVisit": "Visit website",
+    "partnersVisitExternal": "Visit {{name}} website (opens in new tab)",
+    "partnersScrollHint": "Swipe or use arrows to browse partners",
+    "partnersRailLabel": "Gold Standard partners",
+    "partnersMoreKicker": "Coming soon",
+    "partnersMoreFoot": "Manufacturing, custody, and institutional channels.",
+    "partnersMoreTitle": "More",
+    "partnersMoreBody": "Additional strategic partnerships are on the way — in manufacturing, custody, and institutional distribution.",
+    "partners": {
+      "wathaq": {
+        "role": "Legal representative",
+        "name": "Wathaq Law Firm & Legal Consultations",
+        "body": "The company’s legal representative — supporting corporate governance, contracts, regulatory filings, and ongoing legal advisory for Gold Standard’s operations."
+      },
+      "sultanGold": {
+        "role": "Parent manufacturing group",
+        "name": "Sultan Gold",
+        "body": "Our parent brand and manufacturing backbone — investment bullion is produced inside Sultan Gold workshops with the industrial depth behind Kuwait’s gold market."
+      },
+      "kfh": {
+        "role": "Banking partner",
+        "name": "Kuwait Finance House (KFH)",
+        "body": "A leading Islamic financial institution in Kuwait — supporting the banking and payment ecosystem around secure, compliant customer transactions."
+      }
+    },
     "clients": {
       "individuals": "Individual investors",
       "banks": "Banks & financial institutions",
@@ -1498,7 +1609,8 @@
     "captchaFailed": "Security verification failed. Please try again.",
     "lastUsed": "Last used",
     "accountInactive": "Your account is inactive. Please contact the administrator.",
-    "accountInactiveWithAdmin": "Your account is inactive. Please contact the administrator. Admin email: {{email}}",
+    "accountInactiveWithAdmin": "Your account is inactive. Please contact the administrator at {{email}}.",
+    "supportLine": "Need help?",
     "createAccountTitle": "Create Account",
     "registerSubtitle": "Join us for exclusive benefits",
     "amlOpenSanctions": "AML Screening powered by OpenSanctions (Germany)",
@@ -1510,7 +1622,14 @@
     "roleTrader": "Trader — shop access and member benefits",
     "fullName": "Full name",
     "nationality": "Nationality",
-    "selectNationality": "Select your country",
+    "country": "Country of residence",
+    "selectCountry": "Select your country",
+    "countryRequired": "Please select your country of residence.",
+    "civilId": "Civil ID number",
+    "placeholderCivilId": "12-digit Civil ID",
+    "civilIdRequired": "Enter a valid 12-digit Civil ID.",
+    "civilIdHint": "Kuwait Civil ID (12 digits). Identity verification may be requested before trading.",
+    "selectNationality": "Select your nationality",
     "nationalityHint": "Your country of nationality (ISO code is stored for your account).",
     "nationalityRequired": "Please select your nationality.",
     "searchNationality": "Search country or code…",
@@ -1526,27 +1645,69 @@
     "termsAcceptRequired": "Please accept the Terms and Conditions & Privacy Policy to continue.",
     "createAccountCta": "Create Account",
     "passwordsMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "emailRequired": "Please enter your email.",
+    "phoneRequired": "Please enter your phone number.",
     "registerSuccess": "Account created successfully!",
     "registerFailed": "Failed to create account. Please try again.",
+    "flow": {
+      "registerSubtitle": "A few short steps — then you’re in.",
+      "stepIdentity": "Contact",
+      "stepDetails": "Details",
+      "stepVerify": "Confirm",
+      "orContinue": "or continue with",
+      "continue": "Continue",
+      "back": "Back",
+      "createAndVerify": "Create account & verify",
+      "emailVerifyHint": "We’ll send a one-time code by email to confirm your account.",
+      "whatsappVerifyHint": "We’ll send a one-time code on WhatsApp to confirm your account.",
+      "passwordHint": "At least 8 characters. Mix letters and numbers for a stronger password.",
+      "bothContactsHint": "We need both email and mobile so you can confirm via Amazon SES or WhatsApp.",
+      "signInPreference": "Preferred sign-in",
+      "signInPreferenceHint": "Choose how you usually sign in — you can still verify by email or WhatsApp.",
+      "verifyChannelHint": "Confirm your account with a code sent by email or WhatsApp."
+    },
     "kyc": {
       "sectionTitle": "Verification questions",
       "skipHint": "You can skip these for now and finish them later in your profile.",
       "skipForNow": "Skip for now",
       "skippedToast": "Verification questions skipped — complete them in your profile when ready.",
-      "incompleteBanner": "Your profile is incomplete. Please answer the verification questions below.",
-      "completeTitle": "Verification questions",
-      "completeHint": "These answers were set by Gold Standard compliance. Complete them to finish your profile.",
+      "incompleteBanner": "Your profile is incomplete. Please answer the Ministry of Commerce verification questions.",
+      "completeTitle": "Ministry verification questions",
+      "completeHint": "Required under Ministry of Commerce customer due-diligence rules. Complete them to finish your profile.",
       "saveAnswers": "Save verification answers",
       "savedToast": "Verification answers saved",
-      "saveFailed": "Could not save verification answers"
+      "saveFailed": "Could not save verification answers",
+      "ministry": {
+        "title": "KYC Update as per MOCI request",
+        "introBody": "To proceed please complete the following data",
+        "startNow": "Start Now",
+        "next": "Next",
+        "back": "Previous",
+        "submit": "Submit",
+        "ok": "OK",
+        "close": "Close",
+        "selectPlaceholder": "Select from the list",
+        "jobPlaceholder": "Enter your profession or job title",
+        "requiredField": "Please complete this field",
+        "tooLong": "Maximum 300 characters",
+        "declareRequired": "Please confirm the declaration to continue",
+        "thanksTitle": "Thank you!",
+        "thanksBody": "Your answer has been sent successfully. Thank you for participating."
+      }
     },
     "forgotPasswordPage": {
       "title": "Forgot password",
-      "subtitleRequest": "We’ll send a code to reset your password",
+      "subtitleRequest": "We'll send a secure one-time code to reset your password",
       "subtitleOtp": "Enter the code we sent you",
       "subtitlePassword": "Choose a new password",
+      "stepRequest": "Request",
+      "stepOtp": "Verify",
+      "stepPassword": "Reset",
       "emailTab": "Email",
       "phoneTab": "Phone",
+      "whatsappTab": "WhatsApp",
+      "channelHint": "Receive your reset code by email (Amazon SES) or WhatsApp.",
       "sendCode": "Send code",
       "otpLabel": "6-digit code",
       "otpHint": "Check your inbox (and spam folder) for the 6-digit code.",
@@ -1559,7 +1720,8 @@
       "resetCta": "Reset password",
       "backToSignIn": "Back to sign in",
       "toasts": {
-        "resetSent": "If this user account exists, a reset code has been sent.",
+        "resetSent": "If this account exists, a reset code has been sent.",
+        "sendFailed": "Could not send the reset code. Try again or contact support.",
         "emailSendFailed": "Email could not be sent. Try again later.",
         "requestFailed": "Request failed. Try again later.",
         "enterOtp": "Enter the 6-digit code.",
@@ -1572,7 +1734,103 @@
         "resetFailed": "Could not reset password. Try again."
       }
     },
-    "authTransitionHint": "Securing your session — this may take a moment on slower connections."
+    "authTransitionHint": "Securing your session — this may take a moment on slower connections.",
+    "verifyAccount": {
+      "title": "Confirm your account",
+      "subtitle": "For security, confirm with a one-time code sent by email (Amazon SES) or WhatsApp.",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "sentTo": "Code sent to {{destination}}",
+      "codeLabel": "6-digit code",
+      "confirm": "Confirm account",
+      "resend": "Resend code",
+      "codeSent": "Verification code sent",
+      "sendFailed": "Could not send the code. Try again.",
+      "enterCode": "Enter the 6-digit code",
+      "verified": "Account confirmed",
+      "invalidCode": "Invalid or expired code",
+      "needHelp": "Need help? Contact us"
+    }
+  },
+  "customerScreening": {
+    "kicker": "Gold Standard · Kuwait",
+    "title": "Name screening",
+    "intro": "Official name screening by Gold Standard — quick verification before completing a transaction or opening an account.",
+    "features": {
+      "search": {
+        "title": "Instant search",
+        "body": "Enter the full name and receive a result within seconds."
+      },
+      "report": {
+        "title": "Reference report",
+        "body": "Match or no-match with a reference ID for your records."
+      },
+      "data": {
+        "title": "Trusted data",
+        "body": "Sanctions data supported by OpenSanctions (Berlin, Germany)."
+      }
+    },
+    "panelTitle": "Name screening",
+    "indexLabel": "Names indexed",
+    "placeholder": "Full name",
+    "run": "Run screening",
+    "scanning": "Screening…",
+    "step": {
+      "normalize": "Preparing name",
+      "search": "Searching registry",
+      "compile": "Building result"
+    },
+    "reportLabel": "Screening report",
+    "statusClear": "No match",
+    "statusMatch": "Match — review required",
+    "fieldQuery": "Name entered",
+    "fieldNormalized": "Normalized form",
+    "fieldListRecord": "Matched record",
+    "fieldMatchType": "Match type",
+    "matchExact": "Exact match",
+    "matchFuzzy": "Close similarity",
+    "similarity": "Similarity score",
+    "matchAdvice": "Stop the transaction and refer to your compliance officer.",
+    "clearAdvice": "No match found for \"{{name}}\" in the current registry.",
+    "reportFooter": "Gold Standard",
+    "newSearch": "Screen another name",
+    "checkFailed": "Screening failed. Try again.",
+    "unavailable": "Service temporarily unavailable.",
+    "endpointUnavailable": "Screening is not live on the server yet. Please try again later or contact support.",
+    "attribution": "Sanctions data supported by OpenSanctions (Berlin, Germany)."
+  },
+  "publicKyc": {
+    "kicker": "Business tool · Kuwait",
+    "title": "Customer KYC questionnaire for Ministry of Commerce due diligence",
+    "subtitle": "A professional, free tool for jewellers, traders, and businesses in Kuwait to collect customer due-diligence answers — purpose of purchase, source of funds, income, PEP, and employment — aligned with MOCI expectations.",
+    "startCta": "Start KYC form",
+    "pricesCta": "View live prices",
+    "pricesBannerTitle": "Verify your customers with our MOCI KYC form",
+    "pricesBannerBody": "Free due-diligence questionnaire for Kuwait businesses — print-ready answers for your compliance file.",
+    "benefits": {
+      "compliance": {
+        "title": "MOCI-aligned questions",
+        "body": "Purpose, source of funds, income band, PEP status, employment sector, and job title — the same structure used for regulated customer updates."
+      },
+      "customers": {
+        "title": "Built for your counter",
+        "body": "Open on a phone or desktop, fill with the customer present, then print or save a clear summary for your records."
+      },
+      "kuwait": {
+        "title": "Local reference for Kuwait",
+        "body": "Designed for the Kuwait market in Arabic and English — a practical reference tool that also strengthens Gold Standard’s local SEO footprint."
+      }
+    },
+    "howTitle": "How it works",
+    "how": {
+      "1": "Open the form and complete the Ministry-style questions with your customer.",
+      "2": "Review the summary on screen.",
+      "3": "Print or keep a copy for your compliance file. Gold Standard account holders can also save answers to their profile after sign-in."
+    },
+    "summaryReady": "Form completed",
+    "summaryTitle": "Customer KYC summary",
+    "print": "Print summary",
+    "disclaimer": "This tool helps collect due-diligence answers for your internal records. It does not replace legal advice or official Ministry filings. Gold Standard is not the regulator of your business."
   },
   "cart": {
     "cart": "Cart",
@@ -2258,6 +2516,58 @@
     "noteKicker": "Transparency",
     "noteTitle": "Why trading is not live yet",
     "noteBody": "Core trading logic is already under development. We will open the public desk only when pricing, custody, and compliance flows meet the same standard we apply to physical bullion."
+  },
+  "holdingsPage": {
+    "badge": "Under development",
+    "badgeVault": "Metal wallet",
+    "title": "Gold holdings",
+    "subtitle": "Build allocated gold in grams at today’s market rate — your metal wallet for long-term positioning, without the noise of a dealing room.",
+    "plannerTitle": "Plan your holding",
+    "plannerHint": "Choose a weight from 5 g to 1 kg — we quote live 24K before you commit.",
+    "liveBuy": "Live buy rate",
+    "perGram": "KWD/g",
+    "liveNote": "Updates with our public price feed",
+    "estimatedTotal": "Estimated total",
+    "gramsUnit": "grams",
+    "gramsLabel": "How much gold do you want to hold?",
+    "gramsRange": "{{min}} g minimum · {{max}} g (1 kg) maximum",
+    "instantBuy": "Instant buy",
+    "instantBuyHint": "Acquire at the live rate the moment you confirm.",
+    "targetBuy": "Buy at target price",
+    "targetBuyHint": "Set a KWD/g level — we execute when the market reaches it.",
+    "targetPriceLabel": "Your target buy price (KWD per gram)",
+    "setTargetCta": "Set target order",
+    "targetTooHigh": "Target must be below the current live buy rate.",
+    "targetExplain": "We will hold your instruction and notify you when execution is available.",
+    "walletTitle": "Metal wallet",
+    "walletSubtitle": "محفظة المعادن — your allocated balance",
+    "currentHoldings": "Current holding",
+    "pureGold": "investment grade",
+    "previewLabel": "If you proceed",
+    "previewHint": "Preview only — execution opens after launch.",
+    "devTitle": "Launching soon",
+    "devBody": "Holdings and automated execution are being finished to the same standard as our physical bullion desk. You can explore amounts and rates today; orders will open once compliance and settlement flows are live.",
+    "devCta": "Talk to our desk",
+    "sellReference": "Reference sell rate: {{price}} KWD/g",
+    "pillars": {
+      "secure": {
+        "title": "Allocated & documented",
+        "body": "Every gram is recorded against your account with Sharia-aligned constructive possession."
+      },
+      "live": {
+        "title": "Market-linked pricing",
+        "body": "Quotes follow our licensed Kuwait buy/sell feed — the same rates you see on Prices."
+      },
+      "clear": {
+        "title": "You choose the size",
+        "body": "From a few grams to a full kilo — scale at your pace, on your timeline."
+      }
+    },
+    "toasts": {
+      "instant": "Instant buy opens with the metal wallet launch.",
+      "target": "Target-price orders will be available at launch.",
+      "description": "Thank you for exploring — we are putting the final pieces in place."
+    }
   },
   "digitalOwnership": {
     "kicker": "Blockchain secured",

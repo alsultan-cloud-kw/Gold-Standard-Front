@@ -8,7 +8,6 @@ import {
   X,
   Search,
   LogOut,
-  ChevronDown,
   Home,
   LayoutGrid,
   TrendingUp,
@@ -48,12 +47,9 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isReminderOpen, setIsReminderOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isPricesMenuOpen, setIsPricesMenuOpen] = useState(false)
   const [navSearchDraft, setNavSearchDraft] = useState('')
   const searchPanelRef = useRef<HTMLDivElement>(null)
   const searchToggleRef = useRef<HTMLButtonElement>(null)
-  const pricesMenuRef = useRef<HTMLDivElement>(null)
-  const pricesToggleRef = useRef<HTMLButtonElement>(null)
   const bottomNavRef = useRef<HTMLElement>(null)
   const topChromeRef = useRef<HTMLElement>(null)
   const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing, logout } = useAuth()
@@ -74,21 +70,22 @@ export default function Navbar() {
   const iconBtnClass =
     'nav-icon-btn relative rounded-lg text-[#64748B] transition-colors hover:bg-black/[0.04] hover:text-[#0C1512]'
 
-  const navLinks = [
-    { nameKey: 'nav.home', href: '/' },
-    { nameKey: 'nav.products', href: '/products' },
-    { nameKey: 'nav.prices', href: '/prices' },
-    // News temporarily hidden — re-enable with HomeNewsSection + /news route
-    // { nameKey: 'nav.news', href: '/news' },
-    { nameKey: 'nav.trading', href: '/trading' },
-    ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
-      ? [{ nameKey: 'nav.tradeGold', href: '/trade-gold' }]
-      : []),
-    // { nameKey: 'nav.sellGold', href: '/sell-gold' },
-    { nameKey: 'nav.branches', href: '/branches' },
-    { nameKey: 'nav.about', href: '/about' },
-    { nameKey: 'nav.contact', href: '/contact' },
-  ]
+  const navLinks = useMemo(() => {
+    const base = [
+      { nameKey: 'nav.home', href: '/' },
+      { nameKey: 'nav.products', href: '/products' },
+      { nameKey: 'nav.prices', href: '/prices' },
+      { nameKey: 'nav.customerKyc', href: '/gs-kyc' },
+      ...(isAuthenticated ? [{ nameKey: 'nav.holdings', href: '/holdings' }] : []),
+      ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
+        ? [{ nameKey: 'nav.tradeGold', href: '/trade-gold' }]
+        : []),
+      { nameKey: 'nav.branches', href: '/branches' },
+      { nameKey: 'nav.about', href: '/about' },
+      { nameKey: 'nav.contact', href: '/contact' },
+    ]
+    return base
+  }, [isAuthenticated])
 
   const handleLogout = () => {
     logout()
@@ -117,7 +114,6 @@ export default function Navbar() {
 
   useEffect(() => {
     closeSearch()
-    setIsPricesMenuOpen(false)
     setIsMenuOpen(false)
     setIsReminderOpen(false)
   }, [location.pathname, closeSearch])
@@ -135,36 +131,6 @@ export default function Navbar() {
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [isMenuOpen])
-
-  useEffect(() => {
-    if (!isPricesMenuOpen) return
-
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Node
-      if (
-        pricesMenuRef.current?.contains(target) ||
-        pricesToggleRef.current?.contains(target)
-      ) {
-        return
-      }
-      setIsPricesMenuOpen(false)
-    }
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        setIsPricesMenuOpen(false)
-        pricesToggleRef.current?.focus()
-      }
-    }
-
-    document.addEventListener('pointerdown', onPointerDown, true)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [isPricesMenuOpen])
 
   /**
    * Sticky (not fixed) chrome sits in document flow — no main padding hack.
@@ -237,8 +203,7 @@ export default function Navbar() {
     }
   }, [isSearchOpen, isProductsListPage, closeSearch])
 
-  const isPricesActive =
-    isPathActive('/prices') || isPathActive('/company-prices')
+  const isPricesActive = isPathActive('/prices')
 
   return (
     <>
@@ -264,100 +229,20 @@ export default function Navbar() {
           {/* Desktop Navigation — scrolls horizontally under zoom instead of blowing page width */}
           <div className="navbar-desktop-links hidden min-w-0 flex-1 items-center justify-center gap-4 overflow-visible lg:flex xl:gap-8">
             {navLinks.map((link) => (
-              link.nameKey === 'nav.prices' ? (
-                <div
-                  key={link.nameKey}
-                  ref={pricesMenuRef}
-                  className="relative shrink-0 group/prices"
-                  onMouseEnter={() => setIsPricesMenuOpen(true)}
-                  onMouseLeave={() => setIsPricesMenuOpen(false)}
-                >
-                  <button
-                    ref={pricesToggleRef}
-                    type="button"
-                    id="nav-prices-trigger"
-                    aria-haspopup="menu"
-                    aria-expanded={isPricesMenuOpen}
-                    aria-controls="nav-prices-menu"
-                    onClick={() => setIsPricesMenuOpen((open) => !open)}
-                    className={`inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium transition-colors relative ${
-                      isPricesActive || isPricesMenuOpen
-                        ? 'text-[#3F6F00]'
-                        : 'text-[#0C1512] group-hover/prices:text-[#3F6F00]'
-                    }`}
-                  >
-                    {t('nav.prices')}
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        isPricesMenuOpen ? 'rotate-180' : 'group-hover/prices:rotate-180'
-                      }`}
-                      aria-hidden="true"
-                    />
-                    <span
-                      className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
-                        isPricesActive || isPricesMenuOpen
-                          ? 'w-full'
-                          : 'w-0 group-hover/prices:w-full'
-                      }`}
-                    />
-                  </button>
-                  {/* Must not sit inside an overflow-x scrollport — that clipped this panel on desktop */}
-                  <div
-                    className={`absolute start-1/2 top-full z-[60] w-56 -translate-x-1/2 pt-2 transition-all duration-150 rtl:translate-x-1/2 ${
-                      isPricesMenuOpen
-                        ? 'pointer-events-auto visible opacity-100'
-                        : 'pointer-events-none invisible opacity-0'
-                    }`}
-                  >
-                    <div
-                      id="nav-prices-menu"
-                      role="menu"
-                      aria-labelledby="nav-prices-trigger"
-                      className="overflow-hidden rounded-xl border border-black/10 bg-white py-1.5 shadow-lg shadow-black/10"
-                    >
-                      <Link
-                        to="/prices"
-                        role="menuitem"
-                        tabIndex={isPricesMenuOpen ? 0 : -1}
-                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 focus-visible:bg-[#ECFCCB]/60 focus-visible:outline-none ${
-                          isPathActive('/prices')
-                            ? 'font-semibold text-[#3F6F00]'
-                            : 'font-medium text-[#0B0F19]'
-                        }`}
-                      >
-                        {t('nav.customerPrices')}
-                      </Link>
-                      <Link
-                        to="/company-prices"
-                        role="menuitem"
-                        tabIndex={isPricesMenuOpen ? 0 : -1}
-                        className={`block px-4 py-2.5 text-sm transition-colors hover:bg-[#ECFCCB]/60 focus-visible:bg-[#ECFCCB]/60 focus-visible:outline-none ${
-                          isPathActive('/company-prices')
-                            ? 'font-semibold text-[#3F6F00]'
-                            : 'font-medium text-[#0B0F19]'
-                        }`}
-                      >
-                        {t('nav.companyPrices')}
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={link.nameKey}
-                  to={link.href}
-                  className={`relative shrink-0 whitespace-nowrap text-sm font-medium transition-colors group ${
-                    isPathActive(link.href) ? 'text-[#3F6F00]' : 'text-[#0C1512] hover:text-[#3F6F00]'
+              <Link
+                key={link.nameKey}
+                to={link.href}
+                className={`relative shrink-0 whitespace-nowrap text-sm font-medium transition-colors group ${
+                  isPathActive(link.href) ? 'text-[#3F6F00]' : 'text-[#0C1512] hover:text-[#3F6F00]'
+                }`}
+              >
+                {t(link.nameKey)}
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
+                    isPathActive(link.href) ? 'w-full' : 'w-0 group-hover:w-full'
                   }`}
-                >
-                  {t(link.nameKey)}
-                  <span
-                    className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
-                      isPathActive(link.href) ? 'w-full' : 'w-0 group-hover:w-full'
-                    }`}
-                  />
-                </Link>
-              )
+                />
+              </Link>
             ))}
           </div>
 
@@ -534,46 +419,18 @@ export default function Navbar() {
               ) : null}
             </div>
             <div className="flex flex-col gap-2">
-              {navLinks.map((link) =>
-                link.nameKey === 'nav.prices' ? (
-                  <div key={link.nameKey} className="mobile-nav-group">
-                    <div className="mobile-nav-group__label" aria-hidden>
-                      {t('nav.prices')}
-                    </div>
-                    <div className="mobile-nav-group__children" role="group" aria-label={t('nav.prices')}>
-                      <Link
-                        to="/prices"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`mobile-nav-sublink ${
-                          isPathActive('/prices') ? 'mobile-nav-sublink--active' : ''
-                        }`}
-                      >
-                        {t('nav.customerPrices')}
-                      </Link>
-                      <Link
-                        to="/company-prices"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`mobile-nav-sublink ${
-                          isPathActive('/company-prices') ? 'mobile-nav-sublink--active' : ''
-                        }`}
-                      >
-                        {t('nav.companyPrices')}
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={link.nameKey}
-                    to={link.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`mobile-nav-link ${
-                      isPathActive(link.href) ? 'mobile-nav-link--active' : ''
-                    }`}
-                  >
-                    {t(link.nameKey)}
-                  </Link>
-                ),
-              )}
+              {navLinks.map((link) => (
+                <Link
+                  key={link.nameKey}
+                  to={link.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`mobile-nav-link ${
+                    isPathActive(link.href) ? 'mobile-nav-link--active' : ''
+                  }`}
+                >
+                  {t(link.nameKey)}
+                </Link>
+              ))}
               {authPending ? (
                 <div
                   className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-black/8 bg-white px-4 py-3 text-sm font-medium text-[#64748B]"

@@ -24,12 +24,34 @@ const PUBLIC_ROUTES: Array<{ match: (path: string) => boolean; seo: PageSeo }> =
     seo: { titleKey: 'seo.prices.title', descKey: 'seo.prices.description', path: '/prices' },
   },
   {
+    match: (p) => p === '/gs-kyc',
+    seo: {
+      titleKey: 'seo.customerKyc.title',
+      descKey: 'seo.customerKyc.description',
+      path: '/gs-kyc',
+    },
+  },
+  {
+    match: (p) => p === '/moci-kyc' || p === '/kyc',
+    seo: {
+      titleKey: 'seo.mociKyc.title',
+      descKey: 'seo.mociKyc.description',
+      path: '/moci-kyc',
+      noIndex: true,
+    },
+  },
+  {
     match: (p) => p === '/company-prices',
     seo: {
       titleKey: 'seo.companyPrices.title',
       descKey: 'seo.companyPrices.description',
       path: '/company-prices',
+      noIndex: true,
     },
+  },
+  {
+    match: (p) => p === '/verify-account',
+    seo: { titleKey: 'seo.auth.title', descKey: 'seo.auth.description', path: '/verify-account', noIndex: true },
   },
   {
     match: (p) => p === '/products' || p.startsWith('/products/'),
@@ -40,8 +62,12 @@ const PUBLIC_ROUTES: Array<{ match: (path: string) => boolean; seo: PageSeo }> =
     seo: { titleKey: 'seo.about.title', descKey: 'seo.about.description', path: '/about' },
   },
   {
-    match: (p) => p === '/trading',
-    seo: { titleKey: 'seo.trading.title', descKey: 'seo.trading.description', path: '/trading' },
+    match: (p) => p === '/holdings' || p === '/trading',
+    seo: {
+      titleKey: 'seo.holdings.title',
+      descKey: 'seo.holdings.description',
+      path: '/holdings',
+    },
   },
   {
     match: (p) => p === '/contact',

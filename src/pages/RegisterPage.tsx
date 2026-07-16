@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Eye,
@@ -8,9 +8,11 @@ import {
   Lock,
   User,
   ArrowRight,
+  ArrowLeft,
   Shield,
-  Globe,
-  ChevronDown,
+  MessageCircle,
+  Loader2,
+  CreditCard,
 } from 'lucide-react'
 import { Trans, useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
@@ -19,26 +21,17 @@ import { STOREFRONT_USER_ROLES, type StorefrontUserRole } from '../constants/sto
 import { formatApiErrorMessage } from '../utils/apiErrors'
 import { safeAppNextPath } from '../utils/safeNextPath'
 import { resolvePostAuthPath } from '../utils/authRedirect'
-import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { RegionFlagImg } from '@/components/RegionFlagImg'
-import { getRegionDisplayName, getSortedIso2RegionCodes } from '@/lib/registrationRegions'
+import { RegionSelectField } from '@/components/auth/RegionSelectField'
+import { getRegionDisplayName } from '@/lib/registrationRegions'
 import { cn } from '@/lib/utils'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
-import KycRegistrationFields, { type KycQuestion } from '../components/auth/KycRegistrationFields'
 import AmlOpenSanctionsNotice from '../components/auth/AmlOpenSanctionsNotice'
-import { authApi } from '../services/api'
+import { AuthFlowShell } from '../components/auth/AuthFlowShell'
+import { AuthSupportFooter } from '../components/auth/AuthSupportFooter'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { setLastAuthMethod } from '@/lib/lastAuthMethod'
+import { authApi } from '@/services/api'
 
 const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
   customer: 'auth.roleCustomer',
@@ -46,32 +39,25 @@ const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
   trader: 'auth.roleTrader',
 }
 
+type StepId = 'identity' | 'details' | 'verify'
+type SignInPreference = 'email' | 'phone'
+
+function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
+  if (!pw) return 0
+  let score = 0
+  if (pw.length >= 8) score++
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++
+  if (/\d/.test(pw) || /[^A-Za-z0-9]/.test(pw)) score++
+  return score as 0 | 1 | 2 | 3
+}
+
 export default function RegisterPage() {
   const { t, i18n } = useTranslation()
   const regionLocale = i18n.language?.startsWith('ar') ? 'ar' : 'en'
-  const sortedRegionCodes = useMemo(
-    () => getSortedIso2RegionCodes(regionLocale),
-    [regionLocale]
-  )
-  const nationalityOptions = useMemo(
-    () =>
-      sortedRegionCodes.map((code) => ({
-        code,
-        name: getRegionDisplayName(code, regionLocale),
-      })),
-    [sortedRegionCodes, regionLocale]
-  )
-  const [nationalityOpen, setNationalityOpen] = useState(false)
-  const nationalityRowRef = useRef<HTMLDivElement>(null)
-  const [nationalityMenuWidth, setNationalityMenuWidth] = useState<number>()
-  const onNationalityOpenChange = useCallback((open: boolean) => {
-    setNationalityOpen(open)
-    if (open && nationalityRowRef.current) {
-      setNationalityMenuWidth(
-        Math.max(nationalityRowRef.current.offsetWidth, 304)
-      )
-    }
-  }, [])
+
+  const [step, setStep] = useState<StepId>('identity')
+  const [signInPreference, setSignInPreference] = useState<SignInPreference>('email')
+
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [acceptedLegal, setAcceptedLegal] = useState(false)
@@ -81,80 +67,111 @@ export default function RegisterPage() {
     setTurnstileToken('')
     turnstileRef.current?.reset()
   }, [])
+
+  const [otp, setOtp] = useState('')
+  const [verifyChannel, setVerifyChannel] = useState<'email' | 'whatsapp'>('email')
+  const [sentHint, setSentHint] = useState('')
+
   const [formData, setFormData] = useState({
     full_name: '',
+    country: 'KW',
     nationality: '',
+    civil_id: '',
     email: '',
     phone_number: '',
     password: '',
     confirm_password: '',
     role: 'customer' as StorefrontUserRole,
   })
-  const [kycQuestions, setKycQuestions] = useState<KycQuestion[]>([])
-  const [kycAnswers, setKycAnswers] = useState<Record<string, string | boolean>>({})
-  const [kycErrors, setKycErrors] = useState<Record<string, string>>({})
 
-  useEffect(() => {
-    void authApi.getKycQuestions().then((res) => {
-      const rows = res.questions as KycQuestion[] | undefined
-      setKycQuestions(Array.isArray(rows) ? rows : [])
-    }).catch(() => setKycQuestions([]))
-  }, [])
-
-  const { register } = useAuth()
+  const { register, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const nextPath = safeAppNextPath(searchParams.get('next'))
   const loginHref = nextPath != null ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const flowSteps = useMemo(
+    () => [
+      { id: 'identity', label: t('auth.flow.stepIdentity') },
+      { id: 'details', label: t('auth.flow.stepDetails') },
+      { id: 'verify', label: t('auth.flow.stepVerify') },
+    ],
+    [t],
+  )
 
+  const strength = passwordStrength(formData.password)
+
+  const goDetails = () => {
+    if (!formData.email.trim()) {
+      toast.error(t('auth.emailRequired'))
+      return
+    }
+    if (!formData.phone_number.trim()) {
+      toast.error(t('auth.phoneRequired'))
+      return
+    }
+    setStep('details')
+  }
+
+  const createAccount = async () => {
     if (formData.password !== formData.confirm_password) {
       toast.error(t('auth.passwordsMismatch'))
       return
     }
-
+    if (formData.password.length < 8) {
+      toast.error(t('auth.passwordTooShort'))
+      return
+    }
     if (!formData.nationality || formData.nationality.length !== 2) {
       toast.error(t('auth.nationalityRequired'))
+      return
+    }
+    if (!formData.country || formData.country.length !== 2) {
+      toast.error(t('auth.countryRequired'))
+      return
+    }
+    const civilDigits = formData.civil_id.replace(/\D/g, '')
+    if (civilDigits.length !== 12) {
+      toast.error(t('auth.civilIdRequired'))
       return
     }
     if (!acceptedLegal) {
       toast.error(t('auth.termsAcceptRequired'))
       return
     }
-
     if (isTurnstileConfigured && !turnstileToken) {
       toast.error(t('auth.captchaRequired'))
       return
     }
 
     setIsLoading(true)
-
     try {
-      const registeredUser = await register({
+      const channel = signInPreference === 'email' ? 'email' : 'whatsapp'
+      await register({
         full_name: formData.full_name,
         nationality: formData.nationality.toUpperCase(),
-        email: formData.email || undefined,
-        phone_number: formData.phone_number || undefined,
+        country: getRegionDisplayName(formData.country, regionLocale),
+        civil_id: civilDigits,
+        email: formData.email.trim(),
+        phone_number: formData.phone_number.trim(),
         password: formData.password,
         confirm_password: formData.confirm_password,
         role: formData.role,
         terms_accepted: acceptedLegal,
         privacy_policy_accepted: acceptedLegal,
-        kyc_answers: kycAnswers,
+        kyc_answers: {},
         registration_source: 'website',
+        verification_channel: channel,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
-      setLastAuthMethod(formData.email ? 'email' : 'phone')
-      toast.success(t('auth.registerSuccess'))
-      navigate(resolvePostAuthPath(registeredUser, nextPath))
+      setLastAuthMethod(signInPreference)
+      setVerifyChannel(signInPreference === 'email' ? 'email' : 'whatsapp')
+      setSentHint(signInPreference === 'email' ? formData.email : formData.phone_number)
+      toast.success(t('auth.verifyAccount.codeSent'))
+      setStep('verify')
     } catch (error) {
       clearTurnstile()
-      const res = (error as { response?: { status?: number; data?: { error?: string; kyc_answers?: Record<string, string> } } })?.response
-      if (res?.data?.kyc_answers && typeof res.data.kyc_answers === 'object') {
-        setKycErrors(res.data.kyc_answers)
-      }
+      const res = (error as { response?: { status?: number; data?: { error?: string } } })?.response
       if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
         toast.error(t('auth.captchaFailed'))
       } else {
@@ -165,362 +182,420 @@ export default function RegisterPage() {
     }
   }
 
+  const confirmOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (otp.trim().length !== 6) {
+      toast.error(t('auth.verifyAccount.enterCode'))
+      return
+    }
+    setIsLoading(true)
+    try {
+      await authApi.verifyOTP({
+        otp_code: otp.trim(),
+        purpose: 'registration',
+      })
+      const refreshed = await refreshUser()
+      toast.success(t('auth.verifyAccount.verified'))
+      navigate(resolvePostAuthPath(refreshed, nextPath), { replace: true })
+    } catch {
+      toast.error(t('auth.verifyAccount.invalidCode'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const resendOtp = async (channel: 'email' | 'whatsapp' = verifyChannel) => {
+    setIsLoading(true)
+    try {
+      const res = await authApi.sendVerificationOTP({ channel })
+      setSentHint(res.verification?.destination || sentHint)
+      toast.success(t('auth.verifyAccount.codeSent'))
+    } catch {
+      toast.error(t('auth.verifyAccount.sendFailed'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const switchVerifyChannel = (channel: 'email' | 'whatsapp') => {
+    if (channel === verifyChannel || isLoading) return
+    setVerifyChannel(channel)
+    setOtp('')
+    setSentHint(channel === 'email' ? formData.email : formData.phone_number)
+    void resendOtp(channel)
+  }
+
+  const fieldClass =
+    'w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B0F19] outline-none placeholder:text-[#94A3B8] focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25'
+  const labelClass = 'mb-1.5 block text-sm font-semibold text-[#0B0F19]'
+
   return (
-    <div className="min-h-screen py-16">
-      <div className="page-shell page-shell--form py-16">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold gold-gradient-text mb-2">{t('auth.createAccountTitle')}</h1>
-          <p className="text-gold-100/60">{t('auth.registerSubtitle')}</p>
-          <div className="mt-4 flex justify-center">
-            <AmlOpenSanctionsNotice />
-          </div>
-        </div>
+    <AuthFlowShell
+      title={
+        step === 'verify' ? t('auth.verifyAccount.title') : t('auth.createAccountTitle')
+      }
+      subtitle={
+        step === 'verify' ? t('auth.verifyAccount.subtitle') : t('auth.flow.registerSubtitle')
+      }
+      steps={flowSteps}
+      currentStepId={step}
+      banner={step === 'identity' ? <AmlOpenSanctionsNotice /> : null}
+      footer={
+        step !== 'verify' ? (
+          <p>
+            {t('auth.hasAccount')}{' '}
+            <Link to={loginHref} className="font-semibold text-[#3F6F00] hover:underline">
+              {t('auth.signInLink')}
+            </Link>
+          </p>
+        ) : (
+          <AuthSupportFooter />
+        )
+      }
+    >
+      {step === 'identity' ? (
+        <div className="space-y-5">
+          <SocialSignInButtons
+            mode="sign-up"
+            redirectComplete={nextPath ?? '/'}
+            disabled={isLoading}
+          />
 
-        <div className="gold-card">
-          <SocialSignInButtons mode="sign-up" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
-
-          <div className="relative my-6">
+          <div className="relative my-2">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gold-500/20" />
+              <div className="w-full border-t border-black/8" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-charcoal-900 px-2 text-gold-100/50">{t('auth.orRegisterWithEmail')}</span>
+            <div className="relative flex justify-center text-[11px] font-semibold uppercase tracking-wide">
+              <span className="bg-white px-3 text-[#94A3B8]">{t('auth.flow.orContinue')}</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.accountType')}</label>
-              <div className="relative">
-                <Shield className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60 pointer-events-none z-10" />
-                <select
-                  value={formData.role}
-                  aria-label={t('auth.accountTypeAria')}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      role: e.target.value as StorefrontUserRole,
-                    })
-                  }
-                  className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 focus:outline-none focus:border-gold-500 appearance-none cursor-pointer"
-                >
-                  {STOREFRONT_USER_ROLES.map((value) => (
-                    <option key={value} value={value}>
-                      {t(ROLE_LABEL_KEYS[value])}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="text-xs text-gold-100/45 mt-1.5">{t('auth.roleHint')}</p>
-            </div>
+          <p className="text-xs text-[#64748B]">{t('auth.flow.bothContactsHint')}</p>
 
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.fullName')}</label>
-              <div className="relative">
-                <User className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                <input
-                  type="text"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder={t('auth.placeholderFullName')}
-                  className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                  required
-                />
-              </div>
+          <div>
+            <label className={labelClass}>{t('auth.email')}</label>
+            <div className="relative">
+              <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type="email"
+                autoComplete="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder={t('auth.placeholderEmail')}
+                className={cn(fieldClass, 'ps-10')}
+              />
             </div>
+          </div>
 
-            <div>
-              <label
-                id="register-nationality-label"
-                className="block text-sm font-medium text-black-100 mb-2"
-              >
-                {t('auth.nationality')}
-              </label>
-              <div ref={nationalityRowRef} className="relative w-full">
-                {!formData.nationality && (
-                  <Globe className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black-400/60 pointer-events-none z-10" />
+          <div>
+            <label className={labelClass}>{t('auth.phoneNumber')}</label>
+            <div className="relative">
+              <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type="tel"
+                autoComplete="tel"
+                value={formData.phone_number}
+                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                placeholder={t('auth.placeholderPhone')}
+                className={cn(fieldClass, 'ps-10')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('auth.flow.signInPreference')}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSignInPreference('email')}
+                className={cn(
+                  'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
+                  signInPreference === 'email'
+                    ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
+                    : 'border-black/10 text-[#64748B] hover:border-black/20',
                 )}
-                <Popover open={nationalityOpen} onOpenChange={onNationalityOpenChange}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={nationalityOpen}
-                      aria-haspopup="listbox"
-                      aria-labelledby="register-nationality-label"
-                      className={cn(
-                        'w-full min-h-[48px] h-auto py-3 pe-10 justify-between font-normal',
-                        formData.nationality ? 'ps-4' : 'ps-11',
-                        'bg-charcoal-800 border border-gold-500/30 rounded-lg text-black-100',
-                        'hover:bg-charcoal-700/35 hover:border-gold-500/45 hover:text-black-50',
-                        'focus-visible:border-gold-400 focus-visible:ring-2 focus-visible:ring-gold-500/25 focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal-900',
-                        'shadow-none data-[state=open]:border-gold-400/60 data-[state=open]:ring-1 data-[state=open]:ring-gold-500/20'
-                      )}
-                    >
-                      <span className="flex items-center gap-3 min-w-0 text-start">
-                        {formData.nationality ? (
-                          <>
-                            <RegionFlagImg code={formData.nationality} size="sm" />
-                            <span className="truncate font-medium tracking-tight text-black-50">
-                              {getRegionDisplayName(formData.nationality, regionLocale)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="truncate ps-5 text-black-400/65">
-                            {t('auth.selectNationality')}
-                          </span>
-                        )}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          'absolute end-3 top-1/2 -translate-y-1/2 size-4 shrink-0 text-black-400/70',
-                          'transition-transform duration-200',
-                          nationalityOpen && 'rotate-180'
-                        )}
-                      />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="start"
-                    sideOffset={8}
-                    collisionPadding={16}
-                    className={cn(
-                      'p-0 z-[200] overflow-hidden rounded-xl',
-                      'border border-gold-500/25 bg-charcoal-900/98 backdrop-blur-sm',
-                      'shadow-[0_22px_50px_-12px_rgba(0,0,0,0.65),0_0_0_1px_rgba(212,175,55,0.07),inset_0_1px_0_rgba(212,175,55,0.06)]'
-                    )}
-                    style={
-                      nationalityMenuWidth
-                        ? { width: nationalityMenuWidth }
-                        : undefined
-                    }
-                  >
-                    <Command
-                      className={cn(
-                        'bg-transparent pt-3',
-                        '[&_[data-slot=command-input-wrapper]]:mx-3 [&_[data-slot=command-input-wrapper]]:mt-0 [&_[data-slot=command-input-wrapper]]:mb-3',
-                        '[&_[data-slot=command-input-wrapper]]:flex [&_[data-slot=command-input-wrapper]]:h-auto [&_[data-slot=command-input-wrapper]]:min-h-[46px]',
-                        '[&_[data-slot=command-input-wrapper]]:items-center [&_[data-slot=command-input-wrapper]]:gap-3',
-                        '[&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:border [&_[data-slot=command-input-wrapper]]:border-gold-500/25',
-                        '[&_[data-slot=command-input-wrapper]]:bg-charcoal-800 [&_[data-slot=command-input-wrapper]]:px-3.5 [&_[data-slot=command-input-wrapper]]:py-2.5',
-                        '[&_[data-slot=command-input-wrapper]]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]',
-                        '[&_[data-slot=command-input-wrapper]]:transition-[border-color,box-shadow] [&_[data-slot=command-input-wrapper]]:focus-within:border-gold-400/55 [&_[data-slot=command-input-wrapper]]:focus-within:shadow-[0_0_0_3px_rgba(212,175,55,0.12),inset_0_1px_2px_rgba(0,0,0,0.2)]',
-                        '[&_[data-slot=command-input-wrapper]]:border-b-0',
-                        '[&_[data-slot=command-input-wrapper]_svg]:size-[18px] [&_[data-slot=command-input-wrapper]_svg]:shrink-0 [&_[data-slot=command-input-wrapper]_svg]:text-black-400 [&_[data-slot=command-input-wrapper]_svg]:opacity-90'
-                      )}
-                      label={t('auth.nationality')}
-                    >
-                      <CommandInput
-                        placeholder={t('auth.searchNationality')}
-                        className={cn(
-                          'h-10 border-0 bg-transparent py-0 text-[15px] text-gold-50',
-                          'placeholder:text-gold-400/50 caret-gold-400',
-                          'outline-none focus:ring-0 focus-visible:ring-0'
-                        )}
-                      />
-                      <CommandList
-                        className={cn(
-                          'max-h-[min(20rem,55vh)] scroll-py-2 px-2 pb-2 pt-0',
-                          '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gold-500/20'
-                        )}
-                      >
-                        <CommandEmpty className="py-10 text-center text-sm text-black-400/55">
-                          {t('auth.noCountryMatch')}
-                        </CommandEmpty>
-                        <CommandGroup className="p-0 [&_[cmdk-group-heading]]:hidden">
-                          {nationalityOptions.map(({ code, name }) => (
-                            <CommandItem
-                              key={code}
-                              value={code}
-                              keywords={[name, code]}
-                              onSelect={(selected) => {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  nationality: selected.toUpperCase(),
-                                }))
-                                setNationalityOpen(false)
-                              }}
-                              className={cn(
-                                'mx-0 mb-0.5 cursor-pointer rounded-lg px-2.5 py-2 text-sm',
-                                'text-black-100/95 transition-colors duration-100',
-                                'data-[selected=true]:bg-gold-500/[0.14] data-[selected=true]:text-black-50',
-                                'aria-selected:bg-gold-500/[0.14]',
-                                'data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-40'
-                              )}
-                            >
-                              <span className="flex items-center gap-3 min-w-0 w-full">
-                                <RegionFlagImg code={code} size="md" />
-                                <span className="min-w-0 flex-1 truncate leading-snug">{name}</span>
-                                <span className="shrink-0 text-[10px] font-semibold tabular-nums text-black-400/45 tracking-wide">
-                                  {code}
-                                </span>
-                              </span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <p className="text-xs text-black-100/45 mt-1.5">{t('auth.nationalityHint')}</p>
+              >
+                <Mail className="h-4 w-4" />
+                {t('auth.email')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSignInPreference('phone')}
+                className={cn(
+                  'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
+                  signInPreference === 'phone'
+                    ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
+                    : 'border-black/10 text-[#64748B] hover:border-black/20',
+                )}
+              >
+                <Phone className="h-4 w-4" />
+                {t('auth.phone')}
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.email')}</label>
-              <div className="relative">
-                <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder={t('auth.placeholderEmail')}
-                  className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.phoneNumber')}</label>
-              <div className="relative">
-                <Phone className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                <input
-                  type="tel"
-                  value={formData.phone_number}
-                  onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                  placeholder={t('auth.placeholderPhone')}
-                  className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                />
-              </div>
-              <p className="text-xs text-gold-100/40 mt-1">{t('auth.emailOrPhoneRequired')}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.password')}</label>
-              <div className="relative">
-                <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder={t('auth.placeholderCreatePassword')}
-                  className="w-full ps-10 pe-12 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                  required
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-gold-400/60 hover:text-gold-400"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.confirmPassword')}</label>
-              <div className="relative">
-                <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.confirm_password}
-                  onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
-                  placeholder={t('auth.placeholderConfirmPassword')}
-                  className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                  required
-                />
-              </div>
-            </div>
-
-            <KycRegistrationFields
-              questions={kycQuestions}
-              answers={kycAnswers}
-              errors={kycErrors}
-              onChange={(key, value) => {
-                setKycAnswers((prev) => ({ ...prev, [key]: value }))
-                setKycErrors((prev) => {
-                  const next = { ...prev }
-                  delete next[key]
-                  return next
-                })
-              }}
-            />
-            {kycQuestions.length > 0 ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-gold-100/55">{t('auth.kyc.skipHint')}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setKycAnswers({})
-                    setKycErrors({})
-                    toast.message(t('auth.kyc.skippedToast'))
-                  }}
-                  className="text-xs font-semibold text-[#85E307] hover:underline sm:shrink-0"
-                >
-                  {t('auth.kyc.skipForNow')}
-                </button>
-              </div>
-            ) : null}
-
-            <div>
-              <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="rounded border-gold-500/30 bg-charcoal-800 text-gold-500 mt-1"
-                  checked={acceptedLegal}
-                  onChange={(e) => setAcceptedLegal(e.target.checked)}
-                  required
-                />
-                <span className="text-sm text-gold-100/60">
-                  <Trans
-                    i18nKey="auth.termsAgreement"
-                    components={{
-                      legalLink: <Link to="/terms-and-privacy" className="text-gold-400 hover:text-gold-300" />,
-                    }}
-                  />
-                </span>
-              </label>
-            </div>
-
-            <TurnstileWidget
-              ref={turnstileRef}
-              onToken={setTurnstileToken}
-              onExpire={clearTurnstile}
-              onError={clearTurnstile}
-            />
-
-            <button
-              type="submit"
-              disabled={
-                isLoading ||
-                !acceptedLegal ||
-                (isTurnstileConfigured && !turnstileToken)
-              }
-              className="w-full gold-button flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-charcoal-950 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  {t('auth.createAccountCta')}
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-gold-100/60">
-              {t('auth.hasAccount')}{' '}
-              <Link to={loginHref} className="text-gold-400 hover:text-gold-300 font-medium">
-                {t('auth.signInLink')}
-              </Link>
-            </p>
+            <p className="mt-1.5 text-xs text-[#64748B]">{t('auth.flow.signInPreferenceHint')}</p>
           </div>
+
+          <button
+            type="button"
+            onClick={goDetails}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#85E307] px-4 py-3.5 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AF01A]"
+          >
+            {t('auth.flow.continue')}
+            <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+          </button>
         </div>
-      </div>
-    </div>
+      ) : null}
+
+      {step === 'details' ? (
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => setStep('identity')}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#3F6F00] hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            {t('auth.flow.back')}
+          </button>
+
+          <div>
+            <label className={labelClass}>{t('auth.accountType')}</label>
+            <div className="relative">
+              <Shield className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <select
+                value={formData.role}
+                aria-label={t('auth.accountTypeAria')}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value as StorefrontUserRole })
+                }
+                className={cn(fieldClass, 'appearance-none ps-10')}
+              >
+                {STOREFRONT_USER_ROLES.map((value) => (
+                  <option key={value} value={value}>
+                    {t(ROLE_LABEL_KEYS[value])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('auth.fullName')}</label>
+            <div className="relative">
+              <User className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type="text"
+                autoComplete="name"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder={t('auth.placeholderFullName')}
+                className={cn(fieldClass, 'ps-10')}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <RegionSelectField
+              id="register-country-label"
+              label={t('auth.country')}
+              value={formData.country}
+              onChange={(code) => setFormData((prev) => ({ ...prev, country: code }))}
+              placeholder={t('auth.selectCountry')}
+            />
+            <RegionSelectField
+              id="register-nationality-label"
+              label={t('auth.nationality')}
+              value={formData.nationality}
+              onChange={(code) => setFormData((prev) => ({ ...prev, nationality: code }))}
+              placeholder={t('auth.selectNationality')}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('auth.civilId')}</label>
+            <div className="relative">
+              <CreditCard className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={formData.civil_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    civil_id: e.target.value.replace(/\D/g, '').slice(0, 12),
+                  })
+                }
+                placeholder={t('auth.placeholderCivilId')}
+                className={cn(fieldClass, 'ps-10')}
+                required
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-[#64748B]">{t('auth.civilIdHint')}</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('auth.password')}</label>
+            <div className="relative">
+              <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder={t('auth.placeholderCreatePassword')}
+                className={cn(fieldClass, 'ps-10 pe-12')}
+                minLength={8}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0B0F19]"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="mt-2 flex gap-1">
+              {[1, 2, 3].map((n) => (
+                <span
+                  key={n}
+                  className={cn(
+                    'h-1 flex-1 rounded-full',
+                    strength >= n ? 'bg-[#85E307]' : 'bg-[#E8EBE3]',
+                  )}
+                />
+              ))}
+            </div>
+            <p className="mt-1 text-[11px] text-[#64748B]">{t('auth.flow.passwordHint')}</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('auth.confirmPassword')}</label>
+            <div className="relative">
+              <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={formData.confirm_password}
+                onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                placeholder={t('auth.placeholderConfirmPassword')}
+                className={cn(fieldClass, 'ps-10')}
+                required
+              />
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-[#3F6F00]"
+              checked={acceptedLegal}
+              onChange={(e) => setAcceptedLegal(e.target.checked)}
+            />
+            <span className="text-sm text-[#64748B]">
+              <Trans
+                i18nKey="auth.termsAgreement"
+                components={{
+                  legalLink: (
+                    <Link to="/terms-and-privacy" className="font-semibold text-[#3F6F00] hover:underline" />
+                  ),
+                }}
+              />
+            </span>
+          </label>
+
+          <TurnstileWidget
+            ref={turnstileRef}
+            onToken={setTurnstileToken}
+            onExpire={clearTurnstile}
+            onError={clearTurnstile}
+          />
+
+          <button
+            type="button"
+            disabled={isLoading || !acceptedLegal || (isTurnstileConfigured && !turnstileToken)}
+            onClick={() => void createAccount()}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#85E307] px-4 py-3.5 text-sm font-bold text-[#0B0F19] transition enabled:hover:bg-[#9AF01A] disabled:cursor-not-allowed disabled:bg-[#E4E4E7] disabled:text-[#94A3B8]"
+          >
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {t('auth.flow.createAndVerify')}
+            {!isLoading ? <ArrowRight className="h-4 w-4 rtl:rotate-180" /> : null}
+          </button>
+        </div>
+      ) : null}
+
+      {step === 'verify' ? (
+        <form onSubmit={(e) => void confirmOtp(e)} className="space-y-4">
+          <p className="text-center text-xs text-[#64748B]">{t('auth.flow.verifyChannelHint')}</p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => switchVerifyChannel('email')}
+              className={cn(
+                'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold',
+                verifyChannel === 'email'
+                  ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
+                  : 'border-black/10 text-[#64748B] hover:border-black/20',
+              )}
+            >
+              <Mail className="h-4 w-4" />
+              {t('auth.verifyAccount.email')}
+            </button>
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => switchVerifyChannel('whatsapp')}
+              className={cn(
+                'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold',
+                verifyChannel === 'whatsapp'
+                  ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
+                  : 'border-black/10 text-[#64748B] hover:border-black/20',
+              )}
+            >
+              <MessageCircle className="h-4 w-4" />
+              {t('auth.verifyAccount.whatsapp')}
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-[#64748B]">
+            {t('auth.verifyAccount.sentTo', { destination: sentHint })}
+          </p>
+
+          <div>
+            <label className={labelClass}>{t('auth.verifyAccount.codeLabel')}</label>
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.35em] text-[#0B0F19] outline-none focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25"
+              placeholder="••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading || otp.length !== 6}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#85E307] px-4 py-3.5 text-sm font-bold text-[#0B0F19] transition enabled:hover:bg-[#9AF01A] disabled:cursor-not-allowed disabled:bg-[#E4E4E7] disabled:text-[#94A3B8]"
+          >
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {t('auth.verifyAccount.confirm')}
+          </button>
+
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => void resendOtp()}
+            className="w-full text-center text-sm font-semibold text-[#3F6F00] hover:underline disabled:opacity-50"
+          >
+            {t('auth.verifyAccount.resend')}
+          </button>
+        </form>
+      ) : null}
+    </AuthFlowShell>
   )
 }

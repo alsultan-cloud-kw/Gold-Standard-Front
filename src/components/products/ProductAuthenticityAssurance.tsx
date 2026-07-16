@@ -8,16 +8,18 @@ import {
   ScanLine,
   Shield,
   Stamp,
+  BadgeCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const METHODS: ReadonlyArray<{
-  id: 'blockchain' | 'qr' | 'ministry' | 'hologram' | 'receipt'
+  id: 'blockchain' | 'qr' | 'companyStamp' | 'ministry' | 'hologram' | 'receipt'
   icon: typeof Blocks
   badge?: boolean
 }> = [
   { id: 'blockchain', icon: Blocks, badge: true },
   { id: 'qr', icon: QrCode },
+  { id: 'companyStamp', icon: BadgeCheck },
   { id: 'ministry', icon: Stamp },
   { id: 'hologram', icon: Shield },
   { id: 'receipt', icon: FileCheck2 },

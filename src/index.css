@@ -648,6 +648,7 @@
       'qr'
       'ministry'
       'hologram'
+      'company-stamp'
       'receipt';
   }
 
@@ -655,6 +656,7 @@
   .security-trust-bento__qr { grid-area: qr; }
   .security-trust-bento__ministry { grid-area: ministry; }
   .security-trust-bento__hologram { grid-area: hologram; }
+  .security-trust-bento__company-stamp { grid-area: company-stamp; }
   .security-trust-bento__receipt { grid-area: receipt; }
 
   @media (min-width: 640px) {
@@ -662,8 +664,8 @@
       grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
       grid-template-areas:
         'blockchain qr'
-        'ministry hologram'
-        'receipt receipt';
+        'company-stamp hologram'
+        'ministry receipt';
     }
   }
 

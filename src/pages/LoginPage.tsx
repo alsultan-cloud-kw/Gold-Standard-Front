@@ -8,8 +8,12 @@ import { safeAppNextPath } from '../utils/safeNextPath'
 import { completeAuthNavigation } from '@/lib/completeAuthNavigation'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
+import { AuthFlowShell } from '../components/auth/AuthFlowShell'
+import { AuthSupportFooter } from '../components/auth/AuthSupportFooter'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { getLastAuthMethod, setLastAuthMethod } from '@/lib/lastAuthMethod'
+import { GS_CONTACT } from '@/constants/contact'
+import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -73,7 +77,7 @@ export default function LoginPage() {
       if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
         toast.error(t('auth.captchaFailed'))
       } else if (res?.status === 403 && res?.data?.error === 'inactive') {
-        const adminEmail = res.data.admin_email || ''
+        const adminEmail = res.data.admin_email || GS_CONTACT.email
         toast.error(
           adminEmail
             ? t('auth.accountInactiveWithAdmin', { email: adminEmail })
@@ -87,167 +91,159 @@ export default function LoginPage() {
     }
   }
 
+  const fieldClass =
+    'w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B0F19] outline-none placeholder:text-[#94A3B8] focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25'
+  const labelClass = 'mb-1.5 block text-sm font-semibold text-[#0B0F19]'
+  const methodBtn = (active: boolean) =>
+    cn(
+      'w-full rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
+      active
+        ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
+        : 'border-black/10 text-[#64748B] hover:border-black/20',
+    )
+
   return (
-    <div className="min-h-screen py-16">
-      <div className="page-shell page-shell--form py-16">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold gold-gradient-text-on-light mb-2">{t('auth.welcomeBack')}</h1>
-          <p className="gold-gradient-text-on-light">{t('auth.signInSubtitle')}</p>
+    <AuthFlowShell
+      title={t('auth.welcomeBack')}
+      subtitle={t('auth.signInSubtitle')}
+      footer={
+        <div className="space-y-3">
+          <p>
+            {t('auth.noAccount')}{' '}
+            <Link to={registerHref} className="font-semibold text-[#3F6F00] hover:underline">
+              {t('auth.createOne')}
+            </Link>
+          </p>
+          <AuthSupportFooter />
         </div>
+      }
+    >
+      <SocialSignInButtons mode="sign-in" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
 
-        <div className="gold-card">
-          <SocialSignInButtons mode="sign-in" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gold-500/20" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-charcoal-900 px-2 text-gold-100/50">{t('auth.orEmailPhone')}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2 mb-6">
-            <div className="relative flex-1">
-              {lastAuthMethod === 'email' && (
-                <span className="pointer-events-none absolute -top-2.5 start-3 z-10 rounded-full border border-gold-500/40 bg-gold-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-charcoal-950 shadow-sm">
-                  {t('auth.lastUsed')}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setLoginMethod('email')}
-                className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
-                  loginMethod === 'email'
-                    ? 'bg-gold-500 text-charcoal-950'
-                    : 'bg-charcoal-800 text-gold-100/60'
-                }`}
-              >
-                <Mail className="w-4 h-4 inline me-2" />
-                {t('auth.email')}
-              </button>
-            </div>
-            <div className="relative flex-1">
-              {lastAuthMethod === 'phone' && (
-                <span className="pointer-events-none absolute -top-2.5 start-3 z-10 rounded-full border border-gold-500/40 bg-gold-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-charcoal-950 shadow-sm">
-                  {t('auth.lastUsed')}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setLoginMethod('phone')}
-                className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
-                  loginMethod === 'phone'
-                    ? 'bg-gold-500 text-charcoal-950'
-                    : 'bg-charcoal-800 text-gold-100/60'
-                }`}
-              >
-                <Phone className="w-4 h-4 inline me-2" />
-                {t('auth.phone')}
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {loginMethod === 'email' ? (
-              <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.email')}</label>
-                <div className="relative">
-                  <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder={t('auth.placeholderEmail')}
-                    className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                    required
-                  />
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gold-100 mb-2">
-                  {t('auth.phoneNumber')}
-                </label>
-                <div className="relative">
-                  <Phone className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                  <input
-                    type="tel"
-                    value={formData.phone_number}
-                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                    placeholder={t('auth.placeholderPhone')}
-                    className="w-full ps-10 pe-4 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gold-100 mb-2">{t('auth.password')}</label>
-              <div className="relative">
-                <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold-400/60" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder={t('auth.enterPassword')}
-                  className="w-full ps-10 pe-12 py-3 bg-charcoal-800 border border-gold-500/30 rounded-lg text-gold-100 placeholder-gold-400/40 focus:outline-none focus:border-gold-500"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-gold-400/60 hover:text-gold-400"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-gold-500/30 bg-charcoal-800 text-gold-500" />
-                <span className="text-sm text-gold-100/60">{t('auth.rememberMe')}</span>
-              </label>
-              <Link to="/forgot-password" className="text-sm text-gold-400 hover:text-gold-300">
-                {t('auth.forgotPassword')}
-              </Link>
-            </div>
-
-            <TurnstileWidget
-              ref={turnstileRef}
-              onToken={setTurnstileToken}
-              onExpire={clearTurnstile}
-              onError={clearTurnstile}
-            />
-
-            <button
-              type="submit"
-              disabled={isLoading || (isTurnstileConfigured && !turnstileToken)}
-              className="w-full gold-button flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-charcoal-950 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  {t('auth.signIn')}
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-gold-100/60">
-              {t('auth.noAccount')}{' '}
-              <Link to={registerHref} className="text-gold-400 hover:text-gold-300 font-medium">
-                {t('auth.createOne')}
-              </Link>
-            </p>
-          </div>
+      <div className="relative my-5">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-black/8" />
+        </div>
+        <div className="relative flex justify-center text-[11px] font-semibold uppercase tracking-wide">
+          <span className="bg-white px-3 text-[#94A3B8]">{t('auth.orEmailPhone')}</span>
         </div>
       </div>
-    </div>
+
+      <div className="mb-5 flex gap-2">
+        <div className="relative flex-1">
+          {lastAuthMethod === 'email' ? (
+            <span className="pointer-events-none absolute -top-2.5 start-3 z-10 rounded-full border border-[#85E307]/50 bg-[#85E307] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0F19] shadow-sm">
+              {t('auth.lastUsed')}
+            </span>
+          ) : null}
+          <button type="button" onClick={() => setLoginMethod('email')} className={methodBtn(loginMethod === 'email')}>
+            <Mail className="me-2 inline h-4 w-4" />
+            {t('auth.email')}
+          </button>
+        </div>
+        <div className="relative flex-1">
+          {lastAuthMethod === 'phone' ? (
+            <span className="pointer-events-none absolute -top-2.5 start-3 z-10 rounded-full border border-[#85E307]/50 bg-[#85E307] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0F19] shadow-sm">
+              {t('auth.lastUsed')}
+            </span>
+          ) : null}
+          <button type="button" onClick={() => setLoginMethod('phone')} className={methodBtn(loginMethod === 'phone')}>
+            <Phone className="me-2 inline h-4 w-4" />
+            {t('auth.phone')}
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+        {loginMethod === 'email' ? (
+          <div>
+            <label className={labelClass}>{t('auth.email')}</label>
+            <div className="relative">
+              <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type="email"
+                autoComplete="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder={t('auth.placeholderEmail')}
+                className={cn(fieldClass, 'ps-10')}
+                required
+              />
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className={labelClass}>{t('auth.phoneNumber')}</label>
+            <div className="relative">
+              <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <input
+                type="tel"
+                autoComplete="tel"
+                value={formData.phone_number}
+                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                placeholder={t('auth.placeholderPhone')}
+                className={cn(fieldClass, 'ps-10')}
+                required
+              />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className={labelClass}>{t('auth.password')}</label>
+          <div className="relative">
+            <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder={t('auth.enterPassword')}
+              className={cn(fieldClass, 'ps-10 pe-12')}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0B0F19]"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" className="h-4 w-4 accent-[#3F6F00]" />
+            <span className="text-sm text-[#64748B]">{t('auth.rememberMe')}</span>
+          </label>
+          <Link to="/forgot-password" className="text-sm font-semibold text-[#3F6F00] hover:underline">
+            {t('auth.forgotPassword')}
+          </Link>
+        </div>
+
+        <TurnstileWidget
+          ref={turnstileRef}
+          onToken={setTurnstileToken}
+          onExpire={clearTurnstile}
+          onError={clearTurnstile}
+        />
+
+        <button
+          type="submit"
+          disabled={isLoading || (isTurnstileConfigured && !turnstileToken)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#85E307] px-4 py-3.5 text-sm font-bold text-[#0B0F19] transition enabled:hover:bg-[#9AF01A] disabled:cursor-not-allowed disabled:bg-[#E4E4E7] disabled:text-[#94A3B8]"
+        >
+          {isLoading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0B0F19] border-t-transparent" />
+          ) : (
+            <>
+              {t('auth.signIn')}
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </>
+          )}
+        </button>
+      </form>
+    </AuthFlowShell>
   )
 }

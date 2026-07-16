@@ -9,9 +9,9 @@ import {
   Stamp,
   FileCheck2,
   ShieldCheck,
+  BadgeCheck,
 } from 'lucide-react'
 import goldBarImg from '@/assets/home/gold-bullion.png'
-import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
 import { cn } from '@/lib/utils'
 
 function MethodIcon({
@@ -78,7 +78,7 @@ export function SecurityTrustSection() {
         <div className="security-trust-bento mx-auto grid max-w-5xl gap-3 sm:gap-4">
           {/* Blockchain — smaller */}
           <article className="security-trust-bento__blockchain group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:p-6">
-            <span className="mb-4 inline-flex rounded-full border border-[#2DD4BF]/30 bg-[#2DD4BF]/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#5EEAD4]">
+            <span className="mb-4 inline-flex rounded-full border border-[#85E307]/35 bg-[#85E307]/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#85E307]">
               {t('home.securityTrust.methods.blockchain.badge')}
             </span>
             <MethodIcon accent="lime">
@@ -144,6 +144,19 @@ export function SecurityTrustSection() {
             </p>
           </article>
 
+          {/* Company stamp */}
+          <article className="security-trust-bento__company-stamp group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:p-6">
+            <MethodIcon>
+              <BadgeCheck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+            </MethodIcon>
+            <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
+              {t('home.securityTrust.methods.companyStamp.title')}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-white/50">
+              {t('home.securityTrust.methods.companyStamp.description')}
+            </p>
+          </article>
+
           {/* Receipt — full width */}
           <article className="security-trust-bento__receipt group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:flex sm:items-start sm:gap-5 sm:p-6">
             <MethodIcon>
@@ -158,19 +171,6 @@ export function SecurityTrustSection() {
               </p>
             </div>
           </article>
-        </div>
-
-        {/* Credentials strip — inverted for dark band */}
-        <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 sm:mt-10 sm:px-6">
-          <p className="mb-1 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-[#E8C547]/80">
-            {t('home.securityTrust.credentialsKicker')}
-          </p>
-          <p className="mx-auto mb-5 max-w-2xl text-center text-sm leading-relaxed text-white/45">
-            {t('home.securityTrust.credentialsBody')}
-          </p>
-          <div className="security-trust-credentials">
-            <HeroTrustStrip variant="embedded" />
-          </div>
         </div>
 
         {/* CTA */}

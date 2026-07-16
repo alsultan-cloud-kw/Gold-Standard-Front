@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw, ArrowRight, Building2, Scale } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,8 @@ import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { buildPublicRatesPricing, normalizeCaratKey } from '@/utils/publicStorefrontRates'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+import { isStaffRole } from '@/utils/authRedirect'
 
 function fmt(n: number | null | undefined) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
@@ -33,6 +35,7 @@ function karatDescKey(key: string) {
  */
 export default function CompanyPricesPage() {
   const { t } = useTranslation()
+  const { user, isLoading: authLoading } = useAuth()
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['daralsabaekPublicRates'],
@@ -68,6 +71,10 @@ export default function CompanyPricesPage() {
 
   const showBoard = !isLoading && res?.succeeded && carats.length > 0
 
+  if (!authLoading && !isStaffRole(user?.role)) {
+    return <Navigate to="/prices" replace />
+  }
+
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
       <section className="relative overflow-hidden border-b border-black/5 bg-[#0B0F19] text-white">
@@ -83,7 +90,7 @@ export default function CompanyPricesPage() {
                 {t('companyPricesPage.kicker')}
               </p>
               <h1 className="type-page-title text-xl sm:text-4xl lg:text-[2.75rem]">
-                {t('nav.companyPrices')}
+                {t('nav.deskPriceBoard')}
               </h1>
               <p className="mt-2 max-w-xl text-xs leading-relaxed text-white/65 sm:mt-3 sm:text-base">
                 {t('companyPricesPage.subtitle')}
@@ -103,7 +110,7 @@ export default function CompanyPricesPage() {
                 to="/prices"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[#85E307]/35 bg-[#85E307]/15 px-3 py-2 text-xs font-semibold text-[#ECFCCB] transition hover:bg-[#85E307]/25 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
               >
-                {t('nav.customerPrices')}
+                {t('nav.prices')}
                 <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 rtl:rotate-180" />
               </Link>
             </div>

@@ -37,7 +37,7 @@ function AuthLoadingFallbackCompleting() {
 
 /** Any signed-in user (storefront or staff). */
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -47,6 +47,16 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   if (!isAuthenticated) {
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/login?next=${next}`} replace />
+  }
+
+  // Mandatory email / WhatsApp confirmation before storefront account areas.
+  if (
+    user &&
+    user.is_verified === false &&
+    !isStaffRole(user.role) &&
+    location.pathname !== '/verify-account'
+  ) {
+    return <Navigate to="/verify-account" replace />
   }
 
   return <RouteErrorBoundary resetHref="/dashboard">{children}</RouteErrorBoundary>

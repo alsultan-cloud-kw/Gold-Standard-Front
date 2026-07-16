@@ -23,10 +23,14 @@ import ClerkAuthBridge from './components/auth/ClerkAuthBridge'
 import AuthSuccessNotifier from './components/auth/AuthSuccessNotifier'
 import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
 import AuthTransitionOverlay from './components/auth/AuthTransitionOverlay'
+import MinistryKycGate from './components/auth/MinistryKycGate'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UserDashboard from './pages/UserDashboard'
 import AboutPage from './pages/AboutPage'
-import TradingComingSoonPage from './pages/TradingComingSoonPage'
+import HoldingsPage from './pages/HoldingsPage'
+import VerifyAccountPage from './pages/VerifyAccountPage'
+import PublicMociKycPage from './pages/PublicMociKycPage'
+import CustomerBlacklistScreenPage from './pages/CustomerBlacklistScreenPage'
 import ContactPage from './pages/ContactPage'
 import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
@@ -104,6 +108,7 @@ function App() {
             <MarketingVisitTracker />
             <GoogleOneTapPrompt />
             <AuthTransitionOverlay />
+            <MinistryKycGate />
             <div className="min-h-screen bg-siteBg">
               <SkipToContentLink />
               <Navbar />
@@ -114,7 +119,19 @@ function App() {
                   <Route path="/products" element={<ProductsPage />} />
                   <Route path="/products/:slug" element={<ProductDetailPage />} />
                   <Route path="/verify" element={<ProductAuthenticityPage />} />
+                  <Route path="/gs-kyc" element={<CustomerBlacklistScreenPage />} />
+                  <Route path="/customer-kyc" element={<Navigate to="/gs-kyc" replace />} />
+                  <Route path="/moci-kyc" element={<PublicMociKycPage />} />
+                  <Route path="/kyc" element={<Navigate to="/moci-kyc" replace />} />
                   <Route path="/cart" element={<CartPage />} />
+                  <Route
+                    path="/verify-account"
+                    element={
+                      <ProtectedRoute>
+                        <VerifyAccountPage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/checkout"
                     element={
@@ -140,7 +157,15 @@ function App() {
                     }
                   />
                   <Route path="/about" element={<AboutPage />} />
-                  <Route path="/trading" element={<TradingComingSoonPage />} />
+                  <Route path="/trading" element={<Navigate to="/holdings" replace />} />
+                  <Route
+                    path="/holdings"
+                    element={
+                      <ProtectedRoute>
+                        <HoldingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/branches" element={<BranchesPage />} />
                   <Route path="/prices" element={<PricesPage />} />

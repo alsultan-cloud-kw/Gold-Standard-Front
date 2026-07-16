@@ -27,6 +27,8 @@ import {
   resolveAuthoritativeUsdOunceSpot,
 } from '@/utils/publicStorefrontRates'
 import { PreciousMetalMark, preciousMetalIdFromRowKey } from '@/components/prices/PreciousMetalMark'
+import { CustomerGoldPricePair } from '@/components/prices/CustomerGoldPricePair'
+import { GramWeightCalculatorStrip } from '@/components/prices/GramWeightCalculatorStrip'
 
 const PRECIOUS_METAL_LABEL_KEYS = {
   Silver: 'productsPage.metal.silver',
@@ -72,6 +74,10 @@ function karatDescKey(key: string) {
   if (/^21/.test(norm)) return 'pricesPage.karatDesc.21K'
   if (/^18/.test(norm)) return 'pricesPage.karatDesc.18K'
   return 'companyPricesPage.karatLabel'
+}
+
+function goldAccountKaratLabel(key: string) {
+  return normalizeCaratKey(key).replace(/K$/i, '')
 }
 
 /**
@@ -205,13 +211,15 @@ export default function PricesPage() {
                 <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isFetching ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">{t('pricesPage.refresh')}</span>
               </button>
-              <Link
-                to="/company-prices"
-                className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#85E307]/35 bg-[#85E307]/15 px-2.5 py-1.5 text-[11px] font-semibold text-[#ECFCCB] transition hover:bg-[#85E307]/25 sm:min-h-0 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
-              >
-                <span className="max-w-[6.5rem] truncate sm:max-w-none">{t('nav.companyPrices')}</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 rtl:rotate-180" />
-              </Link>
+              {isStaff ? (
+                <Link
+                  to="/company-prices"
+                  className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white/80 transition hover:bg-white/10 sm:min-h-0 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                >
+                  <span className="max-w-[6.5rem] truncate sm:max-w-none">{t('nav.deskPriceBoard')}</span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 rtl:rotate-180" />
+                </Link>
+              ) : null}
             </div>
           </div>
 
@@ -363,34 +371,21 @@ export default function PricesPage() {
                   </div>
 
                   {gramsValid && previewCarat && previewSellTotal != null && previewBuyTotal != null ? (
-                    <div className="mt-3 space-y-2 border-t border-[#85E307]/20 pt-3">
-                      <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3 sm:text-start">
-                        <div className="rounded-lg bg-[#0B0F19]/40 px-2 py-2">
-                          <p className="text-[9px] font-bold uppercase tracking-wide text-white/45">
-                            {previewCarat.key}
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-white/55">{t('pricesPage.customerPay')}</p>
-                          <p className="text-sm font-bold tabular-nums text-[#A3E635]">
-                            {fmtTotal(previewSellTotal)}
-                          </p>
-                        </div>
-                        <div className="rounded-lg bg-[#0B0F19]/40 px-2 py-2">
-                          <p className="text-[9px] font-bold uppercase tracking-wide text-white/45 sm:invisible">
-                            ·
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-white/55">{t('pricesPage.customerReceive')}</p>
-                          <p className="text-sm font-bold tabular-nums text-white">
-                            {fmtTotal(previewBuyTotal)}
-                          </p>
-                        </div>
-                        <div className="col-span-2 rounded-lg bg-[#0B0F19]/25 px-2 py-2 sm:col-span-1">
-                          <p className="text-[9px] text-white/45">{t('common.kwd')}</p>
-                          <p className="mt-0.5 text-[10px] tabular-nums text-white/70">
-                            {fmt(previewCarat.sellTotal)} / {fmt(previewCarat.buyTotal)}{' '}
-                            {t('common.kwdPerGramShort')}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="mt-3 space-y-3 border-t border-[#85E307]/20 pt-3">
+                      <p className="text-center text-[10px] font-bold uppercase tracking-wide text-white/50">
+                        {t('pricesPage.goldAccountTitle', { karat: goldAccountKaratLabel(previewCarat.key) })} ·{' '}
+                        {t('pricesPage.totalForWeight', { grams })}
+                      </p>
+                      <CustomerGoldPricePair
+                        buyGoldTotal={previewSellTotal}
+                        sellGoldTotal={previewBuyTotal}
+                        formatTotal={fmtTotal}
+                        variant="hero"
+                      />
+                      <p className="text-center text-[10px] tabular-nums text-white/45">
+                        {fmt(previewCarat.sellTotal)} / {fmt(previewCarat.buyTotal)}{' '}
+                        {t('common.kwdPerGramShort')}
+                      </p>
                       <button
                         type="button"
                         onClick={scrollToRates}
@@ -437,6 +432,12 @@ export default function PricesPage() {
           <div className="space-y-5 sm:space-y-8">
             <PricesHistoryChart rates={res} showSectionHeader={false} />
 
+            <GramWeightCalculatorStrip
+              gramsInput={gramsInput}
+              onGramsInputChange={setGramsInput}
+              gramsValid={gramsValid}
+            />
+
             {/* Gold karats */}
             <section
               id="gold-karat-rates"
@@ -460,10 +461,6 @@ export default function PricesPage() {
                       : null
                   const buyForWeight = gramsValid ? caratGramTotals(c, grams).buyTotal : null
                   const sellForWeight = gramsValid ? caratGramTotals(c, grams).sellTotal : null
-                  const spreadForWeight =
-                    gramsValid && buyForWeight != null && sellForWeight != null
-                      ? sellForWeight - buyForWeight
-                      : null
                   const tileDir = resolveDir(c.key)
                   const featured = isFeaturedKarat(c.key)
 
@@ -483,77 +480,65 @@ export default function PricesPage() {
                         </div>
 
                         <header className="price-rate-card__identity">
-                          <h3 className="price-rate-card__karat">{c.key}</h3>
+                          <h3 className="price-rate-card__karat">
+                            {gramsValid
+                              ? t('pricesPage.goldAccountTitle', { karat: goldAccountKaratLabel(c.key) })
+                              : c.key}
+                          </h3>
                           <p className="price-rate-card__desc">{t(karatDescKey(c.key))}</p>
                         </header>
 
                         {gramsValid ? (
-                          <div className="price-rate-card__weight">
-                            <p className="price-rate-card__weight-label">
-                              {t('pricesPage.totalForWeight', { grams })}
-                            </p>
-                            <div className="price-rate-card__quotes price-rate-card__quotes--compact">
-                              <div>
-                                <span className="price-rate-card__quote-label">
-                                  {t('pricesPage.customerPay')}
+                          <CustomerGoldPricePair
+                            buyGoldTotal={sellForWeight}
+                            sellGoldTotal={buyForWeight}
+                            formatTotal={fmtTotal}
+                            className="mt-1"
+                          />
+                        ) : (
+                          <>
+                            <div className="price-rate-card__quote-block price-rate-card__quote-block--sell">
+                              <div className="price-rate-card__quote-head">
+                                <span className="price-rate-card__side-tag price-rate-card__side-tag--sell">
+                                  {t('pricesPage.priceToBuyGold')}
                                 </span>
-                                <span className="price-rate-card__quote-value">
-                                  {fmtTotal(sellForWeight)}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="price-rate-card__quote-label">
-                                  {t('pricesPage.customerReceive')}
-                                </span>
-                                <span className="price-rate-card__quote-value">
-                                  {fmtTotal(buyForWeight)}
+                                <span className="price-rate-card__quote-hint">
+                                  {t('pricesPage.priceToBuyGoldHint')}
                                 </span>
                               </div>
-                            </div>
-                            {spreadForWeight != null && Number.isFinite(spreadForWeight) ? (
-                              <p className="price-rate-card__spread">
-                                {t('pricesPage.spreadTotal', { value: fmtFils(spreadForWeight) })}
+                              <div className="price-rate-card__hero">
+                                <span className="price-rate-card__hero-price">{fmt(sellTotal)}</span>
+                                <span className="price-rate-card__currency">{t('common.kwd')}</span>
+                              </div>
+                              <p className="price-rate-card__unit-row">
+                                <Scale className="price-rate-card__unit-icon" aria-hidden="true" />
+                                <span>{t('common.kwdPerGram')}</span>
                               </p>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        <div className="price-rate-card__quote-block price-rate-card__quote-block--sell">
-                          <div className="price-rate-card__quote-head">
-                            <span className="price-rate-card__side-tag price-rate-card__side-tag--sell">
-                              {t('pricesPage.sell')}
-                            </span>
-                            <span className="price-rate-card__quote-hint">{t('pricesPage.sellHint')}</span>
-                          </div>
-                          <div className="price-rate-card__hero">
-                            <span className="price-rate-card__hero-price">{fmt(sellTotal)}</span>
-                            <span className="price-rate-card__currency">{t('common.kwd')}</span>
-                          </div>
-                          <p className="price-rate-card__unit-row">
-                            <Scale className="price-rate-card__unit-icon" aria-hidden="true" />
-                            <span>{t('common.kwdPerGram')}</span>
-                          </p>
-                        </div>
-
-                        <div className="price-rate-card__secondary">
-                          <div className="price-rate-card__secondary-row price-rate-card__quote-block--buy">
-                            <div className="price-rate-card__quote-head price-rate-card__quote-head--inline">
-                              <span className="price-rate-card__side-tag price-rate-card__side-tag--buy">
-                                {t('pricesPage.buy')}
-                              </span>
-                              <span className="price-rate-card__quote-hint">{t('pricesPage.buyHint')}</span>
                             </div>
-                            <span className="price-rate-card__secondary-value">{fmt(buyTotal)}</span>
-                            <span className="price-rate-card__secondary-unit">
-                              {t('common.kwdPerGram')}
-                            </span>
-                          </div>
-                          {!gramsValid && spread != null && Number.isFinite(spread) ? (
-                            <p className="price-rate-card__spread">
-                              {t('pricesPage.spreadPerGram', { value: fmtFils(spread) })}
-                            </p>
-                          ) : null}
-                        </div>
+
+                            <div className="price-rate-card__secondary">
+                              <div className="price-rate-card__secondary-row price-rate-card__quote-block--buy">
+                                <div className="price-rate-card__quote-head price-rate-card__quote-head--inline">
+                                  <span className="price-rate-card__side-tag price-rate-card__side-tag--buy">
+                                    {t('pricesPage.priceToSellGold')}
+                                  </span>
+                                  <span className="price-rate-card__quote-hint">
+                                    {t('pricesPage.priceToSellGoldHint')}
+                                  </span>
+                                </div>
+                                <span className="price-rate-card__secondary-value">{fmt(buyTotal)}</span>
+                                <span className="price-rate-card__secondary-unit">
+                                  {t('common.kwdPerGram')}
+                                </span>
+                              </div>
+                              {spread != null && Number.isFinite(spread) ? (
+                                <p className="price-rate-card__spread">
+                                  {t('pricesPage.spreadPerGram', { value: fmtFils(spread) })}
+                                </p>
+                              ) : null}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </article>
                   )
@@ -607,64 +592,56 @@ export default function PricesPage() {
                         </header>
 
                         {gramsValid ? (
-                          <div className="price-rate-card__weight">
-                            <div className="price-rate-card__quotes price-rate-card__quotes--compact">
-                              <div>
-                                <span className="price-rate-card__quote-label">
-                                  {t('pricesPage.customerPay')}
+                          <CustomerGoldPricePair
+                            buyGoldTotal={sellForWeight}
+                            sellGoldTotal={buyForWeight}
+                            formatTotal={fmtTotal}
+                            className="mt-1"
+                          />
+                        ) : (
+                          <>
+                            <div className="price-rate-card__quote-block price-rate-card__quote-block--sell">
+                              <div className="price-rate-card__quote-head">
+                                <span className="price-rate-card__side-tag price-rate-card__side-tag--sell">
+                                  {t('pricesPage.priceToBuyGold')}
                                 </span>
-                                <span className="price-rate-card__quote-value">
-                                  {fmtTotal(sellForWeight)}
+                                <span className="price-rate-card__quote-hint">
+                                  {t('pricesPage.priceToBuyGoldHint')}
                                 </span>
                               </div>
-                              <div>
-                                <span className="price-rate-card__quote-label">
-                                  {t('pricesPage.customerReceive')}
-                                </span>
-                                <span className="price-rate-card__quote-value">
-                                  {fmtTotal(buyForWeight)}
+                              <div className="price-rate-card__hero">
+                                <span className="price-rate-card__hero-price">{fmt(sellTotal)}</span>
+                                <span className="price-rate-card__currency">{t('common.kwd')}</span>
+                              </div>
+                              <p className="price-rate-card__unit-row">
+                                <Scale className="price-rate-card__unit-icon" aria-hidden="true" />
+                                <span>{t('common.kwdPerGram')}</span>
+                              </p>
+                            </div>
+
+                            <div className="price-rate-card__secondary">
+                              <div className="price-rate-card__secondary-row price-rate-card__quote-block--buy">
+                                <div className="price-rate-card__quote-head price-rate-card__quote-head--inline">
+                                  <span className="price-rate-card__side-tag price-rate-card__side-tag--buy">
+                                    {t('pricesPage.priceToSellGold')}
+                                  </span>
+                                  <span className="price-rate-card__quote-hint">
+                                    {t('pricesPage.priceToSellGoldHint')}
+                                  </span>
+                                </div>
+                                <span className="price-rate-card__secondary-value">{fmt(buyTotal)}</span>
+                                <span className="price-rate-card__secondary-unit">
+                                  {t('common.kwdPerGram')}
                                 </span>
                               </div>
+                              {spread != null && Number.isFinite(spread) ? (
+                                <p className="price-rate-card__spread">
+                                  {t('pricesPage.spreadPerGram', { value: fmtFils(spread) })}
+                                </p>
+                              ) : null}
                             </div>
-                          </div>
-                        ) : null}
-
-                        <div className="price-rate-card__quote-block price-rate-card__quote-block--sell">
-                          <div className="price-rate-card__quote-head">
-                            <span className="price-rate-card__side-tag price-rate-card__side-tag--sell">
-                              {t('pricesPage.sell')}
-                            </span>
-                            <span className="price-rate-card__quote-hint">{t('pricesPage.sellHint')}</span>
-                          </div>
-                          <div className="price-rate-card__hero">
-                            <span className="price-rate-card__hero-price">{fmt(sellTotal)}</span>
-                            <span className="price-rate-card__currency">{t('common.kwd')}</span>
-                          </div>
-                          <p className="price-rate-card__unit-row">
-                            <Scale className="price-rate-card__unit-icon" aria-hidden="true" />
-                            <span>{t('common.kwdPerGram')}</span>
-                          </p>
-                        </div>
-
-                        <div className="price-rate-card__secondary">
-                          <div className="price-rate-card__secondary-row price-rate-card__quote-block--buy">
-                            <div className="price-rate-card__quote-head price-rate-card__quote-head--inline">
-                              <span className="price-rate-card__side-tag price-rate-card__side-tag--buy">
-                                {t('pricesPage.buy')}
-                              </span>
-                              <span className="price-rate-card__quote-hint">{t('pricesPage.buyHint')}</span>
-                            </div>
-                            <span className="price-rate-card__secondary-value">{fmt(buyTotal)}</span>
-                            <span className="price-rate-card__secondary-unit">
-                              {t('common.kwdPerGram')}
-                            </span>
-                          </div>
-                          {!gramsValid && spread != null && Number.isFinite(spread) ? (
-                            <p className="price-rate-card__spread">
-                              {t('pricesPage.spreadPerGram', { value: fmtFils(spread) })}
-                            </p>
-                          ) : null}
-                        </div>
+                          </>
+                        )}
                       </div>
                     </article>
                   )

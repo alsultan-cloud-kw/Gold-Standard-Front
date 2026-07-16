@@ -16,6 +16,7 @@ import {
   Share2,
   Crown,
   Download,
+  Layers,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
@@ -200,6 +201,11 @@ export default function UserDashboard() {
                   <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
                 </button>
               ))}
+              <Link to="/holdings" className="dashboard-nav-item">
+                <Layers className="dashboard-nav-item__icon" aria-hidden />
+                <span>{t('nav.holdings')}</span>
+                <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
+              </Link>
               <button
                 type="button"
                 onClick={logout}

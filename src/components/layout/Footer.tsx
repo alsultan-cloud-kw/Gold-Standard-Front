@@ -28,9 +28,8 @@ export default function Footer() {
 
   const shopLinks: FooterLink[] = [
     { nameKey: 'footer.prices', to: '/prices' },
-    { nameKey: 'footer.companyPrices', to: '/company-prices' },
     { nameKey: 'footer.verifyAuthenticity', to: '/verify' },
-    { nameKey: 'footer.trading', to: '/trading' },
+    { nameKey: 'footer.holdings', to: '/holdings' },
   ]
 
   const companyLinks: CompanyLink[] = [

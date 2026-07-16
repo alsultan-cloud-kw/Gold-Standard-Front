@@ -140,14 +140,39 @@ export const authApi = {
   changePassword: (data: { old_password: string; new_password: string; confirm_password: string }) =>
     apiService.post('/accounts/users/change_password/', data),
 
-  forgotPassword: (data: { email?: string; phone_number?: string }) =>
-    apiService.post('/accounts/users/forgot_password/', data),
+  forgotPassword: (data: {
+    email?: string
+    phone_number?: string
+    channel?: 'email' | 'whatsapp'
+    turnstile_token?: string
+  }) => apiService.post('/accounts/users/forgot_password/', data),
 
-  verifyOTP: (data: { otp_code: string; purpose?: string }) =>
-    apiService.post<{ message: string; user_id: string }>('/accounts/users/verify_otp/', data),
+  verifyOTP: (data: { otp_code: string; purpose?: string; user_id?: string }) =>
+    apiService.post<{
+      message: string
+      user_id: string
+      reset_token?: string
+      is_verified?: boolean
+      user?: unknown
+    }>('/accounts/users/verify_otp/', data),
 
-  /** Call after verifyOTP; requires user_id from verify response */
-  resetPassword: (data: { user_id: string; new_password: string }) =>
+  /** Resend registration confirmation OTP (email SES or WhatsApp). */
+  sendVerificationOTP: (data: {
+    channel?: 'email' | 'whatsapp'
+    user_id?: string
+    email?: string
+    phone_number?: string
+  }) =>
+    apiService.post<{
+      message: string
+      verification_required?: boolean
+      verification?: { channel?: string; destination?: string }
+      user_id?: string
+      is_verified?: boolean
+    }>('/accounts/users/send_verification_otp/', data),
+
+  /** Call after verifyOTP; requires reset_token from verify response */
+  resetPassword: (data: { reset_token: string; new_password: string; user_id?: string }) =>
     apiService.post<{ message: string }>('/accounts/users/reset_password/', data),
 }
 

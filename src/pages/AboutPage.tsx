@@ -11,10 +11,15 @@ import {
   Truck,
   Users,
   Scale,
+  Globe,
+  BadgeCheck,
+  Smartphone,
 } from 'lucide-react'
 import { GS_BUSINESS } from '@/constants/businessCredentials'
 import { HeroTrustIcon } from '@/components/home/HeroTrustIcon'
 import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
+import { AboutPartnersSection } from '@/components/about/AboutPartnersSection'
+import { AboutSecurityAdvantageSection } from '@/components/about/AboutSecurityAdvantageSection'
 
 const OFFERINGS = [
   'bars',
@@ -50,6 +55,19 @@ const FOCUS = [
   { id: 'manufacture', icon: Factory },
   { id: 'specialty', icon: Package },
 ] as const
+
+const MILESTONES = [
+  { id: 'kuwait', icon: Building2 },
+  { id: 'licence', icon: BadgeCheck },
+  { id: 'manufacturing', icon: Factory },
+  { id: 'moci', icon: Shield },
+  { id: 'digital', icon: Globe },
+  { id: 'authenticity', icon: Award },
+  { id: 'sharia', icon: Scale },
+  { id: 'reach', icon: Users },
+] as const
+
+const STORY_PARAS = ['p1', 'p2', 'p3', 'p4'] as const
 
 export default function AboutPage() {
   const { t } = useTranslation()
@@ -100,6 +118,16 @@ export default function AboutPage() {
               <p className="mt-4 text-sm leading-relaxed text-[#64748B] sm:text-base">
                 {t('aboutPage.storyBody')}
               </p>
+              <div className="mt-5 space-y-4">
+                {STORY_PARAS.map((key) => (
+                  <p
+                    key={key}
+                    className="text-sm leading-[1.85] text-[#475569] sm:text-base"
+                  >
+                    {t(`aboutPage.story.${key}`)}
+                  </p>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-7 xl:grid-cols-3">
@@ -133,6 +161,73 @@ export default function AboutPage() {
       </section>
 
       <section className="border-b border-black/5 bg-[#F9F9FA]">
+        <div className="page-shell page-section--roomy">
+          <div className="mb-10 max-w-3xl">
+            <p className="page-kicker">{t('aboutPage.profileKicker')}</p>
+            <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
+              {t('aboutPage.profileTitle')}
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('aboutPage.profileIntro')}
+            </p>
+          </div>
+
+          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {MILESTONES.map((item, index) => {
+              const Icon = item.icon
+              return (
+                <li
+                  key={item.id}
+                  className="relative overflow-hidden rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
+                >
+                  <div className="absolute inset-y-0 start-0 w-1 bg-[#85E307]" aria-hidden />
+                  <div className="flex items-start gap-4 ps-2">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                      <Icon className="h-5 w-5" strokeWidth={1.75} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="font-mono text-[10px] font-bold tabular-nums text-[#94A3B8]">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <h3 className="text-sm font-bold text-[#0B0F19] sm:text-base">
+                          {t(`aboutPage.milestones.${item.id}.title`)}
+                        </h3>
+                      </div>
+                      <p className="text-sm leading-relaxed text-[#64748B]">
+                        {t(`aboutPage.milestones.${item.id}.body`)}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+
+          <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]">
+                <Smartphone className="h-5 w-5" strokeWidth={1.75} />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-[#0B0F19]">{t('aboutPage.digitalChannelTitle')}</p>
+                <p className="mt-1 text-sm leading-relaxed text-[#64748B]">
+                  {t('aboutPage.digitalChannelBody')}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/products"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-black/10 bg-[#F9F9FA] px-4 py-2.5 text-sm font-semibold text-[#0B0F19] transition hover:bg-[#ECFCCB]"
+            >
+              {t('aboutPage.ctaShop')}
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/5 bg-white">
         <div className="page-shell page-section--roomy">
           <div className="mb-8 max-w-2xl">
             <p className="page-kicker">{t('aboutPage.offeringsKicker')}</p>
@@ -182,6 +277,10 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <AboutPartnersSection />
+
+      <AboutSecurityAdvantageSection />
 
       <section className="bg-[#F9F9FA]">
         <div className="page-shell page-section--roomy">

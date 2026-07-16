@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
-  Check,
   ScanLine,
   Repeat,
   MapPin,
@@ -125,19 +124,6 @@ export default function HomePage() {
                     </Link>
                   ) : null}
                 </div>
-
-                <ul className="home-hero-trust-inline">
-                  {[
-                    t('home.heroTrustInsured'),
-                    t('home.heroTrustBuyback'),
-                    t('home.heroTrustFineGold'),
-                  ].map((label) => (
-                    <li key={label} className="inline-flex min-w-0 items-center gap-1.5">
-                      <Check className="h-4 w-4 shrink-0 text-[#3F6F00]" strokeWidth={3} aria-hidden />
-                      <span className="type-body-muted text-sm font-medium">{label}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
 

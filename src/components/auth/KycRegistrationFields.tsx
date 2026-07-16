@@ -7,7 +7,7 @@ export type KycQuestion = {
   label_ar: string;
   help_text_en?: string | null;
   help_text_ar?: string | null;
-  input_type: 'text' | 'textarea' | 'boolean' | 'single_select';
+  input_type: 'text' | 'textarea' | 'boolean' | 'single_select' | 'multi_select';
   options_json?: Array<{ value: string; label_en: string; label_ar: string }>;
   is_required: boolean;
   sort_order: number;
@@ -95,6 +95,39 @@ export default function KycRegistrationFields({ questions, answers, onChange, er
                   </option>
                 ))}
               </select>
+            ) : q.input_type === 'multi_select' ? (
+              <div className="space-y-2 rounded-lg border border-gold-500/30 bg-charcoal-800 p-3">
+                {(q.options_json ?? []).map((opt) => {
+                  const selected = String(value || '')
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .includes(opt.value)
+                  return (
+                    <label
+                      key={opt.value}
+                      className="flex cursor-pointer items-center gap-3 text-sm text-gold-100/90"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => {
+                          const cur = String(value || '')
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                          const next = selected
+                            ? cur.filter((v) => v !== opt.value)
+                            : [...cur, opt.value]
+                          onChange(q.question_key, next.join(','))
+                        }}
+                        className="h-4 w-4 accent-amber-500"
+                      />
+                      <span>{isAr ? opt.label_ar : opt.label_en}</span>
+                    </label>
+                  )
+                })}
+              </div>
             ) : (
               <input
                 type="text"

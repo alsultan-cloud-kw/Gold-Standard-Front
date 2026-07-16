@@ -25,6 +25,8 @@ interface AuthContextType {
   register: (data: unknown) => Promise<User>
   logout: () => void
   updateUser: (data: unknown) => Promise<void>
+  /** Re-fetch /users/me/ into context (e.g. after OTP verify). */
+  refreshUser: () => Promise<User | null>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -49,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const fetchUser = async () => {
+  const fetchUser = async (): Promise<User | null> => {
     let settled = false
     const failSafe = window.setTimeout(() => {
       if (settled) return
@@ -60,9 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userData = await authApi.getMe()
       if (!settled) {
-        setUser(userData as User)
+        const next = userData as User
+        setUser(next)
         suppressSignInNudge()
+        return next
       }
+      return null
     } catch (error) {
       const status = (error as { response?: { status?: number } })?.response?.status
       console.error('Failed to fetch user:', error)
@@ -71,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('refresh_token')
         setUser(null)
       }
+      return null
     } finally {
       if (!settled) {
         settled = true
@@ -81,6 +87,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
   }
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('access_token')
+    if (!token) return null
+    try {
+      const userData = await authApi.getMe()
+      const next = userData as User
+      setUser(next)
+      return next
+    } catch {
+      return null
+    }
+  }, [])
 
   const login = async (credentials: {
     email?: string
@@ -159,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateUser,
+        refreshUser,
       }}
     >
       {children}
