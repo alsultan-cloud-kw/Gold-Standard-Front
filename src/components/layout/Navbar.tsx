@@ -28,6 +28,7 @@ import { RegionFlagImg } from '@/components/RegionFlagImg'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
 import { isStaffRole } from '@/utils/authRedirect'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
+import { useCustomerCompliance } from '@/hooks/useCustomerCompliance'
 import { formatPrice } from '@/utils/metalChartSeries'
 import { resolveAuthoritativeUsdOunceSpot } from '@/utils/publicStorefrontRates'
 import { CartCountBadge } from '@/components/layout/CartCountBadge'
@@ -54,6 +55,9 @@ export default function Navbar() {
   const topChromeRef = useRef<HTMLElement>(null)
   const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing, logout } = useAuth()
   const authPending = authLoading || isClerkSyncing
+  const { complianceComplete, isLoading: complianceLoading } = useCustomerCompliance()
+  const showHoldingsNav =
+    isAuthenticated && !authPending && !complianceLoading && complianceComplete
   const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
   const cartCount = getItemCount()
@@ -71,12 +75,21 @@ export default function Navbar() {
     'nav-icon-btn relative rounded-lg text-[#64748B] transition-colors hover:bg-black/[0.04] hover:text-[#0C1512]'
 
   const navLinks = useMemo(() => {
-    const base = [
+    const base: { nameKey: string; href: string; badgeKey?: string; badgeHintKey?: string }[] = [
       { nameKey: 'nav.home', href: '/' },
       { nameKey: 'nav.products', href: '/products' },
       { nameKey: 'nav.prices', href: '/prices' },
       { nameKey: 'nav.customerKyc', href: '/gs-kyc' },
-      ...(isAuthenticated ? [{ nameKey: 'nav.holdings', href: '/holdings' }] : []),
+      ...(showHoldingsNav
+        ? [
+            {
+              nameKey: 'nav.holdings',
+              href: '/holdings',
+              badgeKey: 'nav.holdingsNewBadge',
+              badgeHintKey: 'nav.holdingsNewHint',
+            },
+          ]
+        : []),
       ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
         ? [{ nameKey: 'nav.tradeGold', href: '/trade-gold' }]
         : []),
@@ -85,7 +98,7 @@ export default function Navbar() {
       { nameKey: 'nav.contact', href: '/contact' },
     ]
     return base
-  }, [isAuthenticated])
+  }, [showHoldingsNav])
 
   const handleLogout = () => {
     logout()
@@ -232,11 +245,17 @@ export default function Navbar() {
               <Link
                 key={link.nameKey}
                 to={link.href}
-                className={`relative shrink-0 whitespace-nowrap text-sm font-medium transition-colors group ${
+                title={link.badgeHintKey ? t(link.badgeHintKey) : undefined}
+                className={`relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-medium transition-colors group ${
                   isPathActive(link.href) ? 'text-[#3F6F00]' : 'text-[#0C1512] hover:text-[#3F6F00]'
                 }`}
               >
-                {t(link.nameKey)}
+                <span>{t(link.nameKey)}</span>
+                {link.badgeKey ? (
+                  <span className="rounded-md bg-[#85E307] px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-[#0B0F19]">
+                    {t(link.badgeKey)}
+                  </span>
+                ) : null}
                 <span
                   className={`absolute -bottom-1 left-0 h-0.5 bg-[#85E307] transition-all duration-300 rtl:right-0 rtl:left-auto ${
                     isPathActive(link.href) ? 'w-full' : 'w-0 group-hover:w-full'
@@ -426,11 +445,19 @@ export default function Navbar() {
                   key={link.nameKey}
                   to={link.href}
                   onClick={() => setIsMenuOpen(false)}
+                  title={link.badgeHintKey ? t(link.badgeHintKey) : undefined}
                   className={`mobile-nav-link ${
                     isPathActive(link.href) ? 'mobile-nav-link--active' : ''
                   }`}
                 >
-                  {t(link.nameKey)}
+                  <span className="inline-flex items-center gap-2">
+                    {t(link.nameKey)}
+                    {link.badgeKey ? (
+                      <span className="rounded-md bg-[#85E307] px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-[#0B0F19]">
+                        {t(link.badgeKey)}
+                      </span>
+                    ) : null}
+                  </span>
                 </Link>
               ))}
               {authPending ? (

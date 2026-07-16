@@ -30,6 +30,7 @@ import {
   numOrNull,
 } from '@/utils/publicStorefrontRates'
 import { cn } from '@/lib/utils'
+import { formatLatinNumber } from '@/utils/formatLatinNumber'
 
 const MIN_GRAMS = 5
 const MAX_GRAMS = 1000
@@ -39,18 +40,18 @@ const TARGET_FINE_STEP = 0.001
 
 type BuyMode = 'instant' | 'target'
 
-function formatKwd(value: number | null, locale: string): string {
+function formatKwd(value: number | null): string {
   if (value == null || !Number.isFinite(value)) return '—'
-  return new Intl.NumberFormat(locale.startsWith('ar') ? 'ar-KW' : 'en-KW', {
+  return formatLatinNumber(value, {
     minimumFractionDigits: 3,
     maximumFractionDigits: 3,
-  }).format(value)
+  })
 }
 
-function formatGrams(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale.startsWith('ar') ? 'ar' : 'en', {
+function formatGrams(value: number): string {
+  return formatLatinNumber(value, {
     maximumFractionDigits: 1,
-  }).format(value)
+  })
 }
 
 function parseGramsText(text: string): number | null {
@@ -197,7 +198,7 @@ export default function HoldingsPage() {
                       {t('holdingsPage.liveBuy')}
                     </p>
                     <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-[#0B0F19]">
-                      {ratesLoading ? '…' : formatKwd(buyPerGram, i18n.language)}
+                      {ratesLoading ? '…' : formatKwd(buyPerGram)}
                       <span className="ms-1 text-sm font-semibold text-[#64748B]">
                         {t('holdingsPage.perGram')}
                       </span>
@@ -209,11 +210,11 @@ export default function HoldingsPage() {
                       {t('holdingsPage.estimatedTotal')}
                     </p>
                     <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-[#3F6F00]">
-                      {ratesLoading ? '…' : formatKwd(totals.buyTotal, i18n.language)}
+                      {ratesLoading ? '…' : formatKwd(totals.buyTotal)}
                       <span className="ms-1 text-sm font-semibold text-[#64748B]">KWD</span>
                     </p>
                     <p className="mt-1 text-[11px] text-[#94A3B8]">
-                      {formatGrams(effectiveGrams, i18n.language)} {t('holdingsPage.gramsUnit')}
+                      {formatGrams(effectiveGrams)} {t('holdingsPage.gramsUnit')}
                     </p>
                   </div>
                 </div>
@@ -287,7 +288,7 @@ export default function HoldingsPage() {
                           : 'border-black/10 text-[#64748B] hover:border-black/20',
                       )}
                     >
-                      {formatGrams(preset, i18n.language)}g
+                      {formatGrams(preset)}g
                     </button>
                   ))}
                 </div>
@@ -398,7 +399,7 @@ export default function HoldingsPage() {
                         </button>
                         <span className="text-[11px] text-[#64748B]">
                           {t('holdingsPage.livePriceRef', {
-                            price: formatKwd(buyPerGram, i18n.language),
+                            price: formatKwd(buyPerGram),
                           })}
                         </span>
                       </div>
@@ -517,11 +518,22 @@ export default function HoldingsPage() {
           <aside className="space-y-4 lg:sticky lg:top-[calc(var(--nav-offset,5rem)+1rem)]">
             <div className="overflow-hidden rounded-2xl border border-black/10 bg-[#0B0F19] text-white shadow-lg">
               <div className="border-b border-white/10 px-5 py-4">
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-[#85E307]" />
-                  <h3 className="text-sm font-bold">{t('holdingsPage.walletTitle')}</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#85E307]/15 text-[#85E307]">
+                    <Layers className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#85E307]/90">
+                      {t('holdingsPage.walletKicker')}
+                    </p>
+                    <h3 className="text-base font-bold tracking-tight text-white">
+                      {t('holdingsPage.walletTitle')}
+                    </h3>
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-white/55">{t('holdingsPage.walletSubtitle')}</p>
+                <p className="mt-2.5 text-sm leading-relaxed text-white/65">
+                  {t('holdingsPage.walletSubtitle')}
+                </p>
               </div>
               <div className="px-5 py-6">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
@@ -537,7 +549,7 @@ export default function HoldingsPage() {
                     {t('holdingsPage.previewLabel')}
                   </p>
                   <p className="mt-2 font-mono text-xl font-bold tabular-nums">
-                    +{formatGrams(effectiveGrams, i18n.language)} g
+                    +{formatGrams(effectiveGrams)} g
                   </p>
                   <p className="mt-1 text-[11px] text-white/45">{t('holdingsPage.previewHint')}</p>
                 </div>
@@ -563,7 +575,7 @@ export default function HoldingsPage() {
             {sellPerGram != null ? (
               <p className="text-center text-[11px] text-[#94A3B8]">
                 {t('holdingsPage.sellReference', {
-                  price: formatKwd(sellPerGram, i18n.language),
+                  price: formatKwd(sellPerGram),
                 })}
               </p>
             ) : null}

@@ -25,6 +25,7 @@ import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
 import AuthTransitionOverlay from './components/auth/AuthTransitionOverlay'
 import MinistryKycGate from './components/auth/MinistryKycGate'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import { KycRequiredRoute } from './components/routing/KycRequiredRoute'
 import UserDashboard from './pages/UserDashboard'
 import AboutPage from './pages/AboutPage'
 import HoldingsPage from './pages/HoldingsPage'
@@ -135,9 +136,9 @@ function App() {
                   <Route
                     path="/checkout"
                     element={
-                      <ProtectedRoute>
+                      <KycRequiredRoute>
                         <CheckoutPage />
-                      </ProtectedRoute>
+                      </KycRequiredRoute>
                     }
                   />
                   <Route path="/payment-receipt/:saleId" element={<KnetReceiptPage />} />
@@ -161,9 +162,9 @@ function App() {
                   <Route
                     path="/holdings"
                     element={
-                      <ProtectedRoute>
+                      <KycRequiredRoute>
                         <HoldingsPage />
-                      </ProtectedRoute>
+                      </KycRequiredRoute>
                     }
                   />
                   <Route path="/contact" element={<ContactPage />} />

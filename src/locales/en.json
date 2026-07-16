@@ -31,7 +31,9 @@
     "buyGold": "Buy gold",
     "cart": "Cart",
     "trading": "Trading",
-    "holdings": "Holdings"
+    "holdings": "Holdings",
+    "holdingsNewBadge": "New",
+    "holdingsNewHint": "New feature under development"
   },
   "legal": {
     "combined": {
@@ -113,7 +115,7 @@
     "trading": "Trading",
     "tradingDesc": "Trading desk — coming soon",
     "holdings": "Holdings",
-    "holdingsDesc": "Your metal wallet — build gold holdings"
+    "holdingsDesc": "Digital metal wallet — plan your gold holdings"
   },
   "home": {
     "liveGoldPrices": "Live Gold Prices Available",
@@ -629,8 +631,8 @@
       "description": "Live gold and precious metal buy/sell rates in Kuwaiti dinar. Interactive chart, karat board, and gram calculator — updated continuously."
     },
     "customerKyc": {
-      "title": "Name screening · Gold Standard Kuwait",
-      "description": "Name screening by Gold Standard Kuwait. Sanctions data supported by OpenSanctions."
+      "title": "Enterprise name screening console · Gold Standard Kuwait",
+      "description": "Free live name screening against Gold Standard’s reference registry. Exact and fuzzy match reports for Kuwait counters. Sanctions data supported by OpenSanctions."
     },
     "mociKyc": {
       "title": "MOCI customer due diligence questionnaire · Kuwait | Gold Standard",
@@ -1682,11 +1684,15 @@
     },
     "kyc": {
       "sectionTitle": "Verification questions",
-      "skipHint": "You can skip for now and shop — finish the questions later in your profile.",
-      "skipForNow": "Skip and continue shopping",
-      "skippedToast": "You can shop now — complete verification questions in your profile when ready.",
+      "skipHint": "You can skip for now and browse — buying and holdings require finishing these questions later in your profile.",
+      "skipForNow": "Skip and continue browsing",
+      "skippedToast": "You can browse now — complete verification in your profile before buying or opening holdings.",
       "incompleteBanner": "Ministry of Commerce verification questions are still incomplete.",
-      "incompleteShopHint": "You can buy and check out now. We recommend finishing these questions here for compliance.",
+      "incompleteShopHint": "You can browse for now. Checkout and holdings require a complete profile and verification answers.",
+      "requiredForFeature": "Complete profile and verification",
+      "requiredForFeatureDesc": "Holdings and purchasing unlock after you finish your profile and Ministry KYC questions.",
+      "requiredToBuy": "Complete verification to buy",
+      "requiredToBuyDesc": "Before adding items or checking out, finish your profile and verification questions in the dashboard.",
       "completeTitle": "Ministry verification questions",
       "completeHint": "Required under Ministry of Commerce due-diligence rules. Shopping stays available before you finish.",
       "saveAnswers": "Save verification answers",
@@ -1768,37 +1774,68 @@
   },
   "customerScreening": {
     "kicker": "Gold Standard · Kuwait",
-    "title": "Name screening",
-    "intro": "Official name screening by Gold Standard — quick verification before completing a transaction or opening an account.",
-    "features": {
-      "search": {
-        "title": "Instant search",
-        "body": "Enter the full name and receive a result within seconds."
-      },
-      "report": {
-        "title": "Reference report",
-        "body": "Match or no-match with a reference ID for your records."
-      },
-      "data": {
-        "title": "Trusted data",
-        "body": "Sanctions data supported by OpenSanctions (Berlin, Germany)."
+    "freeBadge": "Free compliance tool",
+    "title": "Enterprise name screening console",
+    "intro": "Screen a full legal name against Gold Standard’s reference registry — exact match and close similarity — before you complete a sale or open an account.",
+    "introHook": "Built for the counter. Free to use. The kind of tool desks usually pay for.",
+    "footerPitch": "Same company that prices, settles, and documents physical bullion in Kuwait — now a live screening console for your customers.",
+    "metrics": {
+      "latencyLabel": "Typical response",
+      "latencyValue": "Sub-second",
+      "registryLabel": "Names in registry",
+      "registryFallback": "—",
+      "sessionLabel": "Screens today (this browser)"
+    },
+    "ticker": {
+      "live": "Live",
+      "aria": "Live registry activity ticker",
+      "registrySize": "{{size}} names indexed",
+      "kinds": {
+        "indexed": "Indexed",
+        "synced": "Synced",
+        "screened": "Screened",
+        "cleared": "Cleared",
+        "flagged": "Review"
       }
     },
-    "panelTitle": "Name screening",
+    "features": {
+      "search": {
+        "title": "Full-screen search",
+        "body": "Run a name and watch the console work — normalize, scan the registry, then deliver a reference report."
+      },
+      "report": {
+        "title": "Reference-grade result",
+        "body": "Match or clear with similarity score, registry name, and a reference ID for your file."
+      },
+      "data": {
+        "title": "Trusted sanctions data",
+        "body": "Sanctions data supported by OpenSanctions (Berlin, Germany), plus your Gold Standard uploaded lists."
+      }
+    },
+    "panelKicker": "Live screening",
+    "panelTitle": "Start a verification",
+    "panelSubtitle": "Enter the customer’s full legal name exactly as on official documents. The console compares against the active registry.",
+    "queryLabel": "Entity name to screen",
+    "hint": "Names only — no ID numbers or addresses required. Exact hits first; close spellings surface as partial matches.",
     "indexLabel": "Names in registry",
-    "indexHint": "Current screening database size",
-    "placeholder": "Full name",
-    "run": "Run screening",
+    "indexHint": "Active screening index",
+    "placeholder": "Enter full legal name…",
+    "run": "Start search",
     "scanning": "Screening…",
+    "overlayTitle": "Searching the registry",
     "step": {
-      "normalize": "Preparing name",
-      "search": "Searching registry",
-      "compile": "Building result"
+      "normalize": "Normalizing name for comparison",
+      "search": "Scanning indexed records",
+      "compile": "Compiling verification report"
     },
     "reportLabel": "Screening result",
     "statusClear": "No match in registry",
     "statusMatchExact": "Exact name match — compliance review",
     "statusMatchFuzzy": "Partial name similarity — compliance review",
+    "formulaLabel": "Comparison formula",
+    "formulaExact": "Exact string match",
+    "formulaFuzzy": "Fuzzy (edit distance)",
+    "similarityIndex": "Similarity index",
     "fieldQuery": "Name entered",
     "fieldNormalized": "Normalized form",
     "fieldListRecord": "Name on registry",
@@ -1810,7 +1847,7 @@
     "matchAdviceExact": "Stop the transaction and refer to your compliance officer.",
     "matchAdviceFuzzy": "The entered name is similar to a registry record but not an exact match — review the matched record before proceeding.",
     "clearAdvice": "No match found for \"{{name}}\" in the current registry.",
-    "reportFooter": "Gold Standard",
+    "reportFooter": "Gold Standard · AML screening",
     "newSearch": "Screen another name",
     "checkFailed": "Screening failed. Try again.",
     "unavailable": "Service temporarily unavailable.",
@@ -2537,9 +2574,9 @@
   },
   "holdingsPage": {
     "badge": "Under development",
-    "badgeVault": "Metal wallet",
+    "badgeVault": "Digital metal wallet",
     "title": "Gold holdings",
-    "subtitle": "Build allocated gold in grams at today’s market rate — your metal wallet for long-term positioning, without the noise of a dealing room.",
+    "subtitle": "Plan how much gold you want to acquire at today’s market rate — your balance will appear in the digital metal wallet after launch.",
     "plannerTitle": "Plan your holding",
     "plannerHint": "Choose a weight from 5 g to 1 kg — we quote live 24K before you commit.",
     "liveBuy": "Live buy rate",
@@ -2567,15 +2604,16 @@
     "setTargetCta": "Set target order",
     "targetTooHigh": "Target must be below the current live buy rate.",
     "targetExplain": "We will hold your instruction and notify you when execution is available.",
-    "walletTitle": "Metal wallet",
-    "walletSubtitle": "محفظة المعادن — your allocated balance",
-    "currentHoldings": "Current holding",
-    "pureGold": "investment grade",
+    "walletKicker": "Your account",
+    "walletTitle": "Digital metal wallet",
+    "walletSubtitle": "Your allocated gold balance in grams will show here once launch and execution are live.",
+    "currentHoldings": "Current balance",
+    "pureGold": "24K investment grade",
     "previewLabel": "If you proceed",
     "previewHint": "Preview only — execution opens after launch.",
     "devTitle": "Launching soon",
-    "devBody": "Holdings and automated execution are being finished to the same standard as our physical bullion desk. You can explore amounts and rates today; orders will open once compliance and settlement flows are live.",
-    "devCta": "Talk to our desk",
+    "devBody": "Holdings and automated execution are being finished to the same standard our company applies to physical bullion. You can explore amounts and rates today; orders will open once compliance and settlement flows are live.",
+    "devCta": "Contact the company",
     "sellReference": "Reference sell rate: {{price}} KWD/g",
     "pillars": {
       "secure": {

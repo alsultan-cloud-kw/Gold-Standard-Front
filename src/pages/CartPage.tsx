@@ -135,7 +135,8 @@ export default function CartPage() {
   const isAr = i18n.language?.startsWith('ar')
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart()
   const summary = useOrderSummaryDisplay(cart)
-  const { ensureCanPurchase, isAuthenticated, needsVerification, loginHref } = usePurchaseAuth()
+  const { ensureCanPurchase, isAuthenticated, needsVerification, needsKyc, loginHref } =
+    usePurchaseAuth()
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =
     cartClubPricingBreakdown(cart.items)
   const displayTotalAfterClub = chargedSubtotal
@@ -148,8 +149,10 @@ export default function CartPage() {
   const checkoutHref = !isAuthenticated
     ? loginHref('/checkout')
     : needsVerification
-      ? '/dashboard?tab=profile'
-      : '/checkout'
+      ? '/verify-account'
+      : needsKyc
+        ? '/dashboard?tab=profile&complete=kyc'
+        : '/checkout'
 
   const onCheckoutClick = (e: MouseEvent) => {
     if (hasUnavailableItems) {

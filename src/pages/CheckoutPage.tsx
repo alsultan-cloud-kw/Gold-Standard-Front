@@ -12,7 +12,6 @@ import {
   Crown,
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
-import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
@@ -211,9 +210,8 @@ const checkoutSecondaryBtnClass = 'checkout-secondary-btn'
 export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
-  const { user } = useAuth()
-  const needsVerification = Boolean(user && user.is_verified === false)
   const navigate = useNavigate()
+  // Account OTP + KYC enforced by KycRequiredRoute.
   const location = useLocation()
   const queryClient = useQueryClient()
   const [step, setStep] = useState(1)
@@ -859,21 +857,6 @@ export default function CheckoutPage() {
           {t('checkoutPage.title')}
         </h1>
         <p className="mb-2 text-sm text-[#64748B] sm:mb-4 sm:text-base">{t('checkoutPage.trustNote')}</p>
-
-        {needsVerification ? (
-          <div
-            role="status"
-            className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-          >
-            <p className="font-semibold">{t('auth.verificationRequiredToBuy')}</p>
-            <p className="mt-1 text-amber-900/80">
-              {t('auth.kyc.incompleteShopHint')}{' '}
-              <Link to="/dashboard?tab=profile" className="font-semibold underline underline-offset-2">
-                {t('auth.goToProfile')}
-              </Link>
-            </p>
-          </div>
-        ) : null}
 
         <CheckoutStepIndicator labels={stepLabels} step={step} />
 

@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import gsap from 'gsap'
 import {
   AlertTriangle,
   CheckCircle2,
+  Database,
   FileText,
-  Fingerprint,
   Loader2,
   Search,
   Shield,
   ShieldAlert,
+  Sparkles,
 } from 'lucide-react'
 import {
   blacklistScreeningApi,
   type BlacklistCheckResponse,
 } from '@/services/blacklistScreeningApi'
+import {
+  bumpScreensToday,
+  loadScreeningSession,
+  saveScreeningSession,
+} from '@/lib/screeningTicker'
 
 type ScreeningReport = {
   queriedAt: Date
@@ -30,27 +37,38 @@ function makeReferenceId(): string {
   return `GS-SCR-${stamp}-${rand}`
 }
 
-function formatReportTime(date: Date, isAr: boolean): string {
-  return date.toLocaleString(isAr ? 'ar-KW' : 'en-GB', {
+function formatReportTime(date: Date): string {
+  return date.toLocaleString('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
   })
 }
 
-type Props = {
-  totalIndexed: number | null
+function formatPct(n: number): string {
+  return `${Math.round(n)}%`
 }
 
-export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
-  const { t, i18n } = useTranslation()
-  const isAr = i18n.language?.startsWith('ar')
-  const [query, setQuery] = useState('')
+function formatCount(n: number): string {
+  return n.toLocaleString('en-US')
+}
+
+type Props = {
+  totalIndexed: number | null
+  onScreenComplete?: () => void
+}
+
+export function CustomerBlacklistScreenPanel({ totalIndexed, onScreenComplete }: Props) {
+  const { t } = useTranslation()
+  const [query, setQuery] = useState(() => loadScreeningSession().lastQuery || '')
   const [checking, setChecking] = useState(false)
   const [scanStep, setScanStep] = useState(0)
   const [scanProgress, setScanProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [report, setReport] = useState<ScreeningReport | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const searchIconRef = useRef<HTMLSpanElement>(null)
+  const overlayIconRef = useRef<HTMLDivElement>(null)
+  const radarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!checking) return
@@ -70,6 +88,79 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
     }
   }, [checking])
 
+  /* Idle search icon — gentle orbit + pulse */
+  useEffect(() => {
+    if (checking || !searchIconRef.current) return
+    const el = searchIconRef.current
+    const ctx = gsap.context(() => {
+      gsap.to(el, {
+        y: -3,
+        duration: 1.1,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut',
+      })
+      gsap.to(el, {
+        rotate: 12,
+        duration: 1.6,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut',
+        delay: 0.15,
+      })
+    })
+    return () => ctx.revert()
+  }, [checking])
+
+  /* Full-screen overlay: sweeping radar + roaming search */
+  useEffect(() => {
+    if (!checking) return
+    const icon = overlayIconRef.current
+    const radar = radarRef.current
+    if (!icon || !radar) return
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        icon,
+        { scale: 0.85, opacity: 0.7 },
+        {
+          scale: 1.08,
+          opacity: 1,
+          duration: 0.9,
+          yoyo: true,
+          repeat: -1,
+          ease: 'sine.inOut',
+        },
+      )
+      gsap.to(icon, {
+        x: 28,
+        y: -18,
+        duration: 1.4,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut',
+      })
+      gsap.to(icon, {
+        rotate: 360,
+        duration: 3.2,
+        repeat: -1,
+        ease: 'none',
+      })
+      gsap.fromTo(
+        radar,
+        { scale: 0.35, opacity: 0.55 },
+        {
+          scale: 1.55,
+          opacity: 0,
+          duration: 1.45,
+          repeat: -1,
+          ease: 'power1.out',
+        },
+      )
+    })
+    return () => ctx.revert()
+  }, [checking])
+
   const runScreening = useCallback(async () => {
     const trimmed = query.trim()
     if (!trimmed || checking) return
@@ -78,6 +169,7 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
     setError(null)
     setReport(null)
     setScanProgress(12)
+    saveScreeningSession({ lastQuery: trimmed })
 
     try {
       const json = await blacklistScreeningApi.checkName(trimmed)
@@ -94,15 +186,34 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
         originalName: json.originalName ?? null,
         similarityScore: json.similarityScore ?? null,
         normalizedName: json.normalizedName ?? '',
+        matches: Array.isArray(json.matches)
+          ? json.matches
+              .filter((m) => m && typeof m.originalName === 'string')
+              .map((m) => ({
+                originalName: m.originalName,
+                similarityScore: Number(m.similarityScore ?? 0),
+              }))
+          : json.matched && json.originalName
+            ? [
+                {
+                  originalName: json.originalName,
+                  similarityScore: Number(json.similarityScore ?? 1),
+                },
+              ]
+            : [],
       }
       setScanProgress(100)
-      await new Promise((r) => window.setTimeout(r, 280))
+      await new Promise((r) => window.setTimeout(r, 320))
+      const referenceId = makeReferenceId()
       setReport({
         queriedAt: new Date(),
-        referenceId: makeReferenceId(),
+        referenceId,
         query: trimmed,
         result,
       })
+      bumpScreensToday()
+      saveScreeningSession({ lastQuery: trimmed, lastReferenceId: referenceId })
+      onScreenComplete?.()
     } catch (e) {
       const axiosErr =
         e && typeof e === 'object' && 'response' in e
@@ -122,7 +233,7 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
     } finally {
       setChecking(false)
     }
-  }, [checking, query, t])
+  }, [checking, onScreenComplete, query, t])
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -152,230 +263,373 @@ export function CustomerBlacklistScreenPanel({ totalIndexed }: Props) {
       : '—'
 
   return (
-    <section
-      className="overflow-hidden rounded-2xl border border-black/10 bg-[#0B0F19] text-white shadow-xl"
-      aria-labelledby="customer-screening-title"
-    >
-      <div className="border-b border-white/10 px-5 py-5 sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="shrink-0 rounded-xl bg-[#85E307]/15 p-2.5 ring-1 ring-[#85E307]/30">
-              <Shield className="h-6 w-6 text-[#85E307]" aria-hidden />
-            </div>
-            <div className="min-w-0">
-              <h2
-                id="customer-screening-title"
-                className="text-base font-bold tracking-tight sm:text-lg"
-              >
-                {t('customerScreening.panelTitle')}
-              </h2>
-            </div>
-          </div>
-          {totalIndexed != null && totalIndexed > 0 ? (
+    <>
+      {/* Immersive full-screen search */}
+      {checking ? (
+        <div
+          className="fixed inset-0 z-[80] flex flex-col items-center justify-center bg-[#F7F8F5]/97 backdrop-blur-md"
+          role="alertdialog"
+          aria-busy="true"
+          aria-labelledby="gs-screening-overlay-title"
+        >
+          <div className="relative mb-10 flex h-40 w-40 items-center justify-center sm:h-48 sm:w-48">
             <div
-              className="shrink-0 overflow-hidden rounded-2xl border border-[#85E307]/40 bg-[#0B0F19] px-4 py-3 text-end ring-1 ring-[#85E307]/20"
-              aria-label={`${t('customerScreening.indexLabel')}: ${totalIndexed.toLocaleString(isAr ? 'ar-KW' : 'en-US')}`}
+              ref={radarRef}
+              className="absolute inset-0 rounded-full border-2 border-[#85E307]/50"
+              aria-hidden
+            />
+            <div
+              className="absolute inset-4 rounded-full border border-[#85E307]/25"
+              aria-hidden
+            />
+            <div
+              ref={overlayIconRef}
+              className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-[#0B0F19] text-[#85E307] shadow-[0_20px_50px_rgba(133,227,7,0.25)] sm:h-24 sm:w-24"
             >
-              <p className="text-[11px] font-semibold leading-snug text-white/70">
-                {t('customerScreening.indexLabel')}
-              </p>
-              <p className="mt-1.5 font-mono text-3xl font-bold leading-none tracking-tight tabular-nums text-[#85E307]">
-                {totalIndexed.toLocaleString(isAr ? 'ar-KW' : 'en-US')}
-              </p>
-              <p className="mt-1.5 text-[10px] font-medium text-white/45">
-                {t('customerScreening.indexHint')}
-              </p>
+              <Search className="h-9 w-9 sm:h-10 sm:w-10" strokeWidth={2} aria-hidden />
             </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="space-y-4 px-5 py-5 sm:px-6">
-        <form onSubmit={onSubmit} className="space-y-3">
-          <label htmlFor="customer-screening-query" className="sr-only">
-            {t('customerScreening.placeholder')}
-          </label>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <div className="relative min-w-0 flex-1">
-              <Search
-                className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-white/40 start-3"
-                aria-hidden
-              />
-              <input
-                ref={inputRef}
-                id="customer-screening-query"
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('customerScreening.placeholder')}
-                disabled={checking}
-                autoComplete="off"
-                spellCheck={false}
-                className="w-full rounded-xl border border-white/10 bg-black/40 py-3 text-sm text-white placeholder:text-white/35 focus:border-[#85E307]/50 focus:outline-none focus:ring-2 focus:ring-[#85E307]/20 disabled:opacity-60 ps-10 pe-4"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={checking || !query.trim()}
-              className="gold-button inline-flex min-w-[8.5rem] items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {checking ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('customerScreening.scanning')}
-                </>
-              ) : (
-                <>
-                  <Fingerprint className="h-4 w-4" />
-                  {t('customerScreening.run')}
-                </>
-              )}
-            </button>
           </div>
-        </form>
 
-        {checking ? (
-          <div className="space-y-3 rounded-xl border border-[#85E307]/20 bg-black/30 p-4">
-            <div className="flex items-center justify-between gap-2 text-[11px]">
-              <span className="font-semibold text-[#85E307]/90">
-                {t(`customerScreening.step.${SCAN_STEP_KEYS[scanStep]}`)}
-              </span>
-              <span className="tabular-nums text-white/45">{scanProgress}%</span>
+          <p
+            id="gs-screening-overlay-title"
+            className="max-w-xl px-6 text-center text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl"
+          >
+            {t('customerScreening.overlayTitle')}
+          </p>
+          <p className="mt-3 max-w-lg px-6 text-center text-base text-[#64748B] sm:text-lg">
+            {t(`customerScreening.step.${SCAN_STEP_KEYS[scanStep]}`)}
+          </p>
+
+          <div className="mt-8 w-full max-w-md px-6">
+            <div className="mb-2 flex items-center justify-between text-sm font-semibold">
+              <span className="text-[#3F6F00]">{t('customerScreening.scanning')}</span>
+              <span className="font-mono tabular-nums text-[#0B0F19]">{scanProgress}%</span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div className="h-2.5 overflow-hidden rounded-full bg-black/[0.06]">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#3F6F00] via-[#85E307] to-[#ECFCCB] transition-all duration-300"
                 style={{ width: `${scanProgress}%` }}
               />
             </div>
+            <p className="mt-4 text-center font-mono text-sm text-[#94A3B8]">{query.trim()}</p>
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        {error ? (
-          <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-xs text-red-200">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        ) : null}
+      <section
+        className="relative overflow-hidden rounded-[1.75rem] border border-black/[0.08] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]"
+        aria-labelledby="customer-screening-title"
+      >
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(133,227,7,0.18), transparent 55%)',
+          }}
+          aria-hidden
+        />
 
-        {report && !checking ? (
-          <article
-            className={`overflow-hidden rounded-xl border ${
-              report.result.matched
-                ? 'border-red-500/35 bg-gradient-to-b from-red-950/50 to-black/40'
-                : 'border-[#85E307]/30 bg-gradient-to-b from-[#3F6F00]/20 to-black/40'
-            }`}
-          >
-            <div
-              className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-5 ${
-                report.result.matched
-                  ? 'border-red-500/20 bg-red-500/10'
-                  : 'border-[#85E307]/20 bg-[#85E307]/10'
-              }`}
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                {report.result.matched ? (
-                  <ShieldAlert className="h-5 w-5 shrink-0 text-red-300" aria-hidden />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5 shrink-0 text-[#85E307]" aria-hidden />
-                )}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
-                    {t('customerScreening.reportLabel')}
-                  </p>
-                  <p
-                    className={`text-sm font-bold ${
-                      report.result.matched ? 'text-red-100' : 'text-[#ECFCCB]'
-                    }`}
-                  >
-                    {matchStatusLabel}
-                  </p>
-                </div>
-              </div>
-              <div className="text-end font-mono text-[10px] text-white/45">
-                <p>{report.referenceId}</p>
-                <p className="mt-0.5">{formatReportTime(report.queriedAt, Boolean(isAr))}</p>
-              </div>
+        <div className="relative border-b border-black/[0.06] px-5 py-6 sm:px-8 sm:py-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0 max-w-3xl">
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#3F6F00]">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                {t('customerScreening.panelKicker')}
+              </p>
+              <h2
+                id="customer-screening-title"
+                className="mt-3 text-3xl font-bold tracking-tight text-[#0B0F19] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
+              >
+                {t('customerScreening.panelTitle')}
+              </h2>
+              <p className="mt-3 max-w-2xl text-base leading-relaxed text-[#64748B] sm:text-lg">
+                {t('customerScreening.panelSubtitle')}
+              </p>
             </div>
 
-            <div className="space-y-4 p-4 sm:p-5">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <ReportField label={t('customerScreening.fieldQuery')} value={report.query} highlight />
-                <ReportField
-                  label={t('customerScreening.fieldNormalized')}
-                  value={report.result.normalizedName || '—'}
-                  mono
-                />
-                {report.result.matched ? (
-                  <>
-                    <ReportField
-                      label={t('customerScreening.fieldListRecord')}
-                      value={report.result.originalName ?? '—'}
-                      highlight
-                    />
-                    <ReportField label={t('customerScreening.fieldMatchType')} value={matchTypeLabel} />
-                  </>
-                ) : null}
+            {totalIndexed != null && totalIndexed > 0 ? (
+              <div
+                className="w-full shrink-0 rounded-2xl border border-[#85E307]/30 bg-[#F4FBEF] p-1 lg:w-[16rem]"
+                aria-label={`${t('customerScreening.indexLabel')}: ${formatCount(totalIndexed)}`}
+              >
+                <div className="rounded-[0.95rem] bg-white px-5 py-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#3F6F00]/80">
+                        {t('customerScreening.indexLabel')}
+                      </p>
+                      <p className="mt-2 font-mono text-4xl font-bold tabular-nums tracking-tight text-[#0B0F19]">
+                        {formatCount(totalIndexed)}
+                      </p>
+                      <p className="mt-1.5 text-xs text-[#64748B]">
+                        {t('customerScreening.indexHint')}
+                      </p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#85E307]/35 bg-[#ECFCCB] text-[#3F6F00]">
+                      <Database className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                    </span>
+                  </div>
+                </div>
               </div>
+            ) : null}
+          </div>
+        </div>
 
-              {report.result.matched ? (
-                <div className="space-y-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                  {isFuzzyMatch ? (
+        <div className="relative space-y-5 px-5 py-6 sm:px-8 sm:py-8">
+          <form onSubmit={onSubmit} className="space-y-4">
+            <label
+              htmlFor="customer-screening-query"
+              className="block text-base font-semibold text-[#0B0F19] sm:text-lg"
+            >
+              {t('customerScreening.queryLabel')}
+            </label>
+
+            <div className="rounded-[1.35rem] border border-black/[0.08] bg-[#F7F8F5] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-2.5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                <div className="relative min-w-0 flex-1">
+                  <span
+                    ref={searchIconRef}
+                    className="pointer-events-none absolute top-1/2 z-[1] -translate-y-1/2 text-[#3F6F00] start-4"
+                    aria-hidden
+                  >
+                    <Search className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
+                  </span>
+                  <input
+                    ref={inputRef}
+                    id="customer-screening-query"
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t('customerScreening.placeholder')}
+                    disabled={checking}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full rounded-[1rem] border border-transparent bg-white py-4 text-lg font-medium text-[#0B0F19] outline-none transition placeholder:font-normal placeholder:text-[#94A3B8] focus:border-[#85E307] focus:ring-4 focus:ring-[#85E307]/20 disabled:opacity-60 ps-12 pe-4 sm:py-5 sm:text-xl sm:ps-14"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={checking || !query.trim()}
+                  className="inline-flex min-h-[3.5rem] min-w-[11rem] items-center justify-center gap-2 rounded-[1rem] bg-[#0B0F19] px-6 text-base font-bold text-[#85E307] transition hover:bg-[#161c2c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:text-lg"
+                >
+                  {checking ? (
                     <>
-                      <div className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="font-semibold text-red-100/90">
-                          {t('customerScreening.similarity')}
-                        </span>
-                        <span className="font-bold tabular-nums text-red-200">{matchScore}%</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-red-700 via-red-500 to-amber-400"
-                          style={{ width: `${Math.min(100, matchScore)}%` }}
-                        />
-                      </div>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      {t('customerScreening.scanning')}
                     </>
                   ) : (
-                    <p className="text-[11px] font-semibold text-red-100/90">
-                      {t('customerScreening.similarityExactNote')}
-                    </p>
+                    <>
+                      <Shield className="h-5 w-5" strokeWidth={2} />
+                      {t('customerScreening.run')}
+                    </>
                   )}
-                  <p className="text-[11px] leading-relaxed text-red-200/80">
-                    {isExactMatch
-                      ? t('customerScreening.matchAdviceExact')
-                      : t('customerScreening.matchAdviceFuzzy')}
-                  </p>
-                </div>
-              ) : (
-                <p className="rounded-lg border border-[#85E307]/15 bg-[#85E307]/5 px-3 py-2.5 text-xs leading-relaxed text-[#ECFCCB]/85">
-                  {t('customerScreening.clearAdvice', { name: report.query })}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-1">
-                <p className="inline-flex items-center gap-1.5 text-[10px] text-white/40">
-                  <FileText className="h-3.5 w-3.5" />
-                  {t('customerScreening.reportFooter')}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReport(null)
-                    setQuery('')
-                    inputRef.current?.focus()
-                  }}
-                  className="text-[11px] font-bold text-[#85E307]/90 hover:text-[#85E307]"
-                >
-                  {t('customerScreening.newSearch')}
                 </button>
               </div>
             </div>
-          </article>
-        ) : null}
+            <p className="text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('customerScreening.hint')}
+            </p>
+          </form>
 
-        <p className="text-[11px] leading-relaxed text-white/40">{t('customerScreening.attribution')}</p>
-      </div>
-    </section>
+          {error ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-base text-red-800">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          ) : null}
+
+          {report && !checking ? (
+            <article
+              className={`overflow-hidden rounded-2xl border ${
+                report.result.matched
+                  ? 'border-amber-200 bg-white'
+                  : 'border-[#85E307]/35 bg-white'
+              }`}
+            >
+              <div
+                className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6 ${
+                  report.result.matched
+                    ? 'border-amber-100 bg-amber-50/90'
+                    : 'border-[#ECFCCB] bg-[#F4FBEF]'
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  {report.result.matched ? (
+                    <ShieldAlert className="h-6 w-6 shrink-0 text-amber-700" aria-hidden />
+                  ) : (
+                    <CheckCircle2 className="h-6 w-6 shrink-0 text-[#3F6F00]" aria-hidden />
+                  )}
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#64748B]">
+                      {t('customerScreening.reportLabel')}
+                    </p>
+                    <p
+                      className={`text-lg font-bold sm:text-xl ${
+                        report.result.matched ? 'text-amber-950' : 'text-[#0B0F19]'
+                      }`}
+                    >
+                      {matchStatusLabel}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-end font-mono text-xs text-[#94A3B8]">
+                  <p>{report.referenceId}</p>
+                  <p className="mt-0.5">{formatReportTime(report.queriedAt)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-5 p-5 sm:p-6">
+                {report.result.matched ? (
+                  <div className="grid gap-4 lg:grid-cols-[1fr_auto_1.1fr] lg:items-center">
+                    <div className="rounded-xl border border-black/[0.06] bg-[#F9F9FA] px-4 py-3.5">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">
+                        {t('customerScreening.formulaLabel')}
+                      </p>
+                      <p className="mt-1.5 text-base font-semibold text-[#0B0F19]">
+                        {isExactMatch
+                          ? t('customerScreening.formulaExact')
+                          : t('customerScreening.formulaFuzzy')}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-mono text-5xl font-bold tabular-nums tracking-tight text-[#3F6F00]">
+                        {formatPct(matchScore)}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#64748B]">
+                        {t('customerScreening.similarity')}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-black/[0.06] bg-[#F9F9FA] px-4 py-3.5">
+                      <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+                        <span className="font-semibold text-[#64748B]">
+                          {t('customerScreening.similarityIndex')}
+                        </span>
+                        <span className="font-mono font-bold tabular-nums text-[#0B0F19]">
+                          {formatPct(matchScore)}
+                        </span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-black/[0.06]">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#3F6F00] to-[#85E307]"
+                          style={{ width: `${Math.min(100, matchScore)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <ReportField
+                    label={t('customerScreening.fieldQuery')}
+                    value={report.query}
+                    highlight
+                  />
+                  <ReportField
+                    label={t('customerScreening.fieldNormalized')}
+                    value={report.result.normalizedName || '—'}
+                    mono
+                  />
+                  {report.result.matched ? (
+                    <>
+                      <RegistryNamesField
+                        label={t('customerScreening.fieldListRecord')}
+                        matches={
+                          report.result.matches.length > 0
+                            ? report.result.matches
+                            : report.result.originalName
+                              ? [
+                                  {
+                                    originalName: report.result.originalName,
+                                    similarityScore: report.result.similarityScore ?? 1,
+                                  },
+                                ]
+                              : []
+                        }
+                      />
+                      <ReportField
+                        label={t('customerScreening.fieldMatchType')}
+                        value={matchTypeLabel}
+                      />
+                    </>
+                  ) : null}
+                </div>
+
+                {report.result.matched ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-base leading-relaxed text-amber-950">
+                    {isExactMatch
+                      ? t('customerScreening.matchAdviceExact')
+                      : t('customerScreening.matchAdviceFuzzy')}
+                    {isExactMatch ? (
+                      <span className="mt-2 block text-sm font-semibold text-amber-800">
+                        {t('customerScreening.similarityExactNote')}
+                      </span>
+                    ) : null}
+                  </p>
+                ) : (
+                  <p className="rounded-xl border border-[#85E307]/25 bg-[#F4FBEF] px-4 py-3.5 text-base leading-relaxed text-[#0B0F19]">
+                    {t('customerScreening.clearAdvice', { name: report.query })}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.05] pt-3">
+                  <p className="inline-flex items-center gap-1.5 text-sm text-[#94A3B8]">
+                    <FileText className="h-4 w-4" aria-hidden />
+                    {t('customerScreening.reportFooter')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReport(null)
+                      setQuery('')
+                      saveScreeningSession({ lastQuery: '' })
+                      inputRef.current?.focus()
+                    }}
+                    className="text-base font-bold text-[#3F6F00] transition hover:text-[#0B0F19]"
+                  >
+                    {t('customerScreening.newSearch')}
+                  </button>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          <p className="text-sm leading-relaxed text-[#94A3B8]">{t('customerScreening.attribution')}</p>
+        </div>
+      </section>
+    </>
+  )
+}
+
+function RegistryNamesField({
+  label,
+  matches,
+}: {
+  label: string
+  matches: { originalName: string; similarityScore: number }[]
+}) {
+  return (
+    <div className="rounded-xl border border-black/[0.06] bg-[#F9F9FA] px-4 py-3.5 sm:col-span-2">
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">{label}</p>
+      {matches.length === 0 ? (
+        <p className="text-base text-[#334155]">—</p>
+      ) : (
+        <ul className="space-y-2">
+          {matches.map((hit, index) => (
+            <li
+              key={`${hit.originalName}-${index}`}
+              className="flex flex-wrap items-baseline justify-between gap-2 border-b border-black/[0.04] pb-2 last:border-0 last:pb-0"
+            >
+              <span className="text-base font-semibold text-[#0B0F19] sm:text-lg">
+                {hit.originalName}
+              </span>
+              <span className="font-mono text-sm tabular-nums text-[#3F6F00]">
+                {formatPct(hit.similarityScore * 100)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
@@ -391,11 +645,15 @@ function ReportField({
   mono?: boolean
 }) {
   return (
-    <div className="rounded-lg border border-white/8 bg-black/30 px-3 py-2.5">
-      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/45">{label}</p>
+    <div className="rounded-xl border border-black/[0.06] bg-[#F9F9FA] px-4 py-3.5">
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">{label}</p>
       <p
-        className={`text-sm break-words ${
-          mono ? 'font-mono text-white/70' : highlight ? 'font-semibold text-white' : 'text-white/80'
+        className={`break-words text-base sm:text-lg ${
+          mono
+            ? 'font-mono text-[#475569]'
+            : highlight
+              ? 'font-semibold text-[#0B0F19]'
+              : 'text-[#334155]'
         }`}
       >
         {value}
