@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -24,12 +24,7 @@ import CategoryGrid from '@/components/sections/CategoryGrid'
 import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
 import { HomeProductCard } from '@/components/home/HomeProductCard'
 import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
-import { HeroBullionNetwork } from '@/components/home/HeroBullionNetwork'
 import clubMembersUrl from '@/assets/home/club/testimonials-showcase.png'
-import {
-  BullionStartSlot,
-  HeroBullionScroll,
-} from '@/components/home/bullion'
 import { GoldAssetComparisonSection } from '@/components/home/GoldAssetComparisonSection'
 import { LiveGoldMarketSection } from '@/components/home/LiveGoldMarketSection'
 import { WealthProtectionSection } from '@/components/home/WealthProtectionSection'
@@ -45,16 +40,28 @@ import { MOTION } from '@/motion/tokens'
 export default function HomePage() {
   const { t } = useTranslation()
   const heroRef = useRef<HTMLDivElement | null>(null)
-  const bullionHeroRef = useRef<HTMLDivElement | null>(null)
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
   const bullionTrustRef = useRef<HTMLDivElement | null>(null)
   const bullionFinalRef = useRef<HTMLDivElement | null>(null)
-  /** Reference stops only: hero → heritage → gold vs cash. */
-  const bullionStops = useMemo(
-    () => [bullionHeroRef, bullionTrustRef, bullionFinalRef],
-    [],
-  )
 
   const { gsap } = ensureGsap()
+
+  // Respect reduced motion: keep the hero video paused on its first frame.
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => {
+      if (mq.matches) {
+        video.pause()
+      } else {
+        void video.play().catch(() => undefined)
+      }
+    }
+    sync()
+    mq.addEventListener?.('change', sync)
+    return () => mq.removeEventListener?.('change', sync)
+  }, [])
 
   useGSAP(
     () => {
@@ -74,11 +81,6 @@ export default function HomePage() {
           .from('.home-hero-cta', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.2')
           .from('.home-hero-club', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.18')
           .from('.home-hero-trust-line', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.instant }, '-=0.16')
-          .from(
-            '.home-hero-visual',
-            { autoAlpha: 0, y: MOTION.y.sm, scale: 0.985, duration: MOTION.duration.slow },
-            '-=0.45',
-          )
           .from('.hero-trust-strip', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.28')
       })
 
@@ -96,12 +98,6 @@ export default function HomePage() {
           .from('.home-hero-cta', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.1')
           .from('.home-hero-club', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.08')
           .from('.home-hero-trust-line', { autoAlpha: 0, duration: MOTION.duration.instant }, '-=0.08')
-          .from('.home-hero-visual', {
-            autoAlpha: 0,
-            y: MOTION.y.sm,
-            scale: 0.988,
-            duration: MOTION.duration.base,
-          }, '-=0.2')
           .from('.hero-trust-strip', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.3')
       })
 
@@ -145,14 +141,28 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--site-bg)] flex flex-col lg:block">
       <div className="order-1 lg:order-none">
-        <section className="home-section home-section--hero relative overflow-x-clip border-b border-black/5">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/25 via-[var(--site-bg)] to-[var(--site-bg)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_100%_0%,rgba(133,227,7,0.06),transparent_55%)]" />
+        <section className="home-section home-section--hero home-section--hero-video relative overflow-x-clip border-b border-black/5">
+        {/* Looping product film as full-bleed hero background, dark scrim keeps copy legible */}
+        <div className="home-hero-video" aria-hidden="true">
+          <video
+            ref={heroVideoRef}
+            className="home-hero-video__media"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+          >
+            <source src="/videos/hero-video.optimized.mp4" type="video/mp4" />
+            <source src="/videos/hero-video.webm" type="video/webm" />
+          </video>
+          <div className="home-hero-video__particles" />
+          <div className="home-hero-video__scrim" />
         </div>
 
         <div className="home-section-inner relative z-10" ref={heroRef}>
-          <div className="home-hero">
+          <div className="home-hero home-hero--video">
             <div className="home-hero-intro">
               <h1 className="home-hero-headline">
                 <span className="home-hero-headline__line home-hero-headline__line--lead">
@@ -174,6 +184,9 @@ export default function HomePage() {
                   <ArrowRight className="home-hero-cta-btn__icon" aria-hidden />
                 </Link>
                 <a href="#security-trust" className="ds-btn-primary home-hero-cta-btn">
+                  <span className="home-hero-cta-btn__num" aria-hidden>
+                    6
+                  </span>
                   <span className="home-hero-cta-btn__label">{t('home.heroVerifyCta')}</span>
                 </a>
                 {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
@@ -207,29 +220,6 @@ export default function HomePage() {
               </a>
 
               <p className="home-hero-trust-line">{t('home.heroTrustLine')}</p>
-            </div>
-
-            <div className="home-hero-visual">
-              <div className="home-hero-bullion-stage">
-                <div className="home-hero-bullion-stage__bg" aria-hidden="true" />
-                <div className="home-hero-bullion-stage__glow" aria-hidden="true" />
-                <div className="home-hero-bullion-stage__hex" aria-hidden="true">
-                  <svg viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      className="home-hero-bullion-stage__hex-path"
-                      d="M100 8 L184 54 L184 166 L100 212 L16 166 L16 54 Z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <HeroBullionNetwork />
-                <div className="home-hero-bullion-stage__dust" aria-hidden="true" />
-                <div className="home-hero-bullion-stage__core">
-                  <BullionStartSlot slotRef={bullionHeroRef} className="home-hero-bullion-slot" />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -269,11 +259,6 @@ export default function HomePage() {
         <RevealSection as="div" mode="section" y="md">
           <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
         </RevealSection>
-      </div>
-
-      {/* After docks mount so stop refs exist — flyer self-gates to real desktop */}
-      <div className="order-10 lg:order-none">
-        <HeroBullionScroll stops={bullionStops} />
       </div>
 
       <div className="order-4 lg:order-none">
