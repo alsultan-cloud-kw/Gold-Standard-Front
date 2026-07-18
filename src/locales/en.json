@@ -20,6 +20,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "menu": "Menu",
+    "more": "More",
+    "investorsClub": "Investors Club",
     "menuClose": "Close",
     "productsShort": "Shop",
     "closeSearch": "Close search",
@@ -158,14 +160,14 @@
     "clubFormationExampleCarat18": "Member buy rate for 18K",
     "clubFormationDeliveryHint": "Applied instantly when you pay.",
     "investorsClub": {
-      "kicker": "Investors Clubs",
+      "kicker": "Members-only pricing",
       "title": "Investors Club",
-      "tagline": "Shared power. Better prices.",
-      "desc": "Shop together with your club and unlock member buy rates at checkout — the same tailored experience you know from the Gold Standard app.",
-      "ctaOpen": "Open a club",
-      "ctaInvite": "Have an invite?",
-      "ctaOpenLogin": "Sign in to open a club",
-      "ctaInviteLogin": "Sign in to join with invite",
+      "tagline": "Group buying power — at a price you can’t get alone.",
+      "desc": "Join a private club and member buy rates plus exclusive offers apply automatically at every checkout — the same Gold Standard app experience you know, with full transparency showing the live market price and your club price side by side.",
+      "ctaOpen": "Create your club now",
+      "ctaInvite": "Join with an invite",
+      "ctaOpenLogin": "Sign in & create a club",
+      "ctaInviteLogin": "Sign in & join with invite",
       "loginRequiredHint": "Club features require a Gold Standard account. After signing in, open your invite link or create a club from the dashboard.",
       "demoClubName": "Gold Investors Club",
       "demoClubBy": "Created by Gold Standard",
@@ -205,8 +207,8 @@
       "memberRate": "Member",
       "memberPrice": "Member price",
       "savings": "Savings",
-      "value1Title": "Bigger savings",
-      "value1Desc": "Prices below open market when you buy with your club.",
+      "value1Title": "Save on every order",
+      "value1Desc": "Below-market buy rates apply automatically to every order in your club.",
       "value2Title": "Exclusive offers",
       "value2Desc": "Shared discounts inherited by every member.",
       "value3Title": "Trusted community",
@@ -244,17 +246,8 @@
     "heroHeadlineLead": "The first company in the Gulf to deliver a",
     "heroHeadlineAccent": "multi-layer verification system",
     "heroHeadlineTrail": "for investment bullion.",
-    "heroSubtext": "Gold is only an asset when you can prove it is yours. Every Gold Standard bar and coin is built so you can — from the factory to your hand.",
+    "heroSubtext": "Investment gold bars and coins made by us in Kuwait, with clear, up-to-date KWD pricing. Every piece also carries a serial number and Digital Ownership Record for easier verification and purchase recordkeeping.",
     "heroTrustLine": "Our own manufacturing · Live KWD prices · Branches across Kuwait",
-    "heroOrbit": {
-      "ariaLabel": "Six verification layers around the bar",
-      "blockchain": "Digital Ownership Record",
-      "qr": "Unique QR",
-      "hologram": "Hologram",
-      "companyStamp": "Company stamp",
-      "ministry": "MOCI hallmark",
-      "receipt": "Official receipt"
-    },
     "heroKicker": "Gold coins, minted bars, and live bullion rates — together in Kuwait.",
     "heroIntro": "Shop certified gold coins and investment bars with transparent live pricing and follow the market in real time under Gold Standard.",
     "heroCardBullionTitle": "Coins & bars",
@@ -263,7 +256,7 @@
     "heroBrowseShop": "Browse shop",
     "heroLivePrices": "Live prices",
     "heroBuyGold": "Buy gold",
-    "heroViewLivePrice": "View live price",
+    "heroVerifyCta": "6 ways we verify your gold",
     "heroTrustInsured": "Insured shipping",
     "heroTrustBuyback": "Buyback guarantee",
     "heroTrustFineGold": "999.9 fine gold",
@@ -590,6 +583,10 @@
       "step3Body": "999.9 fine · 24K · MOCI-backed trust. Scroll on to see why gold protects purchasing power over decades.",
       "heroHintVert": "Keep scrolling — perspective shifts",
       "heroHintHoriz": "Sealed horizontal presentation"
+    },
+    "heroClub": {
+      "title": "Investors Club",
+      "summary": "Member prices below market — offers applied automatically at checkout"
     }
   },
   "newsPage": {
@@ -1426,16 +1423,16 @@
     "ctaContact": "Contact us",
     "storyKicker": "Who we are",
     "storyTitle": "Born in the gold souq, built for investors",
-    "storyBody": "Before Gold Standard was a storefront, it was a question inside the Sultan Gold workshops: why do people buy gold they cannot easily prove they own, or trace back to its source?",
+    "storyBody": "Before Gold Standard was a storefront, it was a question inside the Sultan Gold factories: why do people buy gold they cannot easily prove they own, or trace back to its source?",
     "story": {
       "p1": "The story starts with the Sultan Gold group — an established industrial name in Kuwait’s gold market, with decades of manufacturing, craftsmanship, and direct trade in the Central Gold Market behind it. From within that heritage, Gold Standard Jewellers and Precious Metals Company was registered under commercial licence No. 279/2026 from the Ministry of Commerce and Industry, as the group’s dedicated investment-gold channel.",
-      "p2": "Investment bars, coins, and custom bullion are designed and produced inside Sultan Gold workshops and factories. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
+      "p2": "Investment bars, coins, and custom bullion are designed and produced inside Sultan Gold factories. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
       "p3": "We could have simply sold bars like everyone else. But we saw an obvious gap: a buyer pays thousands of dinars and walks home with a piece of metal and a slip of paper. So we decided to build what did not exist in Kuwait — a system that makes every piece provable and traceable from factory to owner, because gold you cannot prove is a promise, not an asset.",
       "p4": "Today we serve the individual saver and the institution with the same discipline: in-house manufacturing, documented ownership, and transactions structured in line with Islamic Sharia guidelines. Our ambition is to build Kuwait’s infrastructure for gold ownership — not just another place to buy it."
     },
     "profileKicker": "Our journey",
     "profileTitle": "The milestones that shaped Gold Standard",
-    "profileIntro": "From a manufacturing workshop to a complete investment-gold operation — these are the key stages of the journey so far.",
+    "profileIntro": "From a gold factory to a complete investment-gold operation — these are the key stages of the journey so far.",
     "milestones": {
       "kuwait": {
         "title": "Roots — Sultan Gold",
@@ -1451,7 +1448,7 @@
       },
       "verification": {
         "title": "Building the documentation stack",
-        "body": "We developed a way to document every piece and link it to its owner — an idea that began as a workshop question and became the first system of its kind in Kuwait."
+        "body": "We developed a way to document every piece and link it to its owner — an idea that began as a factory-floor question and became the first system of its kind in Kuwait."
       },
       "digital": {
         "title": "Going digital",
@@ -1480,7 +1477,7 @@
         },
         "casting": {
           "title": "Melting & casting",
-          "body": "The gold is melted and cast into weight-controlled moulds inside the group’s workshops."
+          "body": "The gold is melted and cast into weight-controlled moulds inside the group’s factories."
         },
         "finishing": {
           "title": "Finishing",
@@ -1591,7 +1588,7 @@
       },
       "craft": {
         "title": "Craftsmanship",
-        "description": "Manufacturing is our origin, not a supplier relationship — every piece reflects workshop standards refined over decades."
+        "description": "Manufacturing is our origin, not a supplier relationship — every piece reflects factory standards refined over decades."
       },
       "trust": {
         "title": "Trust & Transparency",
@@ -1670,7 +1667,7 @@
       "sultanGold": {
         "role": "Parent manufacturing group",
         "name": "Sultan Gold",
-        "body": "Our parent brand and manufacturing backbone — investment bullion is produced inside Sultan Gold workshops with the industrial depth behind Kuwait’s gold market."
+        "body": "Our parent brand and manufacturing backbone — investment bullion is produced inside Sultan Gold factories with the industrial depth behind Kuwait’s gold market."
       },
       "kfh": {
         "role": "Banking partner",

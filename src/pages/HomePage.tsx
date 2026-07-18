@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
+  Crown,
   ScanLine,
   Repeat,
   MapPin,
@@ -24,7 +25,7 @@ import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
 import { HomeProductCard } from '@/components/home/HomeProductCard'
 import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
 import { HeroBullionNetwork } from '@/components/home/HeroBullionNetwork'
-import { HeroBullionVerifyOrbit } from '@/components/home/HeroBullionVerifyOrbit'
+import clubMembersUrl from '@/assets/home/club/testimonials-showcase.png'
 import {
   BullionStartSlot,
   HeroBullionScroll,
@@ -71,6 +72,7 @@ export default function HomePage() {
         })
           .from('.home-hero-sub', { autoAlpha: 0, y: MOTION.y.sm, duration: MOTION.duration.fast }, '-=0.28')
           .from('.home-hero-cta', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.2')
+          .from('.home-hero-club', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.18')
           .from('.home-hero-trust-line', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.instant }, '-=0.16')
           .from(
             '.home-hero-visual',
@@ -80,25 +82,27 @@ export default function HomePage() {
           .from('.hero-trust-strip', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.28')
       })
 
+      // Mobile: copy leads, bullion settles in last (matches intro→visual layout)
       mm.add('(prefers-reduced-motion: no-preference) and (max-width: 639px)', () => {
         const tl = gsap.timeline({
           defaults: { ease: MOTION.ease.out, duration: MOTION.duration.fast },
         })
-        tl.from('.home-hero-visual', {
+        tl.from('.home-hero-headline__line', {
           autoAlpha: 0,
-          y: MOTION.y.sm,
-          scale: 0.988,
-          duration: MOTION.duration.base,
+          y: MOTION.y.xs,
+          stagger: MOTION.stagger.tight,
         })
-          .from('.home-hero-headline__line', {
-            autoAlpha: 0,
-            y: MOTION.y.xs,
-            stagger: MOTION.stagger.tight,
-          }, '-=0.2')
           .from('.home-hero-sub', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.instant }, '-=0.14')
           .from('.home-hero-cta', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.1')
+          .from('.home-hero-club', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.08')
           .from('.home-hero-trust-line', { autoAlpha: 0, duration: MOTION.duration.instant }, '-=0.08')
-          .from('.hero-trust-strip', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.06')
+          .from('.home-hero-visual', {
+            autoAlpha: 0,
+            y: MOTION.y.sm,
+            scale: 0.988,
+            duration: MOTION.duration.base,
+          }, '-=0.2')
+          .from('.hero-trust-strip', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.3')
       })
 
       return () => mm.revert()
@@ -169,9 +173,9 @@ export default function HomePage() {
                   <span className="home-hero-cta-btn__label">{t('home.heroBuyGold')}</span>
                   <ArrowRight className="home-hero-cta-btn__icon" aria-hidden />
                 </Link>
-                <Link to="/prices" className="ds-btn-primary home-hero-cta-btn">
-                  <span className="home-hero-cta-btn__label">{t('home.heroViewLivePrice')}</span>
-                </Link>
+                <a href="#security-trust" className="ds-btn-primary home-hero-cta-btn">
+                  <span className="home-hero-cta-btn__label">{t('home.heroVerifyCta')}</span>
+                </a>
                 {TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                   <Link
                     to="/trade-gold"
@@ -181,6 +185,26 @@ export default function HomePage() {
                   </Link>
                 ) : null}
               </div>
+
+              {/* Investors Club teaser — people + club mark, links down to the section */}
+              <a href="#investors-club" className="home-hero-club">
+                <span className="home-hero-club__mark" aria-hidden>
+                  <Crown className="home-hero-club__crown" strokeWidth={2} />
+                </span>
+                <img
+                  src={clubMembersUrl}
+                  alt=""
+                  className="home-hero-club__members"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+                <span className="home-hero-club__text">
+                  <span className="home-hero-club__title">{t('home.heroClub.title')}</span>
+                  <span className="home-hero-club__summary">{t('home.heroClub.summary')}</span>
+                </span>
+                <ArrowRight className="home-hero-club__arrow rtl:rotate-180" aria-hidden />
+              </a>
 
               <p className="home-hero-trust-line">{t('home.heroTrustLine')}</p>
             </div>
@@ -205,7 +229,6 @@ export default function HomePage() {
                 <div className="home-hero-bullion-stage__core">
                   <BullionStartSlot slotRef={bullionHeroRef} className="home-hero-bullion-slot" />
                 </div>
-                <HeroBullionVerifyOrbit />
               </div>
             </div>
           </div>

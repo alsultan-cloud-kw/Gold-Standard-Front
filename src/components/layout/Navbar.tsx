@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   TrendingUp,
   Bell,
+  Crown,
 } from 'lucide-react'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -35,6 +36,7 @@ import { CartCountBadge } from '@/components/layout/CartCountBadge'
 import GoldPriceTicker from '@/components/sections/GoldPriceTicker'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
 import { PriceReminderPanel } from '@/components/reminders/PriceReminderPanel'
+import { scrollToHash } from '@/utils/scrollToHash'
 import {
   Sheet,
   SheetContent,
@@ -42,6 +44,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+
+/** Tabs already pinned in the mobile bottom bar — excluded from the "More" sheet. */
+const BOTTOM_BAR_HREFS = ['/', '/products', '/prices', '/cart']
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -107,6 +112,11 @@ export default function Navbar() {
     }
     navigate('/')
   }
+
+  const moreSheetLinks = useMemo(
+    () => navLinks.filter((link) => !BOTTOM_BAR_HREFS.includes(link.href)),
+    [navLinks],
+  )
 
   const isPathActive = (href: string) => {
     if (href === '/') return location.pathname === '/'
@@ -419,11 +429,11 @@ export default function Navbar() {
           style={{ bottom: 'var(--bottom-nav-height)' }}
           role="dialog"
           aria-modal="true"
-          aria-label={t('nav.menu')}
+          aria-label={t('nav.more')}
         >
           <div className="page-shell py-4 pb-5">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-[#0B0F19]">{t('nav.menu')}</p>
+              <p className="text-sm font-bold text-[#0B0F19]">{t('nav.more')}</p>
               {isAuthenticated ? (
                 <button
                   type="button"
@@ -440,7 +450,7 @@ export default function Navbar() {
               ) : null}
             </div>
             <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
+              {moreSheetLinks.map((link) => (
                 <Link
                   key={link.nameKey}
                   to={link.href}
@@ -460,6 +470,24 @@ export default function Navbar() {
                   </span>
                 </Link>
               ))}
+              {/* Investors Club — scrolls to the landing-page section (navigates home first if needed) */}
+              <Link
+                to="/#investors-club"
+                onClick={() => {
+                  setIsMenuOpen(false)
+                  // Route change (or hash change) is handled by ScrollToTop; this covers
+                  // re-clicking while the URL already points at the section.
+                  if (location.pathname === '/' && location.hash === '#investors-club') {
+                    window.setTimeout(() => scrollToHash('#investors-club'), 0)
+                  }
+                }}
+                className="mobile-nav-link flex items-center gap-2.5"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#F5E6B8] to-[#C9A227]">
+                  <Crown className="h-3.5 w-3.5 text-[#3F2A00]" strokeWidth={2} aria-hidden />
+                </span>
+                {t('nav.investorsClub')}
+              </Link>
               {authPending ? (
                 <div
                   className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-black/8 bg-white px-4 py-3 text-sm font-medium text-[#64748B]"
@@ -588,7 +616,7 @@ export default function Navbar() {
         >
           {isMenuOpen ? <X className="h-5 w-5 shrink-0" strokeWidth={2.5} /> : <Menu className="h-5 w-5 shrink-0" strokeWidth={1.75} />}
           <span className="mobile-bottom-nav__label">
-            {isMenuOpen ? t('nav.menuClose') : t('nav.menu')}
+            {isMenuOpen ? t('nav.menuClose') : t('nav.more')}
           </span>
         </button>
       </div>
