@@ -11,7 +11,12 @@ import {
   ShieldCheck,
   BadgeCheck,
 } from 'lucide-react'
-import goldBarImg from '@/assets/home/gold-bullion.png'
+import blockchainImg from '@/assets/home/security/blockchain.webp'
+import qrVerifyImg from '@/assets/home/security/qr-verify.webp'
+import ministryHallmarkImg from '@/assets/home/security/ministry-hallmark.webp'
+import hologramSealImg from '@/assets/home/security/hologram-seal.webp'
+import companyStampImg from '@/assets/home/security/company-stamp.webp'
+import officialReceiptImg from '@/assets/home/security/official-receipt.webp'
 import { cn } from '@/lib/utils'
 
 function MethodIcon({
@@ -32,6 +37,38 @@ function MethodIcon({
     >
       {children}
     </span>
+  )
+}
+
+function MethodImage({
+  src,
+  alt,
+  className,
+  imgClassName,
+}: {
+  src: string
+  alt: string
+  className?: string
+  imgClassName?: string
+}) {
+  return (
+    <div className={cn('relative overflow-hidden', className)}>
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          'h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.04]',
+          imgClassName,
+        )}
+        loading="lazy"
+        decoding="async"
+      />
+      {/* Soft blend only at the very bottom so the photo stays fully readable */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#0E1219] to-transparent"
+        aria-hidden
+      />
+    </div>
   )
 }
 
@@ -76,49 +113,59 @@ export function SecurityTrustSection() {
 
         {/* Bento verification grid — matches reference layout */}
         <div className="security-trust-bento mx-auto grid max-w-5xl gap-3 sm:gap-4">
-          {/* Blockchain — smaller */}
-          <article className="security-trust-bento__blockchain group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:p-6">
-            <span className="mb-4 inline-flex rounded-full border border-[#85E307]/35 bg-[#85E307]/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#85E307]">
-              {t('home.securityTrust.methods.blockchain.badge')}
-            </span>
-            <MethodIcon accent="lime">
-              <Blocks className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </MethodIcon>
-            <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
-              {t('home.securityTrust.methods.blockchain.title')}
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/50">
-              {t('home.securityTrust.methods.blockchain.description')}
-            </p>
-          </article>
-
-          {/* QR — wider featured */}
-          <article className="security-trust-bento__qr group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:p-6">
-            <div className="pointer-events-none absolute -end-8 -top-8 h-32 w-32 rounded-full bg-[#C9A227]/8 blur-2xl" aria-hidden />
-            <MethodIcon>
-              <QrCode className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </MethodIcon>
-            <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
-              {t('home.securityTrust.methods.qr.title')}
-            </h3>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-white/50">
-              {t('home.securityTrust.methods.qr.description')}
-            </p>
-          </article>
-
-          {/* Ministry — with bullion visual */}
-          <article className="security-trust-bento__ministry group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219]">
-            <div className="relative h-36 overflow-hidden sm:h-40">
-              <img
-                src={goldBarImg}
-                alt={t('home.heroTrust.iconAlt.authentic')}
-                className="h-full w-full object-cover object-center opacity-90 transition-transform duration-500 group-hover:scale-[1.03]"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0E1219] via-[#0E1219]/40 to-transparent" />
+          {/* Blockchain — ownership certificate visual */}
+          <article className="security-trust-bento__blockchain group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219]">
+            <MethodImage
+              src={blockchainImg}
+              alt={t('home.securityTrust.methods.blockchain.title')}
+              className="aspect-[4/3] w-full"
+            />
+            <div className="relative flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+              <div className="flex items-center gap-3">
+                <MethodIcon accent="lime">
+                  <Blocks className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                </MethodIcon>
+                <span className="inline-flex rounded-full border border-[#85E307]/35 bg-[#85E307]/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#85E307]">
+                  {t('home.securityTrust.methods.blockchain.badge')}
+                </span>
+              </div>
+              <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
+                {t('home.securityTrust.methods.blockchain.title')}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-white/50">
+                {t('home.securityTrust.methods.blockchain.description')}
+              </p>
             </div>
-            <div className="relative -mt-6 px-5 pb-5 sm:px-6 sm:pb-6">
+          </article>
+
+          {/* QR — phone verification visual, wider featured */}
+          <article className="security-trust-bento__qr group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219]">
+            <MethodImage
+              src={qrVerifyImg}
+              alt={t('home.securityTrust.methods.qr.title')}
+              className="aspect-[4/3] w-full"
+            />
+            <div className="relative flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+              <MethodIcon>
+                <QrCode className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </MethodIcon>
+              <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
+                {t('home.securityTrust.methods.qr.title')}
+              </h3>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-white/50">
+                {t('home.securityTrust.methods.qr.description')}
+              </p>
+            </div>
+          </article>
+
+          {/* Ministry — hallmark inspection visual */}
+          <article className="security-trust-bento__ministry group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219]">
+            <MethodImage
+              src={ministryHallmarkImg}
+              alt={t('home.securityTrust.methods.ministry.title')}
+              className="aspect-[4/3] w-full"
+            />
+            <div className="relative flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
               <MethodIcon>
                 <Stamp className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </MethodIcon>
@@ -131,39 +178,58 @@ export function SecurityTrustSection() {
             </div>
           </article>
 
-          {/* Hologram */}
-          <article className="security-trust-bento__hologram group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:p-6">
-            <MethodIcon>
-              <Shield className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </MethodIcon>
-            <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
-              {t('home.securityTrust.methods.hologram.title')}
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/50">
-              {t('home.securityTrust.methods.hologram.description')}
-            </p>
+          {/* Hologram — seal close-up visual */}
+          <article className="security-trust-bento__hologram group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219]">
+            <MethodImage
+              src={hologramSealImg}
+              alt={t('home.securityTrust.methods.hologram.title')}
+              className="aspect-[4/3] w-full"
+            />
+            <div className="relative flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+              <MethodIcon>
+                <Shield className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </MethodIcon>
+              <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
+                {t('home.securityTrust.methods.hologram.title')}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-white/50">
+                {t('home.securityTrust.methods.hologram.description')}
+              </p>
+            </div>
           </article>
 
-          {/* Company stamp */}
-          <article className="security-trust-bento__company-stamp group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:p-6">
-            <MethodIcon>
-              <BadgeCheck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </MethodIcon>
-            <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
-              {t('home.securityTrust.methods.companyStamp.title')}
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/50">
-              {t('home.securityTrust.methods.companyStamp.description')}
-            </p>
+          {/* Company stamp — packaging engraving visual */}
+          <article className="security-trust-bento__company-stamp group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219]">
+            <MethodImage
+              src={companyStampImg}
+              alt={t('home.securityTrust.methods.companyStamp.title')}
+              className="aspect-[4/3] w-full"
+            />
+            <div className="relative flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+              <MethodIcon>
+                <BadgeCheck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </MethodIcon>
+              <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
+                {t('home.securityTrust.methods.companyStamp.title')}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-white/50">
+                {t('home.securityTrust.methods.companyStamp.description')}
+              </p>
+            </div>
           </article>
 
-          {/* Receipt — full width */}
-          <article className="security-trust-bento__receipt group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] p-5 sm:flex sm:items-start sm:gap-5 sm:p-6">
-            <MethodIcon>
-              <FileCheck2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </MethodIcon>
-            <div className="mt-4 min-w-0 flex-1 sm:mt-0">
-              <h3 className="text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
+          {/* Receipt — full width, image beside text on larger screens */}
+          <article className="security-trust-bento__receipt group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E1219] sm:grid sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
+            <MethodImage
+              src={officialReceiptImg}
+              alt={t('home.securityTrust.methods.receipt.title')}
+              className="aspect-[4/3] w-full sm:aspect-auto sm:h-full sm:min-h-[16rem]"
+            />
+            <div className="relative px-5 pb-5 pt-4 sm:flex sm:flex-col sm:justify-center sm:p-6">
+              <MethodIcon>
+                <FileCheck2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </MethodIcon>
+              <h3 className="mt-4 text-base font-semibold tracking-tight text-[#E8C547] sm:text-lg">
                 {t('home.securityTrust.methods.receipt.title')}
               </h3>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/50">
