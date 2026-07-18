@@ -8,8 +8,8 @@ const TRUST_ITEMS: ReadonlyArray<{
   labelKey: string
   showLicenseNo?: boolean
 }> = [
-  { id: 'moci', labelKey: 'home.heroTrust.mociHallmark' },
-  { id: 'authentic', labelKey: 'home.heroTrust.authentic' },
+  // Verification (MOCI / authenticity) lives on the orbit chips + SecurityTrustSection —
+  // this strip is commercial / operational trust only.
   { id: 'insured', labelKey: 'home.heroTrust.insuredShipping' },
   { id: 'knet', labelKey: 'home.heroTrust.knetSecure' },
   { id: 'licence', labelKey: 'home.heroTrust.licenseNo', showLicenseNo: true },
@@ -34,7 +34,7 @@ export function HeroTrustStrip({ variant = 'hero', className }: HeroTrustStripPr
         className,
       )}
     >
-      <ul className="hero-trust-strip__list grid grid-cols-2 gap-x-3 gap-y-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6 xl:gap-5">
+      <ul className="hero-trust-strip__list grid grid-cols-2 gap-x-3 gap-y-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
         {TRUST_ITEMS.map((item) => (
           <li key={item.id} className="hero-trust-strip__item flex min-w-0 items-start gap-2 sm:gap-3">
             <HeroTrustIcon id={item.id} className="mt-0.5 shrink-0" size="sm" />

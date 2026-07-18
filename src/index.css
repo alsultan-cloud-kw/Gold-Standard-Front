@@ -28,6 +28,17 @@
     --input: 210 20% 88%;
     --ring: 86 94% 46%;
     --radius: 0.5rem;
+
+    /* Luxury motion system — storefront-wide */
+    --motion-instant: 200ms;
+    --motion-fast: 350ms;
+    --motion-base: 550ms;
+    --motion-slow: 750ms;
+    --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+    --motion-lift: 4px;
+    --motion-scale: 1.015;
+
     --sidebar-background: 220 18% 6%;
     --sidebar-foreground: 45 80% 95%;
     --sidebar-primary: 43 74% 49%;
@@ -296,17 +307,58 @@
     background-clip: text;
   }
   
-  /* Gold button */
+  /* Gold button — premium tactile, no bounce */
   .gold-button {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+    @apply px-6 py-3 rounded-lg font-medium;
     background: linear-gradient(135deg, #85E307 0%, #4F8E00 100%);
     color: #0B0F19;
+    transition:
+      transform var(--motion-fast) var(--ease-luxury),
+      box-shadow var(--motion-fast) var(--ease-soft),
+      background var(--motion-base) var(--ease-soft),
+      filter var(--motion-fast) var(--ease-soft);
   }
   
   .gold-button:hover {
     background: linear-gradient(135deg, #ECFCCB 0%, #85E307 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(133, 227, 7, 0.3);
+    transform: translateY(calc(var(--motion-lift) * -1)) scale(var(--motion-scale));
+    box-shadow: 0 10px 28px rgba(133, 227, 7, 0.28);
+    filter: brightness(1.03);
+  }
+
+  .gold-button:active {
+    transform: translateY(-1px) scale(0.995);
+  }
+
+  /* Storefront cards — quiet lift on hover */
+  .motion-card {
+    transition:
+      transform var(--motion-fast) var(--ease-luxury),
+      box-shadow var(--motion-base) var(--ease-soft),
+      border-color var(--motion-fast) var(--ease-soft);
+  }
+
+  .motion-card:hover {
+    transform: translateY(calc(var(--motion-lift) * -0.75));
+    box-shadow: 0 14px 36px -18px rgba(15, 23, 42, 0.22);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gold-button,
+    .gold-button:hover,
+    .gold-button:active,
+    .motion-card,
+    .motion-card:hover,
+    .vault-category-tile,
+    .vault-category-tile:hover,
+    .ds-btn-accent,
+    .ds-btn-primary,
+    .home-hero-cta-btn {
+      transition: none !important;
+      transform: none !important;
+      animation: none !important;
+      filter: none !important;
+    }
   }
   
   /* Gold border */
@@ -3263,7 +3315,7 @@
   }
 
   .vault-category-tile:hover {
-    transform: translateY(-2px);
+    transform: translateY(calc(var(--motion-lift) * -1));
     box-shadow: 0 14px 36px rgba(11, 15, 25, 0.16);
   }
 

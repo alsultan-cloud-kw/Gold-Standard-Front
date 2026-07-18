@@ -43,6 +43,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { RevealSection } from '@/components/motion/RevealSection'
+import { usePageEnter } from '@/motion/usePageEnter'
 
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'weight-asc' | 'weight-desc' | 'newest'
 type ViewMode = 'grid' | 'list'
@@ -265,6 +267,7 @@ function FilterPanel({
 export default function ProductsPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
+  const heroRef = usePageEnter()
   const [searchParams, setSearchParams] = useSearchParams()
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
@@ -508,10 +511,13 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
-      <div className="border-b border-black/5 bg-white">
+      <div
+        ref={heroRef as React.RefObject<HTMLDivElement>}
+        className="border-b border-black/5 bg-white"
+      >
         <div className="page-shell py-4 sm:py-[var(--space-page-y)]">
           {category ? (
-            <nav className="mb-2 text-xs text-[#64748B] sm:mb-3 sm:text-sm" aria-label={t('common.breadcrumb')}>
+            <nav className="mb-2 text-xs text-[#64748B] sm:mb-3 sm:text-sm" aria-label={t('common.breadcrumb')} data-motion="enter">
               <Link to="/products" className="font-medium text-[#3F6F00] hover:underline">
                 {t('productsPage.allProducts')}
               </Link>
@@ -523,7 +529,7 @@ export default function ProductsPage() {
           ) : null}
 
           <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="min-w-0">
+            <div className="min-w-0" data-motion="enter">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3F6F00] sm:mb-1.5 sm:text-[11px] sm:tracking-[0.22em]">
                 {t('productsPage.kicker')}
               </p>
@@ -539,6 +545,7 @@ export default function ProductsPage() {
               </p>
             </div>
 
+            <div data-motion="enter">
             <ProductSearchBox
               value={searchDraft}
               category={category}
@@ -552,6 +559,7 @@ export default function ProductsPage() {
                 updateParam('search', '')
               }}
             />
+            </div>
           </div>
 
           {category && !activeCategory?.parent ? (
@@ -602,7 +610,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="page-shell pb-6 pt-2 sm:py-[var(--space-page-y)]">
+      <RevealSection as="div" className="page-shell pb-6 pt-2 sm:py-[var(--space-page-y)]" y="sm">
         {/* Toolbar */}
         <div className="mb-3 flex min-h-[2.75rem] flex-col gap-2 sm:mb-5 sm:min-h-0 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
@@ -779,7 +787,7 @@ export default function ProductsPage() {
             )}
           </div>
         </div>
-      </div>
+      </RevealSection>
 
       {/* Mobile filter sheet */}
       <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
@@ -1074,14 +1082,14 @@ function ProductCard({
   }
 
   return (
-    <div className="group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 transition-shadow duration-200 hover:shadow-md sm:h-full sm:p-3.5">
+    <div className="group flex min-w-0 flex-col rounded-2xl border border-black/10 bg-white p-2 transition-[box-shadow,transform] duration-[var(--motion-base)] ease-[var(--ease-luxury)] hover:-translate-y-1 hover:shadow-[0_16px_40px_-20px_rgba(15,23,42,0.28)] sm:h-full sm:p-3.5">
       <Link to={`/products/${product.slug}`} className="block min-w-0">
         <div className={`relative aspect-[4/3] overflow-hidden rounded-xl bg-[#F4F4F5] ring-1 ring-black/5 ${outOfStock ? 'grayscale-[0.35]' : ''}`}>
           {imageSrc ? (
             <img
               src={imageSrc}
               alt={productName}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-[var(--motion-slow)] ease-[var(--ease-luxury)] group-hover:scale-[1.03]"
               loading="lazy"
               decoding="async"
             />

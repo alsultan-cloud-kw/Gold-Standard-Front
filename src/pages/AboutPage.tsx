@@ -4,11 +4,20 @@ import {
   ArrowRight,
   Award,
   Building2,
+  ClipboardCheck,
+  Eye,
   Factory,
+  FileCheck2,
+  Flame,
+  Gem,
+  Hash,
   Landmark,
   Package,
+  PackageCheck,
+  Rocket,
   Shield,
-  Truck,
+  ShieldCheck,
+  Stamp,
   Users,
   Scale,
   Globe,
@@ -17,9 +26,10 @@ import {
 } from 'lucide-react'
 import { GS_BUSINESS } from '@/constants/businessCredentials'
 import { HeroTrustIcon } from '@/components/home/HeroTrustIcon'
-import { HeroTrustStrip } from '@/components/home/HeroTrustStrip'
 import { AboutPartnersSection } from '@/components/about/AboutPartnersSection'
 import { AboutSecurityAdvantageSection } from '@/components/about/AboutSecurityAdvantageSection'
+import { RevealSection } from '@/components/motion/RevealSection'
+import { usePageEnter } from '@/motion/usePageEnter'
 
 const OFFERINGS = [
   'bars',
@@ -47,7 +57,7 @@ const PILLARS = [
   { id: 'transparency', icon: Scale },
   { id: 'quality', icon: Award },
   { id: 'service', icon: Users },
-  { id: 'delivery', icon: Truck },
+  { id: 'craft', icon: Gem },
 ] as const
 
 const FOCUS = [
@@ -60,36 +70,54 @@ const MILESTONES = [
   { id: 'kuwait', icon: Building2 },
   { id: 'licence', icon: BadgeCheck },
   { id: 'manufacturing', icon: Factory },
-  { id: 'moci', icon: Shield },
+  { id: 'verification', icon: ShieldCheck },
   { id: 'digital', icon: Globe },
-  { id: 'authenticity', icon: Award },
-  { id: 'sharia', icon: Scale },
-  { id: 'reach', icon: Users },
+  { id: 'future', icon: Rocket },
+] as const
+
+const PROCESS_STEPS = [
+  { id: 'raw', icon: Gem },
+  { id: 'casting', icon: Flame },
+  { id: 'finishing', icon: Award },
+  { id: 'hallmark', icon: Stamp },
+  { id: 'packaging', icon: PackageCheck },
+  { id: 'registration', icon: FileCheck2 },
+] as const
+
+const QC_GATES = [
+  { id: 'weight', icon: Scale },
+  { id: 'purity', icon: ClipboardCheck },
+  { id: 'visual', icon: Eye },
+  { id: 'serial', icon: Hash },
 ] as const
 
 const STORY_PARAS = ['p1', 'p2', 'p3', 'p4'] as const
 
 export default function AboutPage() {
   const { t } = useTranslation()
+  const heroRef = usePageEnter()
 
   return (
     <div className="storefront-static-page min-h-screen">
-      <section className="relative overflow-hidden border-b border-black/5 bg-white">
+      <section
+        ref={heroRef as React.RefObject<HTMLElement>}
+        className="relative overflow-hidden border-b border-black/5 bg-white"
+      >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/40 via-white to-white" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         </div>
 
         <div className="relative page-shell page-section--roomy">
-          <p className="page-kicker">{t('aboutPage.kicker')}</p>
-          <h1 className="store-display-title max-w-4xl text-[#0B0F19]">
+          <p className="page-kicker" data-motion="enter">{t('aboutPage.kicker')}</p>
+          <h1 className="store-display-title max-w-4xl text-[#0B0F19]" data-motion="enter">
             {t('aboutPage.title')}
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-[#64748B] sm:text-lg">
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-[#64748B] sm:text-lg" data-motion="enter">
             {t('aboutPage.hero')}
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" data-motion="enter">
             <Link
               to="/products"
               className="gold-button inline-flex w-full items-center justify-center gap-2 shadow-md sm:w-auto"
@@ -107,7 +135,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-b border-black/5 bg-white">
+      <RevealSection className="border-b border-black/5 bg-white" y="md">
         <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
             <div className="lg:col-span-5">
@@ -136,7 +164,8 @@ export default function AboutPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-black/10 bg-[#F9F9FA] p-5"
+                    data-reveal
+                    className="motion-card rounded-2xl border border-black/10 bg-[#F9F9FA] p-5"
                   >
                     <div className="mb-4 flex items-center justify-between">
                       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
@@ -158,11 +187,11 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <section className="border-b border-black/5 bg-[#F9F9FA]">
+      <RevealSection className="border-b border-black/5 bg-[#F9F9FA]" mode="stagger" y="sm">
         <div className="page-shell page-section--roomy">
-          <div className="mb-10 max-w-3xl">
+          <div className="mb-10 max-w-3xl" data-reveal>
             <p className="page-kicker">{t('aboutPage.profileKicker')}</p>
             <h2 className="type-section-title text-[#0B0F19] sm:text-3xl">
               {t('aboutPage.profileTitle')}
@@ -178,7 +207,8 @@ export default function AboutPage() {
               return (
                 <li
                   key={item.id}
-                  className="relative overflow-hidden rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
+                  data-reveal
+                  className="motion-card relative overflow-hidden rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
                 >
                   <div className="absolute inset-y-0 start-0 w-1 bg-[#85E307]" aria-hidden />
                   <div className="flex items-start gap-4 ps-2">
@@ -204,7 +234,7 @@ export default function AboutPage() {
             })}
           </ol>
 
-          <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6" data-reveal>
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]">
                 <Smartphone className="h-5 w-5" strokeWidth={1.75} />
@@ -225,9 +255,80 @@ export default function AboutPage() {
             </Link>
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <section className="border-b border-black/5 bg-white">
+      <RevealSection
+        className="border-b border-black/5 bg-white"
+        aria-labelledby="about-process-heading"
+        mode="stagger"
+        y="sm"
+      >
+        <div className="page-shell page-section--roomy">
+          <div className="mb-10 max-w-3xl" data-reveal>
+            <p className="page-kicker">{t('aboutPage.process.kicker')}</p>
+            <h2 id="about-process-heading" className="type-section-title text-[#0B0F19] sm:text-3xl">
+              {t('aboutPage.process.title')}
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-[#64748B] sm:text-base">
+              {t('aboutPage.process.intro')}
+            </p>
+          </div>
+
+          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {PROCESS_STEPS.map((step, index) => {
+              const Icon = step.icon
+              return (
+                <li
+                  key={step.id}
+                  data-reveal
+                  className="motion-card relative rounded-2xl border border-black/10 bg-[#F9F9FA] p-5 sm:p-6"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
+                      <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                    </span>
+                    <span className="font-mono text-[11px] font-semibold tabular-nums text-[#94A3B8]">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <h3 className="mb-1.5 text-base font-semibold text-[#0B0F19]">
+                    {t(`aboutPage.process.steps.${step.id}.title`)}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-[#64748B]">
+                    {t(`aboutPage.process.steps.${step.id}.body`)}
+                  </p>
+                </li>
+              )
+            })}
+          </ol>
+
+          <div className="mt-8 rounded-2xl border border-black/10 bg-[#0B0F19] p-6 text-white sm:p-8" data-reveal>
+            <h3 className="text-base font-bold sm:text-lg">{t('aboutPage.process.qcTitle')}</h3>
+            <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {QC_GATES.map((gate) => {
+                const Icon = gate.icon
+                return (
+                  <li key={gate.id} className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#85E307]/12 text-[#85E307]">
+                      <Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">
+                        {t(`aboutPage.process.qc.${gate.id}.title`)}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/60 sm:text-sm">
+                        {t(`aboutPage.process.qc.${gate.id}.body`)}
+                      </p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </div>
+      </RevealSection>
+
+      <RevealSection className="border-b border-black/5 bg-white" y="sm">
         <div className="page-shell page-section--roomy">
           <div className="mb-8 max-w-2xl">
             <p className="page-kicker">{t('aboutPage.offeringsKicker')}</p>
@@ -242,16 +343,16 @@ export default function AboutPage() {
             {OFFERINGS.map((id) => (
               <li
                 key={id}
-                className="rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-semibold text-[#0B0F19]"
+                className="motion-card rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-semibold text-[#0B0F19]"
               >
                 {t(`aboutPage.offerings.${id}`)}
               </li>
             ))}
           </ul>
         </div>
-      </section>
+      </RevealSection>
 
-      <section className="border-b border-black/5 bg-white">
+      <RevealSection className="border-b border-black/5 bg-white" y="sm">
         <div className="page-shell page-section--roomy">
           <div className="mb-8 max-w-2xl">
             <p className="page-kicker">{t('aboutPage.clientsKicker')}</p>
@@ -266,7 +367,7 @@ export default function AboutPage() {
             {CLIENTS.map((id) => (
               <div
                 key={id}
-                className="flex items-start gap-2.5 rounded-xl border border-black/10 bg-[#F9F9FA] px-3.5 py-3"
+                className="motion-card flex items-start gap-2.5 rounded-xl border border-black/10 bg-[#F9F9FA] px-3.5 py-3"
               >
                 <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-[#3F6F00]" strokeWidth={1.75} aria-hidden />
                 <span className="text-sm font-medium leading-snug text-[#0B0F19]">
@@ -276,13 +377,17 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <AboutPartnersSection />
+      <RevealSection as="div" mode="section" y="md">
+        <AboutPartnersSection />
+      </RevealSection>
 
-      <AboutSecurityAdvantageSection />
+      <RevealSection as="div" mode="section" y="md">
+        <AboutSecurityAdvantageSection />
+      </RevealSection>
 
-      <section className="bg-[#F9F9FA]">
+      <RevealSection className="bg-[#F9F9FA]" y="sm">
         <div className="page-shell page-section--roomy">
           <div className="mb-8 max-w-2xl">
             <p className="page-kicker">{t('aboutPage.valuesKicker')}</p>
@@ -318,9 +423,9 @@ export default function AboutPage() {
             })}
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <section className="border-t border-black/5 bg-white">
+      <RevealSection className="border-t border-black/5 bg-white" y="sm">
         <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] p-7 text-white sm:p-8">
@@ -345,9 +450,9 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="commercial-licence" className="scroll-mt-28 border-b border-black/5 bg-white">
+      <RevealSection id="commercial-licence" className="scroll-mt-28 border-b border-black/5 bg-white" y="md">
         <div className="page-shell page-section--roomy">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
             <div className="lg:col-span-5">
@@ -367,7 +472,7 @@ export default function AboutPage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:col-span-7">
-              <div className="about-trust-card rounded-2xl border border-black/10 bg-[var(--site-bg-muted)] p-4 sm:p-5">
+              <div className="about-trust-card motion-card rounded-2xl border border-black/10 bg-[var(--site-bg-muted)] p-4 sm:p-5">
                 <div className="flex items-start gap-3 sm:gap-4">
                   <HeroTrustIcon id="moci" size="md" className="mt-0.5" />
                   <div className="min-w-0">
@@ -380,7 +485,7 @@ export default function AboutPage() {
                   </div>
                 </div>
               </div>
-              <div className="about-trust-card rounded-2xl border border-black/10 bg-[var(--site-bg-muted)] p-4 sm:p-5">
+              <div className="about-trust-card motion-card rounded-2xl border border-black/10 bg-[var(--site-bg-muted)] p-4 sm:p-5">
                 <div className="flex items-start gap-3 sm:gap-4">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0B0F19] text-[#85E307]">
                     <Shield className="h-5 w-5" strokeWidth={1.75} />
@@ -400,12 +505,10 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
-
-          <HeroTrustStrip />
         </div>
-      </section>
+      </RevealSection>
 
-      <section className="storefront-static-page__tail pb-14 sm:pb-16">
+      <RevealSection className="storefront-static-page__tail pb-14 sm:pb-16" y="sm">
         <div className="page-shell">
           <div className="relative overflow-hidden rounded-2xl bg-[#0B0F19] px-5 py-8 sm:px-10 sm:py-12">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(133,227,7,0.16),transparent_55%)]" />
@@ -434,7 +537,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+      </RevealSection>
     </div>
   )
 }

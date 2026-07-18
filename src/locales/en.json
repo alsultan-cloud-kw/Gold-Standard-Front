@@ -244,8 +244,8 @@
     "heroHeadlineLead": "The first company in the Gulf to deliver a",
     "heroHeadlineAccent": "multi-layer verification system",
     "heroHeadlineTrail": "for investment bullion.",
-    "heroSubtext": "We combine manufacturing, digital verification, ownership record, company stamp, security hologram, unique serial, and Ministry of Commerce hallmarking — so every step of investing in gold can be checked.",
-    "heroTrustLine": "MOCI hallmark · Unique serial · Ownership record",
+    "heroSubtext": "Gold is only an asset when you can prove it is yours. Every Gold Standard bar and coin is built so you can — from the factory to your hand.",
+    "heroTrustLine": "Our own manufacturing · Live KWD prices · Branches across Kuwait",
     "heroOrbit": {
       "ariaLabel": "Six verification layers around the bar",
       "blockchain": "Digital Ownership Record",
@@ -420,7 +420,7 @@
         "blockchain": {
           "title": "Digital Ownership Record",
           "description": "Eligible investment pieces can be linked to a Digital Ownership Record — a digital trail of ownership protected with blockchain technology. It works like a shared electronic ledger: once recorded under the system’s rules, entries are designed so they cannot be quietly altered or forged, which supports clearer verification when you buy, hold, or sell.",
-          "badge": "Kuwait pioneer"
+          "badge": "Gulf pioneer"
         },
         "hologram": {
           "title": "Security hologram seal",
@@ -1419,64 +1419,106 @@
     "openNewTab": "Open in new tab"
   },
   "aboutPage": {
-    "kicker": "Investment bullion",
+    "kicker": "Our story",
     "title": "About us",
-    "hero": "Gold Standard is a Kuwait investment bullion company — the investment arm of Sultan Gold — manufacturing and supplying high-purity bars, coins, and institutional solutions. We operate under a Ministry of Commerce commercial licence, with MOCI hallmarking, live digital pricing, and insured delivery across Kuwait.",
+    "hero": "Gold Standard is the investment arm of the Sultan Gold group — a Kuwaiti company that manufactures investment gold in its own facilities and supplies it to individuals and institutions. This is our full story: where we started, how every piece is made and inspected, and the principle we built the business on — never ask a customer to trust, give them something they can check.",
     "ctaShop": "Browse investment products",
     "ctaContact": "Contact us",
     "storyKicker": "Who we are",
-    "storyTitle": "A Kuwait bullion company built for serious investors",
-    "storyBody": "Gold Standard was established to serve individuals, jewellers, banks, and institutions who want transparent, documented physical gold — not fashion jewellery.",
+    "storyTitle": "Born in the gold souq, built for investors",
+    "storyBody": "Before Gold Standard was a storefront, it was a question inside the Sultan Gold workshops: why do people buy gold they cannot easily prove they own, or trace back to its source?",
     "story": {
-      "p1": "We are registered in the State of Kuwait under commercial licence No. 279/2026 issued by the Ministry of Commerce and Industry. Our legal name is Gold Standard Jewellers and Precious Metals Company, and we operate as the dedicated investment channel of Sultan Gold — one of Kuwait’s established gold manufacturing groups.",
+      "p1": "The story starts with the Sultan Gold group — an established industrial name in Kuwait’s gold market, with decades of manufacturing, craftsmanship, and direct trade in the Central Gold Market behind it. From within that heritage, Gold Standard Jewellers and Precious Metals Company was registered under commercial licence No. 279/2026 from the Ministry of Commerce and Industry, as the group’s dedicated investment-gold channel.",
       "p2": "Investment bars, coins, and custom bullion are designed and produced inside Sultan Gold workshops and factories. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
-      "p3": "Our services centre on buying and selling precious metals with clarity: live KWD rates on the website, secure KNET checkout, product authentication, insured delivery within Kuwait, and buyback programmes under published policy. A digital metal wallet and target-price acquisition tools are rolling out for registered clients.",
-      "p4": "We structure sales with constructive possession principles aligned with Islamic finance, so ownership is documented even when physical delivery follows later. Our goal is a trusted environment where savings, trade, and long-term investment in bullion can happen with confidence — backed by manufacturing depth, regulatory compliance, and technology you can verify."
+      "p3": "We could have simply sold bars like everyone else. But we saw an obvious gap: a buyer pays thousands of dinars and walks home with a piece of metal and a slip of paper. So we decided to build what did not exist in Kuwait — a system that makes every piece provable and traceable from factory to owner, because gold you cannot prove is a promise, not an asset.",
+      "p4": "Today we serve the individual saver and the institution with the same discipline: in-house manufacturing, documented ownership, and transactions structured in line with Islamic Sharia guidelines. Our ambition is to build Kuwait’s infrastructure for gold ownership — not just another place to buy it."
     },
-    "profileKicker": "Company profile",
-    "profileTitle": "What defines Gold Standard",
-    "profileIntro": "We combine Kuwait regulatory compliance, Sultan Gold manufacturing heritage, and a modern digital storefront — so every bar and coin is traceable, priced transparently, and built for investment.",
+    "profileKicker": "Our journey",
+    "profileTitle": "The milestones that shaped Gold Standard",
+    "profileIntro": "From a manufacturing workshop to a complete investment-gold operation — these are the key stages of the journey so far.",
     "milestones": {
       "kuwait": {
-        "title": "Established in Kuwait",
-        "body": "Gold Standard operates as a Kuwait precious-metals company serving the Central Gold Market and branches nationwide — focused on bullion, not traditional jewellery retail."
+        "title": "Roots — Sultan Gold",
+        "body": "Decades of gold manufacturing and craftsmanship in the Kuwaiti market laid the foundation: industrial expertise, market relationships, and a reputation that preceded the new name."
       },
       "licence": {
-        "title": "Ministry of Commerce licence",
-        "body": "Registered under commercial licence No. 279/2026 with the Ministry of Commerce and Industry — the legal foundation for our bullion trade and institutional supply activities."
+        "title": "Incorporation & licensing",
+        "body": "Gold Standard was incorporated as a Kuwaiti company under commercial licence No. 279/2026 from the Ministry of Commerce and Industry — dedicated exclusively to investment gold."
       },
       "manufacturing": {
-        "title": "In-house bullion production",
-        "body": "As the investment arm of Sultan Gold, we manufacture bars, coins, and custom institutional pieces with disciplined quality control inside Sultan Gold facilities."
+        "title": "Our own production line",
+        "body": "We began producing bars and coins inside the group’s facilities — making purity, weight, and finishing an internal decision rather than a third-party commitment."
       },
-      "moci": {
-        "title": "MOCI hallmark & inspection",
-        "body": "Investment gold is tested and stamped under Kuwait’s Precious Metals Department rules before sale — confirming karat purity and protecting buyers from unstamped or counterfeit pieces."
+      "verification": {
+        "title": "Building the documentation stack",
+        "body": "We developed a way to document every piece and link it to its owner — an idea that began as a workshop question and became the first system of its kind in Kuwait."
       },
       "digital": {
-        "title": "Digital storefront & live pricing",
-        "body": "Customers can browse certified products, see live KWD buy/sell rates, pay securely via KNET, and track orders online — with member clubs and institutional pricing where applicable."
+        "title": "Going digital",
+        "body": "We launched the online store to connect factory output directly to the customer — no middlemen, with openly published rates."
       },
-      "authenticity": {
-        "title": "Digital Ownership Record & verification layers",
-        "body": "Kuwait’s first stack to combine a Digital Ownership Record, security hologram seal, company stamp, and serial tracking — an investment experience you can verify at every step."
-      },
-      "sharia": {
-        "title": "Compliant with Islamic Sharia principles",
-        "body": "We organise buy and sell operations in line with Islamic Sharia principles, with ownership documentation and secure custody of gold until pickup or insured delivery, according to the terms and conditions."
-      },
-      "reach": {
-        "title": "Clients we serve",
-        "body": "From individual savers and family offices to jewellers, bullion dealers, banks, and corporate buyers — we support wealth preservation, inventory supply, and institutional programmes."
+      "future": {
+        "title": "What’s next",
+        "body": "A digital metals wallet, target-price purchase tools, and broader institutional programmes — we build in stages and announce when ready."
       }
     },
-    "digitalChannelTitle": "Shop and verify online",
-    "digitalChannelBody": "Browse MOCI-hallmarked investment products at live Kuwait rates, complete checkout with KNET, and verify authenticity from our official catalog — with metal holdings tools launching for registered accounts.",
-    "securityKicker": "Our advantage",
-    "securityTitle": "The most complete bullion security stack in Kuwait",
-    "securityIntro": "We built Gold Standard around verification you can repeat — not promises you cannot check. That means combining every protection layer that makes sense for physical gold: official hallmarking, our company stamp, holographic seals, serialised QR, stamped receipts, and a Digital Ownership Record.",
-    "securityLead": "Gold Standard was the first in Kuwait to bring this full security model to investment bullion — including a Digital Ownership Record protected with blockchain technology: physical gold linked to a shared digital ledger designed so ownership trails are hard to rewrite quietly.",
-    "securityLandingLink": "See layers on homepage",
+    "digitalChannelTitle": "See where the story leads",
+    "digitalChannelBody": "Everything you just read ends in a real product — browse the catalog and see the factory’s work for yourself.",
+    "securityKicker": "The innovation story",
+    "securityTitle": "Why we built a complete verification stack",
+    "securityIntro": "In the gold souq, trust was personal: you knew the seller, so you trusted the piece. We wanted trust that does not depend on knowing anyone — so we combined every protection layer that makes sense for physical gold into one system, and were the first in Kuwait to do it.",
+    "securityLead": "At its core is an electronic ownership ledger built on blockchain technology — a shared digital record designed so no single party can quietly rewrite the ownership trail. The full details, and all six protection layers, live on the homepage and the verify page.",
+    "securityLandingLink": "Explore the six protection layers",
+    "process": {
+      "kicker": "Manufacturing & quality",
+      "title": "Every piece’s journey — from raw gold to your hand",
+      "intro": "We don’t resell a finished product; we make it. These are the stages every bar and coin passes through before it reaches you.",
+      "steps": {
+        "raw": {
+          "title": "Raw gold selection",
+          "body": "Production starts with raw gold of documented purity from the group’s approved sources."
+        },
+        "casting": {
+          "title": "Melting & casting",
+          "body": "The gold is melted and cast into weight-controlled moulds inside the group’s workshops."
+        },
+        "finishing": {
+          "title": "Finishing",
+          "body": "Each piece is finished and polished — by hand and machine — until it matches the release specification."
+        },
+        "hallmark": {
+          "title": "Assay & official stamp",
+          "body": "The piece is tested and stamped under the Precious Metals Department rules before it is ever offered for sale."
+        },
+        "packaging": {
+          "title": "Secure packaging",
+          "body": "Each piece is sealed in tamper-evident packaging together with its certificate."
+        },
+        "registration": {
+          "title": "Registration & documentation",
+          "body": "The piece is registered under a serial number in our official catalog, and its ownership is documented at sale."
+        }
+      },
+      "qcTitle": "Four quality gates, never skipped",
+      "qc": {
+        "weight": {
+          "title": "Weight verification",
+          "body": "Every release is weighed on calibrated scales and its actual weight recorded."
+        },
+        "purity": {
+          "title": "Purity testing",
+          "body": "Karat is checked before and after stamping."
+        },
+        "visual": {
+          "title": "Visual inspection",
+          "body": "Each piece is inspected for finish and defects before packaging."
+        },
+        "serial": {
+          "title": "Serial registration",
+          "body": "No piece leaves the factory without a number registered in the catalog."
+        }
+      }
+    },
     "focus": {
       "coins": {
         "title": "Coins, bars ",
@@ -1546,6 +1588,10 @@
       "delivery": {
         "title": "Insured delivery",
         "description": "Orders ship insured across Kuwait with tracking from payment to door."
+      },
+      "craft": {
+        "title": "Craftsmanship",
+        "description": "Manufacturing is our origin, not a supplier relationship — every piece reflects workshop standards refined over decades."
       },
       "trust": {
         "title": "Trust & Transparency",

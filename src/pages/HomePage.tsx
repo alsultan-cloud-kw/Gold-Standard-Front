@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import gsap from 'gsap'
 import {
   ArrowRight,
   ScanLine,
@@ -38,6 +37,9 @@ import { InvestorsClubSection } from '@/components/home/InvestorsClubSection'
 import { SecurityTrustSection } from '@/components/home/SecurityTrustSection'
 import { ShariaCompliantSection } from '@/components/home/ShariaCompliantSection'
 import { HomeFaqSection } from '@/components/home/HomeFaqSection'
+import { RevealSection } from '@/components/motion/RevealSection'
+import { ensureGsap, useGSAP } from '@/motion/gsap'
+import { MOTION } from '@/motion/tokens'
 
 export default function HomePage() {
   const { t } = useTranslation()
@@ -51,51 +53,58 @@ export default function HomePage() {
     [],
   )
 
-  useEffect(() => {
-    const root = heroRef.current
-    if (!root) return
+  const { gsap } = ensureGsap()
 
-    const mm = gsap.matchMedia()
-    mm.add('(prefers-reduced-motion: no-preference) and (min-width: 640px)', () => {
-      const ctx = gsap.context(() => {
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia()
+
+      // Layered luxury hero — small distances, expo settle, calm stagger
+      mm.add('(prefers-reduced-motion: no-preference) and (min-width: 640px)', () => {
         const tl = gsap.timeline({
-          defaults: { ease: 'power2.out', duration: 0.55 },
+          defaults: { ease: MOTION.ease.expoOut, duration: MOTION.duration.base },
         })
         tl.from('.home-hero-headline__line', {
           autoAlpha: 0,
-          y: 22,
-          stagger: 0.09,
+          y: MOTION.y.md,
+          stagger: MOTION.stagger.relaxed,
         })
-          .from('.home-hero-sub', { autoAlpha: 0, y: 16, duration: 0.45 }, '-=0.28')
-          .from('.home-hero-cta', { autoAlpha: 0, y: 14, duration: 0.4 }, '-=0.22')
-          .from('.home-hero-trust-line', { autoAlpha: 0, y: 10, duration: 0.35 }, '-=0.2')
+          .from('.home-hero-sub', { autoAlpha: 0, y: MOTION.y.sm, duration: MOTION.duration.fast }, '-=0.28')
+          .from('.home-hero-cta', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.2')
+          .from('.home-hero-trust-line', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.instant }, '-=0.16')
           .from(
             '.home-hero-visual',
-            { autoAlpha: 0, y: 18, scale: 0.97, duration: 0.65 },
-            '-=0.5',
+            { autoAlpha: 0, y: MOTION.y.sm, scale: 0.985, duration: MOTION.duration.slow },
+            '-=0.45',
           )
-          .from('.hero-trust-strip', { autoAlpha: 0, y: 12, duration: 0.4 }, '-=0.3')
-      }, root)
-      return () => ctx.revert()
-    })
+          .from('.hero-trust-strip', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.fast }, '-=0.28')
+      })
 
-    mm.add('(prefers-reduced-motion: no-preference) and (max-width: 639px)', () => {
-      const ctx = gsap.context(() => {
+      mm.add('(prefers-reduced-motion: no-preference) and (max-width: 639px)', () => {
         const tl = gsap.timeline({
-          defaults: { ease: 'power2.out', duration: 0.42 },
+          defaults: { ease: MOTION.ease.out, duration: MOTION.duration.fast },
         })
-        tl.from('.home-hero-visual', { autoAlpha: 0, y: 14, scale: 0.98, duration: 0.5 })
-          .from('.home-hero-headline__line', { autoAlpha: 0, y: 12, stagger: 0.06 }, '-=0.22')
-          .from('.home-hero-sub', { autoAlpha: 0, y: 10, duration: 0.35 }, '-=0.18')
-          .from('.home-hero-cta', { autoAlpha: 0, y: 8, duration: 0.32 }, '-=0.15')
-          .from('.home-hero-trust-line', { autoAlpha: 0, duration: 0.28 }, '-=0.12')
-          .from('.hero-trust-strip', { autoAlpha: 0, y: 8, duration: 0.32 }, '-=0.1')
-      }, root)
-      return () => ctx.revert()
-    })
+        tl.from('.home-hero-visual', {
+          autoAlpha: 0,
+          y: MOTION.y.sm,
+          scale: 0.988,
+          duration: MOTION.duration.base,
+        })
+          .from('.home-hero-headline__line', {
+            autoAlpha: 0,
+            y: MOTION.y.xs,
+            stagger: MOTION.stagger.tight,
+          }, '-=0.2')
+          .from('.home-hero-sub', { autoAlpha: 0, y: MOTION.y.xs, duration: MOTION.duration.instant }, '-=0.14')
+          .from('.home-hero-cta', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.1')
+          .from('.home-hero-trust-line', { autoAlpha: 0, duration: MOTION.duration.instant }, '-=0.08')
+          .from('.hero-trust-strip', { autoAlpha: 0, y: 6, duration: MOTION.duration.instant }, '-=0.06')
+      })
 
-    return () => mm.revert()
-  }, [])
+      return () => mm.revert()
+    },
+    { scope: heroRef },
+  )
 
   const { data: featuredProducts } = useQuery({
     queryKey: ['featuredProducts'],
@@ -211,16 +220,22 @@ export default function HomePage() {
       </div>
 
       <div className="order-2 lg:order-none">
-        <LiveGoldMarketSection />
+        <RevealSection as="div" mode="section" y="sm">
+          <LiveGoldMarketSection />
+        </RevealSection>
       </div>
 
       {/* Trust credentials + bullion verification — early on the page */}
       <div className="order-3 lg:order-none">
-        <SecurityTrustSection />
+        <RevealSection as="div" mode="section" y="md">
+          <SecurityTrustSection />
+        </RevealSection>
       </div>
 
       <div className="order-3 lg:order-none">
-        <ShariaCompliantSection />
+        <RevealSection as="div" mode="section" y="sm">
+          <ShariaCompliantSection />
+        </RevealSection>
       </div>
 
       <div className="order-8 lg:order-none">
@@ -228,7 +243,9 @@ export default function HomePage() {
       </div>
 
       <div className="order-9 lg:order-none">
-        <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
+        <RevealSection as="div" mode="section" y="md">
+          <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
+        </RevealSection>
       </div>
 
       {/* After docks mount so stop refs exist — flyer self-gates to real desktop */}
@@ -237,20 +254,26 @@ export default function HomePage() {
       </div>
 
       <div className="order-4 lg:order-none">
-        <CategoryGrid />
+        <RevealSection as="div" mode="section" y="sm">
+          <CategoryGrid />
+        </RevealSection>
       </div>
 
       <div className="order-6 lg:order-none">
-        <FeaturedProducts
-          title={t('home.featuredCollection')}
-          products={(featuredProducts as Product[]) ?? []}
-          viewAllLink="/products"
-          fetchTrends={fetchTrends}
-        />
+        <RevealSection as="div" mode="section" y="sm">
+          <FeaturedProducts
+            title={t('home.featuredCollection')}
+            products={(featuredProducts as Product[]) ?? []}
+            viewAllLink="/products"
+            fetchTrends={fetchTrends}
+          />
+        </RevealSection>
       </div>
 
       <div className="order-5 lg:order-none">
-        <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
+        <RevealSection as="div" mode="section" y="sm">
+          <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
+        </RevealSection>
       </div>
 
       <div className="order-11 lg:order-none">
@@ -258,7 +281,9 @@ export default function HomePage() {
       </div>
 
       <div className="order-12 lg:order-none">
-        <HomeFaqSection />
+        <RevealSection as="div" mode="section" y="sm">
+          <HomeFaqSection />
+        </RevealSection>
       </div>
 
       {/* Footer includes site-wide CTA band */}
@@ -268,6 +293,7 @@ export default function HomePage() {
       */}
 
       <div className="order-[13] lg:order-none">
+      <RevealSection as="div" mode="section" y="md">
       <section className="home-section">
         <div className="home-section-inner">
           <HomeSectionHeader
@@ -281,6 +307,7 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <div
                 key={feature.titleKey}
+                data-reveal
                 className={`bg-[var(--site-bg)] p-4 sm:p-8 ${index % 2 === 0 ? 'sm:border-e-0' : ''}`}
               >
                 <div className="mb-3 flex items-center gap-2 sm:mb-5 sm:gap-3">
@@ -300,6 +327,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </RevealSection>
       </div>
     </div>
   )

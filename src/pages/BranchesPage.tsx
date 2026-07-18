@@ -12,6 +12,8 @@ import { BranchLocationCard } from '@/components/branches/BranchLocationCard'
 import { branchMapCoords } from '@/utils/branchMap'
 import { GoogleReviewsBadge } from '@/components/branches/GoogleReviewsBadge'
 import { formatBranchTime12h } from '@/utils/formatBranchHours'
+import { RevealSection } from '@/components/motion/RevealSection'
+import { usePageEnter } from '@/motion/usePageEnter'
 
 type PaginatedBranches = { results?: Branch[] } | Branch[]
 
@@ -25,6 +27,7 @@ function asBranchList(data: unknown): Branch[] {
 export default function BranchesPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
+  const heroRef = usePageEnter()
   const formatTime = useCallback(
     (raw?: string | null) => formatBranchTime12h(raw, isAr),
     [isAr],
@@ -65,18 +68,25 @@ export default function BranchesPage() {
 
   return (
     <div className="storefront-static-page min-h-screen">
-      <section className="relative overflow-hidden border-b border-black/5 bg-white">
+      <section
+        ref={heroRef as React.RefObject<HTMLElement>}
+        className="relative overflow-hidden border-b border-black/5 bg-white"
+      >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/40 via-white to-white" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_100%_0%,rgba(133,227,7,0.1),transparent_55%)]" />
         </div>
 
         <div className="relative page-shell page-section--roomy">
-          <p className="page-kicker">{t('branchesPage.kicker')}</p>
-          <h1 className="type-page-title max-w-3xl text-[#0B0F19]">{t('branchesPage.title')}</h1>
-          <p className="type-lead mt-4 max-w-xl text-[#64748B]">{t('branchesPage.subtitle')}</p>
+          <p className="page-kicker" data-motion="enter">{t('branchesPage.kicker')}</p>
+          <h1 className="type-page-title max-w-3xl text-[#0B0F19]" data-motion="enter">
+            {t('branchesPage.title')}
+          </h1>
+          <p className="type-lead mt-4 max-w-xl text-[#64748B]" data-motion="enter">
+            {t('branchesPage.subtitle')}
+          </p>
 
-          <div className="branches-hero-chips mt-6 text-sm text-[#64748B]">
+          <div className="branches-hero-chips mt-6 text-sm text-[#64748B]" data-motion="enter">
             <span className="branches-hero-chip inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--site-bg-muted)] px-3 py-1.5">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
               {isAr ? GS_CONTACT.addressAr : GS_CONTACT.addressEn}
@@ -98,7 +108,7 @@ export default function BranchesPage() {
         </div>
       </section>
 
-      <div className="page-shell page-section--roomy">
+      <RevealSection as="div" className="page-shell page-section--roomy" y="md">
         {isLoading ? (
           <AppLoadingScreen
             message={t('common.loading')}
@@ -234,7 +244,7 @@ export default function BranchesPage() {
             </div>
           </div>
         </div>
-      </div>
+      </RevealSection>
     </div>
   )
 }

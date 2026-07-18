@@ -17,6 +17,8 @@ import { GS_CONTACT } from '@/constants/contact'
 import { GS_INSTAGRAM } from '@/constants/social'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { contactApi } from '@/services/api'
+import { RevealSection } from '@/components/motion/RevealSection'
+import { usePageEnter } from '@/motion/usePageEnter'
 
 const fieldClass =
   'contact-form-field w-full rounded-xl border border-black/10 bg-[var(--site-bg-muted)] px-4 py-3 text-sm font-medium text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25'
@@ -106,6 +108,7 @@ function mapApiFieldErrors(data: Record<string, unknown>): ContactFieldErrors {
 export default function ContactPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
+  const heroRef = usePageEnter()
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -253,24 +256,27 @@ export default function ContactPage() {
   return (
     <div className="storefront-static-page min-h-screen">
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-black/5 bg-white">
+      <section
+        ref={heroRef as React.RefObject<HTMLElement>}
+        className="relative overflow-hidden border-b border-black/5 bg-white"
+      >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#ECFCCB]/35 via-white to-white" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_0%_0%,rgba(133,227,7,0.1),transparent_55%)]" />
         </div>
 
         <div className="page-shell relative page-section--roomy">
-          <p className="page-kicker">{t('contactPage.kicker')}</p>
-          <h1 className="type-page-title max-w-2xl text-[#0B0F19]">
+          <p className="page-kicker" data-motion="enter">{t('contactPage.kicker')}</p>
+          <h1 className="type-page-title max-w-2xl text-[#0B0F19]" data-motion="enter">
             {t('contactPage.title')}
           </h1>
-          <p className="type-lead mt-4 max-w-xl text-[#64748B]">
+          <p className="type-lead mt-4 max-w-xl text-[#64748B]" data-motion="enter">
             {t('contactPage.subtitle')}
           </p>
         </div>
       </section>
 
-      <div className="page-shell page-section--roomy storefront-static-page__tail">
+      <RevealSection as="div" className="page-shell page-section--roomy storefront-static-page__tail" y="md">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Sidebar info */}
           <aside className="space-y-4 lg:col-span-4">
@@ -307,7 +313,7 @@ export default function ContactPage() {
                   <a
                     key={info.titleKey}
                     href={info.href}
-                    className="flex items-start gap-4 rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/25"
+                    className="motion-card flex items-start gap-4 rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#85E307]/40 hover:bg-[#ECFCCB]/25"
                   >
                     {inner}
                   </a>
@@ -317,7 +323,7 @@ export default function ContactPage() {
               return (
                 <div
                   key={info.titleKey}
-                  className="flex items-start gap-4 rounded-2xl border border-black/10 bg-white p-5"
+                  className="motion-card flex items-start gap-4 rounded-2xl border border-black/10 bg-white p-5"
                 >
                   {inner}
                 </div>
@@ -328,7 +334,7 @@ export default function ContactPage() {
               href={GS_INSTAGRAM.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#85E307]/40"
+              className="motion-card group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#85E307]/40"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af] text-white">
                 <Instagram className="h-5 w-5" strokeWidth={1.75} />
@@ -360,7 +366,7 @@ export default function ContactPage() {
 
           {/* Form */}
           <div className="lg:col-span-8">
-            <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-8">
+            <div className="motion-card rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-8">
               <div className="mb-6 flex items-start gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ECFCCB] text-[#3F6F00]">
                   <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
@@ -525,7 +531,7 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
-      </div>
+      </RevealSection>
     </div>
   )
 }

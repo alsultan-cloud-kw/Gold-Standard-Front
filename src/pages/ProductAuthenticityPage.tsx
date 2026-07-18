@@ -19,6 +19,26 @@ import {
 import { productsApi, type ProductAuthenticityResponse } from '../services/api'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { ProductAuthenticityAssurance } from '@/components/products/ProductAuthenticityAssurance'
+import { usePageEnter } from '@/motion/usePageEnter'
+
+function VerifyEnterShell({
+  children,
+  rtl,
+}: {
+  children: React.ReactNode
+  rtl?: boolean
+}) {
+  const rootRef = usePageEnter()
+  return (
+    <div
+      ref={rootRef as React.RefObject<HTMLDivElement>}
+      className="min-h-[70vh] bg-gradient-to-b from-lime-50/60 via-white to-white py-8 sm:py-12"
+      dir={rtl ? 'rtl' : 'ltr'}
+    >
+      {children}
+    </div>
+  )
+}
 
 function formatWeight(value: string | number | null | undefined, locale?: string) {
   const n = typeof value === 'number' ? value : Number(value)
@@ -181,12 +201,9 @@ export default function ProductAuthenticityPage() {
 
   if (!code) {
     return (
-      <div
-        className="min-h-[70vh] bg-gradient-to-b from-lime-50/60 via-white to-white py-10 sm:py-14"
-        dir={rtl ? 'rtl' : 'ltr'}
-      >
+      <VerifyEnterShell rtl={rtl}>
         <div className="page-shell page-shell--reading py-8 sm:py-10">
-          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8" data-motion="enter">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-[#3F6F00]/15 bg-[#ECFCCB]/70 text-[#3F6F00]">
               <ShieldCheck className="h-6 w-6" strokeWidth={1.75} aria-hidden />
             </div>
@@ -216,7 +233,7 @@ export default function ProductAuthenticityPage() {
             </div>
           </div>
         </div>
-      </div>
+      </VerifyEnterShell>
     )
   }
 
@@ -270,11 +287,8 @@ export default function ProductAuthenticityPage() {
   const statusBg = verified ? 'bg-lime-50 border-lime-200' : 'bg-amber-50 border-amber-200'
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-lime-50/60 via-white to-white py-8 sm:py-12"
-      dir={rtl ? 'rtl' : 'ltr'}
-    >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <VerifyEnterShell rtl={rtl}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8" data-motion="enter">
         <header className="mb-6 text-center sm:mb-8 sm:text-start">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#3F6F00]">
             {t('authenticity.eyebrow')}
@@ -388,6 +402,6 @@ export default function ProductAuthenticityPage() {
 
         <p className="mt-8 text-center text-xs text-stone-500">{t('authenticity.footerNote')}</p>
       </div>
-    </div>
+    </VerifyEnterShell>
   )
 }
