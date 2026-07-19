@@ -28,8 +28,6 @@ import {
 } from '@/utils/publicStorefrontRates'
 import { PreciousMetalMark, preciousMetalIdFromRowKey } from '@/components/prices/PreciousMetalMark'
 import { CustomerGoldPricePair } from '@/components/prices/CustomerGoldPricePair'
-import { GramWeightCalculatorStrip } from '@/components/prices/GramWeightCalculatorStrip'
-
 const PRECIOUS_METAL_LABEL_KEYS = {
   Silver: 'productsPage.metal.silver',
   Platinum: 'productsPage.metal.platinum',
@@ -430,14 +428,6 @@ export default function PricesPage() {
 
         {showBoard ? (
           <div className="space-y-5 sm:space-y-8">
-            <PricesHistoryChart rates={res} showSectionHeader={false} />
-
-            <GramWeightCalculatorStrip
-              gramsInput={gramsInput}
-              onGramsInputChange={setGramsInput}
-              gramsValid={gramsValid}
-            />
-
             {/* Gold karats */}
             <section
               id="gold-karat-rates"
@@ -445,13 +435,14 @@ export default function PricesPage() {
               className="scroll-mt-[calc(var(--nav-offset)+4.5rem)]"
             >
               <div className="mb-3 flex items-end justify-between gap-3 sm:mb-4">
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6F00] sm:text-[11px] sm:tracking-[0.2em]">
+                <h2 className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-[#0B0F19] sm:text-xl">
+                  <span className="h-5 w-1.5 shrink-0 rounded-full bg-[#85E307]" aria-hidden />
                   {gramsValid
                     ? t('pricesPage.ratesForWeight', { grams })
                     : t('pricesPage.buySellPerGram')}
                 </h2>
               </div>
-              <div className="price-rate-board grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 min-[420px]:gap-3 sm:gap-4 xl:grid-cols-4">
+              <div className="price-rate-board grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
                 {carats.map((c) => {
                   const buyTotal = c.buyTotal != null ? c.buyTotal : null
                   const sellTotal = c.sellTotal != null ? c.sellTotal : null
@@ -548,11 +539,12 @@ export default function PricesPage() {
 
             {/* Precious metals */}
             <section>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6F00] sm:mb-4 sm:text-[11px] sm:tracking-[0.2em]">
+              <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold tracking-tight text-[#0B0F19] sm:mb-4 sm:text-xl">
+                <span className="h-5 w-1.5 shrink-0 rounded-full bg-[#85E307]" aria-hidden />
                 {t('pricesPage.preciousKicker')}
-              </p>
-              <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                {preciousRows.map(({ key, data: m }) => {
+              </h2>
+              <div className="price-rate-board grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4">
+                {preciousRows.map(({ key, data: m }, metalIndex) => {
                   const metalLabel = t(PRECIOUS_METAL_LABEL_KEYS[key])
                   const metalId = preciousMetalIdFromRowKey(key)
                   const spot = m ?? { key, buyTotal: null, sellTotal: null }
@@ -567,7 +559,13 @@ export default function PricesPage() {
                   const sellForWeight = gramsValid ? caratGramTotals(spot, grams).sellTotal : null
 
                   return (
-                    <article key={key} className="price-rate-card">
+                    <article
+                      key={key}
+                      className={cn(
+                        'price-rate-card',
+                        metalIndex === preciousRows.length - 1 && 'col-span-2 sm:col-span-1',
+                      )}
+                    >
                       <div className="price-rate-card__rail" aria-hidden="true" />
                       <div className="price-rate-card__body">
                         <div className="price-rate-card__top">
@@ -653,6 +651,8 @@ export default function PricesPage() {
                 </p>
               ) : null}
             </section>
+
+            <PricesHistoryChart rates={res} showSectionHeader={false} />
 
             <p className="text-center text-[10px] text-[#64748B] sm:text-xs">{t('pricesPage.disclaimer')}</p>
           </div>

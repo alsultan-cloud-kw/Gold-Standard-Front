@@ -246,8 +246,8 @@
     "heroHeadlineLead": "The first company in the Gulf to deliver a",
     "heroHeadlineAccent": "multi-layer verification system",
     "heroHeadlineTrail": "for investment bullion.",
-    "heroSubtext": "Investment gold bars and coins made by us in Kuwait, with clear, up-to-date KWD pricing. Every piece also carries a serial number and Digital Ownership Record for easier verification and purchase recordkeeping.",
-    "heroTrustLine": "Our own manufacturing · Live KWD prices · Branches across Kuwait",
+    "heroSubtext": "From the heart of Kuwait, we are shaping a new future for secure investment. Investment gold bars and coins of our own production, built to the highest standards of global trust. Every bar carries a unique international serial number and is fully linked to blockchain technology — giving you an encrypted, tamper-proof digital record that secures your ownership and enables instant verification of your gold's authenticity anywhere in the world.",
+    "heroTrustLine": "Made in Kuwait · Live KWD prices · Branches in every governorate",
     "heroKicker": "Gold coins, minted bars, and live bullion rates — together in Kuwait.",
     "heroIntro": "Shop certified gold coins and investment bars with transparent live pricing and follow the market in real time under Gold Standard.",
     "heroCardBullionTitle": "Coins & bars",
@@ -297,53 +297,21 @@
     "whyChooseUsDesc": "What sets us apart starts after checkout — verify your piece, sell it back anytime, and visit us in person.",
     "whyKicker": "The difference",
     "wealthProtection": {
-      "kicker": "Preserve your wealth's value",
-      "title": "Inflation erodes purchasing power... gold preserves it",
-      "subtitle": "Over more than fifty years, physical gold has proven its ability to protect the real value of wealth across different economic conditions.",
-      "cash": {
-        "title": "Cash purchasing power",
-        "metric": "Value lost: 90%+",
-        "stackHint": "Pile shrinks over time"
-      },
+      "kicker": "Value that lasts",
+      "title": "Gold preserves your wealth. Cash loses it over time.",
       "gold": {
-        "title": "Gold value retention",
-        "metric": "Value retained: 100%+",
-        "stackHint": "Stack grows into a larger pile"
+        "label": "Physical gold",
+        "value": "24×",
+        "caption": "Real value growth since 1970"
       },
-      "amounts": {
-        "start": "$100,000",
-        "cashToday": "~$10k power",
-        "goldToday": "$2.4M equiv."
+      "cash": {
+        "label": "Paper cash",
+        "value": "−90%",
+        "caption": "Purchasing power lost since 1970"
       },
-      "timelineTitle": "Purchasing power over time",
-      "timelineNote": "Indicative index · 1970 = 100",
-      "stackExplain": "Cash loses purchasing power and the pile gets smaller. Gold preserves value — and the stack can grow larger over decades.",
-      "baseline": "1970 baseline",
-      "timeline": {
-        "y1970": "1970",
-        "y1990": "1990",
-        "y2000": "2000",
-        "y2010": "2010",
-        "today": "Today"
-      },
-      "chart": {
-        "title": "Real value: $100k in 1970 vs. today",
-        "note": "Indicative long-term benchmark — not financial advice.",
-        "cashValue": "~$10k",
-        "goldValue": "$2.4M",
-        "axis0": "$0",
-        "axis100k": "$100k",
-        "axis500k": "$500k",
-        "axis1m": "$1M",
-        "axis2m": "$2.4M",
-        "startLine": "1970 start · $100k",
-        "goldGain": "Gold · 24× real value",
-        "cashLoss": "Cash · −90% purchasing power",
-        "today": "Today",
-        "footnote": "Same $100,000 in 1970: held in gold it is worth about $2.4 million today; held as cash, its buying power is only about $10,000."
-      },
-      "cta": "Shop certified gold",
-      "ctaNote": "MOCI-stamped · Insured delivery · Live KWD pricing"
+      "vs": "VS",
+      "footnote": "Indicative long-term historical benchmark, not financial advice.",
+      "cta": "Shop certified gold"
     },
     "goldComparison": {
       "kicker": "Why gold",
@@ -441,7 +409,7 @@
     "sharia": {
       "kicker": "Sharia compliant",
       "title": "Compliant with Islamic Sharia principles",
-      "body": "We organise buy and sell operations in line with Islamic Sharia principles, with ownership documentation and secure custody of gold until pickup or insured delivery, according to the terms and conditions.",
+      "body": "We organise buying and selling in accordance with Islamic Sharia principles, with documented ownership and secure custody until pickup or insured delivery. We do not offer direct gold-for-gold exchanges where weight or value differs. Instead, the existing gold is sold first and new gold is purchased through a separate transaction to avoid riba, subject to our terms and conditions.",
       "sealAlt": "Shariah Compliant seal — متوافق مع أحكام الشريعة الإسلامية",
       "ctaShop": "Browse the shop",
       "ctaAbout": "Learn more about us"
@@ -1428,7 +1396,8 @@
       "p1": "The story starts with the Sultan Gold group — an established industrial name in Kuwait’s gold market, with decades of manufacturing, craftsmanship, and direct trade in the Central Gold Market behind it. From within that heritage, Gold Standard Jewellers and Precious Metals Company was registered under commercial licence No. 279/2026 from the Ministry of Commerce and Industry, as the group’s dedicated investment-gold channel.",
       "p2": "Investment bars, coins, and custom bullion are designed and produced inside Sultan Gold factories. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
       "p3": "We could have simply sold bars like everyone else. But we saw an obvious gap: a buyer pays thousands of dinars and walks home with a piece of metal and a slip of paper. So we decided to build what did not exist in Kuwait — a system that makes every piece provable and traceable from factory to owner, because gold you cannot prove is a promise, not an asset.",
-      "p4": "Today we serve the individual saver and the institution with the same discipline: in-house manufacturing, documented ownership, and transactions structured in line with Islamic Sharia guidelines. Our ambition is to build Kuwait’s infrastructure for gold ownership — not just another place to buy it."
+      "p4": "Today we serve individual savers and institutions with the same discipline: in-house manufacturing, documented ownership, and a clear experience from purchase to delivery. Our ambition is to build Kuwait’s infrastructure for gold ownership — not just another place to buy it.",
+      "p5": "We organise buying and selling in accordance with Islamic Sharia principles, with documented ownership and secure custody until pickup or insured delivery. We do not offer direct gold-for-gold exchanges where weight or value differs. Instead, the existing gold is sold first and new gold is purchased through a separate transaction to avoid riba, subject to our terms and conditions."
     },
     "profileKicker": "Our journey",
     "profileTitle": "The milestones that shaped Gold Standard",

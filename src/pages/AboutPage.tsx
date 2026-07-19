@@ -91,7 +91,7 @@ const QC_GATES = [
   { id: 'serial', icon: Hash },
 ] as const
 
-const STORY_PARAS = ['p1', 'p2', 'p3', 'p4'] as const
+const STORY_PARAS = ['p1', 'p2', 'p3', 'p4', 'p5'] as const
 
 export default function AboutPage() {
   const { t } = useTranslation()

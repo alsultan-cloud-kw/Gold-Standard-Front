@@ -32,9 +32,6 @@ export function ShariaCompliantSection() {
           </div>
 
           <div className="sharia-band__copy min-w-0 text-center lg:text-start">
-            <p className="page-kicker !mb-2">
-              {t('home.sharia.kicker')}
-            </p>
             <h2
               id="sharia-compliant-heading"
               className="type-section-title text-balance text-[#0B0F19] sm:text-3xl"
