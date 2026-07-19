@@ -791,8 +791,12 @@
       );
   }
 
-  /* Copy-only layout — the film is the visual */
-  .home-hero--video {
+  /*
+   * Copy-only layout — the film is the visual.
+   * Double-class selector outranks the responsive two-column `.home-hero`
+   * rules below, so the video hero never reserves an empty visual column.
+   */
+  .home-hero.home-hero--video {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'intro';
     min-height: clamp(24rem, 56vh, 38rem);

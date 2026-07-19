@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
 import bullionHorizUrl from '@/assets/home/bullion-horiz.png'
 import bullionVertUrl from '@/assets/home/bullion-vert.png'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { cn } from '@/lib/utils'
 import { BULLION_FLYER_MQ, prefersBullionFlyer } from './flyerMedia'
 
-gsap.registerPlugin(ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 const FLYER_EVENT = 'gs-bullion-flyer'
 
@@ -485,6 +487,18 @@ export function BullionChapterAnchor({
   )
 }
 
+/** Masks the glint sweep to the bar's exact silhouette. */
+const GLINT_MASK_STYLE: CSSProperties = {
+  WebkitMaskImage: `url(${bullionHorizUrl})`,
+  maskImage: `url(${bullionHorizUrl})`,
+  WebkitMaskSize: 'contain',
+  maskSize: 'contain',
+  WebkitMaskRepeat: 'no-repeat',
+  maskRepeat: 'no-repeat',
+  WebkitMaskPosition: 'center',
+  maskPosition: 'center',
+}
+
 /** Composition dock for a journey stop. */
 export function BullionEndDock({
   slotRef,
@@ -496,6 +510,8 @@ export function BullionEndDock({
   size?: 'default' | 'compact' | 'large'
 }) {
   const [hideForFlyer, setHideForFlyer] = useState(false)
+  const fxRef = useRef<HTMLDivElement | null>(null)
+  const reduced = usePrefersReducedMotion()
 
   useEffect(() => {
     const sync = (active?: boolean) => {
@@ -527,6 +543,88 @@ export function BullionEndDock({
     }
   }, [])
 
+  /**
+   * Scroll presentation for the static dock bar:
+   * 3D drop-landing → shadow settles → glint sweep → idle levitation loop.
+   * Skipped for the compact seat, reduced motion, and while the flyer owns the bar.
+   */
+  useGSAP(
+    () => {
+      const fx = fxRef.current
+      if (!fx || reduced || hideForFlyer || size === 'compact') return
+
+      const img = fx.querySelector('img')
+      const glint = fx.querySelector('[data-bullion-glint]')
+      const shadow = fx.querySelector('[data-bullion-shadow]')
+      if (!img || !glint || !shadow) return
+
+      const landing = gsap.timeline({
+        scrollTrigger: {
+          trigger: fx,
+          start: 'top 85%',
+          toggleActions: 'restart none none reset',
+        },
+      })
+
+      landing
+        .from(img, {
+          yPercent: -70,
+          rotationX: 46,
+          rotationY: -18,
+          scale: 0.82,
+          autoAlpha: 0,
+          transformPerspective: 900,
+          duration: 1.1,
+          ease: 'expo.out',
+        })
+        .from(
+          shadow,
+          { scaleX: 0.4, autoAlpha: 0, duration: 0.9, ease: 'power3.out' },
+          '<0.12',
+        )
+        .fromTo(
+          glint,
+          { xPercent: -180 },
+          { xPercent: 280, duration: 0.95, ease: 'power2.inOut' },
+          '-=0.4',
+        )
+
+      // Idle: heavy, calm levitation with a counter-breathing shadow
+      gsap.to(img, {
+        y: -5,
+        rotation: 0.7,
+        duration: 3.2,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+        delay: 1.25,
+      })
+      gsap.to(shadow, {
+        scaleX: 0.86,
+        opacity: 0.55,
+        duration: 3.2,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+        delay: 1.25,
+      })
+      // Recurring glint so the bar keeps catching the light
+      gsap.fromTo(
+        glint,
+        { xPercent: -180 },
+        {
+          xPercent: 280,
+          duration: 1.15,
+          ease: 'power2.inOut',
+          repeat: -1,
+          repeatDelay: 4.4,
+          delay: 2.6,
+        },
+      )
+    },
+    { scope: fxRef, dependencies: [reduced, hideForFlyer, size], revertOnUpdate: true },
+  )
+
   return (
     <div
       ref={slotRef}
@@ -541,17 +639,37 @@ export function BullionEndDock({
       )}
       aria-hidden
     >
-      <img
-        src={bullionHorizUrl}
-        alt=""
+      <div
+        ref={fxRef}
         className={cn(
-          'h-[88%] w-auto max-w-full object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.18)] transition-opacity duration-200',
+          'relative flex h-[88%] items-center justify-center transition-opacity duration-200',
           hideForFlyer ? 'opacity-0' : 'opacity-100',
         )}
-        draggable={false}
-        loading="lazy"
-        decoding="async"
-      />
+        style={{ perspective: '900px' }}
+      >
+        <img
+          src={bullionHorizUrl}
+          alt=""
+          className="h-full w-auto max-w-full object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.18)]"
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+        />
+        <span
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={GLINT_MASK_STYLE}
+          aria-hidden
+        >
+          <span
+            data-bullion-glint
+            className="absolute inset-y-0 start-0 w-1/3 -skew-x-[18deg] bg-gradient-to-r from-transparent via-white/60 to-transparent"
+          />
+        </span>
+        <span
+          data-bullion-shadow
+          className="absolute -bottom-3 left-1/2 h-3 w-[72%] -translate-x-1/2 rounded-[100%] bg-[#0B0F19]/20 blur-md"
+        />
+      </div>
     </div>
   )
 }
