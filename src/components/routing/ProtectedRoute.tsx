@@ -94,7 +94,12 @@ export function GuestOnlyRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={resolvePostAuthPath(user, searchParams.get('next'))} replace />
+    return (
+      <Navigate
+        to={resolvePostAuthPath(user, searchParams.get('next'), searchParams.get('returnUrl'))}
+        replace
+      />
+    )
   }
 
   return <Outlet />

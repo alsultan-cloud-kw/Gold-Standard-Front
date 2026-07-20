@@ -297,6 +297,8 @@ export default function AdminProducts() {
 
       if (!payload.category_id || !payload.metal_type_id || !payload.carat_id)
         throw new Error('Select a category (and subcategory if needed), metal type, and carat')
+      if (!payload.description_en && !payload.description_ar)
+        throw new Error('Add a product description in English and/or Arabic')
 
       if (editingSlug) {
         const { sku: _sku, ...patch } = payload
@@ -517,7 +519,7 @@ export default function AdminProducts() {
                 <textarea
                   className={inputClass + ' min-h-[88px] resize-y'}
                   rows={4}
-                  placeholder="Optional — shown on the product page under the image."
+                  placeholder="Customer-facing details — at least EN or AR required."
                   value={form.description_en}
                   onChange={(e) => setForm({ ...form, description_en: e.target.value })}
                 />
@@ -527,7 +529,8 @@ export default function AdminProducts() {
                 <textarea
                   className={inputClass + ' min-h-[88px] resize-y'}
                   rows={4}
-                  placeholder="اختياري — يظهر في صفحة المنتج تحت الصورة."
+                  dir="rtl"
+                  placeholder="تفاصيل للعميل — مطلوب إنجليزي أو عربي على الأقل."
                   value={form.description_ar}
                   onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
                 />

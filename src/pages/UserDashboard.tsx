@@ -14,6 +14,7 @@ import {
   Scale,
   Users,
   Share2,
+  Mail,
   Crown,
   Download,
   Layers,
@@ -278,6 +279,8 @@ function ClubTab() {
   const [clubName, setClubName] = useState('')
   const [renameDraft, setRenameDraft] = useState('')
   const [showShareOptions, setShowShareOptions] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [showEmailInvite, setShowEmailInvite] = useState(false)
 
   const { data: memData, isLoading: memLoading, isError: memError, refetch: refetchMembership } = useQuery({
     queryKey: ['clubMembership'],
@@ -346,6 +349,24 @@ function ClubTab() {
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } }
       toast.error(e?.response?.data?.detail || t('userDashboard.club.toasts.couldNotCreateInvite'))
+    },
+  })
+
+  const inviteEmailMutation = useMutation({
+    mutationFn: () =>
+      clubsApi.inviteEmail(club!.id, {
+        email: inviteEmail.trim(),
+        ...(activeInvite?.token ? { token: activeInvite.token } : {}),
+      }),
+    onSuccess: (data) => {
+      toast.success(t('userDashboard.club.toasts.inviteEmailSent', { email: data.email }))
+      setInviteEmail('')
+      setShowEmailInvite(false)
+      queryClient.invalidateQueries({ queryKey: ['clubMembership'] })
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } }
+      toast.error(e?.response?.data?.detail || t('userDashboard.club.toasts.couldNotSendInviteEmail'))
     },
   })
 
@@ -547,25 +568,65 @@ function ClubTab() {
                     <code className="text-xs text-gold-100/80 break-all flex-1">{inviteLink}</code>
                     <button
                       type="button"
-                      onClick={shareInviteLink}
+                      onClick={copyLink}
                       disabled={!canShareInvite}
-                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Share2 className="w-3.5 h-3.5" />
-                      {t('userDashboard.club.shareButton')}
+                      {t('userDashboard.club.copyUrlButton')}
                     </button>
                     <span className="shrink-0 text-xs text-gold-100/50 px-0.5 select-none">
                       {t('userDashboard.club.orBetweenActions')}
                     </span>
                     <button
                       type="button"
-                      onClick={copyLink}
+                      onClick={() => setShowEmailInvite((v) => !v)}
                       disabled={!canShareInvite}
-                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/40 text-gold-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {t('userDashboard.club.copyButton')}
+                      <Mail className="w-3.5 h-3.5" />
+                      {t('userDashboard.club.sendEmailButton')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={shareInviteLink}
+                      disabled={!canShareInvite}
+                      className="shrink-0 px-2 py-1 text-xs rounded border border-gold-500/30 text-gold-100/80 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      {t('userDashboard.club.shareButton')}
                     </button>
                   </div>
+                  {showEmailInvite && (
+                    <div className="flex flex-wrap gap-2 items-end pt-1">
+                      <div className="flex-1 min-w-[180px]">
+                        <label className="text-[11px] text-gold-100/60 block mb-1">
+                          {t('userDashboard.club.inviteEmailLabel')}
+                        </label>
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder={t('userDashboard.club.inviteEmailPlaceholder')}
+                          className="w-full px-3 py-1.5 rounded-lg bg-charcoal-800 border border-gold-500/30 text-gold-100 text-xs"
+                          disabled={!canShareInvite || inviteEmailMutation.isPending}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        disabled={
+                          !canShareInvite ||
+                          inviteEmailMutation.isPending ||
+                          !inviteEmail.trim().includes('@')
+                        }
+                        onClick={() => inviteEmailMutation.mutate()}
+                        className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 disabled:opacity-50"
+                      >
+                        {inviteEmailMutation.isPending
+                          ? t('userDashboard.club.sendingEmail')
+                          : t('userDashboard.club.sendInviteEmail')}
+                      </button>
+                    </div>
+                  )}
                   {!canShareInvite && (
                     <p className="text-[11px] text-gold-100/60">{t('userDashboard.club.inviteBlockedHint')}</p>
                   )}

@@ -4,7 +4,7 @@ import { Eye, EyeOff, Mail, Phone, Lock, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
-import { safeAppNextPath } from '../utils/safeNextPath'
+import { resolveAuthReturnPath } from '../utils/safeNextPath'
 import { completeAuthNavigation } from '@/lib/completeAuthNavigation'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
@@ -39,9 +39,11 @@ export default function LoginPage() {
   const { login, user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const nextPath = safeAppNextPath(searchParams.get('next'))
+  const nextPath = resolveAuthReturnPath(searchParams.get('next'), searchParams.get('returnUrl'))
   const registerHref =
-    nextPath != null ? `/register?next=${encodeURIComponent(nextPath)}` : '/register'
+    nextPath != null
+      ? `/register?next=${encodeURIComponent(nextPath)}&returnUrl=${encodeURIComponent(nextPath)}`
+      : '/register'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -10,7 +10,8 @@ export function productAvailableQuantity(product: Product): number {
     return Math.max(0, product.available_quantity)
   }
   if (product.in_stock === false) return 0
-  return product.in_stock === true ? 1 : 1
+  // Missing stock fields → treat as unavailable (never invent sellable qty).
+  return 0
 }
 
 export function productStockStatus(product: Product): ProductStockStatus {

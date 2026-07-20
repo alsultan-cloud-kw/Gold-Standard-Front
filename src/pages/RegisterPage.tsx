@@ -19,7 +19,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { STOREFRONT_USER_ROLES, type StorefrontUserRole } from '../constants/storefrontRoles'
 import { getSafeUserErrorMessage } from '../utils/apiErrors'
-import { safeAppNextPath } from '../utils/safeNextPath'
+import { resolveAuthReturnPath } from '../utils/safeNextPath'
 import { resolvePostAuthPath } from '../utils/authRedirect'
 import { RegionSelectField } from '@/components/auth/RegionSelectField'
 import { getRegionDisplayName } from '@/lib/registrationRegions'
@@ -87,8 +87,11 @@ export default function RegisterPage() {
   const { register, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const nextPath = safeAppNextPath(searchParams.get('next'))
-  const loginHref = nextPath != null ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'
+  const nextPath = resolveAuthReturnPath(searchParams.get('next'), searchParams.get('returnUrl'))
+  const loginHref =
+    nextPath != null
+      ? `/login?next=${encodeURIComponent(nextPath)}&returnUrl=${encodeURIComponent(nextPath)}`
+      : '/login'
 
   const flowSteps = useMemo(
     () => [

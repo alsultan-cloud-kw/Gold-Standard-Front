@@ -53,8 +53,10 @@ export default function AdminClubs() {
   })
   const formationMinOrders = formationConfigData?.min_completed_orders ?? 0
   const formationPerSlot = formationConfigData?.orders_per_additional_member
+  const formationInviteUses = formationConfigData?.default_invite_max_uses ?? 50
   const [minCompletedOrdersInput, setMinCompletedOrdersInput] = useState(String(formationMinOrders))
   const [ordersPerSlotInput, setOrdersPerSlotInput] = useState('')
+  const [inviteMaxUsesInput, setInviteMaxUsesInput] = useState(String(formationInviteUses))
 
   useEffect(() => {
     if (!formationConfigLoading) {
@@ -62,8 +64,9 @@ export default function AdminClubs() {
       setOrdersPerSlotInput(
         formationPerSlot != null && formationPerSlot > 0 ? String(formationPerSlot) : '',
       )
+      setInviteMaxUsesInput(String(formationInviteUses))
     }
-  }, [formationConfigLoading, formationMinOrders, formationPerSlot])
+  }, [formationConfigLoading, formationMinOrders, formationPerSlot, formationInviteUses])
 
   const updateFormationConfigMutation = useMutation({
     mutationFn: () => {
@@ -81,9 +84,15 @@ export default function AdminClubs() {
         }
         orders_per_additional_member = p > 0 ? p : null
       }
+      const usesRaw = inviteMaxUsesInput.trim()
+      const uses = Number(usesRaw)
+      if (usesRaw === '' || Number.isNaN(uses) || !Number.isFinite(uses) || uses < 1 || uses > 500) {
+        throw new Error(t('admin.clubFormationInviteUsesInvalid'))
+      }
       return clubsApi.updateFormationConfig({
         min_completed_orders: i,
         orders_per_additional_member,
+        default_invite_max_uses: Math.floor(uses),
       })
     },
     onSuccess: () => {
@@ -191,43 +200,21 @@ export default function AdminClubs() {
 
       const club = clubs.find((c) => c.id === grantClubId)
       if (!club) throw new Error('Please choose a club')
-      const memberUserIds = Array.from(
-        new Set((club.members ?? []).map((m) => m.user_id).filter((id) => typeof id === 'string' && id.trim().length > 0)),
-      )
-      if (memberUserIds.length === 0) {
-        throw new Error('Selected club has no members to receive this offer')
-      }
 
       const payloadBase = {
+        club_id: grantClubId,
         title: grantTitle.trim(),
         discount_percent: pct != null && !Number.isNaN(pct) ? pct : null,
         discount_amount_kwd: amt,
         valid_until: validUntil,
       }
 
-      const results = await Promise.allSettled(
-        memberUserIds.map((userId) =>
-          clubsApi.grantOffer({
-            user_id: userId,
-            ...payloadBase,
-          }),
-        ),
-      )
-
-      const failed = results.filter((r) => r.status === 'rejected').length
-      return {
-        total: memberUserIds.length,
-        failed,
-        ok: memberUserIds.length - failed,
-      }
+      return clubsApi.createClubOffer(payloadBase)
     },
-    onSuccess: (result) => {
-      if (result.failed > 0) {
-        toast.warning(`Offer granted to ${result.ok}/${result.total} club members`)
-      } else {
-        toast.success(`Offer granted to ${result.total} club members`)
-      }
+    onSuccess: () => {
+      toast.success(t('admin.clubOfferCreated', { defaultValue: 'Club offer created — members inherit until expiry' }))
       queryClient.invalidateQueries({ queryKey: ['adminClubs'] })
+      queryClient.invalidateQueries({ queryKey: ['adminClubOffers'] })
       setGrantPercent('')
       setGrantAmount('')
     },
@@ -287,6 +274,21 @@ export default function AdminClubs() {
               />
               <p className="text-xs text-stone-500 mt-1.5">{t('admin.clubFormationPerMemberHint')}</p>
             </div>
+            <div>
+              <label className="text-xs text-stone-600 block mb-1">
+                {t('admin.clubFormationInviteUsesLabel')}
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-black text-sm"
+                value={inviteMaxUsesInput}
+                onChange={(e) => setInviteMaxUsesInput(e.target.value)}
+                disabled={formationConfigLoading || updateFormationConfigMutation.isPending}
+              />
+              <p className="text-xs text-stone-500 mt-1.5">{t('admin.clubFormationInviteUsesHint')}</p>
+            </div>
           </div>
           <div className="mt-4">
             <button
@@ -305,7 +307,10 @@ export default function AdminClubs() {
         <div className="gold-card mb-8">
           <h2 className="text-lg font-semibold text-black mb-4">{t('admin.grantCustomerOffer')}</h2>
           <p className="text-sm text-stone-700 mb-4">
-            {t('admin.grantOfferHint')}
+            {t('admin.grantOfferHint', {
+              defaultValue:
+                'Pick a club, set a title and either a percent or fixed KWD off. The offer stays on the club — current and future members inherit it until expiry.',
+            })}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
             <div className="md:col-span-2" ref={comboRef}>

@@ -48,7 +48,9 @@ export default function VerifyAccountPage() {
       return
     }
     if (user?.is_verified) {
-      navigate(resolvePostAuthPath(user, searchParams.get('next')), { replace: true })
+      navigate(resolvePostAuthPath(user, searchParams.get('next'), searchParams.get('returnUrl')), {
+        replace: true,
+      })
     }
   }, [isLoading, isAuthenticated, user, navigate, searchParams])
 
@@ -103,7 +105,10 @@ export default function VerifyAccountPage() {
       const refreshed = await refreshUser()
       toast.success(t('auth.verifyAccount.verified'))
       const nextUser = refreshed ?? (user ? { ...user, is_verified: true } : null)
-      navigate(resolvePostAuthPath(nextUser, searchParams.get('next')), { replace: true })
+      navigate(
+        resolvePostAuthPath(nextUser, searchParams.get('next'), searchParams.get('returnUrl')),
+        { replace: true },
+      )
     } catch {
       toast.error(t('auth.verifyAccount.invalidCode'))
     } finally {

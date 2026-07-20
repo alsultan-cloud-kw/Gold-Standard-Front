@@ -723,20 +723,38 @@ export const clubsApi = {
   getMyMembership: () => apiService.get<unknown>('/clubs/my-membership/'),
   getMyOffers: () => apiService.get<unknown[]>('/clubs/my-offers/'),
   join: (token: string) => apiService.post<unknown>('/clubs/join/', { token }),
-  /** Public: validate token and show club name on /join-club (no auth). */
+  /** Public: validate token and show club details on /join-club (no auth). */
   invitePreview: (token: string) =>
     apiService.get<{
       valid: boolean
       detail?: string
+      club_id?: string | null
       club_name?: string | null
       head_name?: string | null
+      invited_by_name?: string | null
       expires_at?: string | null
+      member_count?: number
+      members?: Array<{ full_name: string; role: string }>
+      active_offers?: Array<{
+        id: string
+        title: string
+        discount_percent?: string | null
+        discount_amount_kwd?: string | null
+        valid_until?: string | null
+      }>
+      benefits?: string[]
     }>(`/clubs/invite-preview/?token=${encodeURIComponent(token)}`),
   leave: () => apiService.post<unknown>('/clubs/leave/', {}),
   createInvite: (clubId: string, body?: { max_uses?: number }) =>
     apiService.post<{ token: string; expires_at: string; max_uses: number }>(
       `/clubs/${clubId}/invite/`,
       body ?? {},
+    ),
+  /** Club head: email invite link (uses active token or creates one). */
+  inviteEmail: (clubId: string, data: { email: string; token?: string }) =>
+    apiService.post<{ ok: boolean; email: string; token: string; join_url: string }>(
+      `/clubs/${clubId}/invite-email/`,
+      data,
     ),
   dissolveClub: (clubId: string) => apiService.post<unknown>(`/clubs/${clubId}/dissolve/`, {}),
   /** Admin */
@@ -745,11 +763,13 @@ export const clubsApi = {
     apiService.get<{
       min_completed_orders: number
       orders_per_additional_member: number | null
+      default_invite_max_uses?: number
       updated_at?: string
     }>('/clubs/formation-config/'),
   updateFormationConfig: (data: {
     min_completed_orders: number
     orders_per_additional_member?: number | null
+    default_invite_max_uses?: number
   }) => apiService.put('/clubs/formation-config/', data),
   grantOffer: (data: {
     user_id: string
@@ -761,6 +781,19 @@ export const clubsApi = {
   }) => apiService.post<unknown>('/clubs/admin/offers/grant/', data),
   listOffersForUser: (userId: string) =>
     apiService.get<unknown[]>(`/clubs/admin/offers/list-for-user/`, { params: { user_id: userId } }),
+  /** Club-level offers (new members inherit while active). */
+  listClubOffers: (params?: { club_id?: string; is_active?: boolean | string }) =>
+    apiService.get<unknown[]>('/clubs/admin/club-offers/', { params }),
+  createClubOffer: (data: {
+    club_id: string
+    title: string
+    discount_percent?: string | number | null
+    discount_amount_kwd?: string | number | null
+    valid_until?: string | null
+    max_redemptions?: number | null
+  }) => apiService.post<unknown>('/clubs/admin/club-offers/', data),
+  deactivateClubOffer: (offerId: string) =>
+    apiService.post<unknown>(`/clubs/admin/club-offers/${offerId}/deactivate/`, {}),
 
   /** Logged-in: preview server subtotal + best club/customer offer (matches place_order). */
   checkoutPreview: (items: { product_id: string; quantity: number }[]) =>
