@@ -9,6 +9,8 @@ type CheckoutPaymentSettings = {
   enable_credit_card: boolean
   enable_cash_on_delivery: boolean
   shipping_charge_kwd: number
+  shipping_eta_en?: string
+  shipping_eta_ar?: string
   updated_at?: string
 }
 
@@ -25,12 +27,15 @@ export default function AdminCheckoutPayment() {
       enable_credit_card: boolean
       enable_cash_on_delivery: boolean
       shipping_charge_kwd: number
+      shipping_eta_en: string
+      shipping_eta_ar: string
     }) =>
       ordersApi.updateCheckoutPaymentSettings(body),
     onSuccess: () => {
       toast.success(t('admin.checkoutPayment.saved'))
       void qc.invalidateQueries({ queryKey: ['admin', 'checkout', 'payment-settings'] })
       void qc.invalidateQueries({ queryKey: ['checkoutPaymentMethods'] })
+      void qc.invalidateQueries({ queryKey: ['checkout-payment-methods'] })
     },
     onError: () => toast.error(t('admin.checkoutPayment.saveFailed')),
   })
@@ -54,7 +59,7 @@ export default function AdminCheckoutPayment() {
             <p className="text-stone-600 text-sm">{t('admin.checkoutPayment.loading')}</p>
           ) : (
             <form
-              key={`${data.enable_credit_card}-${data.enable_cash_on_delivery}-${data.shipping_charge_kwd}-${data.updated_at ?? ''}`}
+              key={`${data.enable_credit_card}-${data.enable_cash_on_delivery}-${data.shipping_charge_kwd}-${data.shipping_eta_en ?? ''}-${data.shipping_eta_ar ?? ''}-${data.updated_at ?? ''}`}
               className="space-y-5"
               onSubmit={(e) => {
                 e.preventDefault()
@@ -69,6 +74,8 @@ export default function AdminCheckoutPayment() {
                     Number.isFinite(shippingRaw) && shippingRaw >= 0
                       ? Math.round(shippingRaw * 1000) / 1000
                       : 0,
+                  shipping_eta_en: String(fd.get('shipping_eta_en') ?? '').trim(),
+                  shipping_eta_ar: String(fd.get('shipping_eta_ar') ?? '').trim(),
                 })
               }}
             >
@@ -125,6 +132,30 @@ export default function AdminCheckoutPayment() {
                   />
                   <span className="absolute inset-y-0 right-3 flex items-center text-xs text-stone-500">KWD</span>
                 </div>
+              </div>
+
+              <div>
+                <label className="font-medium text-black block">{t('admin.checkoutPayment.shippingEtaEn')}</label>
+                <p className="text-xs text-stone-600 mb-2">{t('admin.checkoutPayment.shippingEtaHint')}</p>
+                <input
+                  type="text"
+                  name="shipping_eta_en"
+                  maxLength={120}
+                  defaultValue={data.shipping_eta_en ?? 'Ships in 1–2 days'}
+                  className="w-full max-w-lg rounded-lg border border-stone-300 px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                />
+              </div>
+
+              <div>
+                <label className="font-medium text-black block">{t('admin.checkoutPayment.shippingEtaAr')}</label>
+                <input
+                  type="text"
+                  name="shipping_eta_ar"
+                  maxLength={120}
+                  dir="rtl"
+                  defaultValue={data.shipping_eta_ar ?? 'الشحن خلال يومين'}
+                  className="w-full max-w-lg rounded-lg border border-stone-300 px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                />
               </div>
 
               {data.updated_at && (

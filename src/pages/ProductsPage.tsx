@@ -27,6 +27,7 @@ import {
   useProductPriceTrendSincePreviousFetch,
   type ProductFetchTrendMap,
 } from '../hooks/useProductPriceTrendSincePreviousFetch'
+import { useShippingEtaLabel } from '@/hooks/useShippingEtaLabel'
 import {
   Sheet,
   SheetContent,
@@ -895,6 +896,7 @@ function ProductCard({
 }) {
   const { t } = useTranslation()
   const { addToCart } = useCart()
+  const shipsInLabel = useShippingEtaLabel()
   const imageSrc = productImageSrc(product)
   const unitPrice = productUnitPrice(product)
   const productName = isAr && product.name_ar ? product.name_ar : product.name_en
@@ -1153,7 +1155,7 @@ function ProductCard({
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 border-t border-black/5 pt-1 sm:pt-1.5">
-            <span className="text-[9px] leading-tight text-[#64748B] sm:text-[11px]">{t('home.shipsIn')}</span>
+            <span className="text-[9px] leading-tight text-[#64748B] sm:text-[11px]">{shipsInLabel}</span>
             <ProductStockStatusLabel product={product} className="shrink-0 text-[9px] sm:text-[11px]" />
           </div>
         </div>

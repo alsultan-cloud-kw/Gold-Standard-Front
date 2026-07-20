@@ -12,6 +12,7 @@ import type { ProductFetchTrendMap } from '@/hooks/useProductPriceTrendSincePrev
 import { ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
 import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
 import { isProductOutOfStock, productFineness } from '@/utils/productStock'
+import { useShippingEtaLabel } from '@/hooks/useShippingEtaLabel'
 
 type Props = {
   product: Product
@@ -28,6 +29,7 @@ function HomeProductCardInner({
 }: Props) {
   const { t, i18n } = useTranslation()
   const { addToCart } = useCart()
+  const shipsInLabel = useShippingEtaLabel()
   const imageSrc = productImageSrc(product)
   const lang = i18n.language
   const productName = lang === 'ar' && product.name_ar ? product.name_ar : product.name_en
@@ -129,7 +131,7 @@ function HomeProductCardInner({
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 border-t border-black/5 pt-1 sm:pt-1.5">
-            <span className="text-[9px] leading-tight text-[#64748B] sm:text-[10px]">{t('home.shipsIn')}</span>
+            <span className="text-[9px] leading-tight text-[#64748B] sm:text-[10px]">{shipsInLabel}</span>
             <ProductStockStatusLabel product={product} className="shrink-0 text-[9px] sm:text-[10px]" />
           </div>
         </div>

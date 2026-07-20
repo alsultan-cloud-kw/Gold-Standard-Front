@@ -575,6 +575,8 @@ export const ordersApi = {
       credit_card: boolean
       cash: boolean
       shipping_charge_kwd: number
+      shipping_eta_en?: string
+      shipping_eta_ar?: string
     }>('/accounting/sales/checkout-payment-methods/'),
 
   /** Staff: read optional checkout toggles. */
@@ -583,6 +585,8 @@ export const ordersApi = {
       enable_credit_card: boolean
       enable_cash_on_delivery: boolean
       shipping_charge_kwd: number
+      shipping_eta_en?: string
+      shipping_eta_ar?: string
       updated_at: string
     }>('/accounting/sales/checkout-payment-settings/'),
 
@@ -591,6 +595,8 @@ export const ordersApi = {
     enable_credit_card?: boolean
     enable_cash_on_delivery?: boolean
     shipping_charge_kwd?: number
+    shipping_eta_en?: string
+    shipping_eta_ar?: string
   }) =>
     apiService.patch<unknown>('/accounting/sales/checkout-payment-settings/', data),
 
