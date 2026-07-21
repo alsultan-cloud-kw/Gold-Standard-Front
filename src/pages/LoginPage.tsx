@@ -15,6 +15,8 @@ import { getLastAuthMethod, setLastAuthMethod } from '@/lib/lastAuthMethod'
 import { GS_CONTACT } from '@/constants/contact'
 import { getSafeUserErrorMessage } from '../utils/apiErrors'
 import { cn } from '@/lib/utils'
+import { KuwaitPhoneField } from '@/components/auth/KuwaitPhoneField'
+import { normalizeKuwaitPhone } from '@/lib/kuwaitPhone'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -36,7 +38,7 @@ export default function LoginPage() {
     turnstileRef.current?.reset()
   }, [])
 
-  const { login, user, isAuthenticated } = useAuth()
+  const { login, user, isAuthenticated, setAuthBusy } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const nextPath = resolveAuthReturnPath(searchParams.get('next'), searchParams.get('returnUrl'))
@@ -54,18 +56,27 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
+    setAuthBusy(true)
 
     if (isAuthenticated) {
       completeAuthNavigation(navigate, user, nextPath)
       setIsLoading(false)
+      setAuthBusy(false)
       return
     }
 
     try {
+      const phoneE164 =
+        loginMethod === 'phone' ? normalizeKuwaitPhone(formData.phone_number) : null
+      if (loginMethod === 'phone' && !phoneE164) {
+        toast.error(t('auth.flow.invalidKuwaitPhone'))
+        return
+      }
+
       const credentials =
         loginMethod === 'email'
           ? { email: formData.email, password: formData.password }
-          : { phone_number: formData.phone_number, password: formData.password }
+          : { phone_number: phoneE164!, password: formData.password }
 
       const loggedInUser = await login({
         ...credentials,
@@ -91,6 +102,7 @@ export default function LoginPage() {
       }
     } finally {
       setIsLoading(false)
+      setAuthBusy(false)
     }
   }
 
@@ -175,21 +187,11 @@ export default function LoginPage() {
             </div>
           </div>
         ) : (
-          <div>
-            <label className={labelClass}>{t('auth.phoneNumber')}</label>
-            <div className="relative">
-              <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-              <input
-                type="tel"
-                autoComplete="tel"
-                value={formData.phone_number}
-                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                placeholder={t('auth.placeholderPhone')}
-                className={cn(fieldClass, 'ps-10')}
-                required
-              />
-            </div>
-          </div>
+          <KuwaitPhoneField
+            value={formData.phone_number}
+            onChange={(local) => setFormData({ ...formData, phone_number: local })}
+            disabled={isLoading}
+          />
         )}
 
         <div>

@@ -106,11 +106,17 @@ export default function Navbar() {
   }, [showHoldingsNav])
 
   const handleLogout = () => {
-    logout()
-    if (clerkSignedIn) {
-      void clerkSignOut()
-    }
-    navigate('/')
+    void (async () => {
+      if (clerkSignedIn) {
+        try {
+          await clerkSignOut()
+        } catch (e) {
+          console.error('Clerk signOut failed:', e)
+        }
+      }
+      await logout()
+      navigate('/', { replace: true })
+    })()
   }
 
   const moreSheetLinks = useMemo(

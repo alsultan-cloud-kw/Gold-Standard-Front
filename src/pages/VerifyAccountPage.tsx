@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { authApi } from '@/services/api'
 import { resolvePostAuthPath } from '@/utils/authRedirect'
+import { getSafeUserErrorMessage } from '@/utils/apiErrors'
 import { AuthFlowShell } from '@/components/auth/AuthFlowShell'
 import { AuthSupportFooter } from '@/components/auth/AuthSupportFooter'
 import { cn } from '@/lib/utils'
@@ -21,19 +22,11 @@ export default function VerifyAccountPage() {
   const [otp, setOtp] = useState('')
   const [busy, setBusy] = useState(false)
   const [sentHint, setSentHint] = useState('')
+  const [sendError, setSendError] = useState<string | null>(null)
   const [autoSent, setAutoSent] = useState(false)
 
   const hasEmail = Boolean(user?.email)
   const hasPhone = Boolean(user?.phone_number)
-
-  const flowSteps = useMemo(
-    () => [
-      { id: 'identity', label: t('auth.flow.stepIdentity') },
-      { id: 'details', label: t('auth.flow.stepDetails') },
-      { id: 'verify', label: t('auth.flow.stepVerify') },
-    ],
-    [t],
-  )
 
   useEffect(() => {
     if (!user) return
@@ -54,39 +47,56 @@ export default function VerifyAccountPage() {
     }
   }, [isLoading, isAuthenticated, user, navigate, searchParams])
 
+  const sendCode = async (targetChannel: Channel, quiet = false) => {
+    setBusy(true)
+    setSendError(null)
+    try {
+      const res = await authApi.sendVerificationOTP({ channel: targetChannel })
+      if (res.verification?.channel === 'whatsapp') {
+        setChannel('whatsapp')
+      } else if (res.verification?.channel === 'email') {
+        setChannel('email')
+      }
+      setSentHint(res.verification?.destination || '')
+      if (!quiet) toast.success(t('auth.verifyAccount.codeSent'))
+      return true
+    } catch (err) {
+      const message = getSafeUserErrorMessage(err, t, t('auth.verifyAccount.sendFailed'))
+      setSendError(message)
+      if (!quiet) toast.error(message)
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
   useEffect(() => {
     if (!isAuthenticated || !user || user.is_verified || autoSent) return
     setAutoSent(true)
-    void (async () => {
-      try {
-        const preferred: Channel = hasEmail ? 'email' : 'whatsapp'
-        setChannel(preferred)
-        const res = await authApi.sendVerificationOTP({ channel: preferred })
-        const dest = res.verification?.destination
-        setSentHint(dest || '')
-        toast.success(t('auth.verifyAccount.codeSent'))
-      } catch {
-        /* user can tap resend */
+    const preferred: Channel = hasEmail ? 'email' : 'whatsapp'
+    setChannel(preferred)
+    void sendCode(preferred, true).then((ok) => {
+      if (!ok && hasPhone && preferred === 'email') {
+        void sendCode('whatsapp', false)
       }
-    })()
-  }, [isAuthenticated, user, autoSent, hasEmail, t])
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once after auth ready
+  }, [isAuthenticated, user, autoSent, hasEmail, hasPhone])
 
   const channelLabel = useMemo(() => {
     if (channel === 'email') return user?.email || t('auth.verifyAccount.email')
     return user?.phone_number || t('auth.verifyAccount.whatsapp')
   }, [channel, user, t])
 
-  const handleResend = async () => {
-    setBusy(true)
-    try {
-      const res = await authApi.sendVerificationOTP({ channel })
-      setSentHint(res.verification?.destination || '')
-      toast.success(t('auth.verifyAccount.codeSent'))
-    } catch {
-      toast.error(t('auth.verifyAccount.sendFailed'))
-    } finally {
-      setBusy(false)
-    }
+  const switchChannel = (next: Channel) => {
+    if (next === channel || busy) return
+    setChannel(next)
+    setOtp('')
+    void sendCode(next)
+  }
+
+  const handleResend = () => {
+    void sendCode(channel)
   }
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -128,8 +138,6 @@ export default function VerifyAccountPage() {
     <AuthFlowShell
       title={t('auth.verifyAccount.title')}
       subtitle={t('auth.verifyAccount.subtitle')}
-      steps={flowSteps}
-      currentStepId="verify"
       footer={
         <div className="space-y-3">
           <Link to="/contact" className="text-sm font-medium text-[#64748B] hover:text-[#0B0F19]">
@@ -139,11 +147,13 @@ export default function VerifyAccountPage() {
         </div>
       }
     >
+      <p className="mb-4 text-center text-xs text-[#64748B]">{t('auth.flow.verifyChannelHint')}</p>
+
       <div className="mb-5 grid grid-cols-2 gap-2">
         <button
           type="button"
           disabled={!hasEmail || busy}
-          onClick={() => setChannel('email')}
+          onClick={() => switchChannel('email')}
           className={cn(
             'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
             channel === 'email'
@@ -158,7 +168,7 @@ export default function VerifyAccountPage() {
         <button
           type="button"
           disabled={!hasPhone || busy}
-          onClick={() => setChannel('whatsapp')}
+          onClick={() => switchChannel('whatsapp')}
           className={cn(
             'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
             channel === 'whatsapp'
@@ -172,9 +182,31 @@ export default function VerifyAccountPage() {
         </button>
       </div>
 
-      <p className="mb-4 text-center text-xs text-[#64748B]">
-        {t('auth.verifyAccount.sentTo', { destination: sentHint || channelLabel })}
-      </p>
+      {sendError ? (
+        <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-xs text-red-700">
+          {sendError}
+          {hasPhone && channel === 'email' ? (
+            <>
+              {' '}
+              <button
+                type="button"
+                className="font-semibold underline"
+                onClick={() => switchChannel('whatsapp')}
+              >
+                {t('auth.verifyAccount.tryWhatsapp')}
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+
+      {sentHint ? (
+        <p className="mb-4 text-center text-xs text-[#64748B]">
+          {t('auth.verifyAccount.sentTo', { destination: sentHint })}
+        </p>
+      ) : (
+        <p className="mb-4 text-center text-xs text-[#64748B]">{channelLabel}</p>
+      )}
 
       <form onSubmit={(e) => void handleVerify(e)} className="space-y-4">
         <div>
@@ -205,7 +237,7 @@ export default function VerifyAccountPage() {
       <button
         type="button"
         disabled={busy}
-        onClick={() => void handleResend()}
+        onClick={handleResend}
         className="mt-4 w-full text-center text-sm font-semibold text-[#3F6F00] hover:underline disabled:opacity-50"
       >
         {t('auth.verifyAccount.resend')}

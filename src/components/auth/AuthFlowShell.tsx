@@ -13,8 +13,6 @@ type Props = {
   currentStepId?: string
   children: ReactNode
   footer?: ReactNode
-  /** Extra block under subtitle (e.g. AML notice) */
-  banner?: ReactNode
   className?: string
 }
 
@@ -29,7 +27,6 @@ export function AuthFlowShell({
   currentStepId,
   children,
   footer,
-  banner,
   className,
 }: Props) {
   const currentIndex = steps?.findIndex((s) => s.id === currentStepId) ?? -1
@@ -46,7 +43,6 @@ export function AuthFlowShell({
           {subtitle ? (
             <p className="mt-2 text-sm leading-relaxed text-[#64748B] sm:text-base">{subtitle}</p>
           ) : null}
-          {banner ? <div className="mt-4 flex justify-center">{banner}</div> : null}
         </div>
 
         <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
@@ -67,18 +63,6 @@ export function AuthFlowShell({
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <ol className="mt-3 flex gap-1">
-                {steps.map((step, i) => (
-                  <li
-                    key={step.id}
-                    className={cn(
-                      'h-1 flex-1 rounded-full transition-colors',
-                      i <= currentIndex ? 'bg-[#85E307]' : 'bg-[#E8EBE3]',
-                    )}
-                    aria-current={i === currentIndex ? 'step' : undefined}
-                  />
-                ))}
-              </ol>
             </div>
           ) : null}
 

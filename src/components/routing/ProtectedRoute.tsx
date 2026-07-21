@@ -7,7 +7,7 @@ import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { RouteErrorBoundary } from '@/components/routing/RouteErrorBoundary'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
-import { isStaffRole, resolvePostAuthPath } from '../../utils/authRedirect'
+import { isStaffRole, isOAuthVerifiedSession, resolvePostAuthPath } from '../../utils/authRedirect'
 
 export { isStaffRole }
 
@@ -54,6 +54,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     user &&
     user.is_verified === false &&
     !isStaffRole(user.role) &&
+    !isOAuthVerifiedSession() &&
     location.pathname !== '/verify-account'
   ) {
     return <Navigate to="/verify-account" replace />

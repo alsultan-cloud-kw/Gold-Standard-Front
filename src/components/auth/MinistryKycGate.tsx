@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
@@ -22,12 +23,19 @@ import {
  */
 export default function MinistryKycGate() {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
   const { user, isAuthenticated, isLoading, isClerkSyncing } = useAuth()
   const queryClient = useQueryClient()
   const [dismissed, setDismissed] = useState(() => readMociKycSkip(user?.id))
   const [saving, setSaving] = useState(false)
 
-  const enabled = isAuthenticated && !!user && !isLoading && !isClerkSyncing
+  const enabled =
+    isAuthenticated &&
+    !!user &&
+    !isLoading &&
+    !isClerkSyncing &&
+    user.is_verified !== false &&
+    pathname !== '/verify-account'
 
   const { data: profileData, isFetched: profileFetched } = useQuery({
     queryKey: ['myCustomerProfile'],

@@ -393,9 +393,6 @@ export const productsApi = {
     brand?: string
     status?: string
     is_featured?: boolean
-    /** Starting on-hand units at `initial_stock_branch_id` (or default branch). Create only. */
-    initial_stock_quantity?: number
-    initial_stock_branch_id?: string | null
   }) => {
     const token = localStorage.getItem('access_token')
     return apiService.post<unknown>('/products/products/', data, {

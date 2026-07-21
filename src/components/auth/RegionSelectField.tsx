@@ -65,9 +65,6 @@ export function RegionSelectField({
         {label}
       </label>
       <div ref={rowRef} className="relative w-full">
-        {!value && (
-          <Globe className="pointer-events-none absolute start-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-        )}
         <Popover open={open} onOpenChange={onOpenChange}>
           <PopoverTrigger asChild>
             <Button
@@ -77,26 +74,27 @@ export function RegionSelectField({
               aria-expanded={open}
               aria-labelledby={id}
               className={cn(
-                'h-auto min-h-[48px] w-full justify-between rounded-xl border-black/10 bg-white py-3 font-normal text-[#0B0F19] shadow-none hover:bg-[#F9F9FA]',
-                value ? 'ps-4' : 'ps-10',
-                'pe-10',
+                'h-auto min-h-[48px] w-full justify-between rounded-xl border-black/10 bg-white py-3 pe-10 ps-4 font-normal text-[#0B0F19] shadow-none hover:bg-[#F9F9FA]',
               )}
             >
-              <span className="flex min-w-0 items-center gap-3 text-start">
+              <span className="flex min-w-0 flex-1 items-center gap-2.5 text-start">
                 {value ? (
                   <>
-                    <RegionFlagImg code={value} size="sm" />
+                    <RegionFlagImg code={value} size="sm" className="shrink-0" />
                     <span className="truncate font-medium">
                       {getRegionDisplayName(value, regionLocale)}
                     </span>
                   </>
                 ) : (
-                  <span className="truncate text-[#94A3B8]">
-                    {placeholder ?? t('auth.selectNationality')}
-                  </span>
+                  <>
+                    <Globe className="h-4 w-4 shrink-0 text-[#94A3B8]" aria-hidden />
+                    <span className="truncate text-[#94A3B8]">
+                      {placeholder ?? t('auth.selectNationality')}
+                    </span>
+                  </>
                 )}
               </span>
-              <ChevronDown className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <ChevronDown className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 shrink-0 text-[#94A3B8]" />
             </Button>
           </PopoverTrigger>
           <PopoverContent

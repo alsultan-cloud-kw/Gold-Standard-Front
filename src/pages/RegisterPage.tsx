@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Eye,
@@ -26,12 +26,19 @@ import { getRegionDisplayName } from '@/lib/registrationRegions'
 import { cn } from '@/lib/utils'
 import SocialSignInButtons from '../components/auth/SocialSignInButtons'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '../components/auth/TurnstileWidget'
-import AmlOpenSanctionsNotice from '../components/auth/AmlOpenSanctionsNotice'
+import { KuwaitPhoneField } from '@/components/auth/KuwaitPhoneField'
+import { LegalTermsModal } from '@/components/auth/LegalTermsModal'
 import { AuthFlowShell } from '../components/auth/AuthFlowShell'
 import { AuthSupportFooter } from '../components/auth/AuthSupportFooter'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { setLastAuthMethod } from '@/lib/lastAuthMethod'
 import { authApi } from '@/services/api'
+import { normalizeKuwaitPhone } from '@/lib/kuwaitPhone'
+import {
+  clearRegisterDraft,
+  loadRegisterDraft,
+  saveRegisterDraft,
+} from '@/lib/registerFormDraft'
 
 const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
   customer: 'auth.roleCustomer',
@@ -40,7 +47,7 @@ const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
 }
 
 type StepId = 'identity' | 'details' | 'verify'
-type SignInPreference = 'email' | 'phone'
+type RegistrationPath = 'email' | 'phone'
 
 function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
   if (!pw) return 0
@@ -56,7 +63,8 @@ export default function RegisterPage() {
   const regionLocale = i18n.language?.startsWith('ar') ? 'ar' : 'en'
 
   const [step, setStep] = useState<StepId>('identity')
-  const [signInPreference, setSignInPreference] = useState<SignInPreference>('email')
+  const [registrationPath, setRegistrationPath] = useState<RegistrationPath>('email')
+  const [legalOpen, setLegalOpen] = useState(false)
 
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -104,14 +112,44 @@ export default function RegisterPage() {
 
   const strength = passwordStrength(formData.password)
 
+  useEffect(() => {
+    const draft = loadRegisterDraft()
+    if (!draft) return
+    setStep(draft.step === 'verify' ? 'details' : draft.step)
+    setRegistrationPath(draft.registrationPath)
+    setFormData((prev) => ({ ...prev, ...draft.formData, role: draft.formData.role as StorefrontUserRole }))
+    setAcceptedLegal(draft.acceptedLegal)
+  }, [])
+
+  useEffect(() => {
+    if (step === 'verify') return
+    saveRegisterDraft({
+      step,
+      registrationPath,
+      formData: {
+        full_name: formData.full_name,
+        country: formData.country,
+        nationality: formData.nationality,
+        civil_id: formData.civil_id,
+        email: formData.email,
+        phone_number: formData.phone_number,
+        role: formData.role,
+      },
+      acceptedLegal,
+    })
+  }, [step, registrationPath, formData, acceptedLegal])
+
   const goDetails = () => {
-    if (!formData.email.trim()) {
-      toast.error(t('auth.emailRequired'))
-      return
-    }
-    if (!formData.phone_number.trim()) {
-      toast.error(t('auth.phoneRequired'))
-      return
+    if (registrationPath === 'email') {
+      if (!formData.email.trim()) {
+        toast.error(t('auth.emailRequired'))
+        return
+      }
+    } else {
+      if (!normalizeKuwaitPhone(formData.phone_number)) {
+        toast.error(t('auth.flow.invalidKuwaitPhone'))
+        return
+      }
     }
     setStep('details')
   }
@@ -149,14 +187,15 @@ export default function RegisterPage() {
 
     setIsLoading(true)
     try {
-      const channel = signInPreference === 'email' ? 'email' : 'whatsapp'
+      const channel = registrationPath === 'email' ? 'email' : 'whatsapp'
+      const phoneE164 = normalizeKuwaitPhone(formData.phone_number)
       await register({
         full_name: formData.full_name,
         nationality: formData.nationality.toUpperCase(),
         country: getRegionDisplayName(formData.country, regionLocale),
         civil_id: civilDigits,
-        email: formData.email.trim(),
-        phone_number: formData.phone_number.trim(),
+        email: formData.email.trim() || undefined,
+        phone_number: phoneE164 || undefined,
         password: formData.password,
         confirm_password: formData.confirm_password,
         role: formData.role,
@@ -164,12 +203,18 @@ export default function RegisterPage() {
         privacy_policy_accepted: acceptedLegal,
         kyc_answers: {},
         registration_source: 'website',
+        registration_path: registrationPath,
         verification_channel: channel,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
-      setLastAuthMethod(signInPreference)
-      setVerifyChannel(signInPreference === 'email' ? 'email' : 'whatsapp')
-      setSentHint(signInPreference === 'email' ? formData.email : formData.phone_number)
+      setLastAuthMethod(registrationPath === 'email' ? 'email' : 'phone')
+      setVerifyChannel(registrationPath === 'email' ? 'email' : 'whatsapp')
+      setSentHint(
+        registrationPath === 'email'
+          ? formData.email
+          : phoneE164 || formData.phone_number,
+      )
+      clearRegisterDraft()
       toast.success(t('auth.verifyAccount.codeSent'))
       setStep('verify')
     } catch (error) {
@@ -242,7 +287,6 @@ export default function RegisterPage() {
       }
       steps={flowSteps}
       currentStepId={step}
-      banner={step === 'identity' ? <AmlOpenSanctionsNotice /> : null}
       footer={
         step !== 'verify' ? (
           <p>
@@ -273,70 +317,95 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <p className="text-xs text-[#64748B]">{t('auth.flow.bothContactsHint')}</p>
-
           <div>
-            <label className={labelClass}>{t('auth.email')}</label>
-            <div className="relative">
-              <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-              <input
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder={t('auth.placeholderEmail')}
-                className={cn(fieldClass, 'ps-10')}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass}>{t('auth.phoneNumber')}</label>
-            <div className="relative">
-              <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-              <input
-                type="tel"
-                autoComplete="tel"
-                value={formData.phone_number}
-                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                placeholder={t('auth.placeholderPhone')}
-                className={cn(fieldClass, 'ps-10')}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass}>{t('auth.flow.signInPreference')}</label>
+            <label className={labelClass}>{t('auth.flow.registrationPath')}</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setSignInPreference('email')}
+                onClick={() => setRegistrationPath('email')}
                 className={cn(
                   'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
-                  signInPreference === 'email'
+                  registrationPath === 'email'
                     ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
                     : 'border-black/10 text-[#64748B] hover:border-black/20',
                 )}
               >
                 <Mail className="h-4 w-4" />
-                {t('auth.email')}
+                {t('auth.flow.registerWithEmail')}
               </button>
               <button
                 type="button"
-                onClick={() => setSignInPreference('phone')}
+                onClick={() => setRegistrationPath('phone')}
                 className={cn(
                   'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
-                  signInPreference === 'phone'
+                  registrationPath === 'phone'
                     ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19]'
                     : 'border-black/10 text-[#64748B] hover:border-black/20',
                 )}
               >
                 <Phone className="h-4 w-4" />
-                {t('auth.phone')}
+                {t('auth.flow.registerWithPhone')}
               </button>
             </div>
-            <p className="mt-1.5 text-xs text-[#64748B]">{t('auth.flow.signInPreferenceHint')}</p>
+            <p className="mt-1.5 text-xs text-[#64748B]">
+              {registrationPath === 'email'
+                ? t('auth.flow.emailPathHint')
+                : t('auth.flow.phonePathHint')}
+            </p>
           </div>
+
+          {registrationPath === 'email' ? (
+            <>
+              <div>
+                <label className={labelClass}>{t('auth.email')}</label>
+                <div className="relative">
+                  <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder={t('auth.placeholderEmail')}
+                    className={cn(fieldClass, 'ps-10')}
+                    required
+                  />
+                </div>
+              </div>
+              <KuwaitPhoneField
+                value={formData.phone_number}
+                onChange={(local) => setFormData({ ...formData, phone_number: local })}
+                optional
+                disabled={isLoading}
+              />
+              <p className="-mt-2 text-xs text-[#64748B]">{t('auth.flow.phoneOptionalHint')}</p>
+            </>
+          ) : (
+            <>
+              <KuwaitPhoneField
+                value={formData.phone_number}
+                onChange={(local) => setFormData({ ...formData, phone_number: local })}
+                disabled={isLoading}
+              />
+              <div>
+                <label className={labelClass}>
+                  {t('auth.email')}{' '}
+                  <span className="font-normal text-[#94A3B8]">({t('auth.optional')})</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder={t('auth.placeholderEmail')}
+                    className={cn(fieldClass, 'ps-10')}
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-[#64748B]">{t('auth.flow.emailOptionalHint')}</p>
+              </div>
+            </>
+          )}
 
           <button
             type="button"
@@ -501,7 +570,14 @@ export default function RegisterPage() {
                 i18nKey="auth.termsAgreement"
                 components={{
                   legalLink: (
-                    <Link to="/terms-and-privacy" className="font-semibold text-[#3F6F00] hover:underline" />
+                    <button
+                      type="button"
+                      className="font-semibold text-[#3F6F00] hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setLegalOpen(true)
+                      }}
+                    />
                   ),
                 }}
               />
@@ -599,6 +675,8 @@ export default function RegisterPage() {
           </button>
         </form>
       ) : null}
+
+      <LegalTermsModal open={legalOpen} onOpenChange={setLegalOpen} />
     </AuthFlowShell>
   )
 }

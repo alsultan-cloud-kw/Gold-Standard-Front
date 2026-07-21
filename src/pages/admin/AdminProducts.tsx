@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { productsApi, inventoryApi } from '../../services/api'
+import { productsApi } from '../../services/api'
 import type { Product } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getApiBaseUrl } from '@/lib/apiBase'
@@ -15,7 +15,6 @@ type SubCat = { id: string; name_en: string; slug?: string }
 type CategoryRoot = { id: string; name_en: string; subcategories?: SubCat[] }
 type MetalTypeOpt = { id: string; display_name_en: string; name?: string }
 type CaratOpt = { id: string; display_name_en: string; carat_value?: number }
-type BranchOpt = { id: string; code: string; name_en: string }
 
 function asResults<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[]
@@ -80,8 +79,6 @@ export default function AdminProducts() {
     brand: 'Gold Standard',
     status: 'active',
     is_featured: false,
-    initial_stock_quantity: '0',
-    initial_stock_branch_id: '',
   })
 
   const { data: productsData, isLoading } = useQuery({
@@ -109,11 +106,6 @@ export default function AdminProducts() {
     queryFn: () => productsApi.getCarats(),
   })
 
-  const { data: branchesData } = useQuery({
-    queryKey: ['inventoryBranches', 'admin-products'],
-    queryFn: () => inventoryApi.getBranches(),
-  })
-
   const productList = useMemo(() => {
     const list = asResults<Product>(productsData)
     if (!searchQuery.trim()) return list
@@ -137,7 +129,6 @@ export default function AdminProducts() {
   const roots = useMemo(() => (Array.isArray(categoryTree) ? (categoryTree as CategoryRoot[]) : []), [categoryTree])
   const metalTypes = useMemo(() => asResults<MetalTypeOpt>(metalTypesData), [metalTypesData])
   const carats = useMemo(() => asResults<CaratOpt>(caratsData), [caratsData])
-  const branchOptions = useMemo(() => asResults<BranchOpt>(branchesData), [branchesData])
 
   const activeCategoryId = form.subcategory_id || form.parent_category_id
 
@@ -180,8 +171,6 @@ export default function AdminProducts() {
       status: 'active',
       is_featured: false,
       brand: 'Gold Standard',
-      initial_stock_quantity: '0',
-      initial_stock_branch_id: '',
     })
     setEditingSlug(null)
     setEditingId(null)
@@ -233,8 +222,6 @@ export default function AdminProducts() {
         brand: String(detail.brand ?? 'Gold Standard'),
         status: String(detail.status ?? 'active'),
         is_featured: Boolean(detail.is_featured),
-        initial_stock_quantity: String(detail.initial_stock_quantity ?? '0'),
-        initial_stock_branch_id: String(detail.initial_stock_branch_id ?? ''),
       })
       setEditingBarcodeValue(String(detail.barcode_value ?? ''))
       setEditingBarcodeImageUrl(String(detail.barcode_image_url ?? ''))
@@ -270,7 +257,6 @@ export default function AdminProducts() {
       const making = parseFloat(form.making_charge_amount)
       if (Number.isNaN(making)) throw new Error('Invalid making charge')
 
-      const initialQty = Math.max(0, Math.floor(Number(form.initial_stock_quantity) || 0))
       const payload: Parameters<typeof productsApi.createProduct>[0] = {
         sku: form.sku.trim() || undefined,
         name_ar: form.name_ar.trim(),
@@ -287,12 +273,6 @@ export default function AdminProducts() {
         brand: form.brand.trim() || 'Gold Standard',
         status: form.status,
         is_featured: form.is_featured,
-      }
-      if (!editingSlug) {
-        payload.initial_stock_quantity = initialQty
-        if (form.initial_stock_branch_id.trim()) {
-          payload.initial_stock_branch_id = form.initial_stock_branch_id.trim()
-        }
       }
 
       if (!payload.category_id || !payload.metal_type_id || !payload.carat_id)
@@ -473,39 +453,6 @@ export default function AdminProducts() {
                   />
                 </div>
               </div>
-              {!editingSlug && (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-semibold text-black/80">{t('admin.initialStockQty')}</label>
-                      <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        className={inputClass}
-                        value={form.initial_stock_quantity}
-                        onChange={(e) => setForm({ ...form, initial_stock_quantity: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-black/80">{t('admin.initialStockBranch')}</label>
-                      <select
-                        className={inputClass}
-                        value={form.initial_stock_branch_id}
-                        onChange={(e) => setForm({ ...form, initial_stock_branch_id: e.target.value })}
-                      >
-                        <option value="">{t('admin.initialStockBranchHint')}</option>
-                        {branchOptions.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.code} — {b.name_en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <p className="text-xs text-stone-600">{t('admin.initialStockQtyHint')}</p>
-                </>
-              )}
               <div>
                 <label className="text-xs font-semibold text-black/80">Name (EN) *</label>
                 <input className={inputClass} value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />

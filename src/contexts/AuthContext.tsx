@@ -14,6 +14,11 @@ interface AuthContextType {
   isLoading: boolean
   /** Clerk OAuth → Django JWT exchange in progress */
   isClerkSyncing: boolean
+  /** Prevents Clerk re-sync during sign-out */
+  isLoggingOut: boolean
+  /** Manual login/register submit in progress */
+  authBusy: boolean
+  setAuthBusy: (value: boolean) => void
   setClerkSyncing: (value: boolean) => void
   login: (credentials: {
     email?: string
@@ -23,7 +28,7 @@ interface AuthContextType {
   }) => Promise<User>
   loginWithClerk: (clerkSessionToken: string) => Promise<User>
   register: (data: unknown) => Promise<User>
-  logout: () => void
+  logout: () => Promise<void>
   updateUser: (data: unknown) => Promise<void>
   /** Re-fetch /users/me/ into context (e.g. after OTP verify). */
   refreshUser: () => Promise<User | null>
@@ -36,6 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<CustomerProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isClerkSyncing, setClerkSyncingState] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [authBusy, setAuthBusy] = useState(false)
 
   const setClerkSyncing = useCallback((value: boolean) => {
     setClerkSyncingState(value)
@@ -141,17 +148,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return nextUser
   }
 
-  const logout = () => {
+  const logout = async () => {
+    setIsLoggingOut(true)
+    setClerkSyncingState(false)
     const refreshToken = localStorage.getItem('refresh_token')
-    if (refreshToken) {
-      authApi.logout(refreshToken).catch(console.error)
-    }
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     setUser(null)
     setProfile(null)
-    setClerkSyncingState(false)
     clearSignInNudgeSuppress()
+    if (refreshToken) {
+      try {
+        await authApi.logout(refreshToken)
+      } catch (error) {
+        console.error('Logout API failed:', error)
+      }
+    }
+    // Brief delay so ClerkAuthBridge does not re-exchange before Clerk session ends.
+    await new Promise((r) => window.setTimeout(r, 50))
+    setIsLoggingOut(false)
   }
 
   const updateUser = async (data: unknown) => {
@@ -172,6 +187,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         isClerkSyncing,
+        isLoggingOut,
+        authBusy,
+        setAuthBusy,
         setClerkSyncing,
         login,
         loginWithClerk,

@@ -9,11 +9,11 @@ import { suppressSignInNudge } from '@/lib/signInNudgeGate'
 export default function ClerkAuthBridge() {
   const { t } = useTranslation()
   const { isSignedIn, isLoaded, getToken, signOut } = useClerkAuth()
-  const { isAuthenticated, isLoading, loginWithClerk, setClerkSyncing } = useAuth()
+  const { isAuthenticated, isLoading, loginWithClerk, setClerkSyncing, isLoggingOut } = useAuth()
   const syncingRef = useRef(false)
 
   useEffect(() => {
-    if (!isLoaded || isLoading || !isSignedIn || isAuthenticated || syncingRef.current) return
+    if (!isLoaded || isLoading || !isSignedIn || isAuthenticated || syncingRef.current || isLoggingOut) return
 
     syncingRef.current = true
     setClerkSyncing(true)
@@ -64,7 +64,7 @@ export default function ClerkAuthBridge() {
         setClerkSyncing(false)
       }
     })()
-  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, getToken, loginWithClerk, signOut, setClerkSyncing, t])
+  }, [isLoaded, isLoading, isSignedIn, isAuthenticated, isLoggingOut, getToken, loginWithClerk, signOut, setClerkSyncing, t])
 
   return null
 }
