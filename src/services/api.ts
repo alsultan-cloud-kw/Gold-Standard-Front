@@ -208,6 +208,78 @@ export type ProductAuthenticityResponse = {
   message_ar: string
   message_en: string
   product: ProductAuthenticityProduct | null
+  unit?: ProductAuthenticityUnit | null
+}
+
+export type ProductAuthenticityUnit = {
+  id: string
+  barcode_value: string
+  qr_value: string | null
+  sequence: number
+  status: string
+  verification_url: string
+  gsw3_bar_id: string | null
+  gsw3_verify_url: string | null
+  qr_image_url: string | null
+}
+
+export type PassportLabel = { code: string; label_ar: string; label_en: string }
+
+export type DigitalPassportResponse = {
+  verified: boolean
+  status: string
+  verified_at: string
+  message_ar: string
+  message_en: string
+  passport_title_ar: string
+  passport_title_en: string
+  certificate_number: string
+  ownership_record_id: string
+  product: ProductAuthenticityProduct | null
+  unit: ProductAuthenticityUnit | null
+  bar: {
+    serial_number: string
+    weight_grams: string | number | null
+    weight_display_en: string
+    weight_display_ar: string
+    purity_display: string
+    purity_display_en: string
+    purity_display_ar: string
+    gold_type_en: string
+    gold_type_ar: string
+    production_date: string | null
+    manufacturer_en: string
+    manufacturer_ar: string
+    product_image_url: string | null
+    image_urls: string[]
+    packaging_condition: PassportLabel
+    bar_condition: PassportLabel
+    inspection_cert: PassportLabel
+    insurance: PassportLabel
+  }
+  ownership: {
+    current_owner_name: string
+    verified: boolean
+    owner_since: string | null
+    history_count: number
+  }
+  blockchain: {
+    registered: boolean
+    gsw3_bar_id: string | null
+    gsw3_verify_url: string | null
+    token_id: string | null
+    network: string | null
+    contract_address: string | null
+    mint_tx_hash: string | null
+    metadata_hash: string | null
+    certificate_hash: string | null
+  }
+  ownership_history: Array<{
+    to_owner_name: string | null
+    from_owner_name: string | null
+    reason: string | null
+    transferred_at: string | null
+  }>
 }
 
 export type ProductSearchSuggestItem = {
@@ -232,6 +304,11 @@ export type ProductSearchSuggestResponse = {
 export const productsApi = {
   verifyAuthenticity: (code: string) =>
     apiService.get<ProductAuthenticityResponse>('/products/products/authenticity/', {
+      params: { code },
+    }),
+
+  getDigitalPassport: (code: string) =>
+    apiService.get<DigitalPassportResponse>('/products/products/passport/', {
       params: { code },
     }),
 
@@ -994,6 +1071,10 @@ export const invoicesApi = {
       `/invoices/sale_preview/${saleId}/`,
       templateId ? { params: { template_id: templateId } } : {}
     ),
+
+  /** Canonical PDF invoice (stored server-side; same file sent on WhatsApp). */
+  downloadSaleInvoicePdf: (saleId: string, filenameHint?: string) =>
+    import('@/lib/downloadSaleInvoicePdf').then((m) => m.downloadSaleInvoicePdf(saleId, filenameHint)),
 
   getTemplates: () =>
     apiService.get('/invoices/templates/'),

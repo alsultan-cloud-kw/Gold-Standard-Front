@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" role="img" aria-label="Gold Standard">
+  <rect x="0" y="4" width="32" height="32" rx="8" fill="#85e307"/>
+  <text
+    x="16"
+    y="25.5"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="13"
+    font-weight="700"
+    fill="#0b0f19"
+  >
+    GS
+  </text>
+  <text
+    x="42"
+    y="27"
+    fill="#0b0f19"
+    font-family="system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="18"
+    font-weight="700"
+    letter-spacing="-0.02em"
+  >
+    Gold Standard
+  </text>
+</svg>

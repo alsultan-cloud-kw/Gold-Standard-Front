@@ -111,7 +111,7 @@ export function KnetReceiptPanel({
               </button>
             ) : null}
             <Link
-              to="/dashboard"
+              to="/dashboard?tab=orders"
               className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#85E307] px-5 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AEF2A]"
             >
               {t('checkoutPage.viewMyOrders')}

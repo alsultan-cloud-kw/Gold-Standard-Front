@@ -72,15 +72,7 @@ export default function KnetReceiptPage() {
     if (!saleId) return
     setDownloading(true)
     try {
-      const res = await invoicesApi.getSaleInvoicePreview(saleId)
-      const html = res.html || ''
-      const w = window.open('', '_blank')
-      if (!w) return
-      w.document.open()
-      w.document.write(html)
-      w.document.close()
-      w.focus()
-      setTimeout(() => w.print(), 350)
+      await invoicesApi.downloadSaleInvoicePdf(saleId, receipt?.invoice_number ? `${receipt.invoice_number}.pdf` : undefined)
     } finally {
       setDownloading(false)
     }

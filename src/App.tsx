@@ -12,6 +12,7 @@ import HomePage from './pages/HomePage'
 import ProductsPage from './pages/ProductsPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ProductAuthenticityPage from './pages/ProductAuthenticityPage'
+import DigitalPassportPage, { VerifyUnitRedirect } from './pages/DigitalPassportPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import KnetReceiptPage from './pages/KnetReceiptPage'
@@ -117,6 +118,8 @@ function App() {
                   <Route path="/products" element={<ProductsPage />} />
                   <Route path="/products/:slug" element={<ProductDetailPage />} />
                   <Route path="/verify" element={<ProductAuthenticityPage />} />
+                  <Route path="/verify/passport" element={<DigitalPassportPage />} />
+                  <Route path="/verify/unit" element={<VerifyUnitRedirect />} />
                   <Route path="/gs-kyc" element={<CustomerBlacklistScreenPage />} />
                   <Route path="/customer-kyc" element={<Navigate to="/gs-kyc" replace />} />
                   <Route path="/moci-kyc" element={<PublicMociKycPage />} />

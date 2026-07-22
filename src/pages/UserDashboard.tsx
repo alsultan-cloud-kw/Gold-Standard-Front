@@ -1165,6 +1165,17 @@ function AddressesTab() {
   )
 }
 
+type OrderItemSummary = {
+  id: string
+  product_name?: string
+  quantity: number
+  total_price: string
+  unit_serial_number?: string | null
+  gsw3_verify_url?: string | null
+  gsw3_status?: string | null
+  django_verify_url?: string | null
+}
+
 type OrderSummary = {
   id: string
   invoice_number: string
@@ -1174,7 +1185,17 @@ type OrderSummary = {
   total_amount: string
   delivery_type?: string
   delivery_type_display?: string
-  items?: { id: string; product_name?: string; quantity: number; total_price: string }[]
+  items?: OrderItemSummary[]
+}
+
+function isPublicRegistryUrl(url: string | null | undefined): url is string {
+  if (!url) return false
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('goldstandardkw.com')
+  } catch {
+    return false
+  }
 }
 
 function asOrderList(data: unknown): OrderSummary[] {
@@ -1206,23 +1227,7 @@ function OrdersTab() {
     }
     setDownloadingId(order.id)
     try {
-      const res = (await invoicesApi.getSaleInvoicePreview(order.id)) as { html?: string }
-      const html = res?.html
-      if (html) {
-        const w = window.open('', '_blank')
-        if (w) {
-          w.document.write(html)
-          w.document.close()
-          w.focus()
-          setTimeout(() => {
-            w.print()
-          }, 400)
-        } else {
-          toast.error(t('userDashboard.orders.toasts.allowPopupsDownloadInvoice'))
-        }
-      } else {
-        toast.error(t('userDashboard.orders.toasts.invoiceNotAvailable'))
-      }
+      await invoicesApi.downloadSaleInvoicePdf(order.id, `${order.invoice_number || order.id}.pdf`)
     } catch {
       toast.error(t('userDashboard.orders.toasts.couldNotLoadInvoice'))
     } finally {
@@ -1290,13 +1295,48 @@ function OrdersTab() {
                   </div>
                 </div>
                 {order.items && order.items.length > 0 && (
-                  <ul className="mt-3 space-y-1 text-sm text-[#64748B]">
-                    {order.items.slice(0, 3).map((item) => (
-                      <li key={item.id}>
-                        {item.product_name ?? t('userDashboard.orders.item')} × {item.quantity}
-                        {item.total_price && ` — ${Number(item.total_price).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD`}
-                      </li>
-                    ))}
+                  <ul className="mt-3 space-y-2 text-sm text-[#64748B]">
+                    {order.items.slice(0, 3).map((item) => {
+                      const passportUrl = item.django_verify_url?.includes('/verify/passport')
+                        ? item.django_verify_url
+                        : item.unit_serial_number
+                          ? `/verify/passport?code=${encodeURIComponent(item.unit_serial_number)}`
+                          : null
+                      const registryUrl = isPublicRegistryUrl(item.gsw3_verify_url) ? item.gsw3_verify_url : null
+                      const ownershipUrl = passportUrl || registryUrl
+                      const showOwnershipLink =
+                        ownershipUrl &&
+                        ['paid', 'delivered', 'locked', 'shipped'].includes(order.status)
+                      return (
+                        <li key={item.id} className="space-y-1">
+                          <div>
+                            {item.product_name ?? t('userDashboard.orders.item')} × {item.quantity}
+                            {item.total_price && ` — ${Number(item.total_price).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD`}
+                          </div>
+                          {showOwnershipLink && (
+                            ownershipUrl.startsWith('http') ? (
+                              <a
+                                href={ownershipUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-[#3F6F00] hover:underline"
+                              >
+                                {t('userDashboard.orders.viewDigitalOwnership')}
+                                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                              </a>
+                            ) : (
+                              <Link
+                                to={ownershipUrl}
+                                className="inline-flex items-center gap-1 text-xs font-medium text-[#3F6F00] hover:underline"
+                              >
+                                {t('userDashboard.orders.viewDigitalOwnership')}
+                                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                              </Link>
+                            )
+                          )}
+                        </li>
+                      )
+                    })}
                     {order.items.length > 3 && (
                       <li className="text-[#94A3B8]">
                         +{order.items.length - 3} {t('userDashboard.orders.more')}

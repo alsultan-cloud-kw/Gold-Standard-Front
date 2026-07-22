@@ -684,22 +684,10 @@ export default function CheckoutPage() {
     }
     setDownloadingInvoice(true)
     try {
-      // apiService.get() returns the response body directly, so result is { html: "..." }
-      const res = await invoicesApi.getSaleInvoicePreview(lastOrder.id) as { html?: string }
-      const html = res?.html
-      if (html) {
-        const w = window.open('', '_blank')
-        if (w) {
-          w.document.write(html)
-          w.document.close()
-          w.focus()
-          setTimeout(() => { w.print(); w.close() }, 400)
-        } else {
-          toast.error(t('checkoutPage.popupsBlocked'))
-        }
-      } else {
-        toast.error(t('checkoutPage.invoiceUnavailable'))
-      }
+      await invoicesApi.downloadSaleInvoicePdf(
+        lastOrder.id,
+        `${lastOrder.invoice_number || lastOrder.id}.pdf`,
+      )
     } catch {
       toast.error(t('checkoutPage.invoiceLoadError'))
     } finally {
@@ -797,7 +785,7 @@ export default function CheckoutPage() {
                 {downloadingInvoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {t('checkoutPage.downloadInvoice')}
               </button>
-              <Link to="/dashboard" className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
+              <Link to="/dashboard?tab=orders" className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
                 {t('checkoutPage.viewMyOrders')}
               </Link>
               <Link

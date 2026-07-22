@@ -160,8 +160,15 @@ export default function ProductAuthenticityPage() {
 
   const payload = data as ProductAuthenticityResponse | undefined
   const product = payload?.product
+  const unit = payload?.unit
   const verified = Boolean(payload?.verified)
   const status = payload?.status || (code ? 'error' : 'missing')
+
+  const passportCode = useMemo(() => {
+    return unit?.barcode_value || product?.serial_number || product?.sku || code
+  }, [unit, product, code])
+
+  const hasDigitalPassport = Boolean(unit?.gsw3_bar_id || unit?.barcode_value)
 
   const productName = useMemo(() => {
     if (!product) return ''
@@ -374,13 +381,23 @@ export default function ProductAuthenticityPage() {
                     <ExternalLink className="h-4 w-4" />
                     {t('authenticity.viewProduct')}
                   </Link>
-                  <Link
-                    to="/contact"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#3F6F00] bg-white px-4 py-3 text-sm font-semibold text-[#3F6F00] hover:bg-lime-50"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    {t('authenticity.contactSupport')}
-                  </Link>
+                  {hasDigitalPassport && verified ? (
+                    <Link
+                      to={`/verify/passport?code=${encodeURIComponent(passportCode)}`}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#3F6F00] bg-white px-4 py-3 text-sm font-semibold text-[#3F6F00] hover:bg-lime-50"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      {t('authenticity.viewPassport')}
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/contact"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#3F6F00] bg-white px-4 py-3 text-sm font-semibold text-[#3F6F00] hover:bg-lime-50"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {t('authenticity.contactSupport')}
+                    </Link>
+                  )}
                 </div>
 
                 {verified ? (
