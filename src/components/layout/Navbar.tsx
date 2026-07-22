@@ -334,11 +334,13 @@ export default function Navbar() {
                     <p className="text-xs text-[#64748B]">{user?.email}</p>
                   </div>
                   <DropdownMenuItem
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() =>
+                      navigate(isStaffRole(user?.role) ? '/admin' : '/dashboard')
+                    }
                     className="cursor-pointer text-[#0C1512] hover:bg-[#ECFCCB]/50"
                   >
                     <User className="me-2 h-4 w-4" />
-                    {t('nav.dashboard')}
+                    {isStaffRole(user?.role) ? t('nav.adminPanel') : t('nav.dashboard')}
                   </DropdownMenuItem>
                   {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
                     <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-[#64748B]">
@@ -348,10 +350,10 @@ export default function Navbar() {
                   ) : null}
                   {isStaffRole(user?.role) ? (
                     <DropdownMenuItem
-                      onClick={() => navigate('/admin')}
+                      onClick={() => navigate('/')}
                       className="cursor-pointer text-[#0C1512] hover:bg-[#ECFCCB]/50"
                     >
-                      {t('nav.adminPanel')}
+                      {t('nav.viewWebsite')}
                     </DropdownMenuItem>
                   ) : null}
                   <DropdownMenuSeparator className="bg-black/10" />

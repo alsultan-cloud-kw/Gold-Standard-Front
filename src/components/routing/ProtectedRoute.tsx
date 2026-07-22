@@ -130,6 +130,17 @@ export function StaffRoute() {
   return <Outlet />
 }
 
+/** Customer dashboard only — staff accounts use `/admin`. */
+export function StaffDashboardGate({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+
+  if (isStaffRole(user?.role)) {
+    return <Navigate to="/admin" replace />
+  }
+
+  return <>{children}</>
+}
+
 /**
  * Catalog managers only — product/category admin in website.
  */

@@ -13,13 +13,13 @@ import { isStaffRole } from '@/utils/authRedirect'
 
 /**
  * Customer profile + Ministry KYC readiness for gated commerce features.
- * Staff bypass KYC checks (desk tools, not storefront customer flows).
+ * Staff/admin must complete the same profile, KYC, and Civil ID before storefront checkout.
  */
 export function useCustomerCompliance() {
   const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing } = useAuth()
   const authPending = authLoading || isClerkSyncing
-  const staffBypass = isStaffRole(user?.role)
-  const enabled = isAuthenticated && !!user && !authPending && !staffBypass
+  const staffRole = isStaffRole(user?.role)
+  const enabled = isAuthenticated && !!user && !authPending
 
   const profileQuery = useQuery({
     queryKey: ['myCustomerProfile'],
@@ -47,24 +47,17 @@ export function useCustomerCompliance() {
     authPending || (enabled && (!profileFetched || !questionsFetched || profileQuery.isLoading))
 
   const basicProfileComplete = isBasicProfileComplete(user)
-  const kycComplete = staffBypass
-    ? true
-    : profileFetched && questionsFetched
-      ? isCustomerKycComplete(profile, questions)
-      : false
-  const civilIdComplete = staffBypass
-    ? true
-    : profileFetched
-      ? isCivilIdUploaded(profile)
-      : false
+  const kycComplete = profileFetched && questionsFetched
+    ? isCustomerKycComplete(profile, questions)
+    : false
+  const civilIdComplete = profileFetched ? isCivilIdUploaded(profile) : false
 
-  const complianceComplete =
-    staffBypass || (basicProfileComplete && kycComplete && civilIdComplete)
+  const complianceComplete = basicProfileComplete && kycComplete && civilIdComplete
 
   return {
     isLoading,
     enabled,
-    staffBypass,
+    staffRole,
     profile,
     questions,
     basicProfileComplete,

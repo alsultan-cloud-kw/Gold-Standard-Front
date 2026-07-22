@@ -2542,6 +2542,154 @@
   }
 
   /* ── Admin console (/admin/*) — matches storefront + customer dashboard tokens ── */
+  .admin-route-root .main-with-bottom-nav {
+    padding-bottom: 0;
+  }
+
+  .admin-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: #0b0f19;
+    color: #f8fafc;
+  }
+
+  .admin-top-bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .admin-top-bar__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .admin-top-bar__logo {
+    height: 2rem;
+    width: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  .admin-top-bar__title {
+    font-family: var(--font-display, inherit);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .admin-top-bar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .admin-top-bar__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #f8fafc;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .admin-top-bar__link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(133, 227, 7, 0.45);
+  }
+
+  .admin-top-bar__link--primary {
+    border-color: rgba(133, 227, 7, 0.55);
+    background: rgba(133, 227, 7, 0.12);
+    color: #ecfccb;
+  }
+
+  .admin-top-bar__user {
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    color: rgba(248, 250, 252, 0.72);
+  }
+
+  .admin-top-bar__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fca5a5;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .admin-top-bar__logout:hover {
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  .staff-preview-bar {
+    position: relative;
+    z-index: 55;
+    border-bottom: 1px solid rgba(133, 227, 7, 0.35);
+    background: #ecfccb;
+    color: #1a2e05;
+  }
+
+  .staff-preview-bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.375rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+
+  .staff-preview-bar__text {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .staff-preview-bar__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    background: #0b0f19;
+    padding: 0.3125rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #ecfccb;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .staff-preview-bar__link:hover {
+    background: #1e293b;
+  }
+
   .admin-page {
     min-height: 100dvh;
     background: var(--site-bg);
@@ -2554,7 +2702,7 @@
 
   .admin-nav {
     position: sticky;
-    top: calc(var(--nav-offset, 7.25rem) + 0.35rem);
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
     z-index: 35;
     margin-bottom: 1.5rem;
     border-radius: 1rem;

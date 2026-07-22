@@ -16,6 +16,7 @@ import {
   resolveKycQuestions,
   writeMociKycSkip,
 } from '@/lib/customerCompliance'
+import { isStaffRole } from '@/utils/authRedirect'
 
 /**
  * Soft reminder for Ministry KYC on general browsing — can be dismissed.
@@ -34,8 +35,10 @@ export default function MinistryKycGate() {
     !!user &&
     !isLoading &&
     !isClerkSyncing &&
+    !isStaffRole(user.role) &&
     user.is_verified !== false &&
-    pathname !== '/verify-account'
+    pathname !== '/verify-account' &&
+    !pathname.startsWith('/admin')
 
   const { data: profileData, isFetched: profileFetched } = useQuery({
     queryKey: ['myCustomerProfile'],

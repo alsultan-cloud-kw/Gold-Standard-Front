@@ -4,8 +4,7 @@ import { Toaster } from 'sonner'
 import './App.css'
 
 // Layout Components
-import Navbar from './components/layout/Navbar'
-import Footer from './components/layout/Footer'
+import AppChrome from './components/layout/AppChrome'
 import SkipToContentLink from './components/layout/SkipToContentLink'
 
 // Page Components
@@ -72,7 +71,6 @@ import SellGoldPage from './pages/SellGoldPage'
 import TradeGoldPage from './pages/TradeGoldPage'
 import AdminClubs from './pages/admin/AdminClubs'
 import JoinClubPage from './pages/JoinClubPage'
-import FloatingPriceReminder from './components/reminders/FloatingPriceReminder'
 import MarketingVisitTracker from './components/analytics/MarketingVisitTracker'
 import { RouteSeo } from './components/seo/RouteSeo'
 
@@ -80,7 +78,7 @@ import { RouteSeo } from './components/seo/RouteSeo'
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 
-import { ProtectedRoute, StaffRoute, CatalogManagerRoute, GuestOnlyRoute } from './components/routing/ProtectedRoute'
+import { ProtectedRoute, StaffRoute, CatalogManagerRoute, GuestOnlyRoute, StaffDashboardGate } from './components/routing/ProtectedRoute'
 import ScrollToTop from './components/routing/ScrollToTop'
 import { GlobalBootGate } from './components/routing/GlobalBootGate'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from './featureFlags'
@@ -110,9 +108,8 @@ function App() {
             <GoogleOneTapPrompt />
             <AuthTransitionOverlay />
             <MinistryKycGate />
-            <div className="min-h-screen bg-siteBg">
+            <AppChrome>
               <SkipToContentLink />
-              <Navbar />
               <main id="main-content" className="main-with-bottom-nav" tabIndex={-1}>
                 <Routes>
                   {/* Public Routes */}
@@ -153,7 +150,9 @@ function App() {
                     path="/dashboard"
                     element={
                       <ProtectedRoute>
-                        <UserDashboard />
+                        <StaffDashboardGate>
+                          <UserDashboard />
+                        </StaffDashboardGate>
                       </ProtectedRoute>
                     }
                   />
@@ -242,8 +241,6 @@ function App() {
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </main>
-              <Footer />
-              <FloatingPriceReminder />
               <Toaster
                 position="top-center"
                 richColors
@@ -274,7 +271,7 @@ function App() {
                   },
                 }}
               />
-            </div>
+            </AppChrome>
             </CartProvider>
           </Router>
           </GlobalBootGate>
