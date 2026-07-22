@@ -2,6 +2,7 @@ import { ExternalLink, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { BullionFrame } from './BullionFrame'
 import type { DigitalPassportResponse } from '@/services/api'
+import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 
 function qrImageUrl(url: string) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}&margin=8`
@@ -26,7 +27,8 @@ export function CertificateOfOwnership({ data, lang, verifyUrl }: Props) {
   const bar = data.bar
   const owner = data.ownership
   const chain = data.blockchain
-  const scanUrl = verifyUrl || chain.gsw3_verify_url || (typeof window !== 'undefined' ? window.location.href : '')
+  const registryUrl = resolveGsw3RegistryUrl(chain.gsw3_verify_url, chain.gsw3_bar_id)
+  const scanUrl = verifyUrl || registryUrl || (typeof window !== 'undefined' ? window.location.href : '')
 
   const issueDate = formatDate(owner.owner_since || bar.production_date, lang === 'ar' ? 'ar-KW' : 'en-GB')
 
@@ -156,9 +158,9 @@ export function CertificateOfOwnership({ data, lang, verifyUrl }: Props) {
         <p className="mt-4 text-center text-xs text-stone-500">{t('passport.verifyFootnote')}</p>
         <p className="mt-1 text-center text-xs text-stone-400">{t('passport.verifyFootnoteAr')}</p>
 
-        {chain.gsw3_verify_url && (
+        {registryUrl && (
           <a
-            href={chain.gsw3_verify_url}
+            href={registryUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-[#3F6F00] hover:underline"

@@ -8,6 +8,7 @@ import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { CertificateOfOwnership } from '@/components/passport/CertificateOfOwnership'
 import { OwnershipJourney } from '@/components/passport/OwnershipJourney'
 import { usePageEnter } from '@/motion/usePageEnter'
+import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 
 export default function DigitalPassportPage() {
   const { t, i18n } = useTranslation()
@@ -27,7 +28,11 @@ export default function DigitalPassportPage() {
   })
 
   const verifyUrl = useMemo(() => {
-    if (data?.blockchain?.gsw3_verify_url) return data.blockchain.gsw3_verify_url
+    const registry = resolveGsw3RegistryUrl(
+      data?.blockchain?.gsw3_verify_url,
+      data?.blockchain?.gsw3_bar_id,
+    )
+    if (registry) return registry
     if (typeof window !== 'undefined' && codeParam) {
       return `${window.location.origin}/verify/passport?code=${encodeURIComponent(codeParam)}`
     }

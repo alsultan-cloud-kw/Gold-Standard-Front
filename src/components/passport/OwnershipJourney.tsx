@@ -1,6 +1,7 @@
 import { Clock, ExternalLink, Globe, Hash, Route } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { DigitalPassportResponse } from '@/services/api'
+import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 
 type HistoryRow = DigitalPassportResponse['ownership_history'][number]
 
@@ -57,6 +58,7 @@ export function OwnershipJourney({ data, lang }: Props) {
   const { t } = useTranslation()
   const rtl = lang === 'ar'
   const chain = data.blockchain
+  const registryUrl = resolveGsw3RegistryUrl(chain.gsw3_verify_url, chain.gsw3_bar_id)
   const steps = buildTimeline(
     data.ownership_history ?? [],
     data.ownership.current_owner_name,
@@ -179,9 +181,9 @@ export function OwnershipJourney({ data, lang }: Props) {
                 </div>
               )}
             </dl>
-            {chain.gsw3_verify_url && (
+            {registryUrl && (
               <a
-                href={chain.gsw3_verify_url}
+                href={registryUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 hover:underline"

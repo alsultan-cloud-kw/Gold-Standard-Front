@@ -45,6 +45,7 @@ import {
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
 import { cn } from '@/lib/utils'
+import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 import { asSingleCustomerProfile } from '@/utils/customerProfile'
 import {
   isBasicProfileComplete,
@@ -1171,6 +1172,7 @@ type OrderItemSummary = {
   quantity: number
   total_price: string
   unit_serial_number?: string | null
+  gsw3_bar_id?: string | null
   gsw3_verify_url?: string | null
   gsw3_status?: string | null
   django_verify_url?: string | null
@@ -1186,16 +1188,6 @@ type OrderSummary = {
   delivery_type?: string
   delivery_type_display?: string
   items?: OrderItemSummary[]
-}
-
-function isPublicRegistryUrl(url: string | null | undefined): url is string {
-  if (!url) return false
-  try {
-    const parsed = new URL(url)
-    return parsed.protocol === 'https:' && parsed.hostname.endsWith('goldstandardkw.com')
-  } catch {
-    return false
-  }
 }
 
 function asOrderList(data: unknown): OrderSummary[] {
@@ -1297,13 +1289,13 @@ function OrdersTab() {
                 {order.items && order.items.length > 0 && (
                   <ul className="mt-3 space-y-2 text-sm text-[#64748B]">
                     {order.items.slice(0, 3).map((item) => {
-                      const passportUrl = item.django_verify_url?.includes('/verify/passport')
+                      const registryUrl = resolveGsw3RegistryUrl(item.gsw3_verify_url, item.gsw3_bar_id)
+                      const passportUrl = !registryUrl && item.django_verify_url?.includes('/verify/passport')
                         ? item.django_verify_url
-                        : item.unit_serial_number
+                        : !registryUrl && item.unit_serial_number
                           ? `/verify/passport?code=${encodeURIComponent(item.unit_serial_number)}`
                           : null
-                      const registryUrl = isPublicRegistryUrl(item.gsw3_verify_url) ? item.gsw3_verify_url : null
-                      const ownershipUrl = passportUrl || registryUrl
+                      const ownershipUrl = registryUrl || passportUrl
                       const showOwnershipLink =
                         ownershipUrl &&
                         ['paid', 'delivered', 'locked', 'shipped'].includes(order.status)
