@@ -2394,6 +2394,29 @@
       "triggeredBySell": "Triggered by sell price.",
       "delivery": "Delivery: {{status}}"
     },
+    "holdingsPanel": {
+      "title": "Holdings overview",
+      "subtitle": "Track your allocated gold balance, profit and loss, and recent activity.",
+      "loading": "Loading holdings…",
+      "loadError": "Could not load holdings right now. Try again shortly.",
+      "openHoldings": "Manage holdings",
+      "openHoldingsPage": "Full holdings page",
+      "manageHoldings": "Buy or sell gold",
+      "recentActivity": "Recent activity",
+      "noActivity": "No holdings activity yet. Purchases and sell-backs will appear here.",
+      "activityBuy": "Purchase",
+      "activitySell": "Sell-back",
+      "walletBalance": "Wallet balance",
+      "walletHint": "Used to acquire gold at live rates. Proceeds from sell-backs return here.",
+      "stats": {
+        "gramsHeld": "Gold held",
+        "marketValue": "Market value",
+        "atSellRate": "At today's sell rate",
+        "unrealizedPl": "Unrealized P/L",
+        "realizedPl": "Realized P/L",
+        "fromSells": "From {{count}} sell-back(s)"
+      }
+    },
     "tradeGoldPanel": {
       "title": "Trade gold",
       "subtitle": "Buy or sell virtual gold instantly by grams or KWD using your wallet balance.",
@@ -2729,10 +2752,51 @@
     "noteBody": "Core trading logic is already under development. We will open the public desk only when pricing, custody, and compliance flows meet the same standard we apply to physical bullion."
   },
   "holdingsPage": {
-    "badge": "Under development",
-    "badgeVault": "Digital metal wallet",
+    "badge": "Digital metal wallet",
+    "badgeVault": "Allocated holdings",
     "title": "Gold holdings",
-    "subtitle": "Plan how much gold you want to acquire at today’s market rate — your balance will appear in the digital metal wallet after launch.",
+    "subtitle": "Acquire and manage your allocated 24K gold balance — buy at live rates or sell back what you already hold.",
+    "backToDashboard": "Back to dashboard overview",
+    "actionBuy": "Buy",
+    "actionSell": "Sell back",
+    "liveSell": "Live sell rate",
+    "estimatedProceeds": "Estimated proceeds",
+    "sellGramsLabel": "How much gold do you want to sell back?",
+    "availableToSell": "Available to sell back: {{grams}} g",
+    "sellAll": "Sell all",
+    "sellPanelHint": "Sell back uses your existing holdings only — you cannot sell more than you own.",
+    "sellConfirmHint": "Review the quote, then confirm to credit your wallet at the live sell rate.",
+    "sellCta": "Review sell-back quote",
+    "unrealizedPl": "Unrealized P/L",
+    "walletBalanceLabel": "Wallet balance",
+    "costBasis": "Cost basis",
+    "walletSubtitleLive": "Live balance from your account — grams held and wallet funds update after each purchase or sell-back.",
+    "confirmBuyTitle": "Confirm purchase",
+    "confirmSellTitle": "Confirm sell-back",
+    "confirmHint": "Review the live quote before confirming. This action uses your wallet for buys and credits it for sell-backs.",
+    "confirmGrams": "Weight",
+    "confirmRate": "Rate",
+    "confirmTotal": "Total",
+    "confirmAction": "Confirm",
+    "executing": "Processing…",
+    "preparingQuote": "Preparing quote…",
+    "decreaseGrams": "Decrease grams",
+    "increaseGrams": "Increase grams",
+    "errors": {
+      "loginRequired": "Sign in to manage your holdings.",
+      "quoteFailed": "Could not prepare a quote. Check the amount and try again.",
+      "executeFailed": "Could not complete this action. Check your balance and try again.",
+      "invalidGrams": "Enter a valid weight within the allowed range.",
+      "noHoldingsToSell": "You have no gold available to sell back yet.",
+      "exceedsAvailable": "Amount exceeds your available holdings."
+    },
+    "toasts": {
+      "buySuccess": "Purchase completed — your holdings were updated.",
+      "sellSuccess": "Sell-back completed — proceeds were added to your wallet.",
+      "instant": "Instant buy opens with the metal wallet launch.",
+      "target": "Target-price orders will be available at launch.",
+      "description": "Thank you for exploring — we are putting the final pieces in place."
+    },
     "plannerTitle": "Plan your holding",
     "plannerHint": "Choose a weight from 5 g to 1 kg — we quote live 24K before you commit.",
     "liveBuy": "Live buy rate",
@@ -2784,11 +2848,6 @@
         "title": "You choose the size",
         "body": "From a few grams to a full kilo — scale at your pace, on your timeline."
       }
-    },
-    "toasts": {
-      "instant": "Instant buy opens with the metal wallet launch.",
-      "target": "Target-price orders will be available at launch.",
-      "description": "Thank you for exploring — we are putting the final pieces in place."
     },
     "comingSoonModal": {
       "confirm": "Got it"

@@ -2890,6 +2890,18 @@
 
   .dashboard-content {
     min-width: 0;
+    min-height: clamp(22rem, 55vh, 36rem);
+  }
+
+  .dashboard-tab-stage {
+    min-height: inherit;
+  }
+
+  .dashboard-tab-loading {
+    display: flex;
+    min-height: clamp(18rem, 45vh, 28rem);
+    align-items: center;
+    justify-content: center;
   }
 
   .dashboard-panel {
@@ -2897,7 +2909,27 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
     background: #fff;
     padding: clamp(1.125rem, 3vw, 1.5rem);
-    animation: checkout-step-enter 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  .dashboard-panel--stable {
+    animation: none;
+  }
+
+  .dashboard-nav-item--external {
+    margin-top: 0.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-top: 0.625rem;
+    color: #3f6f00;
+  }
+
+  .dashboard-nav-item--external:hover {
+    background: rgba(133, 227, 7, 0.08);
+    color: #0b0f19;
+  }
+
+  .dashboard-nav-item--external .dashboard-nav-item__chevron {
+    opacity: 1;
+    color: #3f6f00;
   }
 
   .dashboard-panel + .dashboard-panel {

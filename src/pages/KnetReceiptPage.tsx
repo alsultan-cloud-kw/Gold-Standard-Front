@@ -6,6 +6,7 @@ import { invoicesApi, ordersApi } from '@/services/api'
 import type { KnetReceiptDetails } from '@/types'
 import { KnetReceiptPanel } from '@/components/checkout/KnetReceiptPanel'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+import { isKnetReceiptCaptured } from '@/lib/knetReceipt'
 
 import { useCart } from '../contexts/CartContext'
 
@@ -42,7 +43,7 @@ export default function KnetReceiptPage() {
           // Clear cart only if this was a fresh return from a successful payment.
           // We check the pending sale key to avoid clearing if they're just viewing an old receipt.
           const pendingRaw = sessionStorage.getItem('gs_knet_pending_sale')
-          if (pendingRaw && (data.status === 'CAPTURED' || data.result === 'CAPTURED')) {
+          if (pendingRaw && isKnetReceiptCaptured(data)) {
             try {
               const pending = JSON.parse(pendingRaw)
               if (pending.saleId === saleId) {

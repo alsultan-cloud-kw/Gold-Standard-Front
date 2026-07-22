@@ -18,6 +18,8 @@ import {
   Crown,
   Download,
   Layers,
+  ExternalLink,
+  ArrowUpRight,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
@@ -50,6 +52,7 @@ import {
   dashboardPrimaryBtnClass,
   dashboardSecondaryBtnClass,
 } from '@/lib/dashboardStyles'
+import HoldingsOverviewTab from '@/components/holdings/HoldingsOverviewTab'
 
 function isDisabledDashboardTab(tab: string): boolean {
   if (tab === 'locked_gold') {
@@ -80,6 +83,7 @@ const DASHBOARD_TABS = new Set([
   'bank_account',
   'addresses',
   'notifications',
+  'holdings',
 ])
 
 function readDashboardTabFromUrl(): string {
@@ -149,6 +153,7 @@ export default function UserDashboard() {
     { id: 'addresses', name: t('userDashboard.tabs.addresses'), icon: MapPin },
     // { id: 'payments', name: 'Payment Methods', icon: CreditCard },
     { id: 'notifications', name: t('userDashboard.tabs.notifications'), icon: Bell },
+    { id: 'holdings', name: t('nav.holdings'), icon: Layers },
   ]
 
   const userInitial =
@@ -202,10 +207,13 @@ export default function UserDashboard() {
                   <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
                 </button>
               ))}
-              <Link to="/holdings" className="dashboard-nav-item">
-                <Layers className="dashboard-nav-item__icon" aria-hidden />
-                <span>{t('nav.holdings')}</span>
-                <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
+              <Link
+                to="/holdings"
+                className="dashboard-nav-item dashboard-nav-item--external"
+              >
+                <ExternalLink className="dashboard-nav-item__icon" aria-hidden />
+                <span>{t('userDashboard.holdingsPanel.openHoldingsPage')}</span>
+                <ArrowUpRight className="dashboard-nav-item__chevron rtl:-scale-x-100" aria-hidden />
               </Link>
               <button
                 type="button"
@@ -219,15 +227,18 @@ export default function UserDashboard() {
           </aside>
 
           <div className="dashboard-content">
-            {activeTab === 'profile' && <ProfileTab />}
-            {activeTab === 'orders' && <OrdersTab />}
-            {(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED) && activeTab === 'locked_gold' && <LockedGoldTab />}
-            {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'trade_gold' && <TradeGoldTab />}
-            {activeTab === 'club' && <ClubTab />}
-            {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'transactions' && <TransactionsTab />}
-            {BANK_CHANGE_REQUESTS_ENABLED && activeTab === 'bank_account' && <BankAccountTab />}
-            {activeTab === 'addresses' && <AddressesTab />}
-            {activeTab === 'notifications' && <NotificationsTab />}
+            <div className="dashboard-tab-stage">
+              {activeTab === 'profile' && <ProfileTab />}
+              {activeTab === 'orders' && <OrdersTab />}
+              {(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED) && activeTab === 'locked_gold' && <LockedGoldTab />}
+              {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'trade_gold' && <TradeGoldTab />}
+              {activeTab === 'club' && <ClubTab />}
+              {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'transactions' && <TransactionsTab />}
+              {BANK_CHANGE_REQUESTS_ENABLED && activeTab === 'bank_account' && <BankAccountTab />}
+              {activeTab === 'addresses' && <AddressesTab />}
+              {activeTab === 'notifications' && <NotificationsTab />}
+              {activeTab === 'holdings' && <HoldingsOverviewTab />}
+            </div>
           </div>
         </div>
       </div>

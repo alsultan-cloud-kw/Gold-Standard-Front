@@ -20,7 +20,7 @@ export function usePageEnter(options: PageEnterOptions = {}) {
     childSelector = '[data-motion="enter"]',
     enabled = true,
   } = options
-  const rootRef = useRef<HTMLElement | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const reduced = usePrefersReducedMotion()
   const { gsap } = ensureGsap()
 
