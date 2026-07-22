@@ -20,6 +20,7 @@ import {
   Layers,
   ExternalLink,
   ArrowUpRight,
+  Menu,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
@@ -61,6 +62,12 @@ import {
   dashboardSecondaryBtnClass,
 } from '@/lib/dashboardStyles'
 import HoldingsOverviewTab from '@/components/holdings/HoldingsOverviewTab'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 
 function isDisabledDashboardTab(tab: string): boolean {
   if (tab === 'locked_gold') {
@@ -107,15 +114,118 @@ function readDashboardTabFromUrl(): string {
   return 'profile'
 }
 
+type DashboardTab = {
+  id: string
+  name: string
+  icon: typeof User
+}
+
+function DashboardUserChip({
+  userInitial,
+  user,
+  t,
+  compact = false,
+}: {
+  userInitial: string
+  user: ReturnType<typeof useAuth>['user']
+  t: ReturnType<typeof useTranslation>['t']
+  compact?: boolean
+}) {
+  return (
+    <div className={cn('dashboard-sidebar__user', compact && 'dashboard-sidebar__user--compact')}>
+      <div className={cn('dashboard-sidebar__avatar', compact && 'dashboard-sidebar__avatar--compact')}>
+        {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+          <RegionFlagImg
+            code={user.nationality}
+            size="md"
+            className="h-5 w-8 rounded-[3px] ring-1 ring-black/10"
+          />
+        ) : (
+          userInitial
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="dashboard-sidebar__name">{user?.full_name || t('userDashboard.guestName')}</p>
+        {user?.email ? (
+          <p className="dashboard-sidebar__email" dir="ltr">
+            {user.email}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function DashboardNavList({
+  tabs,
+  activeTab,
+  onSelectTab,
+  onLogout,
+  onNavAction,
+  t,
+}: {
+  tabs: DashboardTab[]
+  activeTab: string
+  onSelectTab: (tabId: string) => void
+  onLogout: () => void
+  onNavAction?: () => void
+  t: ReturnType<typeof useTranslation>['t']
+}) {
+  return (
+    <nav className="dashboard-nav" aria-label={t('nav.dashboard')}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => {
+            onSelectTab(tab.id)
+            onNavAction?.()
+          }}
+          className={cn(
+            'dashboard-nav-item',
+            activeTab === tab.id && 'dashboard-nav-item--active',
+          )}
+        >
+          <tab.icon className="dashboard-nav-item__icon" aria-hidden />
+          <span>{tab.name}</span>
+          <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
+        </button>
+      ))}
+      <Link
+        to="/holdings"
+        className="dashboard-nav-item dashboard-nav-item--external"
+        onClick={() => onNavAction?.()}
+      >
+        <ExternalLink className="dashboard-nav-item__icon" aria-hidden />
+        <span>{t('userDashboard.holdingsPanel.openHoldingsPage')}</span>
+        <ArrowUpRight className="dashboard-nav-item__chevron rtl:-scale-x-100" aria-hidden />
+      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          onLogout()
+          onNavAction?.()
+        }}
+        className="dashboard-nav-item dashboard-nav-item--logout"
+      >
+        <LogOut className="dashboard-nav-item__icon" aria-hidden />
+        <span>{t('userDashboard.logout')}</span>
+      </button>
+    </nav>
+  )
+}
+
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState(readDashboardTabFromUrl)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const selectTab = (tabId: string) => {
     setActiveTab(tabId)
+    setMobileNavOpen(false)
     const params = new URLSearchParams(location.search)
     if (tabId === 'profile') {
       params.delete('tab')
@@ -169,69 +279,70 @@ export default function UserDashboard() {
     || user?.email?.trim().charAt(0)?.toUpperCase()
     || 'U'
 
+  const activeTabMeta = tabs.find((tab) => tab.id === activeTab)
+  const sheetSide = i18n.dir() === 'rtl' ? 'right' : 'left'
+
   return (
     <div className="dashboard-page">
       <div className="page-shell page-section">
-        <h1 className="store-display-title mb-1 text-[#0B0F19]">{t('nav.dashboard')}</h1>
-        <p className="mb-6 text-sm text-[#64748B]">{t('userDashboard.pageSubtitle')}</p>
+        <h1 className="store-display-title mb-1 text-[#0B0F19] max-xl:text-xl">{t('nav.dashboard')}</h1>
+        <p className="mb-4 text-sm text-[#64748B] xl:mb-6">{t('userDashboard.pageSubtitle')}</p>
 
         <div className="dashboard-layout">
-          <aside className="dashboard-sidebar">
-            <div className="dashboard-sidebar__user">
-              <div className="dashboard-sidebar__avatar">
-                {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
-                  <RegionFlagImg
-                    code={user.nationality}
-                    size="md"
-                    className="h-5 w-8 rounded-[3px] ring-1 ring-black/10"
-                  />
-                ) : (
-                  userInitial
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="dashboard-sidebar__name">{user?.full_name || t('userDashboard.guestName')}</p>
-                {user?.email ? (
-                  <p className="dashboard-sidebar__email" dir="ltr">
-                    {user.email}
-                  </p>
-                ) : null}
-              </div>
+          <div className="dashboard-mobile-bar xl:hidden">
+            <button
+              type="button"
+              className="dashboard-mobile-bar__menu"
+              onClick={() => setMobileNavOpen(true)}
+              aria-expanded={mobileNavOpen}
+              aria-controls="dashboard-mobile-sheet"
+              aria-label={t('nav.openMenu')}
+            >
+              <Menu className="h-5 w-5" aria-hidden />
+            </button>
+            <div className="dashboard-mobile-bar__meta min-w-0">
+              <p className="dashboard-mobile-bar__section truncate">
+                {activeTabMeta?.name ?? t('nav.dashboard')}
+              </p>
+              <p className="dashboard-mobile-bar__user truncate">{user?.full_name || user?.email}</p>
             </div>
+            <div className="dashboard-sidebar__avatar dashboard-sidebar__avatar--compact shrink-0">
+              {userInitial}
+            </div>
+          </div>
 
-            <nav className="dashboard-nav" aria-label={t('nav.dashboard')}>
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => selectTab(tab.id)}
-                  className={cn(
-                    'dashboard-nav-item',
-                    activeTab === tab.id && 'dashboard-nav-item--active',
-                  )}
-                >
-                  <tab.icon className="dashboard-nav-item__icon" aria-hidden />
-                  <span>{tab.name}</span>
-                  <ChevronRight className="dashboard-nav-item__chevron rtl:rotate-180" aria-hidden />
-                </button>
-              ))}
-              <Link
-                to="/holdings"
-                className="dashboard-nav-item dashboard-nav-item--external"
-              >
-                <ExternalLink className="dashboard-nav-item__icon" aria-hidden />
-                <span>{t('userDashboard.holdingsPanel.openHoldingsPage')}</span>
-                <ArrowUpRight className="dashboard-nav-item__chevron rtl:-scale-x-100" aria-hidden />
-              </Link>
-              <button
-                type="button"
-                onClick={logout}
-                className="dashboard-nav-item dashboard-nav-item--logout"
-              >
-                <LogOut className="dashboard-nav-item__icon" aria-hidden />
-                <span>{t('userDashboard.logout')}</span>
-              </button>
-            </nav>
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetContent
+              id="dashboard-mobile-sheet"
+              side={sheetSide}
+              className="dashboard-mobile-sheet w-[min(100vw-1rem,22rem)] overflow-y-auto p-0 sm:max-w-sm"
+            >
+              <SheetHeader className="border-b border-black/8 px-4 py-4 text-start">
+                <SheetTitle className="text-base text-[#0B0F19]">{t('nav.dashboard')}</SheetTitle>
+              </SheetHeader>
+              <div className="px-3 py-3">
+                <DashboardUserChip userInitial={userInitial} user={user} t={t} compact />
+                <DashboardNavList
+                  tabs={tabs}
+                  activeTab={activeTab}
+                  onSelectTab={selectTab}
+                  onLogout={logout}
+                  onNavAction={() => setMobileNavOpen(false)}
+                  t={t}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <aside className="dashboard-sidebar hidden xl:block">
+            <DashboardUserChip userInitial={userInitial} user={user} t={t} />
+            <DashboardNavList
+              tabs={tabs}
+              activeTab={activeTab}
+              onSelectTab={selectTab}
+              onLogout={logout}
+              t={t}
+            />
           </aside>
 
           <div className="dashboard-content">
