@@ -18,6 +18,7 @@ import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { usePageEnter } from '@/motion/usePageEnter'
 import { isStaffRole } from '@/utils/authRedirect'
 import {
   buildPublicRatesPricing,
@@ -84,6 +85,7 @@ function goldAccountKaratLabel(key: string) {
 export default function PricesPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const rootRef = usePageEnter()
   const isStaff = isStaffRole(user?.role)
   const [gramsInput, setGramsInput] = useState('')
   /** Weight calculator stays collapsed on mobile so the chart is visible above the fold. */
@@ -171,7 +173,7 @@ export default function PricesPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F9F9FA]">
+    <div className="min-h-screen bg-[#F9F9FA]" ref={rootRef}>
       {/* Hero — compact quote strip on mobile so the chart sits in the first viewport */}
       <section className="prices-hero relative overflow-hidden border-b border-black/5 bg-[#0B0F19] text-white">
         <div className="pointer-events-none absolute inset-0">

@@ -31,6 +31,7 @@ import {
 } from '@/utils/publicStorefrontRates'
 import { cn } from '@/lib/utils'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
+import { usePageEnter } from '@/motion/usePageEnter'
 
 const MIN_GRAMS = 5
 const MAX_GRAMS = 1000
@@ -63,6 +64,7 @@ function parseGramsText(text: string): number | null {
 
 export default function HoldingsPage() {
   const { t, i18n } = useTranslation()
+  const rootRef = usePageEnter()
   const isRtl = i18n.dir() === 'rtl'
   const { data: rates, isLoading: ratesLoading } = useEnrichedPublicRates(20_000)
 
@@ -149,7 +151,7 @@ export default function HoldingsPage() {
   const targetActive = buyMode === 'target'
 
   return (
-    <div className="min-h-screen bg-[var(--site-bg)]" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-[var(--site-bg)]" dir={isRtl ? 'rtl' : 'ltr'} ref={rootRef}>
       <section className="relative overflow-hidden border-b border-black/5 bg-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         <div className="relative page-shell page-section--roomy">

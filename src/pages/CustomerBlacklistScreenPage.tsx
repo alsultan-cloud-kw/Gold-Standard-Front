@@ -6,6 +6,7 @@ import { ScreeningConsoleSidebar } from '@/components/compliance/ScreeningConsol
 import { ScreeningLiveTicker } from '@/components/compliance/ScreeningLiveTicker'
 import { blacklistScreeningApi } from '@/services/blacklistScreeningApi'
 import { loadScreeningSession, loadTickerCache, saveTickerCache } from '@/lib/screeningTicker'
+import { usePageEnter } from '@/motion/usePageEnter'
 import {
   loadActiveTab,
   loadScreenHistory,
@@ -22,6 +23,7 @@ function formatCount(n: number): string {
 /** GS name screening console — public tool at /gs-kyc */
 export default function CustomerBlacklistScreenPage() {
   const { t } = useTranslation()
+  const rootRef = usePageEnter()
   const [totalIndexed, setTotalIndexed] = useState<number | null>(
     () => loadTickerCache().totalIndexed,
   )
@@ -129,7 +131,7 @@ export default function CustomerBlacklistScreenPage() {
   ] as const
 
   return (
-    <div className="storefront-static-page min-h-[100dvh] bg-[#F4F5F1]">
+    <div className="storefront-static-page min-h-[100dvh] bg-[#F4F5F1]" ref={rootRef}>
       <ScreeningLiveTicker
         key={tickerKey}
         sampleNames={sampleNames}

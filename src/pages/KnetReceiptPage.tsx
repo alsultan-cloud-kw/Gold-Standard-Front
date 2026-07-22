@@ -7,9 +7,12 @@ import type { KnetReceiptDetails } from '@/types'
 import { KnetReceiptPanel } from '@/components/checkout/KnetReceiptPanel'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 
+import { useCart } from '../contexts/CartContext'
+
 export default function KnetReceiptPage() {
   const { t } = useTranslation()
   const { saleId } = useParams<{ saleId: string }>()
+  const { clearCart } = useCart()
   const [receipt, setReceipt] = useState<KnetReceiptDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +38,21 @@ export default function KnetReceiptPage() {
         if (!cancelled) {
           setReceipt(data)
           setError(null)
+          
+          // Clear cart only if this was a fresh return from a successful payment.
+          // We check the pending sale key to avoid clearing if they're just viewing an old receipt.
+          const pendingRaw = sessionStorage.getItem('gs_knet_pending_sale')
+          if (pendingRaw && (data.status === 'CAPTURED' || data.result === 'CAPTURED')) {
+            try {
+              const pending = JSON.parse(pendingRaw)
+              if (pending.saleId === saleId) {
+                clearCart()
+                sessionStorage.removeItem('gs_knet_pending_sale')
+              }
+            } catch {
+              // ignore parse errors
+            }
+          }
         }
       } catch {
         if (!cancelled) setError(t('knetReceipt.loadError'))

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Newspaper } from 'lucide-react'
 import { SultanNewsCard } from '@/components/news/SultanNewsCard'
+import { usePageEnter } from '@/motion/usePageEnter'
 import {
   fetchNewsByCategory,
   fetchNewsCategories,
@@ -16,6 +17,7 @@ const ROWS_PER_CHUNK = 4
 
 export default function NewsPage() {
   const { t, i18n } = useTranslation()
+  const rootRef = usePageEnter()
   const isAr = i18n.language.startsWith('ar')
   const [categoryId, setCategoryId] = useState<'all' | number>('all')
   const [gridCols, setGridCols] = useState<1 | 2 | 3>(newsGridColumnCount)
@@ -73,7 +75,7 @@ export default function NewsPage() {
     (categoryId === 'all' ? allNewsQuery.error : categoryNewsQuery.error)
 
   return (
-    <div className="min-h-screen py-8 bg-gradient-to-b from-lime-50/60 via-white to-white">
+    <div className="min-h-screen py-8 bg-gradient-to-b from-lime-50/60 via-white to-white" ref={rootRef}>
       <div className="page-shell py-8 sm:py-10">
         <div className="mb-8">
           <Link
