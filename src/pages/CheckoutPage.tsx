@@ -24,6 +24,7 @@ import knetBadge from '@/assets/trust/knet-badge.png'
 import { cn } from '@/lib/utils'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_VAULT_DELIVERY_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
   cartClubPricingBreakdown,
@@ -36,45 +37,12 @@ import {
   isProductOutOfStock,
   productAvailableQuantity,
 } from '@/utils/productStock'
-
-type CheckoutProfileAddress = {
-  id?: string
-  address_line1?: string | null
-  address_line2?: string | null
-  city?: string | null
-  governorate?: string | null
-  postal_code?: string | null
-  country?: string | null
-}
-
-function profileHasSavedAddress(p: CheckoutProfileAddress): boolean {
-  return Boolean(
-    (p.address_line1 && p.address_line1.trim())
-    || (p.city && p.city.trim())
-    || (p.governorate && p.governorate.trim()),
-  )
-}
-
-function shippingDiffersFromProfile(
-  p: CheckoutProfileAddress,
-  shipping: { address: string; city: string; governorate: string; postalCode: string },
-): boolean {
-  const savedCombined = [p.address_line1, p.address_line2].filter(Boolean).join(', ')
-  const norm = (s: string) => s.trim().toLowerCase()
-  return (
-    norm(shipping.address) !== norm(savedCombined)
-    || norm(shipping.city) !== norm(p.city ?? '')
-    || norm(shipping.governorate) !== norm(p.governorate ?? '')
-    || norm(shipping.postalCode) !== norm(p.postal_code ?? '')
-  )
-}
-
-function firstCustomerProfileForCheckout(data: unknown): CheckoutProfileAddress | null {
-  if (!data) return null
-  if (Array.isArray(data)) return (data[0] as CheckoutProfileAddress) ?? null
-  const p = data as { results?: CheckoutProfileAddress[] }
-  return p.results && p.results.length > 0 ? p.results[0] : null
-}
+import {
+  asSingleCustomerProfile,
+  formatProfileShippingAddress,
+  profileHasSavedAddress,
+  shippingDiffersFromProfile,
+} from '@/utils/customerProfile'
 
 type SaleResponse = {
   id?: string
@@ -211,6 +179,7 @@ export default function CheckoutPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
   const navigate = useNavigate()
+  const { ensureCanPurchase } = usePurchaseAuth()
   // Account OTP + KYC enforced by KycRequiredRoute.
   const location = useLocation()
   const queryClient = useQueryClient()
@@ -262,7 +231,7 @@ export default function CheckoutPage() {
     enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
   })
   const checkoutProfile = useMemo(
-    () => firstCustomerProfileForCheckout(checkoutProfileData),
+    () => asSingleCustomerProfile(checkoutProfileData),
     [checkoutProfileData],
   )
   // Ensure numeric wallet balance (API may return string/Decimal-like)
@@ -367,12 +336,7 @@ export default function CheckoutPage() {
   }, [checkoutProfile, address, city, governorate, postalCode])
 
   useEffect(() => {
-    if (!showSaveAddressPrompt) {
-      saveAddressPromptInitialized.current = false
-      setSaveAddressToProfile(false)
-      return
-    }
-    if (saveAddressPromptInitialized.current) return
+    if (!showSaveAddressPrompt || saveAddressPromptInitialized.current) return
     saveAddressPromptInitialized.current = true
     if (checkoutProfile && !profileHasSavedAddress(checkoutProfile)) {
       setSaveAddressToProfile(true)
@@ -404,17 +368,21 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (profileHydrated.current) return
-    if (savedShipping) {
-      profileHydrated.current = true
-      return
-    }
-    const p = firstCustomerProfileForCheckout(checkoutProfileData)
+    const p = asSingleCustomerProfile(checkoutProfileData)
     if (!p) return
-    const combined = [p.address_line1, p.address_line2].filter(Boolean).join(', ')
-    setAddress((a) => a || combined)
-    setCity((c) => c || (p.city ?? ''))
-    setGovernorate((g) => g || (p.governorate ?? ''))
-    setPostalCode((pc) => pc || (p.postal_code ?? ''))
+    if (profileHasSavedAddress(p)) {
+      const fromProfile = formatProfileShippingAddress(p)
+      setAddress(fromProfile.address)
+      setCity(fromProfile.city)
+      setGovernorate(fromProfile.governorate)
+      setPostalCode(fromProfile.postalCode)
+    } else if (!savedShipping) {
+      const fromProfile = formatProfileShippingAddress(p)
+      setAddress((a) => a || fromProfile.address)
+      setCity((c) => c || fromProfile.city)
+      setGovernorate((g) => g || fromProfile.governorate)
+      setPostalCode((pc) => pc || fromProfile.postalCode)
+    }
     profileHydrated.current = true
   }, [checkoutProfileData, savedShipping])
 
@@ -551,6 +519,7 @@ export default function CheckoutPage() {
       navigate('/login', { state: { from: '/checkout' } })
       return
     }
+    if (!ensureCanPurchase('/checkout')) return
     if (cart.items.length === 0) return
     if (hasUnavailableItems) {
       toast.error(t('stock.cartBlocked'))
@@ -595,18 +564,28 @@ export default function CheckoutPage() {
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })) as SaleResponse
 
-      if (saveAddressToProfile && checkoutProfile?.id) {
+      if (saveAddressToProfile) {
         try {
-          await accountsApi.updateProfile(checkoutProfile.id, {
-            address_line1: address.trim() || null,
-            address_line2: null,
-            city: city.trim() || null,
-            governorate: governorate.trim() || null,
-            postal_code: postalCode.trim() || null,
-            country: 'Kuwait',
-          })
-          void queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
-          toast.success(t('checkoutPage.addressSavedToProfile'))
+          let profileId = checkoutProfile?.id
+          if (!profileId) {
+            const fresh = await accountsApi.getMyProfile()
+            profileId = asSingleCustomerProfile(fresh)?.id
+          }
+          if (!profileId) {
+            toast.error(t('checkoutPage.addressSaveFailed'))
+          } else {
+            await accountsApi.updateProfile(profileId, {
+              address_line1: address.trim() || null,
+              address_line2: null,
+              city: city.trim() || null,
+              governorate: governorate.trim() || null,
+              postal_code: postalCode.trim() || null,
+              country: 'Kuwait',
+            })
+            await queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+            clearCheckoutShippingDraft()
+            toast.success(t('checkoutPage.addressSavedToProfile'))
+          }
         } catch {
           toast.error(t('checkoutPage.addressSaveFailed'))
         }
@@ -640,7 +619,16 @@ export default function CheckoutPage() {
       const err = e as { response?: { data?: unknown } }
       const data = err?.response?.data
       if (data && typeof data === 'object') {
-        const d = data as PlaceOrderErrorPayload & { error?: unknown }
+        const d = data as PlaceOrderErrorPayload & { error?: unknown; detail?: unknown }
+        if (d.error === 'profile_incomplete') {
+          toast.error(
+            typeof d.detail === 'string' && d.detail.trim()
+              ? d.detail
+              : t('auth.kyc.requiredToBuyDesc'),
+          )
+          navigate('/dashboard?tab=profile&complete=profile')
+          return
+        }
         if (d.error === 'captcha_failed') {
           toast.error(t('auth.captchaFailed'))
           return

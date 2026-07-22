@@ -70,17 +70,41 @@ export function isCustomerKycComplete(
   return answersLookComplete(profile.kyc_registration_answers, questions)
 }
 
-/** Basic identity present on the signed-in user (name + email or phone). */
+/** Basic identity present on the signed-in user (name + contact + date of birth). */
 export function isBasicProfileComplete(user: {
   full_name?: string | null
   email?: string | null
   phone_number?: string | null
+  date_of_birth?: string | null
 } | null | undefined): boolean {
   if (!user) return false
   const name = String(user.full_name ?? '').trim()
   const email = String(user.email ?? '').trim()
   const phone = String(user.phone_number ?? '').trim()
-  return name.length > 1 && (email.length > 0 || phone.length > 0)
+  const dob = String(user.date_of_birth ?? '').trim()
+  return name.length > 1 && (email.length > 0 || phone.length > 0) && dob.length > 0
+}
+
+/** Civil ID front + back uploaded on the customer profile. */
+export function isCivilIdUploaded(profile: CustomerProfile | null | undefined): boolean {
+  if (!profile) return false
+  const front = String(profile.civil_id_front ?? '').trim()
+  const back = String(profile.civil_id_back ?? '').trim()
+  return front.length > 0 && back.length > 0
+}
+
+export type PurchaseComplianceReason = 'profile' | 'kyc' | 'civil_id'
+
+/** First missing requirement for dashboard deep-link / messaging. */
+export function purchaseComplianceReason(
+  user: Parameters<typeof isBasicProfileComplete>[0],
+  profile: CustomerProfile | null | undefined,
+  questions: KycQuestion[],
+): PurchaseComplianceReason | null {
+  if (!isBasicProfileComplete(user)) return 'profile'
+  if (!isCustomerKycComplete(profile, questions)) return 'kyc'
+  if (!isCivilIdUploaded(profile)) return 'civil_id'
+  return null
 }
 
 export function clearMociKycSkip(userId: string | number | undefined) {

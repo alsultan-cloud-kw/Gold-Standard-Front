@@ -37,6 +37,8 @@ export interface CustomerProfile {
   loyalty_tier: string
   total_purchases: number
   preferred_language: string
+  civil_id_front?: string | null
+  civil_id_back?: string | null
   kyc_registration_answers?: Record<string, string | boolean> | null
   kyc_registration_complete?: boolean
 }

@@ -45,6 +45,13 @@ import {
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
 import { cn } from '@/lib/utils'
+import { asSingleCustomerProfile } from '@/utils/customerProfile'
+import {
+  isBasicProfileComplete,
+  isCivilIdUploaded,
+  isCustomerKycComplete,
+} from '@/lib/customerCompliance'
+import type { CustomerProfile as StoreCustomerProfile } from '@/types'
 import {
   dashboardFieldClass,
   dashboardLabelClass,
@@ -737,8 +744,15 @@ function ProfileTab() {
   const [kycErrors, setKycErrors] = useState<Record<string, string>>({})
   const [savingKyc, setSavingKyc] = useState(false)
 
-  const kycIncomplete =
-    kycQuestions.length > 0 && profile?.kyc_registration_complete === false
+  const purchaseBlocked = useMemo(() => {
+    if (!user) return false
+    const storeProfile = profile as StoreCustomerProfile | null
+    return (
+      !isBasicProfileComplete(user)
+      || (kycQuestions.length > 0 && !isCustomerKycComplete(storeProfile, kycQuestions))
+      || !isCivilIdUploaded(storeProfile)
+    )
+  }, [user, profile, kycQuestions])
 
   useEffect(() => {
     setFullName(user?.full_name ?? '')
@@ -845,7 +859,7 @@ function ProfileTab() {
     <div className={dashboardPanelClass}>
       <h2 className="dashboard-panel__title">{t('userDashboard.profile.title')}</h2>
 
-      {kycIncomplete ? (
+      {purchaseBlocked ? (
         <div
           role="status"
           className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950"
@@ -1730,13 +1744,7 @@ type CustomerProfile = {
 }
 
 function asSingleProfile(data: unknown): CustomerProfile | null {
-  if (!data) return null
-  if (Array.isArray(data)) return (data[0] as CustomerProfile) ?? null
-  const p = data as { results?: CustomerProfile[]; id?: string; user?: unknown }
-  if (p.results && p.results.length > 0) return p.results[0]
-  // Non-paginated single object (or future API shape)
-  if (typeof p.id === 'string' && p.user !== undefined) return p as CustomerProfile
-  return null
+  return asSingleCustomerProfile(data) as CustomerProfile | null
 }
 
 function BankAccountTab() {

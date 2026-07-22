@@ -6,14 +6,13 @@ import { toast } from 'sonner'
 import { ProtectedRoute, AuthLoadingFallback } from '@/components/routing/ProtectedRoute'
 import { useCustomerCompliance } from '@/hooks/useCustomerCompliance'
 import { useAuth } from '@/contexts/AuthContext'
-import { clearMociKycSkip } from '@/lib/customerCompliance'
+import { clearMociKycSkip, purchaseComplianceReason } from '@/lib/customerCompliance'
 
 function KycComplianceGate({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const location = useLocation()
-  const { isLoading, complianceComplete, kycComplete, basicProfileComplete } =
-    useCustomerCompliance()
+  const { isLoading, complianceComplete, profile, questions } = useCustomerCompliance()
   const toasted = useRef(false)
 
   useEffect(() => {
@@ -32,7 +31,7 @@ function KycComplianceGate({ children }: { children: ReactNode }) {
   }
 
   if (!complianceComplete) {
-    const reason = !basicProfileComplete ? 'profile' : !kycComplete ? 'kyc' : 'profile'
+    const reason = purchaseComplianceReason(user, profile, questions) ?? 'profile'
     return (
       <Navigate
         to={`/dashboard?tab=profile&complete=${reason}`}

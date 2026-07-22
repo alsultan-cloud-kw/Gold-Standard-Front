@@ -4,9 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCustomerCompliance } from '@/hooks/useCustomerCompliance'
-import { clearMociKycSkip } from '@/lib/customerCompliance'
-
-const PROFILE_COMPLETE_PATH = '/dashboard?tab=profile&complete=kyc'
+import { clearMociKycSkip, purchaseComplianceReason } from '@/lib/customerCompliance'
 
 /** Guests cannot purchase. Signed-in customers need profile + Ministry KYC before buy/checkout. */
 export function usePurchaseAuth() {
@@ -17,7 +15,8 @@ export function usePurchaseAuth() {
   const {
     isLoading: complianceLoading,
     complianceComplete,
-    kycComplete,
+    profile,
+    questions,
   } = useCustomerCompliance()
 
   const needsVerification = Boolean(user && user.is_verified === false)
@@ -65,11 +64,9 @@ export function usePurchaseAuth() {
           description: t('auth.kyc.requiredToBuyDesc'),
           duration: 6000,
         })
-        navigate(
-          !kycComplete
-            ? PROFILE_COMPLETE_PATH
-            : '/dashboard?tab=profile&complete=profile',
-        )
+        const reason =
+          purchaseComplianceReason(user, profile, questions) ?? 'profile'
+        navigate(`/dashboard?tab=profile&complete=${reason}`)
         return false
       }
 
@@ -80,7 +77,8 @@ export function usePurchaseAuth() {
       isAuthenticated,
       needsVerification,
       complianceComplete,
-      kycComplete,
+      profile,
+      questions,
       navigate,
       loginHref,
       t,

@@ -5,6 +5,7 @@ import { accountsApi, authApi } from '@/services/api'
 import {
   asSingleCustomerProfile,
   isBasicProfileComplete,
+  isCivilIdUploaded,
   isCustomerKycComplete,
   resolveKycQuestions,
 } from '@/lib/customerCompliance'
@@ -51,8 +52,14 @@ export function useCustomerCompliance() {
     : profileFetched && questionsFetched
       ? isCustomerKycComplete(profile, questions)
       : false
+  const civilIdComplete = staffBypass
+    ? true
+    : profileFetched
+      ? isCivilIdUploaded(profile)
+      : false
 
-  const complianceComplete = staffBypass || (basicProfileComplete && kycComplete)
+  const complianceComplete =
+    staffBypass || (basicProfileComplete && kycComplete && civilIdComplete)
 
   return {
     isLoading,
@@ -62,6 +69,7 @@ export function useCustomerCompliance() {
     questions,
     basicProfileComplete,
     kycComplete,
+    civilIdComplete,
     complianceComplete,
     profileFetched,
     refetchProfile: profileQuery.refetch,
