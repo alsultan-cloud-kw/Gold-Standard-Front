@@ -10,7 +10,7 @@ export async function downloadSaleInvoicePdf(
 ): Promise<void> {
   const token = localStorage.getItem('access_token')
   const lang = localStorage.getItem('app_lang') || document.documentElement.getAttribute('lang') || 'ar'
-  const response = await axios.get(`${getApiBaseUrl()}/invoices/sale_pdf/${saleId}/`, {
+  const response = await axios.get(`${getApiBaseUrl()}/invoices/sale_pdf/${saleId}/?force=1`, {
     responseType: 'blob',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
