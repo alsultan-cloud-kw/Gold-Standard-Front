@@ -6,6 +6,7 @@ import { AlertTriangle, Languages } from 'lucide-react'
 import { productsApi } from '@/services/api'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { CertificateOfOwnership } from '@/components/passport/CertificateOfOwnership'
+import { OwnershipJourney } from '@/components/passport/OwnershipJourney'
 import { usePageEnter } from '@/motion/usePageEnter'
 
 export default function DigitalPassportPage() {
@@ -104,6 +105,7 @@ export default function DigitalPassportPage() {
         )}
 
         <CertificateOfOwnership data={data} lang={lang} verifyUrl={verifyUrl} />
+        <OwnershipJourney data={data} lang={lang} />
       </div>
     </div>
   )

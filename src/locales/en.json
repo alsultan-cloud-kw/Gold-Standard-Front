@@ -1093,7 +1093,26 @@
     "authorizedSignature": "Authorized signature",
     "companySeal": "Company seal",
     "w3cNote": "Verifiable digital certificate — aligned with W3C Verifiable Credentials principles",
-    "footerBrand": "Gold Standard for gold bullion"
+    "footerBrand": "Gold Standard for gold bullion",
+    "journeyTitle": "Ownership journey",
+    "journeySubtitle": "Public record of this bullion from registration to the current holder.",
+    "journeyEmpty": "No ownership events recorded yet for this serial.",
+    "journeyCurrent": "Current owner",
+    "journeyFromTo": "From {{from}} → {{to}}",
+    "journeyBlockchainTitle": "Blockchain anchor",
+    "journeyBlockchainNote": "This bar is linked to an on-chain ERC-721 record for independent verification.",
+    "journeyNetwork": "Network",
+    "journeyAuditNote": "This timeline is maintained by Gold Standard and mirrored on our secure registry. Anyone can verify it using the QR code or serial number.",
+    "journeyReason": {
+      "initial_registration": "Initial registration",
+      "sale": "Sale to customer",
+      "buyback": "Buyback — sold to Gold Standard",
+      "repurchase": "Repurchased by Gold Standard",
+      "gift": "Gift transfer",
+      "inheritance": "Inheritance",
+      "correction": "Ownership correction",
+      "other": "Ownership update"
+    }
   },
   "productDetail": {
     "notFound": "Product not found",

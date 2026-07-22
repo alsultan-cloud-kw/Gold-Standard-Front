@@ -1093,7 +1093,26 @@
     "authorizedSignature": "توقيع مفوض",
     "companySeal": "ختم الشركة",
     "w3cNote": "شهادة رقمية قابلة للتحقق — وفق مبادئ W3C Verifiable Credentials",
-    "footerBrand": "GOLD STANDARD FOR GOLD BULLION"
+    "footerBrand": "GOLD STANDARD FOR GOLD BULLION",
+    "journeyTitle": "رحلة الملكية",
+    "journeySubtitle": "سجل عام لهذه السبيكة من التسجيل حتى المالك الحالي.",
+    "journeyEmpty": "لا توجد أحداث ملكية مسجلة لهذا الرقم التسلسلي بعد.",
+    "journeyCurrent": "المالك الحالي",
+    "journeyFromTo": "من {{from}} ← {{to}}",
+    "journeyBlockchainTitle": "مرساة البلوك تشين",
+    "journeyBlockchainNote": "هذه السبيكة مرتبطة بسجل ERC-721 على السلسلة للتحقق المستقل.",
+    "journeyNetwork": "الشبكة",
+    "journeyAuditNote": "يحتفظ Gold Standard بهذا السجل الزمني في سجلنا الآمن. يمكن لأي شخص التحقق منه عبر رمز QR أو الرقم التسلسلي.",
+    "journeyReason": {
+      "initial_registration": "التسجيل الأولي",
+      "sale": "بيع للعميل",
+      "buyback": "إعادة شراء — بيعت لـ Gold Standard",
+      "repurchase": "استرداد من Gold Standard",
+      "gift": "هدية / تنازل",
+      "inheritance": "ميراث",
+      "correction": "تصحيح ملكية",
+      "other": "تحديث ملكية"
+    }
   },
   "productDetail": {
     "notFound": "المنتج غير موجود",
