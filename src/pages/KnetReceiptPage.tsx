@@ -65,7 +65,7 @@ export default function KnetReceiptPage() {
     return () => {
       cancelled = true
     }
-  }, [saleId, t])
+  }, [saleId, t, clearCart])
 
   const downloadInvoice = async () => {
     if (!saleId) return
