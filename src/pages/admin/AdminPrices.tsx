@@ -403,13 +403,6 @@ export default function AdminPrices() {
 
   const updatePriceMutation = useMutation({
     mutationFn: adminApi.updateGoldPrice,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['goldPrices'] })
-      toast.success('Prices updated successfully')
-    },
-    onError: () => {
-      toast.error('Failed to update prices')
-    },
   })
 
   const { data: adminPriceAlertsData, isLoading: adminPriceAlertsLoading } = useQuery({
@@ -431,11 +424,14 @@ export default function AdminPrices() {
   })
 
   const handleSave = async () => {
+    let markupOk = true
+    let configOk = true
     try {
       const payload: Record<string, MarkupRow> = {}
       for (const k of ALL_MARKUP_KEYS) payload[k] = additional[k] ?? emptyMarkupRow()
       await adminApi.putDaralsabaekMarkup(payload)
     } catch {
+      markupOk = false
       toast.error('Could not sync markup to server; public prices may be stale.')
     }
     try {
@@ -445,6 +441,7 @@ export default function AdminPrices() {
         extra_source_markups: { kw2: additionalKw2, kw3: additionalKw3, gs1: additionalGs1 },
       })
     } catch {
+      configOk = false
       toast.error('Could not sync Kw2/Kw3/Gold Standard config.')
     }
 
@@ -466,7 +463,7 @@ export default function AdminPrices() {
         ? additionalGs1
         : additional
     const rows = (goldPrices as GoldPriceRow[]) || []
-    let saved = 0
+    const updates: Promise<unknown>[] = []
     for (const price of rows) {
       const caratId = price.carat?.id
       if (!caratId) continue
@@ -487,15 +484,39 @@ export default function AdminPrices() {
         sell = edited?.sell !== undefined ? parseFloat(edited.sell) : Number(price.sell_price_per_gram)
       }
       if (Number.isNaN(buy) || Number.isNaN(sell) || buy < 0 || sell < 0) continue
-      updatePriceMutation.mutate({
-        carat_id: caratId,
-        buy_price_per_gram: buy,
-        sell_price_per_gram: sell,
-      })
-      saved++
+      updates.push(
+        updatePriceMutation.mutateAsync({
+          carat_id: caratId,
+          buy_price_per_gram: buy,
+          sell_price_per_gram: sell,
+        }),
+      )
     }
-    if (saved === 0) {
-      toast.message('Adjust additional amounts above or enter manual prices, then save.')
+
+    if (updates.length === 0) {
+      if (markupOk && configOk) {
+        toast.success('Markup and source config saved.')
+      } else {
+        toast.message('Adjust additional amounts above or enter manual prices, then save.')
+      }
+      return
+    }
+
+    const results = await Promise.allSettled(updates)
+    const okCount = results.filter((r) => r.status === 'fulfilled').length
+    const failCount = results.length - okCount
+    await queryClient.invalidateQueries({ queryKey: ['goldPrices'] })
+
+    if (failCount === 0) {
+      toast.success(
+        okCount === 1
+          ? 'Prices updated successfully'
+          : `Prices updated successfully (${okCount} carats)`,
+      )
+    } else if (okCount > 0) {
+      toast.warning(`Updated ${okCount} carat(s); ${failCount} failed.`)
+    } else {
+      toast.error('Failed to update prices')
     }
   }
 

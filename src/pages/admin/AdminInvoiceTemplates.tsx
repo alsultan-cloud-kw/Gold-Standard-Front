@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, FileText, Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
@@ -18,6 +19,7 @@ type TemplateRow = {
 const PAGE_SIZE = 10
 
 export default function AdminInvoiceTemplates() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const hasTriedAutoCreate = useRef(false)
   const [page, setPage] = useState(1)
@@ -30,9 +32,9 @@ export default function AdminInvoiceTemplates() {
     mutationFn: () => invoicesApi.createDefaultSaleTemplate(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoiceTemplates'] })
-      toast.success('Default "Gold Jewelry Invoice" template is ready')
+      toast.success(t('admin.invoicesPage.templatesReady', { defaultValue: 'Default invoice template is ready' }))
     },
-    onError: () => toast.error('Failed to create default template'),
+    onError: () => toast.error(t('admin.invoicesPage.templatesFailed', { defaultValue: 'Failed to create default template' })),
   })
 
   const list: TemplateRow[] = Array.isArray(templatesData)
@@ -69,17 +71,17 @@ export default function AdminInvoiceTemplates() {
           className="inline-flex items-center gap-2 text-stone-600 hover:text-amber-700 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Invoices
+          {t('admin.invoiceTerms.backToInvoices')}
         </Link>
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold gold-gradient-text-on-light">Invoice Templates</h1>
-            <p className="text-stone-600 mt-1">Manage invoice layout and branding for orders</p>
+            <h1 className="text-3xl font-bold gold-gradient-text-on-light">{t('admin.invoicesPage.templates')}</h1>
+            <p className="text-stone-600 mt-1">{t('admin.invoicesPage.subtitle')}</p>
             <Link
               to="/admin/invoices/terms"
               className="inline-flex items-center gap-1 text-sm text-lime-800 hover:underline mt-2"
             >
-              Edit Terms &amp; Conditions for invoices
+              {t('admin.invoiceTerms.title')}
             </Link>
           </div>
           <button
