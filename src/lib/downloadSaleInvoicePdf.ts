@@ -3,6 +3,7 @@ import { getApiBaseUrl } from '@/lib/apiBase'
 
 /**
  * Download the canonical sale invoice PDF (same file WhatsApp receives).
+ * Always force-regenerate + cache-bust so users never get a stale browser-cached receipt.
  */
 export async function downloadSaleInvoicePdf(
   saleId: string,
@@ -10,13 +11,19 @@ export async function downloadSaleInvoicePdf(
 ): Promise<void> {
   const token = localStorage.getItem('access_token')
   const lang = localStorage.getItem('app_lang') || document.documentElement.getAttribute('lang') || 'ar'
-  const response = await axios.get(`${getApiBaseUrl()}/invoices/sale_pdf/${saleId}/?force=1`, {
-    responseType: 'blob',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'Accept-Language': lang.startsWith('ar') ? 'ar' : 'en',
+  const bust = Date.now()
+  const response = await axios.get(
+    `${getApiBaseUrl()}/invoices/sale_pdf/${saleId}/?force=1&_=${bust}`,
+    {
+      responseType: 'blob',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'Accept-Language': lang.startsWith('ar') ? 'ar' : 'en',
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
     },
-  })
+  )
 
   const blob = response.data as Blob
   if (blob.type?.includes('json')) {

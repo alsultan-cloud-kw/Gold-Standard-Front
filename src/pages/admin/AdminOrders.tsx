@@ -691,6 +691,30 @@ export default function AdminOrders() {
               <button
                 type="button"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-500 text-black border border-black/10 hover:bg-lime-400 text-sm font-semibold"
+                disabled={!detailId || invoicePreviewLoading}
+                onClick={() => {
+                  if (!detailId) return
+                  void (async () => {
+                    try {
+                      await invoicesApi.downloadSaleInvoicePdf(
+                        detailId,
+                        detailData?.invoice_number
+                          ? `${detailData.invoice_number}.pdf`
+                          : undefined,
+                      )
+                      toast.success('Invoice PDF downloaded')
+                    } catch {
+                      toast.error('Could not download invoice PDF')
+                    }
+                  })()
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-black/15 bg-white text-black hover:bg-stone-50 text-sm font-semibold"
                 disabled={!invoiceHtml || invoicePreviewLoading}
                 onClick={() => {
                   if (!invoiceHtml) return
@@ -704,12 +728,11 @@ export default function AdminOrders() {
                       w.close()
                     }, 400)
                   } else {
-                    toast.error('Allow pop-ups to download PDF')
+                    toast.error('Allow pop-ups to print')
                   }
                 }}
               >
-                <Download className="w-4 h-4" />
-                Download PDF
+                Print preview
               </button>
             </div>
           </DialogHeader>
