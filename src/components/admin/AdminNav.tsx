@@ -14,7 +14,7 @@ import {
   Scale,
   Crown,
   CreditCard,
-  Database,
+  // Database, // used only by hidden scrapped-data nav entry
   Wallet,
 } from 'lucide-react'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from '@/featureFlags'
@@ -37,7 +37,8 @@ const adminSectionKeys: { path: string; labelKey: string; icon: typeof LayoutDas
     : []),
   { path: '/admin/inventory', labelKey: 'admin.inventory', icon: Warehouse },
   { path: '/admin/prices', labelKey: 'admin.prices', icon: Tag },
-  { path: '/admin/scrapped-data', labelKey: 'admin.scrappedData', icon: Database },
+  // Scrapped data admin hidden — not needed for now (kept for future use).
+  // { path: '/admin/scrapped-data', labelKey: 'admin.scrappedData', icon: Database },
   ...(BANK_CHANGE_REQUESTS_ENABLED
     ? [{ path: '/admin/bank-requests', labelKey: 'admin.bankRequestsNav', icon: CreditCard }]
     : []),

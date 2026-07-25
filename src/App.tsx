@@ -50,7 +50,8 @@ import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminInventory from './pages/admin/AdminInventory'
 import AdminPrices from './pages/admin/AdminPrices'
-import AdminScrappedData from './pages/admin/AdminScrappedData'
+// Scrapped data admin hidden — not needed for now (kept for future use).
+// import AdminScrappedData from './pages/admin/AdminScrappedData'
 import AdminCustomers from './pages/admin/AdminCustomers'
 import AdminCustomerDetailPage from './pages/admin/AdminCustomerDetailPage'
 import AdminBankChangeRequests from './pages/admin/AdminBankChangeRequests'
@@ -220,7 +221,8 @@ function App() {
                       ) : null}
                       <Route path="/admin/inventory" element={<AdminInventory />} />
                       <Route path="/admin/prices" element={<AdminPrices />} />
-                      <Route path="/admin/scrapped-data" element={<AdminScrappedData />} />
+                      {/* Scrapped data admin hidden — not needed for now (kept for future use). */}
+                      {/* <Route path="/admin/scrapped-data" element={<AdminScrappedData />} /> */}
                       {BANK_CHANGE_REQUESTS_ENABLED ? (
                         <Route path="/admin/bank-requests" element={<AdminBankChangeRequests />} />
                       ) : null}
