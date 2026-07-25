@@ -1098,7 +1098,7 @@ export const priceAlertsApi = {
 // Invoices API
 export const invoicesApi = {
   getInvoices: (params?: Record<string, string>) =>
-    apiService.get('/invoices/invoices/', { params }),
+    apiService.get('/invoices/invoices/', { params: { page_size: '500', ...params } }),
   getInvoice: (id: string) =>
     apiService.get(`/invoices/invoices/${id}/`),
   getPendingDelivery: () =>
