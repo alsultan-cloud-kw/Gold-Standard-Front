@@ -44,7 +44,6 @@ import {
   CHECKOUT_VAULT_DELIVERY_ENABLED,
   isTradingDashboardTab,
 } from '../featureFlags'
-import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
 import { cn } from '@/lib/utils'
 import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
@@ -56,13 +55,13 @@ import {
 } from '@/lib/customerCompliance'
 import type { CustomerProfile as StoreCustomerProfile } from '@/types'
 import {
-  dashboardFieldClass,
   dashboardLabelClass,
   dashboardPanelClass,
   dashboardPrimaryBtnClass,
   dashboardSecondaryBtnClass,
 } from '@/lib/dashboardStyles'
 import HoldingsOverviewTab from '@/components/holdings/HoldingsOverviewTab'
+import AddressesTabPanel from '@/components/dashboard/AddressesTabPanel'
 import {
   Sheet,
   SheetContent,
@@ -355,7 +354,7 @@ export default function UserDashboard() {
               {activeTab === 'club' && <ClubTab />}
               {TRADING_AND_VIRTUAL_WALLET_ENABLED && activeTab === 'transactions' && <TransactionsTab />}
               {BANK_CHANGE_REQUESTS_ENABLED && activeTab === 'bank_account' && <BankAccountTab />}
-              {activeTab === 'addresses' && <AddressesTab />}
+              {activeTab === 'addresses' && <AddressesTabPanel />}
               {activeTab === 'notifications' && <NotificationsTab />}
               {activeTab === 'holdings' && <HoldingsOverviewTab />}
             </div>
@@ -393,6 +392,7 @@ type MembershipPayload = {
     id: string
     name: string
     head_name?: string
+    club_level?: number
     head_completed_orders?: number
     orders_per_member_slot?: number | null
     additional_member_limit?: number | null
@@ -698,9 +698,19 @@ function ClubTab() {
               <p className="text-2xl font-semibold text-gold-100">{club.name}</p>
             )}
             <p className="text-xs text-gold-100/50 mt-1">
-              {t('userDashboard.club.yourRole')} <span className="text-gold-300">{membership.role}</span>
+              {t('userDashboard.club.yourRole')}{' '}
+              <span className="text-gold-300">
+                {membership.role === 'head'
+                  ? t('userDashboard.club.roleHead')
+                  : t('userDashboard.club.roleMember')}
+              </span>
               {club.head_name && ` · ${t('userDashboard.club.headLabel')}: ${club.head_name}`}
             </p>
+            {typeof club.club_level === 'number' ? (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[#85E307]/35 bg-[#ECFCCB]/40 px-2.5 py-1 text-xs font-bold text-[#3F6F00]">
+                {t('userDashboard.club.clubLevelBadge', { level: club.club_level })}
+              </p>
+            ) : null}
           </div>
 
           {membership.role === 'head' && (
@@ -1277,164 +1287,6 @@ function ProfileTab() {
 
         <button type="submit" className="dashboard-primary-btn" disabled={saving}>
           {saving ? t('userDashboard.profile.saving') : t('userDashboard.profile.saveChanges')}
-        </button>
-      </form>
-    </div>
-  )
-}
-
-function AddressesTab() {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const { data, isLoading } = useQuery({
-    queryKey: ['myCustomerProfile'],
-    queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
-  })
-  const profile = asSingleProfile(data)
-  const [addressLine1, setAddressLine1] = useState('')
-  const [addressLine2, setAddressLine2] = useState('')
-  const [city, setCity] = useState('')
-  const [governorate, setGovernorate] = useState('')
-  const [postalCode, setPostalCode] = useState('')
-  const [country, setCountry] = useState('Kuwait')
-
-  useEffect(() => {
-    const p = asSingleProfile(data)
-    if (!p) return
-    setAddressLine1(p.address_line1 ?? '')
-    setAddressLine2(p.address_line2 ?? '')
-    setCity(p.city ?? '')
-    setGovernorate(p.governorate ?? '')
-    setPostalCode(p.postal_code ?? '')
-    setCountry(p.country?.trim() || 'Kuwait')
-  }, [data])
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const id = profile?.id
-      if (!id) throw new Error('NO_PROFILE_ID')
-      await accountsApi.updateProfile(id, {
-        address_line1: addressLine1.trim() || null,
-        address_line2: addressLine2.trim() || null,
-        city: city.trim() || null,
-        governorate: governorate.trim() || null,
-        postal_code: postalCode.trim() || null,
-        country: country.trim() || 'Kuwait',
-      })
-    },
-    onSuccess: () => {
-      toast.success(t('userDashboard.addresses.saved'))
-      queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
-    },
-    onError: (err: unknown) => {
-      const e = err as { message?: string; response?: { data?: Record<string, unknown> } }
-      if (e.message === 'NO_PROFILE_ID') {
-        toast.error(t('userDashboard.addresses.saveFailed'))
-        return
-      }
-      if (e.message) {
-        toast.error(e.message)
-        return
-      }
-      const d = e.response?.data
-      const first =
-        d && typeof d === 'object'
-          ? Object.values(d).find((v) => Array.isArray(v) && v.length)
-          : null
-      toast.error(
-        Array.isArray(first) && first[0]
-          ? String(first[0])
-          : t('userDashboard.addresses.saveFailed')
-      )
-    },
-  })
-
-  const inputClass = dashboardFieldClass
-
-  if (isLoading && !profile) {
-    return (
-      <div className={dashboardPanelClass}>
-        <p className="py-10 text-center text-sm text-[#64748B]">{t('userDashboard.addresses.loading')}</p>
-      </div>
-    )
-  }
-
-  if (!profile?.id) {
-    return (
-      <div className={dashboardPanelClass}>
-        <p className="text-sm text-[#64748B]">{t('userDashboard.addresses.noProfile')}</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className={dashboardPanelClass}>
-      <h2 className="dashboard-panel__title">{t('userDashboard.addresses.title')}</h2>
-      <p className="dashboard-panel__subtitle">{t('userDashboard.addresses.subtitle')}</p>
-      <form
-        className="space-y-5"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!profile?.id) return
-          saveMutation.mutate()
-        }}
-      >
-        <div>
-          <label className={dashboardLabelClass}>{t('userDashboard.addresses.line1')}</label>
-          <input
-            type="text"
-            className={inputClass}
-            value={addressLine1}
-            onChange={(e) => setAddressLine1(e.target.value)}
-            autoComplete="street-address"
-          />
-        </div>
-        <div>
-          <label className={dashboardLabelClass}>{t('userDashboard.addresses.line2')}</label>
-          <input
-            type="text"
-            className={inputClass}
-            value={addressLine2}
-            onChange={(e) => setAddressLine2(e.target.value)}
-            autoComplete="address-line2"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <KuwaitLocationFields
-            governorate={governorate}
-            city={city}
-            onGovernorateChange={setGovernorate}
-            onCityChange={setCity}
-            variant="light"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={dashboardLabelClass}>
-              {t('userDashboard.addresses.postalCode')}
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              autoComplete="postal-code"
-            />
-          </div>
-          <div>
-            <label className={dashboardLabelClass}>{t('userDashboard.addresses.country')}</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              autoComplete="country-name"
-            />
-          </div>
-        </div>
-        <p className="text-xs text-[#64748B]">{t('userDashboard.addresses.checkoutHint')}</p>
-        <button type="submit" className={dashboardPrimaryBtnClass} disabled={saveMutation.isPending}>
-          {saveMutation.isPending ? t('userDashboard.profile.saving') : t('userDashboard.addresses.save')}
         </button>
       </form>
     </div>

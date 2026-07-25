@@ -1,12 +1,22 @@
+import { rememberAuthReturnPath } from '@/lib/authReturnIntent'
+import { safeAppNextPath } from '@/utils/safeNextPath'
+
 export type ClerkOAuthProvider = 'google' | 'apple'
 
 export function buildClerkOAuthUrls(redirectComplete: string) {
   const origin = window.location.origin
-  const completePath = redirectComplete.startsWith('http')
-    ? `${new URL(redirectComplete).pathname}${new URL(redirectComplete).search}`
-    : redirectComplete.startsWith('/')
-      ? redirectComplete
-      : `/${redirectComplete}`
+  let requestedPath = redirectComplete
+  if (redirectComplete.startsWith('http')) {
+    const url = new URL(redirectComplete)
+    requestedPath = url.origin === origin ? `${url.pathname}${url.search}` : '/'
+  } else if (!redirectComplete.startsWith('/')) {
+    requestedPath = `/${redirectComplete}`
+  }
+  const completePath = safeAppNextPath(requestedPath) ?? '/'
+
+  // Clerk/Google may drop callback query parameters. Storage survives the
+  // full-page OAuth round trip and is consumed once Django JWT sync completes.
+  rememberAuthReturnPath(completePath)
 
   // Stay on /sso-callback until Django JWT sync finishes; preserve `next` for post-auth redirect.
   const nextQ =

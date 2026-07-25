@@ -24,6 +24,7 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [businessName, setBusinessName] = useState('')
+  const [businessAddress, setBusinessAddress] = useState('')
   const [companyEmail, setCompanyEmail] = useState(user?.email || '')
   const [contactName, setContactName] = useState(user?.full_name || '')
   const [phone, setPhone] = useState('')
@@ -52,13 +53,28 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
     setFormSuccess(null)
 
     const name = businessName.trim()
+    const address = businessAddress.trim()
     const email = companyEmail.trim().toLowerCase()
+    const licence = license.trim()
+    const tel = phone.trim()
     if (name.length < 2) {
       setFormError(t('companyPricesPage.gate.errors.businessName'))
       return
     }
+    if (address.length < 4) {
+      setFormError(t('companyPricesPage.gate.errors.businessAddress'))
+      return
+    }
+    if (licence.length < 2) {
+      setFormError(t('companyPricesPage.gate.errors.license'))
+      return
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setFormError(t('companyPricesPage.gate.errors.companyEmail'))
+      return
+    }
+    if (tel.length < 6) {
+      setFormError(t('companyPricesPage.gate.errors.phone'))
       return
     }
     if (isTurnstileConfigured && !turnstileToken) {
@@ -70,10 +86,11 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
     try {
       const res = await companyDeskApi.apply({
         business_name: name,
+        business_address: address,
         company_email: email,
         contact_name: contactName.trim() || undefined,
-        phone: phone.trim() || undefined,
-        commercial_license: license.trim() || undefined,
+        phone: tel,
+        commercial_license: licence,
         message: message.trim() || undefined,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
@@ -95,6 +112,12 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
         setFormError(t('companyPricesPage.gate.errors.captcha'))
       } else if (code === 'business_name_required') {
         setFormError(t('companyPricesPage.gate.errors.businessName'))
+      } else if (code === 'business_address_required') {
+        setFormError(t('companyPricesPage.gate.errors.businessAddress'))
+      } else if (code === 'commercial_license_required') {
+        setFormError(t('companyPricesPage.gate.errors.license'))
+      } else if (code === 'phone_required') {
+        setFormError(t('companyPricesPage.gate.errors.phone'))
       } else if (code === 'company_email_required') {
         setFormError(t('companyPricesPage.gate.errors.companyEmail'))
       } else {
@@ -247,6 +270,21 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
               </label>
               <label className="block space-y-1.5">
                 <span className="text-xs font-semibold text-[#0C1512]">
+                  {t('companyPricesPage.gate.fields.businessAddress')}{' '}
+                  <span className="text-red-600">*</span>
+                </span>
+                <input
+                  type="text"
+                  value={businessAddress}
+                  onChange={(e) => setBusinessAddress(e.target.value)}
+                  autoComplete="street-address"
+                  required
+                  maxLength={500}
+                  className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold text-[#0C1512]">
                   {t('companyPricesPage.gate.fields.companyEmail')}{' '}
                   <span className="text-red-600">*</span>
                 </span>
@@ -276,25 +314,29 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
               <div className="grid gap-3.5 sm:grid-cols-2">
                 <label className="block space-y-1.5">
                   <span className="text-xs font-semibold text-[#0C1512]">
-                    {t('companyPricesPage.gate.fields.phone')}
+                    {t('companyPricesPage.gate.fields.phone')}{' '}
+                    <span className="text-red-600">*</span>
                   </span>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     autoComplete="tel"
+                    required
                     maxLength={40}
                     className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
                   />
                 </label>
                 <label className="block space-y-1.5">
                   <span className="text-xs font-semibold text-[#0C1512]">
-                    {t('companyPricesPage.gate.fields.license')}
+                    {t('companyPricesPage.gate.fields.license')}{' '}
+                    <span className="text-red-600">*</span>
                   </span>
                   <input
                     type="text"
                     value={license}
                     onChange={(e) => setLicense(e.target.value)}
+                    required
                     maxLength={80}
                     className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
                   />

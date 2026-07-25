@@ -6356,3 +6356,45 @@ html[dir='rtl'] .price-desk-card--featured::before {
     padding-block: clamp(1.25rem, 3.5vw, 2rem);
   }
 }
+
+/* Holdings grams range — native range is LTR; mirror in RTL so min is inline-start */
+.holdings-grams-slider {
+  direction: ltr;
+}
+
+.holdings-grams-slider--rtl {
+  transform: scaleX(-1);
+}
+
+.holdings-grams-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 9999px;
+  background: #ecfccb;
+  border: 2px solid #3f6f00;
+  box-shadow: 0 1px 3px rgba(11, 15, 25, 0.2);
+  cursor: pointer;
+}
+
+.holdings-grams-slider::-moz-range-thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 9999px;
+  background: #ecfccb;
+  border: 2px solid #3f6f00;
+  box-shadow: 0 1px 3px rgba(11, 15, 25, 0.2);
+  cursor: pointer;
+}
+
+.holdings-grams-slider::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+}
+
+.holdings-grams-slider::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: transparent;
+}

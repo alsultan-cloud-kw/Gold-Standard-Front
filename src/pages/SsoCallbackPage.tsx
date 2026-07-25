@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { useAuth } from '../contexts/AuthContext'
 import { completeAuthNavigation } from '@/lib/completeAuthNavigation'
+import { consumeAuthReturnPath } from '@/lib/authReturnIntent'
+import { resolveAuthReturnPath } from '@/utils/safeNextPath'
 
 export default function SsoCallbackPage() {
   const { t } = useTranslation()
@@ -15,7 +17,13 @@ export default function SsoCallbackPage() {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return
-    completeAuthNavigation(navigate, user, searchParams.get('next'))
+    const callbackPath = resolveAuthReturnPath(
+      searchParams.get('next'),
+      searchParams.get('returnUrl'),
+    )
+    const storedPath = consumeAuthReturnPath()
+    const returnPath = callbackPath ?? storedPath
+    completeAuthNavigation(navigate, user, returnPath)
   }, [isAuthenticated, isLoading, navigate, searchParams, user])
 
   return (

@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import { Database, Gauge, ShieldCheck, Zap } from 'lucide-react'
 import { CustomerBlacklistScreenPanel } from '@/components/compliance/CustomerBlacklistScreenPanel'
+import CustomerKycGateLanding from '@/components/compliance/CustomerKycGateLanding'
 import { ScreeningConsoleSidebar } from '@/components/compliance/ScreeningConsoleSidebar'
 import { ScreeningLiveTicker } from '@/components/compliance/ScreeningLiveTicker'
+import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+import { useAuth } from '@/contexts/AuthContext'
 import { blacklistScreeningApi } from '@/services/blacklistScreeningApi'
+import { companyDeskApi } from '@/services/companyDeskApi'
 import { loadScreeningSession, loadTickerCache, saveTickerCache } from '@/lib/screeningTicker'
 import { usePageEnter } from '@/motion/usePageEnter'
+import { isStaffRole } from '@/utils/authRedirect'
 import {
   loadActiveTab,
   loadScreenHistory,
@@ -20,10 +26,28 @@ function formatCount(n: number): string {
   return n.toLocaleString('en-US')
 }
 
-/** GS name screening console — public tool at /gs-kyc */
+/** GS name screening console — gated to approved company emails (staff bypass). */
 export default function CustomerBlacklistScreenPage() {
   const { t } = useTranslation()
   const rootRef = usePageEnter()
+  const { user, isLoading: authLoading } = useAuth()
+  const staff = isStaffRole(user?.role)
+
+  const {
+    data: access,
+    isLoading: accessLoading,
+    refetch: refetchAccess,
+  } = useQuery({
+    queryKey: ['companyDeskAccess', user?.id ?? 'anon', user?.email ?? ''],
+    queryFn: () => companyDeskApi.getAccess(),
+    enabled: !authLoading && !staff,
+    staleTime: 30_000,
+    retry: 1,
+  })
+
+  const hasAccess = staff || !!access?.has_access
+  const gateReady = !authLoading && (staff || !accessLoading)
+
   const [totalIndexed, setTotalIndexed] = useState<number | null>(
     () => loadTickerCache().totalIndexed,
   )
@@ -40,6 +64,7 @@ export default function CustomerBlacklistScreenPage() {
   const [seedQuery, setSeedQuery] = useState('')
 
   useEffect(() => {
+    if (!hasAccess) return
     let cancelled = false
     const hadCache = loadTickerCache().sampleNames.length > 0
     if (!hadCache) setTickerLoading(true)
@@ -76,7 +101,7 @@ export default function CustomerBlacklistScreenPage() {
     return () => {
       cancelled = true
     }
-  }, [tickerKey])
+  }, [tickerKey, hasAccess])
 
   const selectTab = useCallback((next: ScreeningConsoleTab) => {
     setTab(next)
@@ -130,6 +155,23 @@ export default function CustomerBlacklistScreenPage() {
     },
   ] as const
 
+  if (!gateReady) {
+    return (
+      <AppLoadingScreen message={t('customerScreening.gate.checking')} className="min-h-screen" />
+    )
+  }
+
+  if (!hasAccess) {
+    return (
+      <CustomerKycGateLanding
+        access={access ?? null}
+        onApplied={() => {
+          void refetchAccess()
+        }}
+      />
+    )
+  }
+
   return (
     <div className="storefront-static-page min-h-[100dvh] bg-[#F4F5F1]" ref={rootRef}>
       <ScreeningLiveTicker
@@ -166,7 +208,7 @@ export default function CustomerBlacklistScreenPage() {
                     {t('customerScreening.kicker')}
                   </span>
                   <span className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-[#0B0F19]">
-                    {t('customerScreening.freeBadge')}
+                    {t('customerScreening.partnerBadge')}
                   </span>
                 </div>
 

@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowUpRight,
   Layers,
+  Lock,
   TrendingDown,
   TrendingUp,
   Wallet,
 } from 'lucide-react'
 import { useHoldingsPortfolio } from '@/hooks/useHoldingsPortfolio'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
+import { HoldingsBetaStrip } from '@/components/holdings/HoldingsBetaStrip'
+import { HOLDINGS_LIVE_ENABLED } from '@/featureFlags'
 import { getDefaultPreviewCarat, numOrNull } from '@/utils/publicStorefrontRates'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { cn } from '@/lib/utils'
@@ -29,35 +32,108 @@ function formatGrams(value: number): string {
 export default function HoldingsOverviewTab() {
   const { t, i18n } = useTranslation()
   const dateLocale = i18n.language?.startsWith('ar') ? 'ar-KW' : undefined
-  const { stats, recentTrades, walletBalance, isLoading, isError } = useHoldingsPortfolio()
+  const live = HOLDINGS_LIVE_ENABLED
+  const { stats, recentTrades, walletBalance, isLoading, isError } = useHoldingsPortfolio(live)
   const { data: rates } = useEnrichedPublicRates(30_000)
 
   const carat24 = getDefaultPreviewCarat(rates)
   const sellPerGram = numOrNull(carat24?.sellTotal)
   const marketValue =
-    sellPerGram != null && stats.gramsHeld > 0 ? stats.gramsHeld * sellPerGram : null
+    live && sellPerGram != null && stats.gramsHeld > 0 ? stats.gramsHeld * sellPerGram : null
 
   const plPositive = stats.totalPl >= 0
 
+  const teaserStats = [
+    {
+      key: 'gramsHeld',
+      icon: Layers,
+      value: live ? `${formatGrams(stats.gramsHeld)} g` : '—',
+      hint: '24K',
+    },
+    {
+      key: 'marketValue',
+      icon: Wallet,
+      value: live && marketValue != null ? formatKwd(marketValue).replace(/^\+/, '') : '—',
+      hint: t('userDashboard.holdingsPanel.stats.atSellRate'),
+    },
+    {
+      key: 'unrealizedPl',
+      icon: plPositive ? TrendingUp : TrendingDown,
+      value: live ? formatKwd(stats.unrealizedPl) : '—',
+      hint: 'KWD',
+    },
+    {
+      key: 'realizedPl',
+      icon: null,
+      value: live ? formatKwd(stats.realizedPl) : '—',
+      hint: live
+        ? t('userDashboard.holdingsPanel.stats.fromSells', { count: stats.totalSells })
+        : t('holdingsBeta.statsSoonHint'),
+    },
+  ] as const
+
   return (
     <div className="dashboard-panel dashboard-panel--stable space-y-6">
+      <HoldingsBetaStrip compact />
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="dashboard-panel__title">{t('userDashboard.holdingsPanel.title')}</h2>
           <p className="dashboard-panel__subtitle !mb-0">
-            {t('userDashboard.holdingsPanel.subtitle')}
+            {live
+              ? t('userDashboard.holdingsPanel.subtitle')
+              : t('userDashboard.holdingsPanel.subtitleBeta')}
           </p>
         </div>
-        <Link
-          to="/holdings"
-          className="dashboard-secondary-btn shrink-0"
-        >
-          <span>{t('userDashboard.holdingsPanel.openHoldings')}</span>
+        <Link to="/holdings" className="dashboard-secondary-btn shrink-0">
+          <span>
+            {live
+              ? t('userDashboard.holdingsPanel.openHoldings')
+              : t('userDashboard.holdingsPanel.previewHoldings')}
+          </span>
           <ArrowUpRight className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
         </Link>
       </div>
 
-      {isLoading ? (
+      {!live ? (
+        <>
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/55 backdrop-blur-[1.5px]">
+              <div className="mx-4 max-w-sm rounded-xl border border-amber-200/80 bg-white/95 px-4 py-3 text-center shadow-sm">
+                <Lock className="mx-auto h-4 w-4 text-amber-800" aria-hidden />
+                <p className="mt-1.5 text-sm font-semibold text-[#0B0F19]">
+                  {t('holdingsBeta.statsLockedTitle')}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-[#64748B]">
+                  {t('holdingsBeta.statsLockedBody')}
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-3 opacity-60 sm:grid-cols-2 xl:grid-cols-4" aria-hidden>
+              {teaserStats.map((s) => {
+                const Icon = s.icon
+                return (
+                  <div key={s.key} className="dashboard-inset-panel">
+                    <div className="mb-2 flex items-center gap-2 text-[#64748B]">
+                      {Icon ? <Icon className="h-4 w-4" aria-hidden /> : null}
+                      <span className="text-xs font-semibold uppercase tracking-wide">
+                        {t(`userDashboard.holdingsPanel.stats.${s.key}`)}
+                      </span>
+                    </div>
+                    <p className="font-mono text-2xl font-bold tabular-nums text-[#0B0F19]">
+                      {s.value}
+                    </p>
+                    <p className="mt-1 text-xs text-[#64748B]">{s.hint}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          <Link to="/holdings" className="dashboard-primary-btn inline-flex w-full sm:w-auto">
+            {t('userDashboard.holdingsPanel.exploreTeaser')}
+          </Link>
+        </>
+      ) : isLoading ? (
         <div className="dashboard-tab-loading">
           <p className="dashboard-empty">{t('userDashboard.holdingsPanel.loading')}</p>
         </div>

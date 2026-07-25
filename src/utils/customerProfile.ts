@@ -8,6 +8,18 @@ export type CustomerProfileAddress = {
   country?: string | null
 }
 
+export type SavedAddressLike = {
+  id?: string
+  label?: string
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  governorate?: string | null
+  postal_code?: string | null
+  country?: string | null
+  is_default?: boolean
+}
+
 /** Normalize list / paginated / single-object profile API responses. */
 export function asSingleCustomerProfile(data: unknown): CustomerProfileAddress | null {
   if (!data) return null
@@ -40,7 +52,21 @@ export function shippingDiffersFromProfile(
   )
 }
 
-export function formatProfileShippingAddress(p: CustomerProfileAddress): {
+export function shippingMatchesSavedAddress(
+  a: SavedAddressLike,
+  shipping: { address: string; city: string; governorate: string; postalCode: string },
+): boolean {
+  const savedCombined = [a.address_line1, a.address_line2].filter(Boolean).join(', ')
+  const norm = (s: string) => s.trim().toLowerCase()
+  return (
+    norm(shipping.address) === norm(savedCombined)
+    && norm(shipping.city) === norm(a.city ?? '')
+    && norm(shipping.governorate) === norm(a.governorate ?? '')
+    && norm(shipping.postalCode) === norm(a.postal_code ?? '')
+  )
+}
+
+export function formatProfileShippingAddress(p: CustomerProfileAddress | SavedAddressLike): {
   address: string
   city: string
   governorate: string
@@ -52,4 +78,13 @@ export function formatProfileShippingAddress(p: CustomerProfileAddress): {
     governorate: p.governorate ?? '',
     postalCode: p.postal_code ?? '',
   }
+}
+
+export function applySavedAddressToShipping(a: SavedAddressLike): {
+  address: string
+  city: string
+  governorate: string
+  postalCode: string
+} {
+  return formatProfileShippingAddress(a)
 }

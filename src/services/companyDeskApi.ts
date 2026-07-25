@@ -12,10 +12,11 @@ export type CompanyDeskAccessResponse = {
 
 export type CompanyDeskApplyPayload = {
   business_name: string
+  business_address: string
   company_email: string
   contact_name?: string
-  phone?: string
-  commercial_license?: string
+  phone: string
+  commercial_license: string
   message?: string
   turnstile_token?: string
 }

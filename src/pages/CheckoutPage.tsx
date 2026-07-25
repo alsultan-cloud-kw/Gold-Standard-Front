@@ -10,6 +10,7 @@ import {
   Download,
   Tag,
   Crown,
+  MapPin,
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
@@ -39,9 +40,10 @@ import {
 } from '@/utils/productStock'
 import {
   asSingleCustomerProfile,
+  applySavedAddressToShipping,
   formatProfileShippingAddress,
   profileHasSavedAddress,
-  shippingDiffersFromProfile,
+  shippingMatchesSavedAddress,
 } from '@/utils/customerProfile'
 
 type SaleResponse = {
@@ -234,6 +236,12 @@ export default function CheckoutPage() {
     () => asSingleCustomerProfile(checkoutProfileData),
     [checkoutProfileData],
   )
+  const { data: savedAddresses = [] } = useQuery({
+    queryKey: ['savedAddresses'],
+    queryFn: () => accountsApi.listSavedAddresses(),
+    enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
+  })
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   // Ensure numeric wallet balance (API may return string/Decimal-like)
   const walletBalanceRaw =
     (walletData?.wallet as { balance?: unknown } | undefined)?.balance
@@ -331,17 +339,19 @@ export default function CheckoutPage() {
       address.trim() || (city.trim() && governorate.trim()),
     )
     if (!hasShipping) return false
-    if (!profileHasSavedAddress(checkoutProfile)) return true
-    return shippingDiffersFromProfile(checkoutProfile, { address, city, governorate, postalCode })
-  }, [checkoutProfile, address, city, governorate, postalCode])
+    if (savedAddresses.length === 0) return true
+    return !savedAddresses.some((a) =>
+      shippingMatchesSavedAddress(a, { address, city, governorate, postalCode }),
+    )
+  }, [checkoutProfile, savedAddresses, address, city, governorate, postalCode])
 
   useEffect(() => {
     if (!showSaveAddressPrompt || saveAddressPromptInitialized.current) return
     saveAddressPromptInitialized.current = true
-    if (checkoutProfile && !profileHasSavedAddress(checkoutProfile)) {
+    if (savedAddresses.length === 0) {
       setSaveAddressToProfile(true)
     }
-  }, [showSaveAddressPrompt, checkoutProfile])
+  }, [showSaveAddressPrompt, savedAddresses.length])
 
   useEffect(() => {
     writeCheckoutShippingDraft({
@@ -368,6 +378,20 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (profileHydrated.current) return
+    if (savedAddresses.length > 0) {
+      const preferred =
+        savedAddresses.find((a) => a.is_default) || savedAddresses[0]
+      if (preferred && !savedShipping) {
+        const filled = applySavedAddressToShipping(preferred)
+        setAddress(filled.address)
+        setCity(filled.city)
+        setGovernorate(filled.governorate)
+        setPostalCode(filled.postalCode)
+        setSelectedAddressId(preferred.id)
+      }
+      profileHydrated.current = true
+      return
+    }
     const p = asSingleCustomerProfile(checkoutProfileData)
     if (!p) return
     if (profileHasSavedAddress(p)) {
@@ -384,7 +408,19 @@ export default function CheckoutPage() {
       setPostalCode((pc) => pc || fromProfile.postalCode)
     }
     profileHydrated.current = true
-  }, [checkoutProfileData, savedShipping])
+  }, [checkoutProfileData, savedAddresses, savedShipping])
+
+  const applyAddressCard = (id: string) => {
+    const card = savedAddresses.find((a) => a.id === id)
+    if (!card) return
+    const filled = applySavedAddressToShipping(card)
+    setAddress(filled.address)
+    setCity(filled.city)
+    setGovernorate(filled.governorate)
+    setPostalCode(filled.postalCode)
+    setSelectedAddressId(id)
+    setSaveAddressToProfile(false)
+  }
 
   // Pre-fill customer info from logged-in user so the order stores the customer's email, not the viewer's
   useEffect(() => {
@@ -566,25 +602,27 @@ export default function CheckoutPage() {
 
       if (saveAddressToProfile) {
         try {
-          let profileId = checkoutProfile?.id
-          if (!profileId) {
-            const fresh = await accountsApi.getMyProfile()
-            profileId = asSingleCustomerProfile(fresh)?.id
-          }
-          if (!profileId) {
-            toast.error(t('checkoutPage.addressSaveFailed'))
-          } else {
-            await accountsApi.updateProfile(profileId, {
-              address_line1: address.trim() || null,
-              address_line2: null,
-              city: city.trim() || null,
-              governorate: governorate.trim() || null,
-              postal_code: postalCode.trim() || null,
+          const nextLabel = t('checkoutPage.saveAddressLabel', {
+            n: savedAddresses.length + 1,
+          })
+          const line1 = address.trim()
+          if (line1.length >= 2) {
+            await accountsApi.createSavedAddress({
+              label: nextLabel,
+              address_line1: line1,
+              address_line2: '',
+              city: city.trim() || '',
+              governorate: governorate.trim() || '',
+              postal_code: postalCode.trim() || '',
               country: 'Kuwait',
+              is_default: savedAddresses.length === 0,
             })
+            await queryClient.invalidateQueries({ queryKey: ['savedAddresses'] })
             await queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
             clearCheckoutShippingDraft()
             toast.success(t('checkoutPage.addressSavedToProfile'))
+          } else {
+            toast.error(t('checkoutPage.addressSaveFailed'))
           }
         } catch {
           toast.error(t('checkoutPage.addressSaveFailed'))
@@ -843,6 +881,71 @@ export default function CheckoutPage() {
               <div className={checkoutPanelClass}>
                 <h2 className="checkout-panel__title">{t('checkoutPage.shippingInfo')}</h2>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {savedAddresses.length > 0 ? (
+                    <div className="md:col-span-2 space-y-2">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#64748B]">
+                        {t('checkoutPage.savedAddressesHeading')}
+                      </p>
+                      <ul className="grid gap-2 sm:grid-cols-2">
+                        {savedAddresses.map((card) => {
+                          const active =
+                            selectedAddressId === card.id ||
+                            shippingMatchesSavedAddress(card, {
+                              address,
+                              city,
+                              governorate,
+                              postalCode,
+                            })
+                          return (
+                            <li key={card.id}>
+                              <button
+                                type="button"
+                                onClick={() => applyAddressCard(card.id)}
+                                className={cn(
+                                  'w-full rounded-xl border px-3.5 py-3 text-start transition',
+                                  active
+                                    ? 'border-[#85E307]/50 bg-[#F4FBEF] ring-1 ring-[#85E307]/30'
+                                    : 'border-black/10 bg-white hover:border-[#3F6F00]/30',
+                                )}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <MapPin
+                                    className={cn(
+                                      'h-4 w-4 shrink-0',
+                                      active ? 'text-[#3F6F00]' : 'text-[#94A3B8]',
+                                    )}
+                                    aria-hidden
+                                  />
+                                  <span className="text-sm font-bold text-[#0B0F19]">
+                                    {card.label}
+                                  </span>
+                                  {card.is_default ? (
+                                    <span className="rounded bg-[#ECFCCB] px-1.5 py-0.5 text-[10px] font-bold text-[#3F6F00]">
+                                      {t('checkoutPage.defaultAddressBadge')}
+                                    </span>
+                                  ) : null}
+                                </span>
+                                <span className="mt-1 block text-xs leading-relaxed text-[#64748B]">
+                                  {[card.address_line1, card.city, card.governorate]
+                                    .filter(Boolean)
+                                    .join(' · ')}
+                                </span>
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                      <p className="text-xs text-[#64748B]">
+                        {t('checkoutPage.savedAddressesHint')}{' '}
+                        <Link
+                          to="/dashboard?tab=addresses"
+                          className="font-semibold text-[#3F6F00] underline-offset-2 hover:underline"
+                        >
+                          {t('userDashboard.tabs.addresses')}
+                        </Link>
+                      </p>
+                    </div>
+                  ) : null}
                   <input
                     placeholder={t('checkoutPage.firstNamePh')}
                     className={checkoutFieldClass}
@@ -872,20 +975,32 @@ export default function CheckoutPage() {
                     placeholder={t('checkoutPage.addressPh')}
                     className={cn(checkoutFieldClass, 'md:col-span-2')}
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedAddressId(null)
+                      setAddress(e.target.value)
+                    }}
                   />
                   <KuwaitLocationFields
                     governorate={governorate}
                     city={city}
-                    onGovernorateChange={setGovernorate}
-                    onCityChange={setCity}
+                    onGovernorateChange={(v) => {
+                      setSelectedAddressId(null)
+                      setGovernorate(v)
+                    }}
+                    onCityChange={(v) => {
+                      setSelectedAddressId(null)
+                      setCity(v)
+                    }}
                     variant="light"
                   />
                   <input
                     placeholder={t('checkoutPage.postalPh')}
                     className={cn(checkoutFieldClass, 'md:col-span-2')}
                     value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedAddressId(null)
+                      setPostalCode(e.target.value)
+                    }}
                   />
                 </div>
 

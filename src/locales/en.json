@@ -37,8 +37,8 @@
     "cart": "Cart",
     "trading": "Trading",
     "holdings": "Holdings",
-    "holdingsNewBadge": "New",
-    "holdingsNewHint": "New feature under development"
+    "holdingsNewBadge": "Beta",
+    "holdingsNewHint": "Experimental — not live yet"
   },
   "legal": {
     "combined": {
@@ -51,6 +51,7 @@
     }
   },
   "joinClub": {
+    "kicker": "Investors club",
     "title": "You're invited to a club",
     "subtitle": "Create an account or sign in to review the invitation and choose whether to join.",
     "headLabel": "Club head: {{name}}",
@@ -71,8 +72,21 @@
     "redirecting": "Redirecting…",
     "celebrateTitle": "You're invited!",
     "celebrateSubtitle": "Confirm to join this club and unlock member benefits.",
+    "levelBadge": "Club level {{level}}",
     "membersHeading": "Members ({{count}})",
-    "roleHead": "head",
+    "rolesHeading": "Club roles",
+    "roleHead": "Head",
+    "roleMember": "Member",
+    "roleMeta": {
+      "head": {
+        "label": "Head",
+        "description": "Founder who leads the club and manages invites."
+      },
+      "member": {
+        "label": "Member",
+        "description": "Joined via invite — shares club offers and member benefits."
+      }
+    },
     "moreMembers": "+{{n}} more",
     "activeOfferHeading": "Active club offer",
     "offerTeaser": "Active offer: {{offer}}",
@@ -82,6 +96,12 @@
     "benefitDefault1": "Shared checkout discounts when a club offer is live",
     "benefitDefault2": "Member pricing when enabled for your club",
     "benefitDefault3": "A trusted circle of Gold Standard investors",
+    "benefitKeys": {
+      "shared_discounts": "Shared checkout discounts when a club offer is live",
+      "member_pricing": "Member pricing when enabled for your club",
+      "trusted_circle": "A trusted circle of Gold Standard investors"
+    },
+    "switchHint": "If you already belong to another club, joining here will move you to this one (admin setting).",
     "joinCta": "Join club",
     "cancel": "Cancel",
     "cancelledBody": "You declined this invitation. You can reopen it anytime from the invite link.",
@@ -642,8 +662,8 @@
       "description": "Live gold and precious metal buy/sell rates in Kuwaiti dinar. Interactive chart, karat board, and gram calculator — updated continuously."
     },
     "customerKyc": {
-      "title": "Enterprise name screening console · Gold Standard Kuwait",
-      "description": "Free live name screening against Gold Standard’s reference registry. Exact and fuzzy match reports for Kuwait counters. Sanctions data supported by OpenSanctions."
+      "title": "Company customer screening · Gold Standard Kuwait",
+      "description": "Partner gold companies can apply for access to Gold Standard’s enterprise name screening console. Approved emails unlock live registry checks."
     },
     "mociKyc": {
       "title": "MOCI customer due diligence questionnaire · Kuwait | Gold Standard",
@@ -936,9 +956,10 @@
       "loginHint": "After approval, open the board with an account on the company email.",
       "loginCta": "Sign in",
       "formTitle": "Request company listing",
-      "formHint": "Most important fields: business name and official company email.",
+      "formHint": "Business name, address, licence, official email, and phone are required.",
       "fields": {
         "businessName": "Business name",
+        "businessAddress": "Business address",
         "companyEmail": "Official company email",
         "contactName": "Contact name",
         "phone": "Phone",
@@ -948,7 +969,7 @@
       "submit": "Submit listing request",
       "submitPending": "Application under review",
       "submitting": "Submitting…",
-      "successSubmitted": "Request received. We will review and activate access from admin.",
+      "successSubmitted": "Request received. Check your email — we sent an under-review confirmation. Access unlocks after admin approval.",
       "successAlreadyPending": "Your request is already on file and still under review.",
       "successAlreadyActive": "Your company access is active. Sign in with that email to open the board.",
       "statusPendingTitle": "Application under review",
@@ -959,7 +980,10 @@
       "statusRejectedBody": "You can update details and resubmit for a new review.",
       "errors": {
         "businessName": "Enter the business name.",
+        "businessAddress": "Enter the business address.",
         "companyEmail": "Enter a valid official company email.",
+        "license": "Enter the commercial licence number.",
+        "phone": "Enter a contact phone number.",
         "captcha": "Complete the security check and try again.",
         "generic": "Could not submit the request. Please try again."
       }
@@ -1303,7 +1327,11 @@
     "selectGovernorateFirst": "Select governorate first",
     "postalPh": "Postal Code",
     "saveAddressTitle": "Save this address to my account",
-    "saveAddressHint": "We will store it under Addresses in your dashboard for faster checkout next time.",
+    "saveAddressHint": "We will store it as a named card under Addresses for one-tap checkout next time.",
+    "saveAddressLabel": "Address {{n}}",
+    "savedAddressesHeading": "Your saved addresses",
+    "savedAddressesHint": "Tap a card to fill the fields. Manage cards in",
+    "defaultAddressBadge": "Default",
     "addressSavedToProfile": "Address saved to your account",
     "addressSaveFailed": "Order placed, but we could not save your address. You can add it from your dashboard.",
     "manageAddressLater": "You can also update it anytime from",
@@ -1940,11 +1968,76 @@
   },
   "customerScreening": {
     "kicker": "Gold Standard · Kuwait",
-    "freeBadge": "Free compliance tool",
+    "freeBadge": "Partner company tool",
+    "partnerBadge": "Approved company access",
     "title": "Enterprise name screening console",
     "intro": "Screen a full legal name against Gold Standard’s reference registry — exact match and close similarity — before you complete a sale or open an account.",
-    "introHook": "Built for the counter. Free to use. The kind of tool desks usually pay for.",
-    "footerPitch": "Same company that prices, settles, and documents physical bullion in Kuwait — now a live screening console for your customers.",
+    "introHook": "Built for partner gold counters. Activated per company email after admin review.",
+    "footerPitch": "Same company that prices, settles, and documents physical bullion in Kuwait — now a live screening console for approved partner desks.",
+    "gate": {
+      "checking": "Checking company access…",
+      "badge": "Company access · by request",
+      "headline": "Customer screening for approved gold companies",
+      "subtext": "Apply with your business details. We review manually in Django, then activate the email you list — so everyday shoppers never see the console.",
+      "ctaApply": "Request access",
+      "ctaSignIn": "Already approved? Sign in",
+      "pillars": {
+        "verified": "Activated only after admin approval",
+        "compliance": "Live registry name screening",
+        "b2b": "For gold companies — not retail accounts"
+      },
+      "whyTitle": "Why is this gated?",
+      "whyBody": "This console is a B2B compliance tool for partner gold businesses. Normal customer accounts stay on the storefront; only emails you approve in admin unlock screening.",
+      "stepTitles": {
+        "apply": "Submit the company form",
+        "review": "We review & email you",
+        "access": "Sign in & use the console"
+      },
+      "steps": {
+        "apply": "Enter business name, address, commercial licence, contact email, and phone.",
+        "review": "You get an under-review email immediately; acceptance email when we activate access.",
+        "access": "Sign in with the approved company email to open every screening feature."
+      },
+      "includesLabel": "What approved partners unlock",
+      "includes": {
+        "screening": "Full name screening console (exact + fuzzy)",
+        "audit": "Reference IDs logged for your compliance file",
+        "prices": "Same approval also unlocks the company price board"
+      },
+      "loginHint": "After approval, open the console with an account on the company email.",
+      "loginCta": "Sign in",
+      "formTitle": "Request company access",
+      "formHint": "All fields required. Use the official company email you will sign in with.",
+      "fields": {
+        "businessName": "Business name",
+        "businessAddress": "Business address",
+        "license": "Business licence",
+        "companyEmail": "Contact email",
+        "phone": "Contact number"
+      },
+      "submit": "Submit access request",
+      "submitPending": "Application under review",
+      "submitting": "Submitting…",
+      "successSubmitted": "Request received. Check your inbox for the under-review email.",
+      "successAlreadyPending": "Your request is already on file and still under review.",
+      "successAlreadyActive": "Access is active. Sign in with that email to open the console.",
+      "emailNote": "You will receive an under-review email now, and an acceptance email when approved.",
+      "statusPendingTitle": "Application under review",
+      "statusPendingBody": "We received «{{name}}». Screening unlocks after admin approval — watch your email.",
+      "statusInactiveTitle": "Access currently deactivated",
+      "statusInactiveBody": "Your listing exists but access is off. Contact us or resubmit for review.",
+      "statusRejectedTitle": "Previous application not approved",
+      "statusRejectedBody": "You can update details and resubmit for a new review.",
+      "errors": {
+        "businessName": "Enter the business name.",
+        "businessAddress": "Enter the business address.",
+        "license": "Enter the business licence number.",
+        "companyEmail": "Enter a valid contact email.",
+        "phone": "Enter a contact number.",
+        "captcha": "Complete the security check and try again.",
+        "generic": "Could not submit the request. Please try again."
+      }
+    },
     "metrics": {
       "latencyLabel": "Typical response",
       "latencyValue": "Sub-second",
@@ -2033,7 +2126,7 @@
       "recordsPending": "Connecting…",
       "newVerification": "New verification",
       "navAria": "Screening console sections",
-      "sidebarFooter": "Free counter tool · AML name screening",
+      "sidebarFooter": "Partner desk · AML name screening",
       "nav": {
         "overview": "Overview",
         "screening": "Live screening",
@@ -2489,9 +2582,12 @@
     "holdingsPanel": {
       "title": "Holdings overview",
       "subtitle": "Track your allocated gold balance, profit and loss, and recent activity.",
+      "subtitleBeta": "When holdings go live, your grams, market value, and P/L will appear here.",
       "loading": "Loading holdings…",
       "loadError": "Could not load holdings right now. Try again shortly.",
       "openHoldings": "Manage holdings",
+      "previewHoldings": "Preview holdings page",
+      "exploreTeaser": "Explore the holdings preview",
       "openHoldingsPage": "Full holdings page",
       "manageHoldings": "Buy or sell gold",
       "recentActivity": "Recent activity",
@@ -2519,7 +2615,7 @@
     },
     "club": {
       "title": "My club",
-      "description": "You can belong to one club at a time. The club head can invite friends; new members receive a copy of the head's active offers (discounts). You can create your own club.",
+      "description": "Belong to an investors club. The club head can invite friends; new members share live club offers. By default you can only be in one club — admins can allow switching via Django.",
       "loading": "Loading…",
       "loadFailed": "Could not load your club right now.",
       "tryAgain": "Try again",
@@ -2531,6 +2627,7 @@
       "clubLabel": "Club",
       "yourRole": "Your role:",
       "headLabel": "Head",
+      "clubLevelBadge": "Club level {{level}} / 5",
       "inviteFriendsHint": "Create an invite link — it stays here for up to 30 days (until it expires or reaches its join limit). Reloading the page will not remove it.",
       "inviteExpires": "Valid until {{date}} · joins used: {{uses}} / {{maxUses}}",
       "saveClubName": "Save club name",
@@ -2622,10 +2719,30 @@
       }
     },
     "addresses": {
-      "title": "Saved address",
-      "subtitle": "Keep your delivery details up to date. Checkout can load these fields when you are signed in.",
-      "loading": "Loading your address…",
+      "title": "Saved addresses",
+      "subtitle": "Manage named address cards. Use them at checkout to fill shipping in one tap — rename, edit, or delete anytime.",
+      "loading": "Loading your addresses…",
       "noProfile": "We could not load your customer profile. Please sign in again or contact support if this continues.",
+      "addNew": "Add address",
+      "addTitle": "Add address",
+      "editTitle": "Edit address",
+      "emptyTitle": "No saved addresses yet",
+      "emptyHint": "Add an address here, or save one at checkout when you place an order.",
+      "cardName": "Card name",
+      "cardNamePh": "e.g. Address 1, Home, Office",
+      "defaultLabel": "Address {{n}}",
+      "defaultBadge": "Default",
+      "setDefault": "Set default",
+      "makeDefault": "Use as default for checkout",
+      "defaultSet": "Default address updated",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this address card?",
+      "deleted": "Address deleted",
+      "deleteFailed": "Could not delete this address.",
+      "cancel": "Cancel",
+      "labelRequired": "Enter a name for this address card.",
+      "line1Required": "Enter the street / block address.",
       "line1": "Address line 1",
       "line2": "Address line 2 (optional)",
       "city": "City",
@@ -2635,7 +2752,7 @@
       "save": "Save address",
       "saved": "Address saved",
       "saveFailed": "Could not save your address. Check the fields and try again.",
-      "checkoutHint": "If shipping fields on checkout are empty, we fill them from this saved address."
+      "checkoutHint": "At checkout, tap a saved card to fill the shipping fields automatically."
     },
     "orders": {
       "title": "My Orders",
@@ -2855,6 +2972,17 @@
     "noteKicker": "Transparency",
     "noteTitle": "Why trading is not live yet",
     "noteBody": "Core trading logic is already under development. We will open the public desk only when pricing, custody, and compliance flows meet the same standard we apply to physical bullion."
+  },
+  "holdingsBeta": {
+    "badge": "Experimental beta",
+    "title": "Holdings is not live yet — preview only",
+    "pageBody": "You can explore the experience and live rate quotes. Buying, selling, and real balances activate when we flip this feature on.",
+    "dashboardBody": "Live stats will appear here once holdings is activated. Until then this tab is a tease of what’s coming.",
+    "statsLockedTitle": "Stats unlock at launch",
+    "statsLockedBody": "Grams held, market value, and P/L will show your real account here when the feature goes live.",
+    "statsSoonHint": "Available when holdings is live",
+    "toastTitle": "Still in beta",
+    "toastBody": "Holdings trading is not active yet — thanks for exploring the preview."
   },
   "holdingsPage": {
     "badge": "Digital metal wallet",

@@ -22,6 +22,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { useHoldingsPortfolio, type HoldingsQuote } from '@/hooks/useHoldingsPortfolio'
+import { HoldingsBetaStrip } from '@/components/holdings/HoldingsBetaStrip'
+import { HOLDINGS_LIVE_ENABLED } from '@/featureFlags'
 import { goldTradingApi } from '@/services/api'
 import {
   Dialog,
@@ -87,7 +89,7 @@ export default function HoldingsPage() {
   const isRtl = i18n.dir() === 'rtl'
 
   const { data: rates, isLoading: ratesLoading } = useEnrichedPublicRates(20_000)
-  const portfolio = useHoldingsPortfolio(isAuthenticated)
+  const portfolio = useHoldingsPortfolio(isAuthenticated && HOLDINGS_LIVE_ENABLED)
 
   const [grams, setGrams] = useState(25)
   const [gramsText, setGramsText] = useState('25')
@@ -129,6 +131,9 @@ export default function HoldingsPage() {
 
   const quoteMutation = useMutation({
     mutationFn: async (mode: ActionMode) => {
+      if (!HOLDINGS_LIVE_ENABLED) {
+        throw new Error('HOLDINGS_BETA')
+      }
       const payload = { carat_value: CARAT_24, grams: effectiveGrams }
       return mode === 'buy'
         ? (goldTradingApi.quoteBuy(payload) as Promise<HoldingsQuote>)
@@ -139,12 +144,21 @@ export default function HoldingsPage() {
       setConfirmOpen(true)
     },
     onError: (err) => {
+      if (err instanceof Error && err.message === 'HOLDINGS_BETA') {
+        toast.message(t('holdingsBeta.toastTitle'), {
+          description: t('holdingsBeta.toastBody'),
+        })
+        return
+      }
       toast.error(apiErrorMessage(err, t('holdingsPage.errors.quoteFailed')))
     },
   })
 
   const executeMutation = useMutation({
     mutationFn: async (mode: ActionMode) => {
+      if (!HOLDINGS_LIVE_ENABLED) {
+        throw new Error('HOLDINGS_BETA')
+      }
       const payload = { carat_value: CARAT_24, grams: effectiveGrams }
       return mode === 'buy'
         ? goldTradingApi.buy(payload)
@@ -163,6 +177,12 @@ export default function HoldingsPage() {
       portfolio.refetch()
     },
     onError: (err) => {
+      if (err instanceof Error && err.message === 'HOLDINGS_BETA') {
+        toast.message(t('holdingsBeta.toastTitle'), {
+          description: t('holdingsBeta.toastBody'),
+        })
+        return
+      }
       toast.error(apiErrorMessage(err, t('holdingsPage.errors.executeFailed')))
     },
   })
@@ -261,7 +281,8 @@ export default function HoldingsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[var(--site-bg)] py-16" ref={rootRef}>
+      <div className="min-h-screen bg-[var(--site-bg)]" ref={rootRef}>
+        <HoldingsBetaStrip />
         <div className="page-shell max-w-lg py-16 text-center">
           <h1 className="store-display-title text-[#0B0F19]">{t('holdingsPage.title')}</h1>
           <p className="mt-3 text-sm text-[#64748B]">{t('holdingsPage.errors.loginRequired')}</p>
@@ -275,6 +296,7 @@ export default function HoldingsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--site-bg)]" dir={isRtl ? 'rtl' : 'ltr'} ref={rootRef}>
+      <HoldingsBetaStrip />
       <section className="relative overflow-hidden border-b border-black/5 bg-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_100%_0%,rgba(133,227,7,0.12),transparent_55%)]" />
         <div className="relative page-shell page-section--roomy">
@@ -286,10 +308,17 @@ export default function HoldingsPage() {
             {t('holdingsPage.backToDashboard')}
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-800">
-              <Sparkles className="h-3 w-3" aria-hidden />
-              {t('holdingsPage.badge')}
-            </span>
+            {!HOLDINGS_LIVE_ENABLED ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-900">
+                <Sparkles className="h-3 w-3" aria-hidden />
+                {t('holdingsBeta.badge')}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-800">
+                <Sparkles className="h-3 w-3" aria-hidden />
+                {t('holdingsPage.badge')}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[#3F6F00]/15 bg-[#ECFCCB]/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#3F6F00]">
               <Vault className="h-3 w-3" aria-hidden />
               {t('holdingsPage.badgeVault')}
@@ -428,6 +457,10 @@ export default function HoldingsPage() {
                   </button>
                 </div>
 
+                {/*
+                  Range inputs are LTR-native in most browsers. Mirror with scaleX in RTL
+                  so min sits on the inline-start (right) and fill grows toward inline-end.
+                */}
                 <input
                   type="range"
                   min={MIN_GRAMS}
@@ -435,7 +468,14 @@ export default function HoldingsPage() {
                   step={1}
                   value={Math.min(effectiveGrams, sliderMax)}
                   onChange={(e) => setGramsValue(Number(e.target.value))}
-                  className="mb-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#E2E8F0] accent-[#85E307]"
+                  dir="ltr"
+                  aria-valuemin={MIN_GRAMS}
+                  aria-valuemax={sliderMax}
+                  aria-valuenow={Math.min(effectiveGrams, sliderMax)}
+                  className={cn(
+                    'holdings-grams-slider mb-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#E2E8F0] accent-[#85E307]',
+                    isRtl && 'holdings-grams-slider--rtl',
+                  )}
                   style={{
                     background: `linear-gradient(to right, #85E307 0%, #85E307 ${sliderPct}%, #E2E8F0 ${sliderPct}%, #E2E8F0 100%)`,
                   }}

@@ -5,6 +5,13 @@
 export const TRADING_AND_VIRTUAL_WALLET_ENABLED = false;
 
 /**
+ * Digital metal holdings (/holdings + dashboard الحيازات).
+ * When false: page stays visible as a beta tease (strip + preview), trading is not live.
+ * Flip to true to remove the beta strip and enable live stats / buy–sell.
+ */
+export const HOLDINGS_LIVE_ENABLED = false;
+
+/**
  * Checkout “keep in vault” delivery — independent of trading/wallet.
  * Gold is stored with the store (not shipped), billed, and shown on receipt/orders.
  */

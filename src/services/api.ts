@@ -810,11 +810,14 @@ export const clubsApi = {
       detail?: string
       club_id?: string | null
       club_name?: string | null
+      club_level?: number
       head_name?: string | null
       invited_by_name?: string | null
       expires_at?: string | null
       member_count?: number
-      members?: Array<{ full_name: string; role: string }>
+      members?: Array<{ full_name: string; role: string; initials?: string }>
+      roles?: Array<{ key: string; label: string; description: string }>
+      allow_join_while_in_club?: boolean
       active_offers?: Array<{
         id: string
         title: string
@@ -822,6 +825,7 @@ export const clubsApi = {
         discount_amount_kwd?: string | null
         valid_until?: string | null
       }>
+      benefit_keys?: string[]
       benefits?: string[]
     }>(`/clubs/invite-preview/?token=${encodeURIComponent(token)}`),
   leave: () => apiService.post<unknown>('/clubs/leave/', {}),
@@ -1008,6 +1012,31 @@ export type BankChangeRequestRow = {
   customer_user_id?: string
 }
 
+export type SavedAddress = {
+  id: string
+  label: string
+  address_line1: string
+  address_line2?: string
+  city?: string
+  governorate?: string
+  postal_code?: string
+  country?: string
+  is_default: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export type SavedAddressWrite = {
+  label: string
+  address_line1: string
+  address_line2?: string
+  city?: string
+  governorate?: string
+  postal_code?: string
+  country?: string
+  is_default?: boolean
+}
+
 // Accounts API (current user / customer profile)
 export const accountsApi = {
   /** For customers: returns their profile(s); for customers this will typically be a single entry. */
@@ -1017,6 +1046,22 @@ export const accountsApi = {
   /** Update customer profile by id. Supports FormData for file uploads. */
   updateProfile: (id: string, data: FormData | unknown) =>
     apiService.patch(`/accounts/profiles/${id}/`, data),
+
+  /** Named shipping address cards (Address 1, Home, …). */
+  listSavedAddresses: () =>
+    apiService
+      .get<{ results?: SavedAddress[] } | SavedAddress[]>('/accounts/saved-addresses/', {
+        params: { page_size: 100 },
+      })
+      .then(unwrapResults),
+
+  createSavedAddress: (data: SavedAddressWrite) =>
+    apiService.post<SavedAddress>('/accounts/saved-addresses/', data),
+
+  updateSavedAddress: (id: string, data: Partial<SavedAddressWrite>) =>
+    apiService.patch<SavedAddress>(`/accounts/saved-addresses/${id}/`, data),
+
+  deleteSavedAddress: (id: string) => apiService.delete(`/accounts/saved-addresses/${id}/`),
 
   /** Customer's bank change requests (newest first; large page size so “latest” status is accurate). */
   getMyBankChangeRequests: () =>
