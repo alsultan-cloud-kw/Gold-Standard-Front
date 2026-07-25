@@ -1331,8 +1331,10 @@ function OrdersTab() {
     setDownloadingId(order.id)
     try {
       await invoicesApi.downloadSaleInvoicePdf(order.id, `${order.invoice_number || order.id}.pdf`)
-    } catch {
-      toast.error(t('userDashboard.orders.toasts.couldNotLoadInvoice'))
+      toast.success(t('userDashboard.orders.toasts.invoiceDownloaded'))
+    } catch (err) {
+      const detail = err instanceof Error && err.message ? err.message : ''
+      toast.error(detail || t('userDashboard.orders.toasts.couldNotLoadInvoice'))
     } finally {
       setDownloadingId(null)
     }

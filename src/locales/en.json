@@ -2644,7 +2644,8 @@
         "orderIdMissingInvoice": "Order ID missing; cannot load invoice.",
         "allowPopupsDownloadInvoice": "Allow pop-ups to download invoice",
         "invoiceNotAvailable": "Invoice not available",
-        "couldNotLoadInvoice": "Could not load invoice"
+        "couldNotLoadInvoice": "Could not load invoice",
+        "invoiceDownloaded": "Invoice downloaded"
       }
     },
     "lockedGold": {

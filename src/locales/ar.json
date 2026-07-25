@@ -2644,7 +2644,8 @@
         "orderIdMissingInvoice": "معرّف الطلب مفقود؛ لا يمكن تحميل الفاتورة.",
         "allowPopupsDownloadInvoice": "يرجى السماح بالمنبثقات لتنزيل الفاتورة",
         "invoiceNotAvailable": "الفاتورة غير متاحة",
-        "couldNotLoadInvoice": "تعذر تحميل الفاتورة"
+        "couldNotLoadInvoice": "تعذر تحميل الفاتورة",
+        "invoiceDownloaded": "تم تنزيل الفاتورة"
       }
     },
     "lockedGold": {

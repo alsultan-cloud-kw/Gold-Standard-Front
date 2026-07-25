@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { invoicesApi, ordersApi } from '@/services/api'
 import type { KnetReceiptDetails } from '@/types'
 import { KnetReceiptPanel } from '@/components/checkout/KnetReceiptPanel'
@@ -72,7 +73,13 @@ export default function KnetReceiptPage() {
     if (!saleId) return
     setDownloading(true)
     try {
-      await invoicesApi.downloadSaleInvoicePdf(saleId, receipt?.invoice_number ? `${receipt.invoice_number}.pdf` : undefined)
+      await invoicesApi.downloadSaleInvoicePdf(
+        saleId,
+        receipt?.invoice_number ? `${receipt.invoice_number}.pdf` : undefined,
+      )
+    } catch (err) {
+      const detail = err instanceof Error && err.message ? err.message : ''
+      toast.error(detail || t('checkoutPage.invoiceLoadError'))
     } finally {
       setDownloading(false)
     }

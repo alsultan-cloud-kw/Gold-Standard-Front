@@ -688,8 +688,9 @@ export default function CheckoutPage() {
         lastOrder.id,
         `${lastOrder.invoice_number || lastOrder.id}.pdf`,
       )
-    } catch {
-      toast.error(t('checkoutPage.invoiceLoadError'))
+    } catch (err) {
+      const detail = err instanceof Error && err.message ? err.message : ''
+      toast.error(detail || t('checkoutPage.invoiceLoadError'))
     } finally {
       setDownloadingInvoice(false)
     }
