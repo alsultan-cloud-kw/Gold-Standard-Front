@@ -3,6 +3,14 @@ import { authApi } from '../services/api'
 import type { User, CustomerProfile } from '../types'
 import { markLoginSuccessPending } from '@/lib/authToast'
 import {
+  beginAuthSession,
+  clearSessionDeadline,
+  hydrateSessionDeadline,
+  isAuthSessionExpired,
+  notifySessionExpired,
+  SESSION_EXPIRED_EVENT,
+} from '@/lib/authSession'
+import {
   clearSignInNudgeSuppress,
   suppressSignInNudge,
 } from '@/lib/signInNudgeGate'
@@ -50,8 +58,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    const onExpired = () => {
+      setUser(null)
+      setProfile(null)
+      setIsLoading(false)
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired)
+  }, [])
+
+  useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
+      hydrateSessionDeadline()
+      if (isAuthSessionExpired()) {
+        notifySessionExpired()
+        setIsLoading(false)
+        return
+      }
       void fetchUser()
     } else {
       setIsLoading(false)
@@ -78,9 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const status = (error as { response?: { status?: number } })?.response?.status
       console.error('Failed to fetch user:', error)
-      if (status === 401 || status === 403) {
+      if (status === 401) {
+        notifySessionExpired()
+        setUser(null)
+      } else if (status === 403) {
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
+        clearSessionDeadline()
         setUser(null)
       }
       return null
@@ -117,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.login(credentials)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
+    beginAuthSession(response.access, response.refresh)
     suppressSignInNudge()
     const nextUser = response.user as User
     setUser(nextUser)
@@ -129,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.clerkLogin(clerkSessionToken)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
+    beginAuthSession(response.access, response.refresh)
     suppressSignInNudge()
     const nextUser = response.user as User
     setUser(nextUser)
@@ -141,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.register(data)
     localStorage.setItem('access_token', response.access)
     localStorage.setItem('refresh_token', response.refresh)
+    beginAuthSession(response.access, response.refresh)
     suppressSignInNudge()
     const nextUser = response.user as User
     setUser(nextUser)
@@ -154,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshToken = localStorage.getItem('refresh_token')
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    clearSessionDeadline()
     setUser(null)
     setProfile(null)
     clearSignInNudgeSuppress()

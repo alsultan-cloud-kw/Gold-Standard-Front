@@ -1,5 +1,9 @@
 import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { getApiBaseUrl } from '@/lib/apiBase'
+import {
+  isAuthSessionExpired,
+  notifySessionExpired,
+} from '@/lib/authSession'
 import type { KnetReceiptDetails } from '@/types'
 
 // Create axios instance
@@ -35,14 +39,19 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle token refresh
+// Response interceptor: refresh access within absolute 30-min session; else branded expiry modal
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true
+
+      if (isAuthSessionExpired()) {
+        notifySessionExpired()
+        return Promise.reject(error)
+      }
 
       try {
         const refreshToken = localStorage.getItem('refresh_token')
@@ -58,11 +67,9 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${access}`
           return api(originalRequest)
         }
-      } catch (refreshError) {
-        // Clear tokens and redirect to login
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
+        notifySessionExpired()
+      } catch {
+        notifySessionExpired()
       }
     }
 

@@ -1763,6 +1763,14 @@
     "signIn": "Sign In",
     "signInSubtitle": "Sign in to your account",
     "welcomeBack": "Welcome Back",
+    "sessionExpired": {
+      "kicker": "Gold Standard Security",
+      "title": "Your session has expired",
+      "body": "For your protection, signed-in sessions end after 30 minutes. Sign in again to continue securely.",
+      "securityNote": "This keeps your account and orders protected if you step away from this device.",
+      "signInAgain": "Sign in again",
+      "continueBrowsing": "Continue browsing"
+    },
     "email": "Email",
     "phone": "Phone",
     "phoneNumber": "Phone number",
