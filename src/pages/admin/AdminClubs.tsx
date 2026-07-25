@@ -1,10 +1,33 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Search, ChevronDown } from 'lucide-react'
+import { Search, ChevronDown, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminPaginationBar from '../../components/admin/AdminPaginationBar'
 import { clubsApi } from '../../services/api'
+import { cn } from '@/lib/utils'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+
+type ClubMember = {
+  id: string
+  user_id: string
+  full_name: string
+  email: string | null
+  phone_number: string | null
+  role: string
+  joined_at: string | null
+  initials?: string
+  avatar_url?: string | null
+  completed_orders?: number
+  xp?: number
+  level?: number
+}
 
 type ClubRow = {
   id: string
@@ -13,15 +36,82 @@ type ClubRow = {
   head_email?: string
   is_active?: boolean
   member_count?: number
-  members?: Array<{
-    id: string
-    user_id: string
-    full_name: string
-    email: string | null
-    phone_number: string | null
-    role: string
-    joined_at: string | null
-  }>
+  members?: ClubMember[]
+}
+
+function memberInitials(m: ClubMember): string {
+  const fromApi = (m.initials || '').trim()
+  if (fromApi) return fromApi.slice(0, 2).toUpperCase()
+  const parts = (m.full_name || '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+  if (parts.length === 1 && parts[0].length >= 2) return parts[0].slice(0, 2).toUpperCase()
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return '?'
+}
+
+function avatarTone(seed: string): string {
+  const tones = [
+    'bg-[#E8F5E0] text-[#3F6F00]',
+    'bg-[#ECFCCB] text-[#365314]',
+    'bg-[#FEF3C7] text-[#92400E]',
+    'bg-[#E0E7FF] text-[#3730A3]',
+    'bg-[#FCE7F3] text-[#9D174D]',
+    'bg-[#E0F2FE] text-[#075985]',
+  ]
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  return tones[hash % tones.length]
+}
+
+function MemberAvatar({
+  member,
+  size = 'md',
+  className,
+}: {
+  member: ClubMember
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+}) {
+  const sizeClass =
+    size === 'lg' ? 'h-11 w-11 text-sm' : size === 'sm' ? 'h-7 w-7 text-[10px]' : 'h-9 w-9 text-xs'
+  if (member.avatar_url) {
+    return (
+      <img
+        src={member.avatar_url}
+        alt=""
+        className={cn(sizeClass, 'shrink-0 rounded-full object-cover ring-2 ring-white', className)}
+      />
+    )
+  }
+  return (
+    <span
+      className={cn(
+        sizeClass,
+        'inline-flex shrink-0 items-center justify-center rounded-full font-semibold ring-2 ring-white',
+        avatarTone(member.user_id || member.full_name || member.id),
+        className,
+      )}
+      aria-hidden
+    >
+      {memberInitials(member)}
+    </span>
+  )
+}
+
+function roleLabel(role: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (role === 'head') return t('admin.clubMemberRoleHead', { defaultValue: 'Head' })
+  return t('admin.clubMemberRoleMember', { defaultValue: 'Member' })
+}
+
+function formatJoined(iso: string | null | undefined, locale: string): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString(locale.startsWith('ar') ? 'ar-KW' : 'en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 function asClubList(data: unknown): ClubRow[] {
@@ -31,7 +121,7 @@ function asClubList(data: unknown): ClubRow[] {
 }
 
 export default function AdminClubs() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [grantClubId, setGrantClubId] = useState('')
   const [clubSearch, setClubSearch] = useState('')
@@ -42,6 +132,8 @@ export default function AdminClubs() {
   const [grantPercent, setGrantPercent] = useState('')
   const [grantAmount, setGrantAmount] = useState('')
   const [grantValidUntil, setGrantValidUntil] = useState('')
+  const [membersClub, setMembersClub] = useState<ClubRow | null>(null)
+  const [memberSearch, setMemberSearch] = useState('')
 
   const {
     data: formationConfigData,
@@ -145,6 +237,24 @@ export default function AdminClubs() {
     () => clubs.find((c) => c.id === grantClubId),
     [clubs, grantClubId],
   )
+
+  const membersModalList = useMemo(() => {
+    const list = membersClub?.members ?? []
+    const q = memberSearch.trim().toLowerCase()
+    if (!q) return list
+    return list.filter(
+      (m) =>
+        m.full_name?.toLowerCase().includes(q) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
+        (m.phone_number && m.phone_number.toLowerCase().includes(q)) ||
+        m.role?.toLowerCase().includes(q),
+    )
+  }, [membersClub, memberSearch])
+
+  const openMembersModal = (club: ClubRow) => {
+    setMemberSearch('')
+    setMembersClub(club)
+  }
 
   /** Options in dropdown: filtered list, plus current selection if search hides it */
   const dropdownClubs = useMemo(() => {
@@ -487,32 +597,43 @@ export default function AdminClubs() {
                       {c.head_email && <span className="block text-xs text-stone-500">{c.head_email}</span>}
                     </td>
                     <td className="py-3 px-4 text-stone-800">
-                      <div className="flex items-center justify-between gap-3">
-                        <span>{c.member_count ?? '—'}</span>
-                        {c.members && c.members.length > 0 && (
-                          <span className="text-xs text-stone-600">{c.members.length} listed</span>
-                        )}
-                      </div>
-                      {c.members && c.members.length > 0 ? (
-                        <div className="mt-2 space-y-1">
-                          {c.members.slice(0, 4).map((m) => (
-                            <div key={m.id} className="text-xs text-stone-600">
-                              <span className="text-stone-800 font-medium">{m.full_name}</span>{' '}
-                              <span className="text-stone-500">({m.role})</span>
-                              {(m.email || m.phone_number) && (
-                                <span className="block text-[10px] text-stone-500">
-                                  {m.email || m.phone_number}
+                      {(() => {
+                        const members = c.members ?? []
+                        const count = c.member_count ?? members.length
+                        const preview = members.slice(0, 3)
+                        if (!count) {
+                          return (
+                            <span className="text-xs text-stone-500">
+                              {t('admin.clubNoMembers', { defaultValue: 'No members' })}
+                            </span>
+                          )
+                        }
+                        return (
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <div className="flex items-center -space-x-2 rtl:space-x-reverse">
+                              {preview.map((m) => (
+                                <MemberAvatar key={m.id} member={m} size="sm" />
+                              ))}
+                              {count > preview.length && (
+                                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-stone-100 text-[10px] font-semibold text-stone-600 ring-2 ring-white">
+                                  +{count - preview.length}
                                 </span>
                               )}
                             </div>
-                          ))}
-                          {c.members.length > 4 && (
-                            <div className="text-[10px] text-stone-500">+{c.members.length - 4} more</div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-stone-500 mt-2">No active members</div>
-                      )}
+                            <span className="text-sm font-medium text-stone-800 tabular-nums">
+                              {count}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openMembersModal(c)}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-black/10 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-800 hover:bg-lime-50 hover:border-lime-700/30 transition-colors"
+                            >
+                              <Users className="h-3.5 w-3.5 text-lime-800" aria-hidden />
+                              {t('admin.clubViewMembers', { defaultValue: 'View members' })}
+                            </button>
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-stone-800">{c.is_active ? 'Yes' : 'No'}</td>
                   </tr>
@@ -535,6 +656,101 @@ export default function AdminClubs() {
           )}
         </div>
       </div>
+
+      <Dialog
+        open={!!membersClub}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMembersClub(null)
+            setMemberSearch('')
+          }
+        }}
+      >
+        <DialogContent className="bg-white border-black/15 text-black max-w-lg w-[min(100vw-1.5rem,32rem)] p-0 gap-0 overflow-hidden flex flex-col max-h-[min(90vh,40rem)]">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-stone-200 shrink-0 space-y-1">
+            <DialogTitle className="text-lg font-semibold text-black flex items-center gap-2">
+              <Users className="h-5 w-5 text-lime-800 shrink-0" aria-hidden />
+              <span className="truncate">
+                {t('admin.clubMembersModalTitle', {
+                  defaultValue: 'Members — {{name}}',
+                  name: membersClub?.name || '—',
+                })}
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-sm text-stone-600">
+              {t('admin.clubMembersModalSubtitle', {
+                defaultValue: '{{count}} active member(s)',
+                count: membersClub?.members?.length ?? membersClub?.member_count ?? 0,
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-5 py-3 border-b border-stone-100 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+              <input
+                type="search"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder={t('admin.clubMembersSearch', {
+                  defaultValue: 'Search by name, email, or phone…',
+                })}
+                className="w-full pl-9 pr-3 py-2 rounded-md bg-white border border-black/15 text-black text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
+            {membersModalList.length === 0 ? (
+              <p className="px-3 py-10 text-center text-sm text-stone-500">
+                {memberSearch.trim()
+                  ? t('admin.clubMembersNoMatch', { defaultValue: 'No members match your search.' })
+                  : t('admin.clubNoMembers', { defaultValue: 'No members' })}
+              </p>
+            ) : (
+              <ul className="divide-y divide-stone-100">
+                {membersModalList.map((m) => (
+                  <li key={m.id} className="flex items-start gap-3 px-3 py-3">
+                    <MemberAvatar member={m} size="lg" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-stone-900 truncate">{m.full_name}</p>
+                        <span
+                          className={cn(
+                            'inline-flex shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                            m.role === 'head'
+                              ? 'bg-[#FEF3C7] text-[#92400E]'
+                              : 'bg-[#EDF3EC] text-[#346538]',
+                          )}
+                        >
+                          {roleLabel(m.role, t)}
+                        </span>
+                      </div>
+                      {m.email ? (
+                        <p className="mt-0.5 text-xs text-stone-600 truncate" title={m.email}>
+                          {m.email}
+                        </p>
+                      ) : null}
+                      {m.phone_number ? (
+                        <p className="text-xs text-stone-500 truncate" dir="ltr">
+                          {m.phone_number}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 text-[11px] text-stone-400">
+                        {t('admin.clubMemberJoined', {
+                          defaultValue: 'Joined {{date}}',
+                          date: formatJoined(m.joined_at, i18n.language),
+                        })}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
