@@ -21,6 +21,7 @@ import {
   ExternalLink,
   ArrowUpRight,
   Menu,
+  Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
@@ -372,6 +373,20 @@ type ActiveClubInvite = {
   used_count: number
 }
 
+type ClubMemberRow = {
+  id: string
+  user_id: string
+  full_name: string
+  initials?: string
+  role: string
+  joined_at?: string | null
+  completed_orders?: number
+  xp?: number
+  level?: number
+  avatar_url?: string | null
+  rank?: number
+}
+
 type MembershipPayload = {
   membership: { id: string; role: string; joined_at?: string } | null
   club: {
@@ -384,6 +399,9 @@ type MembershipPayload = {
     current_additional_members?: number
     remaining_additional_members?: number | null
     min_completed_orders_required?: number
+    member_count?: number
+    members?: ClubMemberRow[]
+    leaderboard?: ClubMemberRow[]
   } | null
   member_capacity?: {
     additional_limit: number | null
@@ -401,6 +419,53 @@ type CustomerOfferRow = {
   valid_until?: string | null
   source?: string
   is_active?: boolean
+}
+
+function clubMemberInitials(member: ClubMemberRow): string {
+  if (member.initials?.trim()) return member.initials.trim().toUpperCase()
+  const parts = (member.full_name || '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
+
+function clubAvatarTone(seed: string): string {
+  const tones = [
+    'bg-[#E8F5E0] text-[#3F6F00]',
+    'bg-[#ECFCCB] text-[#365314]',
+    'bg-[#FEF3C7] text-[#92400E]',
+    'bg-[#E0E7FF] text-[#3730A3]',
+    'bg-[#FCE7F3] text-[#9D174D]',
+    'bg-[#E0F2FE] text-[#075985]',
+  ]
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  return tones[hash % tones.length]
+}
+
+function ClubMemberAvatar({ member, size = 'md' }: { member: ClubMemberRow; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClass = size === 'lg' ? 'h-12 w-12 text-sm' : size === 'sm' ? 'h-8 w-8 text-[10px]' : 'h-10 w-10 text-xs'
+  if (member.avatar_url) {
+    return (
+      <img
+        src={member.avatar_url}
+        alt=""
+        className={cn(sizeClass, 'shrink-0 rounded-full object-cover ring-2 ring-white')}
+      />
+    )
+  }
+  return (
+    <span
+      className={cn(
+        sizeClass,
+        'inline-flex shrink-0 items-center justify-center rounded-full font-bold ring-2 ring-white',
+        clubAvatarTone(member.user_id || member.full_name || member.id),
+      )}
+      aria-hidden
+    >
+      {clubMemberInitials(member)}
+    </span>
+  )
 }
 
 function ClubTab() {
@@ -804,6 +869,105 @@ function ClubTab() {
               {t('userDashboard.club.dissolveClub')}
             </button>
           )} */}
+        </div>
+      )}
+
+      {membership && club && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="dashboard-panel space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-[#65A30D]" />
+                <h3 className="text-base font-semibold text-[#0B0F19]">
+                  {t('userDashboard.club.membersBoardTitle')}
+                </h3>
+              </div>
+              <span className="text-xs font-medium text-[#64748B]">
+                {t('userDashboard.club.membersCount', {
+                  count: club.members?.length ?? club.member_count ?? 0,
+                })}
+              </span>
+            </div>
+            <p className="text-xs text-[#64748B]">{t('userDashboard.club.membersBoardHint')}</p>
+            {(club.members?.length ?? 0) === 0 ? (
+              <p className="text-sm text-[#94A3B8]">{t('userDashboard.club.noMembersYet')}</p>
+            ) : (
+              <ul className="divide-y divide-black/5">
+                {(club.members ?? []).map((member) => (
+                  <li key={member.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                    <ClubMemberAvatar member={member} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[#0B0F19]">{member.full_name}</p>
+                      <p className="text-[11px] text-[#64748B]">
+                        {member.role === 'head'
+                          ? t('userDashboard.club.roleHead')
+                          : t('userDashboard.club.roleMember')}
+                        {typeof member.level === 'number'
+                          ? ` · ${t('userDashboard.club.levelShort', { level: member.level })}`
+                          : ''}
+                      </p>
+                    </div>
+                    {member.role === 'head' && (
+                      <Crown className="h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="dashboard-panel space-y-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              <h3 className="text-base font-semibold text-[#0B0F19]">
+                {t('userDashboard.club.leaderboardTitle')}
+              </h3>
+            </div>
+            <p className="text-xs text-[#64748B]">{t('userDashboard.club.leaderboardHint')}</p>
+            {(club.leaderboard?.length ?? club.members?.length ?? 0) === 0 ? (
+              <p className="text-sm text-[#94A3B8]">{t('userDashboard.club.noMembersYet')}</p>
+            ) : (
+              <ul className="space-y-2">
+                {(club.leaderboard ?? club.members ?? []).map((member, index) => {
+                  const rank = member.rank ?? index + 1
+                  const medal =
+                    rank === 1
+                      ? 'bg-amber-100 text-amber-800 border-amber-200'
+                      : rank === 2
+                        ? 'bg-stone-100 text-stone-700 border-stone-200'
+                        : rank === 3
+                          ? 'bg-orange-50 text-orange-800 border-orange-100'
+                          : 'bg-[#F8FAFC] text-[#64748B] border-black/5'
+                  return (
+                    <li
+                      key={`lb-${member.id}`}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl border px-3 py-2.5',
+                        medal,
+                      )}
+                    >
+                      <span className="w-6 shrink-0 text-center text-sm font-bold tabular-nums">
+                        {rank}
+                      </span>
+                      <ClubMemberAvatar member={member} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[#0B0F19]">{member.full_name}</p>
+                        <p className="text-[11px] text-[#64748B]">
+                          {t('userDashboard.club.xpOrdersLine', {
+                            xp: member.xp ?? 0,
+                            orders: member.completed_orders ?? 0,
+                          })}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-white/80 px-2 py-1 text-[11px] font-bold text-[#3F6F00]">
+                        {t('userDashboard.club.levelBadge', { level: member.level ?? 1 })}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 
