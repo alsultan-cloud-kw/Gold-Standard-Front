@@ -1013,7 +1013,7 @@ function ProfileTab() {
   const { user, updateUser, refreshUser } = useAuth()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { data: profileData, refetch: refetchProfile } = useQuery({
+  const { data: profileData } = useQuery({
     queryKey: ['myCustomerProfile'],
     queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
   })
@@ -1029,17 +1029,8 @@ function ProfileTab() {
   const [kycAnswers, setKycAnswers] = useState<Record<string, string | boolean>>({})
   const [kycErrors, setKycErrors] = useState<Record<string, string>>({})
   const [savingKyc, setSavingKyc] = useState(false)
-  const [ocrBusy, setOcrBusy] = useState(false)
-
-  const ocrStatus = profile?.civil_id_ocr_status || profile?.civil_id_ocr?.status || 'idle'
-  const ocrResult = (profile?.civil_id_ocr_result || profile?.civil_id_ocr?.result || {}) as {
-    mismatches?: Array<{ field?: string; profile_value?: string; document_value?: string; message?: string }>
-    applied_fixes?: Array<{ field?: string; from?: string; to?: string; action?: string }>
-    message?: string
-    error?: string
-    extracted?: Record<string, string>
-  }
-  const ocrPending = ocrStatus === 'queued' || ocrStatus === 'processing' || ocrBusy
+  /** Silent background OCR after identity upload — no user-facing controls. */
+  const [awaitingSilentOcr, setAwaitingSilentOcr] = useState(false)
 
   const purchaseBlocked = useMemo(() => {
     if (!user) return false
@@ -1080,28 +1071,29 @@ function ProfileTab() {
     }
   }, [profile?.kyc_registration_answers])
 
-  // Poll OCR while queued/processing — same background verify as Android photo OCR
+  // After first identity upload, silently refresh when background OCR finishes (no UI / no CTA).
   useEffect(() => {
-    if (!profile?.id || !ocrPending) return
+    if (!profile?.id || !awaitingSilentOcr) return
     let cancelled = false
+    let attempts = 0
     const tick = async () => {
+      attempts += 1
       try {
         const st = await accountsApi.getCivilIdOcrStatus(profile.id)
         if (cancelled) return
-        if (st.status && st.status !== 'queued' && st.status !== 'processing') {
-          setOcrBusy(false)
+        const done =
+          st.status === 'matched' ||
+          st.status === 'fixed' ||
+          st.status === 'mismatched' ||
+          st.status === 'failed' ||
+          st.status === 'idle'
+        if (done || attempts >= 40) {
+          setAwaitingSilentOcr(false)
           await queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
           await refreshUser()
-          if (st.status === 'matched' || st.status === 'fixed') {
-            toast.success(t('userDashboard.profile.ocr.doneOk'))
-          } else if (st.status === 'mismatched') {
-            toast.message(t('userDashboard.profile.ocr.doneMismatch'))
-          } else if (st.status === 'failed') {
-            toast.error(t('userDashboard.profile.ocr.doneFail'))
-          }
         }
       } catch {
-        /* keep polling */
+        if (attempts >= 40) setAwaitingSilentOcr(false)
       }
     }
     void tick()
@@ -1110,7 +1102,7 @@ function ProfileTab() {
       cancelled = true
       window.clearInterval(id)
     }
-  }, [profile?.id, ocrPending, queryClient, refreshUser, t])
+  }, [profile?.id, awaitingSilentOcr, queryClient, refreshUser])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1140,8 +1132,8 @@ function ProfileTab() {
         queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
         setFrontFile(null)
         setBackFile(null)
-        setOcrBusy(true)
-        toast.success(t('userDashboard.profile.ocr.queuedToast'))
+        setAwaitingSilentOcr(true)
+        toast.success(t('userDashboard.profile.toasts.profileUpdatedSuccess'))
       } else {
         toast.success(t('userDashboard.profile.toasts.profileUpdatedSuccess'))
       }
@@ -1151,19 +1143,6 @@ function ProfileTab() {
       toast.error(Array.isArray(first) ? first[0] : t('userDashboard.profile.toasts.failedToUpdateProfile'))
     } finally {
       setSaving(false)
-    }
-  }
-
-  const handleReverify = async () => {
-    if (!profile?.id) return
-    setOcrBusy(true)
-    try {
-      await accountsApi.reverifyCivilIdOcr(profile.id)
-      await refetchProfile()
-      toast.success(t('userDashboard.profile.ocr.queuedToast'))
-    } catch {
-      setOcrBusy(false)
-      toast.error(t('userDashboard.profile.ocr.reverifyFailed'))
     }
   }
 
@@ -1341,67 +1320,6 @@ function ProfileTab() {
                 />
               )}
             </div>
-          </div>
-
-          <div className="rounded-xl border border-black/10 bg-white px-4 py-3 space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-[#0B0F19]">
-                  {t('userDashboard.profile.ocr.title')}
-                </p>
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  {t('userDashboard.profile.ocr.hint')}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void handleReverify()}
-                disabled={ocrPending || (!profile?.civil_id_front && !profile?.civil_id_back)}
-                className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-semibold text-[#0B0F19] hover:bg-[#ECFCCB]/40 disabled:opacity-40"
-              >
-                {ocrPending
-                  ? t('userDashboard.profile.ocr.scanning')
-                  : t('userDashboard.profile.ocr.reverify')}
-              </button>
-            </div>
-            <p className="text-xs font-medium text-[#334155]">
-              {t('userDashboard.profile.ocr.statusLabel')}:{' '}
-              <span className="tabular-nums">
-                {t(`userDashboard.profile.ocr.status.${ocrStatus}`, {
-                  defaultValue: ocrStatus,
-                })}
-              </span>
-            </p>
-            {ocrResult.message ? (
-              <p className="text-xs text-[#3F6F00]">{ocrResult.message}</p>
-            ) : null}
-            {ocrResult.error ? (
-              <p className="text-xs text-red-700">{ocrResult.error}</p>
-            ) : null}
-            {Array.isArray(ocrResult.applied_fixes) && ocrResult.applied_fixes.length > 0 ? (
-              <div className="text-xs text-[#0B0F19]">
-                <p className="font-semibold mb-1">{t('userDashboard.profile.ocr.fixesTitle')}</p>
-                <ul className="list-disc ps-4 space-y-0.5 text-[#334155]">
-                  {ocrResult.applied_fixes.map((f, i) => (
-                    <li key={`${f.field}-${i}`}>
-                      {f.field}: {f.from || '—'} → {f.to || '—'} ({f.action})
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {Array.isArray(ocrResult.mismatches) && ocrResult.mismatches.length > 0 ? (
-              <div className="text-xs text-amber-950">
-                <p className="font-semibold mb-1">{t('userDashboard.profile.ocr.mismatchesTitle')}</p>
-                <ul className="list-disc ps-4 space-y-0.5">
-                  {ocrResult.mismatches.map((m, i) => (
-                    <li key={`${m.field}-${i}`}>
-                      {m.message || m.field}: {m.profile_value || '—'} ≠ {m.document_value || '—'}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -2022,15 +1940,6 @@ type CustomerProfile = {
   iban_proof?: string | null
   kyc_registration_answers?: Record<string, string | boolean> | null
   kyc_registration_complete?: boolean
-  civil_id_ocr_status?: string | null
-  civil_id_ocr_result?: Record<string, unknown> | null
-  civil_id_ocr_updated_at?: string | null
-  civil_id_ocr?: {
-    status?: string
-    updated_at?: string | null
-    result?: Record<string, unknown>
-    gemini_configured?: boolean
-  } | null
 }
 
 function asSingleProfile(data: unknown): CustomerProfile | null {
