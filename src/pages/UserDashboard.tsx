@@ -1107,13 +1107,17 @@ function ProfileTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
+    if (!dateOfBirth.trim()) {
+      toast.error(t('userDashboard.profile.toasts.dateOfBirthRequired'))
+      return
+    }
     setSaving(true)
     try {
       await updateUser({
         full_name: fullName.trim() || user.full_name,
         email: email.trim() || null,
         phone_number: phoneNumber.trim() || null,
-        date_of_birth: dateOfBirth || null,
+        date_of_birth: dateOfBirth.trim(),
       })
       if (frontFile || backFile) {
         const fresh = await queryClient.fetchQuery({
@@ -1258,12 +1262,17 @@ function ProfileTab() {
             />
           </div>
           <div>
-            <label className={dashboardLabelClass}>{t('userDashboard.profile.dateOfBirth')}</label>
+            <label className={dashboardLabelClass}>
+              {t('userDashboard.profile.dateOfBirth')}
+              <span className="text-rose-600" aria-hidden> *</span>
+            </label>
             <input
               type="date"
+              required
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
               className="dashboard-field"
+              aria-required="true"
             />
           </div>
         </div>

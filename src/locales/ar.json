@@ -2732,6 +2732,7 @@
       "toasts": {
         "profileUpdatedSuccess": "تم تحديث الملف الشخصي بنجاح",
         "failedToUpdateProfile": "فشل تحديث الملف الشخصي",
+        "dateOfBirthRequired": "تاريخ الميلاد مطلوب.",
         "customerProfileNotFoundForUpload": "تعذر تحميل ملف العميل لحفظ مستندات الهوية. يرجى تحديث الصفحة أو التواصل مع الدعم."
       }
     },

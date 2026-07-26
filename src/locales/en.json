@@ -2732,6 +2732,7 @@
       "toasts": {
         "profileUpdatedSuccess": "Profile updated successfully",
         "failedToUpdateProfile": "Failed to update profile",
+        "dateOfBirthRequired": "Date of birth is required.",
         "customerProfileNotFoundForUpload": "Could not load your customer profile to save ID documents. Please refresh the page or contact support."
       }
     },
