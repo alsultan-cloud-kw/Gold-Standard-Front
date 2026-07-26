@@ -1050,6 +1050,24 @@ export const accountsApi = {
   getMyProfile: () =>
     apiService.get('/accounts/profiles/'),
 
+  /** Poll Gemini Civil ID OCR status after uploading front/back. */
+  getCivilIdOcrStatus: (profileId: string) =>
+    apiService.get<{
+      ok?: boolean
+      status?: string
+      updated_at?: string | null
+      result?: Record<string, unknown>
+      gemini_configured?: boolean
+    }>(`/accounts/profiles/${profileId}/civil-id-ocr/`),
+
+  reverifyCivilIdOcr: (profileId: string) =>
+    apiService.post<{
+      ok?: boolean
+      status?: string
+      queued?: unknown
+      result?: Record<string, unknown>
+    }>(`/accounts/profiles/${profileId}/civil-id-ocr/reverify/`, {}),
+
   /** Update customer profile by id. Supports FormData for file uploads. */
   updateProfile: (id: string, data: FormData | unknown) =>
     apiService.patch(`/accounts/profiles/${id}/`, data),
