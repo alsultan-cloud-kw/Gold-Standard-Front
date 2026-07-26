@@ -26,6 +26,7 @@ import AuthTransitionOverlay from './components/auth/AuthTransitionOverlay'
 import MinistryKycGate from './components/auth/MinistryKycGate'
 import { SessionExpiredModal } from './components/auth/SessionExpiredModal'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import CompanyActivatePage from './pages/CompanyActivatePage'
 import { KycRequiredRoute } from './components/routing/KycRequiredRoute'
 import UserDashboard from './pages/UserDashboard'
 import AboutPage from './pages/AboutPage'
@@ -150,6 +151,7 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   </Route>
+                  <Route path="/company-activate" element={<CompanyActivatePage />} />
                   <Route path="/sso-callback" element={<SsoCallbackPage />} />
                   <Route path="/join-club" element={<JoinClubPage />} />
                   <Route

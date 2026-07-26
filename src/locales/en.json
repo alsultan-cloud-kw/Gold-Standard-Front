@@ -1972,6 +1972,37 @@
       "verified": "Account confirmed",
       "invalidCode": "Invalid or expired code",
       "needHelp": "Need help? Contact us"
+    },
+    "companyActivate": {
+      "title": "Activate company access",
+      "subtitleRequest": "Enter the approved company email to receive a verification code",
+      "subtitleOtp": "Enter the 6-digit code from your email",
+      "subtitlePassword": "Choose a password for your company login",
+      "stepRequest": "Email",
+      "stepOtp": "Verify",
+      "stepPassword": "Password",
+      "emailLabel": "Company email",
+      "emailHint": "Use the same email from your /gs-kyc application after Hub activation.",
+      "emailRequired": "Enter a valid company email",
+      "sendCode": "Send verification code",
+      "backToGsKyc": "Back to customer screening",
+      "codeSentTo": "Code sent to {{dest}}",
+      "otpLabel": "6-digit code",
+      "otpRequired": "Enter the 6-digit code",
+      "verifyCode": "Verify code",
+      "resend": "Use a different email / resend",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "setPassword": "Set password & continue",
+      "toasts": {
+        "codeSent": "If this company is approved, a verification code was sent.",
+        "sendFailed": "Could not send the code. Try again later.",
+        "verified": "Email verified — set your password",
+        "verifyFailed": "Invalid or expired code",
+        "sessionExpired": "Session expired — request a new code",
+        "passwordSet": "Password saved. Sign in to open /gs-kyc",
+        "passwordFailed": "Could not save password"
+      }
     }
   },
   "customerScreening": {
@@ -1999,12 +2030,12 @@
       "stepTitles": {
         "apply": "Submit the company form",
         "review": "We review & email you",
-        "access": "Sign in & use the console"
+        "access": "Verify email, set password & use the console"
       },
       "steps": {
         "apply": "Enter business name, address, commercial licence, contact email, and phone.",
-        "review": "You get an under-review email immediately; acceptance email when we activate access.",
-        "access": "Sign in with the approved company email to open every screening feature."
+        "review": "You get an under-review email immediately. When Hub activates access you get an acceptance email + OTP.",
+        "access": "Open /company-activate, verify the OTP, set a password, then sign in with the company email."
       },
       "includesLabel": "What approved partners unlock",
       "includes": {
@@ -2012,8 +2043,9 @@
         "audit": "Reference IDs logged for your compliance file",
         "prices": "Same approval also unlocks the company price board"
       },
-      "loginHint": "After approval, open the console with an account on the company email.",
+      "loginHint": "After Hub activation, verify your email OTP and set a password, then sign in.",
       "loginCta": "Sign in",
+      "activateCta": "Activate account",
       "formTitle": "Request company access",
       "formHint": "All fields required. Use the official company email you will sign in with.",
       "fields": {
@@ -2028,8 +2060,8 @@
       "submitting": "Submitting…",
       "successSubmitted": "Request received. Check your inbox for the under-review email.",
       "successAlreadyPending": "Your request is already on file and still under review.",
-      "successAlreadyActive": "Access is active. Sign in with that email to open the console.",
-      "emailNote": "You will receive an under-review email now, and an acceptance email when approved.",
+      "successAlreadyActive": "Access is active. If you still need a password, open Activate account, then sign in.",
+      "emailNote": "Under-review email now. After Hub activation: acceptance email + OTP to set your password.",
       "statusPendingTitle": "Application under review",
       "statusPendingBody": "We received «{{name}}». Screening unlocks after admin approval — watch your email.",
       "statusInactiveTitle": "Access currently deactivated",

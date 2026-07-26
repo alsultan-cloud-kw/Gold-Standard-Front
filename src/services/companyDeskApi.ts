@@ -36,4 +36,13 @@ export const companyDeskApi = {
 
   apply: (data: CompanyDeskApplyPayload) =>
     apiService.post<CompanyDeskApplyResponse>('/accounts/company-desk/apply/', data),
+
+  requestActivateOtp: (data: { email: string; turnstile_token?: string }) =>
+    apiService.post<{
+      ok: boolean
+      sent?: boolean
+      delivery?: { channel?: string; destination?: string }
+      business_name?: string
+      error?: string
+    }>('/accounts/company-desk/activate/request-otp/', data),
 }

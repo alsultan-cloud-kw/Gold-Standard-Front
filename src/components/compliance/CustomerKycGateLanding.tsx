@@ -248,6 +248,13 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
 
             <p className="rounded-xl border border-black/5 bg-white p-4 text-xs leading-relaxed text-[#64748B] sm:text-sm">
               {t('customerScreening.gate.loginHint')}{' '}
+              <Link
+                to="/company-activate"
+                className="font-semibold text-[#3F6F00] underline-offset-2 hover:underline"
+              >
+                {t('customerScreening.gate.activateCta')}
+              </Link>
+              {' · '}
               {!user ? (
                 <Link
                   to={`/login?next=${encodeURIComponent('/gs-kyc')}`}
