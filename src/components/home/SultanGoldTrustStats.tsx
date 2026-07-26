@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { Star } from 'lucide-react'
-import sultanGoldLogo from '@/assets/brand/sultan-gold-logo.png'
 import { SULTAN_GOLD_BRAND, type SultanGoldTrustStat } from '@/constants/businessCredentials'
 import { BullionEndDock } from '@/components/home/bullion'
 import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
@@ -132,15 +131,6 @@ export function SultanGoldTrustStats({ bullionDockRef, bullionTrustEndRef }: Pro
           {bullionDockRef ? (
             <BullionEndDock slotRef={bullionDockRef} className="mb-2" />
           ) : null}
-          <img
-            src={sultanGoldLogo}
-            alt={brandName}
-            className="h-12 w-auto object-contain sm:h-14"
-            width={120}
-            height={56}
-            loading="lazy"
-            decoding="async"
-          />
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F6F00]">
             {t('home.sultanTrust.kicker')}
           </p>
