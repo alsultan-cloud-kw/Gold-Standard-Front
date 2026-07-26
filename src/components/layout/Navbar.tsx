@@ -246,23 +246,23 @@ export default function Navbar() {
       <div className="page-shell min-w-0">
         <div className="navbar-main-row flex min-h-16 min-w-0 items-center justify-between gap-2 py-1 sm:gap-3">
           
-          {/* Logo */}
-          <Link to="/" className="navbar-logo flex min-w-0 shrink items-center gap-2">
+          {/* Logo — never shrink under crowded mid-width desktop bars */}
+          <Link to="/" className="navbar-logo relative z-10 flex shrink-0 items-center gap-2">
             <img
               src={logo}
               alt={t('common.logoAlt')}
-              className="h-10 w-auto max-w-[min(9.5rem,42vw)] object-contain object-start sm:h-12 sm:max-w-[12rem]"
+              className="h-10 w-auto max-w-[min(9.5rem,42vw)] object-contain object-start sm:h-12 sm:max-w-[11rem] xl:max-w-[12rem]"
             />
           </Link>
 
-          {/* Desktop Navigation — scrolls horizontally under zoom instead of blowing page width */}
-          <div className="navbar-desktop-links hidden min-w-0 flex-1 items-center justify-center gap-4 overflow-visible lg:flex xl:gap-8">
+          {/* Desktop nav from xl (1280+) — lg/md keep bottom sheet so links never overlap the logo */}
+          <div className="navbar-desktop-links hidden min-w-0 flex-1 items-center justify-center gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain xl:flex 2xl:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navLinks.map((link) => (
               <Link
                 key={link.nameKey}
                 to={link.href}
                 title={link.badgeHintKey ? t(link.badgeHintKey) : undefined}
-                className={`relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-medium transition-colors group ${
+                className={`relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-medium transition-colors group 2xl:text-sm ${
                   isPathActive(link.href) ? 'text-[#3F6F00]' : 'text-[#0C1512] hover:text-[#3F6F00]'
                 }`}
               >
@@ -372,14 +372,14 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Link to="/cart" className={`${iconBtnClass} hidden lg:inline-flex`} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
+            <Link to="/cart" className={`${iconBtnClass} hidden xl:inline-flex`} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
               <ShoppingCart className="h-5 w-5" strokeWidth={1.75} />
               <CartCountBadge count={cartCount} />
             </Link>
 
             <Link
               to="/products"
-              className="navbar-buy-cta ms-1 hidden max-w-[min(100%,18rem)] items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 lg:inline-flex"
+              className="navbar-buy-cta ms-1 hidden max-w-[min(100%,18rem)] items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 xl:inline-flex"
               aria-label={`${t('nav.buyGold')}${buyGoldPriceLabel ? ` ${buyGoldPriceLabel}` : ''}`}
             >
               <span className="flex min-w-0 items-center gap-2 px-2.5 py-2.5 tabular-nums text-[12px] font-bold xl:px-3.5 xl:text-[13px]" dir="ltr">
@@ -425,7 +425,7 @@ export default function Navbar() {
       {isMenuOpen ? (
         <button
           type="button"
-          className="mobile-menu-backdrop fixed inset-0 z-[48] bg-black/45 lg:hidden"
+          className="mobile-menu-backdrop fixed inset-0 z-[48] bg-black/45 xl:hidden"
           onClick={() => setIsMenuOpen(false)}
           aria-label={t('nav.closeMenu')}
         />
@@ -433,7 +433,7 @@ export default function Navbar() {
 
       {isMenuOpen ? (
         <div
-          className="mobile-menu-sheet fixed inset-x-0 z-[49] max-h-[min(72dvh,34rem)] overflow-y-auto rounded-t-2xl border-t border-black/10 bg-[var(--site-bg)] shadow-[0_-16px_48px_rgba(11,15,25,0.18)] lg:hidden"
+          className="mobile-menu-sheet fixed inset-x-0 z-[49] max-h-[min(72dvh,34rem)] overflow-y-auto rounded-t-2xl border-t border-black/10 bg-[var(--site-bg)] shadow-[0_-16px_48px_rgba(11,15,25,0.18)] xl:hidden"
           style={{ bottom: 'var(--bottom-nav-height)' }}
           role="dialog"
           aria-modal="true"
@@ -543,7 +543,7 @@ export default function Navbar() {
     <Sheet open={isReminderOpen} onOpenChange={setIsReminderOpen}>
       <SheetContent
         side="bottom"
-        className="z-[55] max-h-[min(85dvh,36rem)] overflow-y-auto rounded-t-2xl border-t border-black/10 px-4 pb-6 pt-5 lg:hidden"
+        className="z-[55] max-h-[min(85dvh,36rem)] overflow-y-auto rounded-t-2xl border-t border-black/10 px-4 pb-6 pt-5 xl:hidden"
         style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
       >
         <SheetHeader className="px-0 text-start">
@@ -570,7 +570,7 @@ export default function Navbar() {
     <nav
       ref={bottomNavRef}
       aria-label={t('nav.menu')}
-      className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)] lg:hidden"
+      className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)] xl:hidden"
     >
       <div className="mobile-bottom-nav__row flex min-h-[var(--bottom-nav-content)] items-stretch justify-around px-0.5 pt-1 pb-1">
         <Link
