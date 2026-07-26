@@ -2733,6 +2733,7 @@
         "profileUpdatedSuccess": "تم تحديث الملف الشخصي بنجاح",
         "failedToUpdateProfile": "فشل تحديث الملف الشخصي",
         "dateOfBirthRequired": "تاريخ الميلاد مطلوب.",
+        "nationalityRequired": "الجنسية مطلوبة.",
         "customerProfileNotFoundForUpload": "تعذر تحميل ملف العميل لحفظ مستندات الهوية. يرجى تحديث الصفحة أو التواصل مع الدعم."
       }
     },

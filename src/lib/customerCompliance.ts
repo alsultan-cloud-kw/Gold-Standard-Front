@@ -70,19 +70,26 @@ export function isCustomerKycComplete(
   return answersLookComplete(profile.kyc_registration_answers, questions)
 }
 
-/** Basic identity present on the signed-in user (name + contact + date of birth). */
+/** Basic identity present on the signed-in user (name + contact + date of birth + nationality). */
 export function isBasicProfileComplete(user: {
   full_name?: string | null
   email?: string | null
   phone_number?: string | null
   date_of_birth?: string | null
+  nationality?: string | null
 } | null | undefined): boolean {
   if (!user) return false
   const name = String(user.full_name ?? '').trim()
   const email = String(user.email ?? '').trim()
   const phone = String(user.phone_number ?? '').trim()
   const dob = String(user.date_of_birth ?? '').trim()
-  return name.length > 1 && (email.length > 0 || phone.length > 0) && dob.length > 0
+  const nationality = String(user.nationality ?? '').trim()
+  return (
+    name.length > 1
+    && (email.length > 0 || phone.length > 0)
+    && dob.length > 0
+    && /^[A-Za-z]{2}$/.test(nationality)
+  )
 }
 
 /** Civil ID front + back uploaded on the customer profile. */

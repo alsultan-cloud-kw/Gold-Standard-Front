@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
+import { RegionSelectField } from '@/components/auth/RegionSelectField'
 import {
   accountsApi,
   authApi,
@@ -1022,6 +1023,7 @@ function ProfileTab() {
   const [email, setEmail] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
+  const [nationality, setNationality] = useState('')
   const [saving, setSaving] = useState(false)
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
@@ -1052,6 +1054,8 @@ function ProfileTab() {
     } else {
       setDateOfBirth('')
     }
+    const rawNationality = String(user?.nationality ?? '').trim().toUpperCase()
+    setNationality(/^[A-Z]{2}$/.test(rawNationality) ? rawNationality : '')
   }, [user])
 
   useEffect(() => {
@@ -1111,6 +1115,11 @@ function ProfileTab() {
       toast.error(t('userDashboard.profile.toasts.dateOfBirthRequired'))
       return
     }
+    const nationalityCode = nationality.trim().toUpperCase()
+    if (!/^[A-Z]{2}$/.test(nationalityCode)) {
+      toast.error(t('userDashboard.profile.toasts.nationalityRequired'))
+      return
+    }
     setSaving(true)
     try {
       await updateUser({
@@ -1118,6 +1127,7 @@ function ProfileTab() {
         email: email.trim() || null,
         phone_number: phoneNumber.trim() || null,
         date_of_birth: dateOfBirth.trim(),
+        nationality: nationalityCode,
       })
       if (frontFile || backFile) {
         const fresh = await queryClient.fetchQuery({
@@ -1275,6 +1285,15 @@ function ProfileTab() {
               aria-required="true"
             />
           </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <RegionSelectField
+            id="profile-nationality-label"
+            label={`${t('auth.nationality')} *`}
+            value={nationality}
+            onChange={(code) => setNationality(code.toUpperCase())}
+            placeholder={t('auth.selectNationality')}
+          />
         </div>
         <div className="dashboard-divider border-t pt-4 space-y-4">
           <h3 className="text-base font-semibold text-[#0B0F19]">{t('userDashboard.profile.identityDocumentsTitle')}</h3>
