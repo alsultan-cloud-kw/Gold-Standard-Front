@@ -5,11 +5,28 @@ export function normalizeKnetResult(value?: string | null) {
 }
 
 export function isKnetReceiptCaptured(receipt: KnetReceiptDetails | null) {
-  const result = normalizeKnetResult(receipt?.result)
-  return (
-    receipt?.payment_status === 'paid' ||
-    ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(result)
-  )
+  if (!receipt) return false
+  const result = normalizeKnetResult(receipt.result)
+  if (receipt.payment_status === 'paid') return true
+  if (['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(result)) return true
+  return false
+}
+
+/** True when the gateway has a definitive decline/cancel (not a pending callback parse). */
+export function isKnetReceiptDefinitelyFailed(receipt: KnetReceiptDetails | null) {
+  if (!receipt || isKnetReceiptCaptured(receipt)) return false
+  const result = normalizeKnetResult(receipt.result)
+  if (['MISSING_TRANDATA', 'DECRYPT_FAILED', 'PENDING', 'INITIATED', ''].includes(result)) {
+    return false
+  }
+  if (['NOT CAPTURED', 'CANCELED', 'CANCELLED', 'DECLINED', 'DENIED', 'FAILED'].includes(result)) {
+    return true
+  }
+  // Stale "failed" from old missing_trandata bugs — keep verifying via Inquiry.
+  if (receipt.payment_status === 'failed' || receipt.payment_status === 'cancelled') {
+    return result.length > 0
+  }
+  return false
 }
 
 export function formatReceiptAmount(amount: string | undefined, currency: string | undefined) {

@@ -54,6 +54,18 @@ type Sale = {
   gold_rate_snapshot?: Record<string, string>
   journal_entry_id?: string | null
   journal_entry_number?: string | null
+  has_pickup_delegation?: boolean
+  pickup_delegation?: {
+    id: string
+    delegate_full_name: string
+    delegate_civil_id_number?: string
+    civil_id_front_url?: string | null
+    civil_id_back_url?: string | null
+    voice_recording_url?: string | null
+    is_complete?: boolean
+    notes?: string
+    created_at?: string
+  } | null
 }
 
 function asResults<T>(data: unknown): T[] {
@@ -447,7 +459,12 @@ export default function AdminOrders() {
                     className="border-b border-stone-100 hover:bg-lime-50"
                   >
                     <td className="py-3 px-4 text-black font-mono text-sm">
-                      {order.invoice_number}
+                      <div>{order.invoice_number}</div>
+                      {order.has_pickup_delegation ? (
+                        <span className="mt-1 inline-block rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                          Pickup delegation
+                        </span>
+                      ) : null}
                     </td>
                     <td className="py-3 px-4 text-black">
                       <div>{order.customer_name}</div>
@@ -568,6 +585,20 @@ export default function AdminOrders() {
                 <span>{detailData.payment_method_display || '—'}</span>
                 <span className="text-stone-500">Delivery</span>
                 <span>{detailData.delivery_type_display ?? (detailData.delivery_type === 'locked' ? 'Locked in vault' : 'Physical')}</span>
+                {detailData.pickup_delegation ? (
+                  <>
+                    <span className="text-stone-500">Pickup by</span>
+                    <span className="font-medium text-violet-800">
+                      {detailData.pickup_delegation.delegate_full_name}
+                      {detailData.pickup_delegation.delegate_civil_id_number
+                        ? ` · ${detailData.pickup_delegation.delegate_civil_id_number}`
+                        : ''}
+                      {detailData.pickup_delegation.is_complete === false ? (
+                        <span className="ml-1 text-amber-600">(incomplete)</span>
+                      ) : null}
+                    </span>
+                  </>
+                ) : null}
                 <span className="text-stone-500">Branch</span>
                 <span>{detailData.branch_name || '—'}</span>
                 <span className="text-stone-500">Sale date</span>
@@ -602,6 +633,56 @@ export default function AdminOrders() {
                   </>
                 )}
               </div>
+              {detailData.pickup_delegation ? (
+                <div className="rounded-lg border border-violet-200 bg-violet-50/80 p-3 space-y-2">
+                  <div className="font-semibold text-violet-900">Shop pickup delegation</div>
+                  <p className="text-xs text-violet-800/80">
+                    Verify Civil ID and voice authorization at the counter before releasing the order.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {detailData.pickup_delegation.civil_id_front_url ? (
+                      <a
+                        href={detailData.pickup_delegation.civil_id_front_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-violet-800 border border-violet-200 hover:bg-violet-100"
+                      >
+                        Civil ID front
+                      </a>
+                    ) : null}
+                    {detailData.pickup_delegation.civil_id_back_url ? (
+                      <a
+                        href={detailData.pickup_delegation.civil_id_back_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-violet-800 border border-violet-200 hover:bg-violet-100"
+                      >
+                        Civil ID back
+                      </a>
+                    ) : null}
+                    {detailData.pickup_delegation.voice_recording_url ? (
+                      <a
+                        href={detailData.pickup_delegation.voice_recording_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-violet-800 border border-violet-200 hover:bg-violet-100"
+                      >
+                        Voice recording
+                      </a>
+                    ) : null}
+                  </div>
+                  {detailData.pickup_delegation.voice_recording_url ? (
+                    <audio
+                      controls
+                      className="mt-2 w-full"
+                      src={detailData.pickup_delegation.voice_recording_url}
+                      preload="metadata"
+                    >
+                      <track kind="captions" />
+                    </audio>
+                  ) : null}
+                </div>
+              ) : null}
               {detailData.items && detailData.items.length > 0 && (
                 <div>
                   <div className="text-stone-500 mb-2">Items</div>

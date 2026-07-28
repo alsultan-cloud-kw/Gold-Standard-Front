@@ -2,7 +2,11 @@ import { Check, CreditCard, Download, Loader2, Lock, XCircle } from 'lucide-reac
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { KnetReceiptDetails } from '@/types'
-import { buildKnetReceiptFields, isKnetReceiptCaptured } from '@/lib/knetReceipt'
+import {
+  buildKnetReceiptFields,
+  isKnetReceiptCaptured,
+  isKnetReceiptDefinitelyFailed,
+} from '@/lib/knetReceipt'
 import knetBadge from '@/assets/trust/knet-badge.png'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +25,8 @@ export function KnetReceiptPanel({
 }: Props) {
   const { t } = useTranslation()
   const captured = isKnetReceiptCaptured(receipt)
+  const failed = isKnetReceiptDefinitelyFailed(receipt)
+  const pending = !captured && !failed
   const fields = buildKnetReceiptFields(receipt, t)
 
   return (
@@ -30,29 +36,41 @@ export function KnetReceiptPanel({
           'border-b px-6 py-8 text-center sm:px-8',
           captured
             ? 'border-[#059669]/20 bg-[rgba(5,150,105,0.1)]'
-            : 'border-red-200/60 bg-[rgba(220,38,38,0.08)]',
+            : failed
+              ? 'border-red-200/60 bg-[rgba(220,38,38,0.08)]'
+              : 'border-amber-200/70 bg-amber-50',
         )}
       >
         <div
           className={cn(
             'mx-auto mb-4 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full',
-            captured ? 'bg-[rgba(5,150,105,0.15)]' : 'bg-[rgba(220,38,38,0.12)]',
+            captured
+              ? 'bg-[rgba(5,150,105,0.15)]'
+              : failed
+                ? 'bg-[rgba(220,38,38,0.12)]'
+                : 'bg-amber-100',
           )}
         >
           {captured ? (
             <Check className="h-10 w-10 text-[#059669]" strokeWidth={2.5} />
-          ) : (
+          ) : failed ? (
             <XCircle className="h-10 w-10 text-[#DC2626]" />
+          ) : (
+            <Loader2 className="h-10 w-10 animate-spin text-amber-700" />
           )}
         </div>
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#64748B]">
           {t('knetReceipt.badge')}
         </p>
         <h1 className="type-page-title text-[#0B0F19]">
-          {captured ? t('knetReceipt.capturedTitle') : t('knetReceipt.notCapturedTitle')}
+          {captured
+            ? t('knetReceipt.capturedTitle')
+            : failed
+              ? t('knetReceipt.notCapturedTitle')
+              : t('knetReceipt.pendingTitle')}
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[#64748B]">
-          {t('knetReceipt.subtitle')}
+          {pending ? t('knetReceipt.pendingSubtitle') : t('knetReceipt.subtitle')}
         </p>
         <div className="mt-5 flex justify-center">
           <img
@@ -94,34 +112,41 @@ export function KnetReceiptPanel({
         </div>
 
         {showActions ? (
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            {onDownloadInvoice ? (
-              <button
-                type="button"
-                onClick={onDownloadInvoice}
-                disabled={downloading}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#3F6F00] bg-[#ECFCCB]/40 px-5 py-3 text-sm font-semibold text-[#0B0F19] transition hover:bg-[#ECFCCB]/70 disabled:opacity-60"
-              >
-                {downloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {t('checkoutPage.downloadInvoice')}
-              </button>
+          <div className="mt-6 space-y-3">
+            {!captured ? (
+              <p className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-center text-xs leading-relaxed text-amber-900">
+                {t('knetReceipt.downloadOnlyWhenPaid')}
+              </p>
             ) : null}
-            <Link
-              to="/dashboard?tab=orders"
-              className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#85E307] px-5 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AEF2A]"
-            >
-              {t('checkoutPage.viewMyOrders')}
-            </Link>
-            <Link
-              to="/products"
-              className="inline-flex flex-1 items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-[#64748B] transition hover:bg-[#F9F9FA]"
-            >
-              {t('cartPage.continueShopping')}
-            </Link>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {captured && onDownloadInvoice ? (
+                <button
+                  type="button"
+                  onClick={onDownloadInvoice}
+                  disabled={downloading}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#3F6F00] bg-[#ECFCCB]/40 px-5 py-3 text-sm font-semibold text-[#0B0F19] transition hover:bg-[#ECFCCB]/70 disabled:opacity-60"
+                >
+                  {downloading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  {t('checkoutPage.downloadInvoice')}
+                </button>
+              ) : null}
+              <Link
+                to="/dashboard?tab=orders"
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#85E307] px-5 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9AEF2A]"
+              >
+                {t('checkoutPage.viewMyOrders')}
+              </Link>
+              <Link
+                to="/products"
+                className="inline-flex flex-1 items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-[#64748B] transition hover:bg-[#F9F9FA]"
+              >
+                {t('cartPage.continueShopping')}
+              </Link>
+            </div>
           </div>
         ) : null}
       </div>

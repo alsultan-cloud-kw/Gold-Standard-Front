@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { XCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -11,9 +11,14 @@ import { isKnetReceiptCaptured } from '@/lib/knetReceipt'
 
 import { useCart } from '../contexts/CartContext'
 
+const VERIFY_POLL_MS = 1_800
+const VERIFY_DEADLINE_MS = 18_000
+
 export default function KnetReceiptPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { saleId } = useParams<{ saleId: string }>()
+  const [searchParams] = useSearchParams()
   const { clearCart } = useCart()
   const [receipt, setReceipt] = useState<KnetReceiptDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -29,22 +34,67 @@ export default function KnetReceiptPage() {
     let cancelled = false
     setLoading(true)
 
+    const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          setTimeout(() => reject(new Error('timeout')), ms)
+        }),
+      ])
+
     const load = async () => {
       try {
-        try {
-          await ordersApi.verifyKnetPayment(saleId)
-        } catch {
-          /* still load latest receipt snapshot */
+        // Ambiguous KNET returns (missing trandata) often land with knet_status=failed/pending
+        // while the charge was actually CAPTURED — poll Inquiry until paid or deadline.
+        const urlStatus = (searchParams.get('knet_status') || '').toLowerCase()
+        const reason = (searchParams.get('reason') || '').toLowerCase()
+        const shouldPoll =
+          urlStatus === 'pending' ||
+          urlStatus === 'failed' ||
+          reason === 'missing_trandata' ||
+          reason === 'decrypt_failed' ||
+          !urlStatus
+
+        let paid = false
+        if (shouldPoll) {
+          const deadline = Date.now() + VERIFY_DEADLINE_MS
+          while (!cancelled && Date.now() < deadline) {
+            try {
+              const verify = await withTimeout(ordersApi.verifyKnetPayment(saleId), 7_000)
+              if (verify.payment_status === 'paid') {
+                paid = true
+                break
+              }
+              if (verify.payment_status === 'failed' && reason !== 'missing_trandata' && reason !== 'decrypt_failed') {
+                break
+              }
+            } catch {
+              // keep polling
+            }
+            await new Promise((r) => setTimeout(r, VERIFY_POLL_MS))
+          }
+        } else {
+          try {
+            await ordersApi.verifyKnetPayment(saleId)
+          } catch {
+            /* still load latest receipt snapshot */
+          }
         }
+
         const data = await ordersApi.getKnetReceipt(saleId)
-        if (!cancelled) {
-          setReceipt(data)
-          setError(null)
-          
-          // Clear cart only if this was a fresh return from a successful payment.
-          // We check the pending sale key to avoid clearing if they're just viewing an old receipt.
+        if (cancelled) return
+
+        setReceipt(data)
+        setError(null)
+
+        const captured = isKnetReceiptCaptured(data) || paid
+        if (captured) {
+          // Never leave ?knet_status=failed in the address bar after a real capture.
+          if (urlStatus && urlStatus !== 'success') {
+            navigate(`/payment-receipt/${saleId}?knet_status=success`, { replace: true })
+          }
           const pendingRaw = sessionStorage.getItem('gs_knet_pending_sale')
-          if (pendingRaw && isKnetReceiptCaptured(data)) {
+          if (pendingRaw) {
             try {
               const pending = JSON.parse(pendingRaw)
               if (pending.saleId === saleId) {
@@ -67,10 +117,13 @@ export default function KnetReceiptPage() {
     return () => {
       cancelled = true
     }
-  }, [saleId, t, clearCart])
+  }, [saleId, t, clearCart, navigate, searchParams])
 
   const downloadInvoice = async () => {
-    if (!saleId) return
+    if (!saleId || !isKnetReceiptCaptured(receipt)) {
+      toast.error(t('knetReceipt.downloadOnlyWhenPaid'))
+      return
+    }
     setDownloading(true)
     try {
       await invoicesApi.downloadSaleInvoicePdf(
@@ -112,13 +165,15 @@ export default function KnetReceiptPage() {
     )
   }
 
+  const captured = isKnetReceiptCaptured(receipt)
+
   return (
     <div className="min-h-screen bg-[#F9F9FA] py-10 sm:py-12">
       <div className="page-shell py-10 sm:py-12">
         <KnetReceiptPanel
           receipt={receipt}
           downloading={downloading}
-          onDownloadInvoice={() => void downloadInvoice()}
+          onDownloadInvoice={captured ? () => void downloadInvoice() : undefined}
         />
       </div>
     </div>

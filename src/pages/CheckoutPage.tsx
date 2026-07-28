@@ -11,6 +11,8 @@ import {
   Tag,
   Crown,
   MapPin,
+  Mic,
+  UserRound,
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
@@ -97,6 +99,34 @@ function clearCheckoutShippingDraft() {
   }
 }
 
+const DELEGATE_VOICE_EXTENSIONS = new Set([
+  '.mp3',
+  '.m4a',
+  '.wav',
+  '.ogg',
+  '.webm',
+  '.aac',
+  '.mpeg',
+  '.mp4',
+  '.3gp',
+])
+
+function isValidDelegateVoiceFile(file: File | null): boolean {
+  if (!file) return false
+  const name = file.name || ''
+  const dot = name.lastIndexOf('.')
+  const ext = dot >= 0 ? name.slice(dot).toLowerCase() : ''
+  if (ext && DELEGATE_VOICE_EXTENSIONS.has(ext)) return true
+  const mime = (file.type || '').toLowerCase()
+  return mime.startsWith('audio/') || mime === 'video/webm' || mime === 'video/mp4'
+}
+
+function isValidDelegateCivilImage(file: File | null): boolean {
+  if (!file) return false
+  const name = (file.name || '').toLowerCase()
+  return /\.(jpe?g|png|webp|heic|heif)$/i.test(name) || (file.type || '').startsWith('image/')
+}
+
 type KnetPendingSale = {
   saleId: string
   invoice?: string
@@ -133,13 +163,13 @@ function isExplicitKnetFailure(
     return true
   }
   const r = (reason || '').toLowerCase()
+  // Callback-parse gaps are NOT real declines — Inquiry may still find CAPTURED.
+  if (r === 'missing_trandata' || r === 'decrypt_failed') return false
   if (r.includes('cancel') || r === 'callback_error') return true
-  // Plain failed redirect from KNET errorURL (no captured result, not a callback-parse issue).
+  // Plain failed redirect from KNET errorURL (customer cancelled / declined on bank page).
   if (
     knetStatus === 'failed'
     && !isExplicitKnetSuccess(knetStatus, result)
-    && r !== 'missing_trandata'
-    && r !== 'decrypt_failed'
   ) {
     return true
   }
@@ -151,6 +181,7 @@ function needsKnetVerification(
   result: string,
   reason: string | null | undefined,
 ): boolean {
+  if (knetStatus === 'pending') return true
   if (isExplicitKnetSuccess(knetStatus, result) || isExplicitKnetFailure(knetStatus, result, reason)) {
     return false
   }
@@ -188,6 +219,12 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState('knet')
   const [deliveryType, setDeliveryType] = useState<'physical' | 'locked'>('physical')
+  const [delegatePickup, setDelegatePickup] = useState(false)
+  const [delegateFullName, setDelegateFullName] = useState('')
+  const [delegateCivilIdNumber, setDelegateCivilIdNumber] = useState('')
+  const [delegateCivilFront, setDelegateCivilFront] = useState<File | null>(null)
+  const [delegateCivilBack, setDelegateCivilBack] = useState<File | null>(null)
+  const [delegateVoice, setDelegateVoice] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [lastOrder, setLastOrder] = useState<SaleResponse | null>(null)
   const [knetReturnPhase, setKnetReturnPhase] = useState<KnetReturnPhase>('idle')
@@ -272,6 +309,12 @@ export default function CheckoutPage() {
       setDeliveryType('physical')
     }
   }, [deliveryType])
+
+  useEffect(() => {
+    if (deliveryType !== 'physical' && delegatePickup) {
+      setDelegatePickup(false)
+    }
+  }, [deliveryType, delegatePickup])
 
   useEffect(() => {
     if (paymentMethod === 'wallet' && walletBalance < checkoutTotalDue - 1e-9) {
@@ -567,6 +610,23 @@ export default function CheckoutPage() {
       return
     }
 
+    const wantsDelegation = deliveryType === 'physical' && delegatePickup
+    if (wantsDelegation) {
+      const nameOk = delegateFullName.trim().length >= 2
+      const filesOk =
+        isValidDelegateCivilImage(delegateCivilFront) &&
+        isValidDelegateCivilImage(delegateCivilBack) &&
+        isValidDelegateVoiceFile(delegateVoice)
+      if (!nameOk || !filesOk) {
+        toast.error(t('checkoutPage.delegateRequired'))
+        return
+      }
+      if (delegateVoice && !isValidDelegateVoiceFile(delegateVoice)) {
+        toast.error(t('checkoutPage.delegateVoiceInvalid'))
+        return
+      }
+    }
+
     const items = cart.items.map((item) => ({
       product_id: item.product.id,
       quantity: item.quantity,
@@ -599,6 +659,24 @@ export default function CheckoutPage() {
         notes,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })) as SaleResponse
+
+      if (wantsDelegation && data.id) {
+        const formData = new FormData()
+        formData.append('delegate_full_name', delegateFullName.trim())
+        if (delegateCivilIdNumber.trim()) {
+          formData.append('delegate_civil_id_number', delegateCivilIdNumber.trim())
+        }
+        if (delegateCivilFront) formData.append('civil_id_front', delegateCivilFront)
+        if (delegateCivilBack) formData.append('civil_id_back', delegateCivilBack)
+        if (delegateVoice) formData.append('voice_recording', delegateVoice)
+        try {
+          await ordersApi.uploadPickupDelegation(data.id, formData)
+        } catch {
+          toast.error(t('checkoutPage.delegateUploadFailed'))
+          setSubmitting(false)
+          return
+        }
+      }
 
       if (saveAddressToProfile) {
         try {
@@ -863,7 +941,13 @@ export default function CheckoutPage() {
     submitting ||
     walletTooLow ||
     hasUnavailableItems ||
-    (isTurnstileConfigured && !turnstileToken)
+    (isTurnstileConfigured && !turnstileToken) ||
+    (deliveryType === 'physical' &&
+      delegatePickup &&
+      (delegateFullName.trim().length < 2 ||
+        !isValidDelegateCivilImage(delegateCivilFront) ||
+        !isValidDelegateCivilImage(delegateCivilBack) ||
+        !isValidDelegateVoiceFile(delegateVoice)))
 
   return (
     <div className="checkout-page checkout-page-with-mobile-actions">
@@ -1118,6 +1202,122 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {deliveryType === 'physical' ? (
+                  <div className={checkoutPanelClass}>
+                    <div className="checkout-panel__header">
+                      <span className="checkout-panel__icon">
+                        <UserRound className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h2 className="text-base font-bold text-[#0B0F19] sm:text-lg">
+                          {t('checkoutPage.delegatePickupTitle')}
+                        </h2>
+                        <p className="mt-1 text-sm text-[#64748B]">
+                          {t('checkoutPage.delegatePickupHint')}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="mt-1 flex cursor-pointer items-start gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-[#CBD5E1] text-[#3F6F00] focus:ring-[#3F6F00]"
+                        checked={delegatePickup}
+                        onChange={(e) => setDelegatePickup(e.target.checked)}
+                      />
+                      <span className="text-sm font-medium text-[#0B0F19]">
+                        {t('checkoutPage.delegatePickupToggle')}
+                      </span>
+                    </label>
+                    {delegatePickup ? (
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <label className="mb-1.5 block text-sm font-medium text-[#0B0F19]">
+                            {t('checkoutPage.delegateNameLabel')}
+                          </label>
+                          <input
+                            type="text"
+                            value={delegateFullName}
+                            onChange={(e) => setDelegateFullName(e.target.value)}
+                            placeholder={t('checkoutPage.delegateNamePh')}
+                            className="w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-2.5 text-sm text-[#0B0F19] outline-none focus:border-[#3F6F00]"
+                            autoComplete="name"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-sm font-medium text-[#0B0F19]">
+                            {t('checkoutPage.delegateCivilIdLabel')}
+                          </label>
+                          <input
+                            type="text"
+                            value={delegateCivilIdNumber}
+                            onChange={(e) => setDelegateCivilIdNumber(e.target.value)}
+                            placeholder={t('checkoutPage.delegateCivilIdPh')}
+                            className="w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-2.5 text-sm text-[#0B0F19] outline-none focus:border-[#3F6F00]"
+                            inputMode="numeric"
+                          />
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="mb-1.5 block text-sm font-medium text-[#0B0F19]">
+                              {t('checkoutPage.delegateCivilFront')}
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                              onChange={(e) =>
+                                setDelegateCivilFront(e.target.files?.[0] ?? null)
+                              }
+                              className="block w-full text-sm text-[#64748B] file:mr-3 file:rounded-lg file:border-0 file:bg-[#3F6F00] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1.5 block text-sm font-medium text-[#0B0F19]">
+                              {t('checkoutPage.delegateCivilBack')}
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                              onChange={(e) =>
+                                setDelegateCivilBack(e.target.files?.[0] ?? null)
+                              }
+                              className="block w-full text-sm text-[#64748B] file:mr-3 file:rounded-lg file:border-0 file:bg-[#3F6F00] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-[#0B0F19]">
+                            <Mic className="h-4 w-4" />
+                            {t('checkoutPage.delegateVoiceLabel')}
+                          </label>
+                          <p className="mb-2 text-xs leading-relaxed text-[#64748B]">
+                            {t('checkoutPage.delegateVoiceHint')}
+                          </p>
+                          <input
+                            type="file"
+                            accept="audio/*,.mp3,.m4a,.wav,.ogg,.webm,.aac,.mpeg,.mp4,.3gp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] ?? null
+                              if (file && !isValidDelegateVoiceFile(file)) {
+                                toast.error(t('checkoutPage.delegateVoiceInvalid'))
+                                e.target.value = ''
+                                setDelegateVoice(null)
+                                return
+                              }
+                              setDelegateVoice(file)
+                            }}
+                            className="block w-full text-sm text-[#64748B] file:mr-3 file:rounded-lg file:border-0 file:bg-[#3F6F00] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+                          />
+                          {delegateVoice ? (
+                            <p className="mt-1.5 text-xs text-[#3F6F00]">
+                              {delegateVoice.name} ({Math.round(delegateVoice.size / 1024)} KB)
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <div className={checkoutPanelClass}>
                   <div className="checkout-panel__header">
                     <span className="checkout-panel__icon bg-white">
@@ -1222,6 +1422,11 @@ export default function CheckoutPage() {
                     <div>
                       <p className="text-sm font-semibold text-[#0B0F19]">{t('checkoutPage.deliveryPhysical')}</p>
                       <p className="mt-0.5 text-xs text-[#64748B]">{t('checkoutPage.deliveryPhysicalHint')}</p>
+                      {delegatePickup && delegateFullName.trim() ? (
+                        <p className="mt-2 text-xs font-medium text-[#3F6F00]">
+                          {t('checkoutPage.delegateReviewNote', { name: delegateFullName.trim() })}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 )}

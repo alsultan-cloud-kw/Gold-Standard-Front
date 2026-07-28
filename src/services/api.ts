@@ -648,6 +648,16 @@ export const ordersApi = {
   }) =>
     apiService.post<unknown>('/accounting/sales/place-order/', data),
 
+  /**
+   * Shop pickup by someone else: Civil ID front/back + voice recording for the delegate.
+   * Multipart FormData. Call after placeOrder when the buyer opted into delegation.
+   */
+  uploadPickupDelegation: (saleId: string, formData: FormData) =>
+    apiService.post<unknown>(`/accounting/sales/${saleId}/pickup-delegation/`, formData),
+
+  getPickupDelegation: (saleId: string) =>
+    apiService.get<unknown>(`/accounting/sales/${saleId}/pickup-delegation/`),
+
   /** Public: which checkout payment methods the storefront may show (KNET + Wallet always true). */
   getCheckoutPaymentMethods: () =>
     apiService.get<{
