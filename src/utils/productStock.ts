@@ -74,3 +74,27 @@ export function clampCartLineQuantity(product: Product, quantity: number): numbe
   if (available <= 0) return Math.max(1, quantity)
   return Math.min(Math.max(1, quantity), available)
 }
+
+/**
+ * Serialized bullion / unique barcode units — cart must be one line per piece.
+ * Storefront available_quantity is received-unit count for these products.
+ */
+export function isProductSerialized(product: Product): boolean {
+  const units = Number((product as { barcode_units_count?: number }).barcode_units_count)
+  if (Number.isFinite(units) && units > 0) return true
+  // Gold storefront stock is unit-backed when available_quantity is present.
+  if (typeof product.available_quantity === 'number' && Number.isFinite(product.available_quantity)) {
+    return true
+  }
+  return false
+}
+
+/** Count of cart lines / units already held for this product id. */
+export function cartUnitsForProductId(
+  items: Array<{ product: Product; quantity: number }>,
+  productId: string,
+): number {
+  return items
+    .filter((item) => item.product.id === productId)
+    .reduce((sum, item) => sum + Math.max(1, Number(item.quantity) || 1), 0)
+}

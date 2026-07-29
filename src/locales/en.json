@@ -1390,7 +1390,9 @@
     "trustSslAlt": "Secure SSL encryption",
     "trustNote": "Online card payments are processed through KNET. Your connection is encrypted for checkout and receipt confirmation.",
     "stockOnlyLeftForSku": "Only {{available}} left in stock for SKU {{sku}}.",
-    "stockInsufficientRequested": "Insufficient stock. Requested {{requested}}, available {{available}}."
+    "stockInsufficientRequested": "Insufficient stock. Requested {{requested}}, available {{available}}.",
+    "unitAlreadySold": "This piece was just sold on another channel. Refresh your cart and try again.",
+    "unitAlreadySoldWithCode": "Piece ({{code}}) was just sold on another channel. Refresh your cart and try again."
   },
   "knetReceipt": {
     "loading": "Loading payment receipt...",

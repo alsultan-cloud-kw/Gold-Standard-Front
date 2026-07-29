@@ -1390,7 +1390,9 @@
     "trustSslAlt": "تشفير SSL آمن",
     "trustNote": "تُعالَج مدفوعات البطاقات عبر KNET. اتصالك مشفّر أثناء الدفع وتأكيد الإيصال.",
     "stockOnlyLeftForSku": "المتوفر فقط {{available}} من المخزون للرمز {{sku}}.",
-    "stockInsufficientRequested": "المخزون غير كافٍ. المطلوب {{requested}} والمتوفر {{available}}."
+    "stockInsufficientRequested": "المخزون غير كافٍ. المطلوب {{requested}} والمتوفر {{available}}.",
+    "unitAlreadySold": "هذه القطعة بيعت للتو على قناة أخرى. حدِّث السلة وأعد المحاولة.",
+    "unitAlreadySoldWithCode": "القطعة ({{code}}) بيعت للتو على قناة أخرى. حدِّث السلة وأعد المحاولة."
   },
   "knetReceipt": {
     "loading": "جاري تحميل إيصال الدفع...",

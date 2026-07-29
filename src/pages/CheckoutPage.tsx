@@ -198,6 +198,8 @@ type CheckoutPayRow = {
 
 type PlaceOrderErrorPayload = {
   detail?: unknown
+  code?: unknown
+  barcode_value?: unknown
   product_sku?: unknown
   available_quantity?: unknown
   requested_quantity?: unknown
@@ -747,6 +749,15 @@ export default function CheckoutPage() {
         }
         if (d.error === 'captcha_failed') {
           toast.error(t('auth.captchaFailed'))
+          return
+        }
+        if (d.code === 'UNIT_ALREADY_SOLD') {
+          const barcode = typeof d.barcode_value === 'string' ? d.barcode_value : null
+          toast.error(
+            barcode
+              ? t('checkoutPage.unitAlreadySoldWithCode', { code: barcode })
+              : t('checkoutPage.unitAlreadySold'),
+          )
           return
         }
         const sku = typeof d.product_sku === 'string' ? d.product_sku : null

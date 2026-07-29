@@ -6,9 +6,12 @@ import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi } from '../services/api'
 import { useAuth } from './AuthContext'
 import {
+  cartUnitsForProductId,
   clampCartLineQuantity,
   clampPurchaseQuantity,
   isProductOutOfStock,
+  isProductSerialized,
+  maxPurchasableQuantity,
   productAvailableQuantity,
   productStockFieldsChanged,
 } from '@/utils/productStock'
@@ -339,6 +342,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     let toastKind: 'added' | 'increased' | 'capped' | null = null
     let toastQty = quantity
     setCart((prevCart) => {
+      if (isProductSerialized(product)) {
+        const already = cartUnitsForProductId(prevCart.items, product.id)
+        const room = maxPurchasableQuantity(product, already)
+        const want = Math.max(1, Math.floor(quantity) || 1)
+        const toAdd = Math.min(want, room)
+        if (toAdd <= 0) {
+          toastKind = 'capped'
+          toastQty = already
+          return prevCart
+        }
+        toastKind = toAdd < want ? 'capped' : already > 0 ? 'increased' : 'added'
+        toastQty = toAdd < want ? already + toAdd : toAdd
+        const unit = unitPriceForMembership(product, clubPricingEnabled)
+        const newLines: CartItem[] = []
+        for (let i = 0; i < toAdd; i += 1) {
+          newLines.push({
+            id: `${product.id}-unit-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+            product,
+            quantity: 1,
+            unit_price: unit,
+            total_price: unit,
+          })
+        }
+        return calculateCartTotals([...prevCart.items, ...newLines])
+      }
+
       const existingItem = prevCart.items.find((item) => item.product.id === product.id)
       const existingQty = existingItem?.quantity ?? 0
       const nextQty = clampPurchaseQuantity(product, existingQty + quantity, 0)
@@ -459,6 +488,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prevCart) => {
       const target = prevCart.items.find((item) => item.id === itemId)
       if (!target) return prevCart
+
+      // Serialized unit lines stay qty=1; "increase" means add another unit line.
+      if (isProductSerialized(target.product)) {
+        if (quantity <= 1) {
+          return prevCart
+        }
+        const already = cartUnitsForProductId(prevCart.items, target.product.id)
+        const room = maxPurchasableQuantity(target.product, already)
+        if (room <= 0) {
+          toastPayload = {
+            name: productDisplayName(target.product),
+            qty: already,
+            direction: 'capped',
+          }
+          return prevCart
+        }
+        const unit = unitPriceForMembership(target.product, clubPricingEnabled)
+        const extra: CartItem = {
+          id: `${target.product.id}-unit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          product: target.product,
+          quantity: 1,
+          unit_price: unit,
+          total_price: unit,
+        }
+        toastPayload = {
+          name: productDisplayName(target.product),
+          qty: already + 1,
+          direction: 'up',
+        }
+        return calculateCartTotals([...prevCart.items, extra])
+      }
 
       const prevQty = target.quantity
       const cappedQty = clampPurchaseQuantity(target.product, quantity, 0)
