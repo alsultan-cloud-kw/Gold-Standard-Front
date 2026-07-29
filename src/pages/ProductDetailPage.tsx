@@ -93,7 +93,8 @@ export default function ProductDetailPage() {
   const productUrl = typeof window !== 'undefined' ? window.location.href : ''
   const outOfStock = isProductOutOfStock(p)
   const availableQty = productAvailableQuantity(p)
-  const maxSelectableQty = Math.max(1, availableQty || 1)
+  // Never invent sellable qty when OOS; steppers stay disabled via outOfStock.
+  const maxSelectableQty = outOfStock ? 0 : Math.max(1, availableQty)
   const verifyCode = p.serial_number || p.barcode_value || p.sku || null
 
   const handleAddToCart = () => {

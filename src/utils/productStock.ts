@@ -14,12 +14,16 @@ export function productAvailableQuantity(product: Product): number {
   return 0
 }
 
+/**
+ * Derive display status from sellable qty first so API `stock_status` cannot
+ * disagree with `available_quantity` / catalog `status` (e.g. OOS label with qty > 0).
+ */
 export function productStockStatus(product: Product): ProductStockStatus {
   if (UNAVAILABLE_STATUSES.has(product.status)) return 'out_of_stock'
-  if (typeof product.stock_status === 'string') {
-    return product.stock_status
-  }
-  return productAvailableQuantity(product) > 0 ? 'in_stock' : 'out_of_stock'
+  const qty = productAvailableQuantity(product)
+  if (qty <= 0) return 'out_of_stock'
+  if (product.stock_status === 'low_stock') return 'low_stock'
+  return 'in_stock'
 }
 
 export function isProductOutOfStock(product: Product): boolean {
@@ -49,4 +53,24 @@ export function clampPurchaseQuantity(product: Product, requested: number, curre
   const max = maxPurchasableQuantity(product, currentInCart)
   if (max <= 0) return 0
   return Math.min(Math.max(1, requested), max)
+}
+
+/** True when live product payload changed stock eligibility fields. */
+export function productStockFieldsChanged(prev: Product, next: Product): boolean {
+  return (
+    (prev.available_quantity ?? null) !== (next.available_quantity ?? null) ||
+    (prev.stock_status ?? null) !== (next.stock_status ?? null) ||
+    (prev.in_stock ?? null) !== (next.in_stock ?? null) ||
+    prev.status !== next.status
+  )
+}
+
+/**
+ * Clamp a cart line qty to live available stock.
+ * When OOS (available 0), keep the previous qty so cart/checkout can show unavailable.
+ */
+export function clampCartLineQuantity(product: Product, quantity: number): number {
+  const available = productAvailableQuantity(product)
+  if (available <= 0) return Math.max(1, quantity)
+  return Math.min(Math.max(1, quantity), available)
 }

@@ -6,9 +6,11 @@ import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi } from '../services/api'
 import { useAuth } from './AuthContext'
 import {
+  clampCartLineQuantity,
   clampPurchaseQuantity,
   isProductOutOfStock,
   productAvailableQuantity,
+  productStockFieldsChanged,
 } from '@/utils/productStock'
 
 interface CartContextType {
@@ -248,19 +250,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
             if (!latest) return item
 
             const nextUnit = unitPriceForMembership(latest, isClub)
+            const nextQty = clampCartLineQuantity(latest, item.quantity)
             const unitChanged = Math.abs((Number(item.unit_price) || 0) - nextUnit) > 1e-9
-            const productChanged =
+            const qtyChanged = nextQty !== item.quantity
+            const priceMetaChanged =
               (item.product.live_total_price ?? null) !== (latest.live_total_price ?? null) ||
               (item.product.live_total_price_club ?? null) !== (latest.live_total_price_club ?? null)
+            const stockChanged = productStockFieldsChanged(item.product, latest)
 
-            if (!unitChanged && !productChanged) return item
+            if (!unitChanged && !qtyChanged && !priceMetaChanged && !stockChanged) return item
 
             changed = true
             return {
               ...item,
               product: latest,
+              quantity: nextQty,
               unit_price: nextUnit,
-              total_price: item.quantity * nextUnit,
+              total_price: nextQty * nextUnit,
             }
           })
 
@@ -349,8 +355,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
       let newItems: CartItem[]
 
       if (existingItem) {
-        if (existingQty === nextQty) {
+        const unit = unitPriceForMembership(product, clubPricingEnabled)
+        const productSnapshotChanged =
+          productStockFieldsChanged(existingItem.product, product) ||
+          existingItem.product.live_total_price !== product.live_total_price ||
+          existingItem.product.live_total_price_club !== product.live_total_price_club
+        if (existingQty === nextQty && !productSnapshotChanged) {
           return prevCart
+        }
+        if (existingQty === nextQty && productSnapshotChanged) {
+          // Refresh stale product/stock snapshot without a qty toast.
+          newItems = prevCart.items.map((item) =>
+            item.product.id === product.id
+              ? {
+                  ...item,
+                  product,
+                  unit_price: unit,
+                  total_price: nextQty * unit,
+                }
+              : item,
+          )
+          return calculateCartTotals(newItems)
         }
         if (toastKind !== 'capped') {
           toastQty = nextQty
@@ -360,8 +385,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           item.product.id === product.id
             ? {
                 ...item,
+                product,
                 quantity: nextQty,
-                total_price: nextQty * item.unit_price,
+                unit_price: unit,
+                total_price: nextQty * unit,
               }
             : item,
         )
