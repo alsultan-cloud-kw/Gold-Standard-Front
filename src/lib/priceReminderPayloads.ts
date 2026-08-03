@@ -54,7 +54,8 @@ export function buildSpotPriceAlertPayloads(params: {
         reminder_mode: 'delta',
         delta_value: delta.toFixed(3),
         baseline_rates: baselineRates,
-        notification_method: 'whatsapp',
+        // WhatsApp + push when the account has an opted-in mobile/web Device (Django beat).
+        notification_method: 'both',
       },
     ],
   }

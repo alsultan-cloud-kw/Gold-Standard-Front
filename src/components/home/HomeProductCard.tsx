@@ -13,6 +13,7 @@ import { ProductStockOverlay, ProductStockStatusLabel } from '@/components/produ
 import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
 import { isProductOutOfStock, productFineness } from '@/utils/productStock'
 import { useShippingEtaLabel } from '@/hooks/useShippingEtaLabel'
+import { categoryDisplayName } from '@/lib/categoryDisplayName'
 
 type Props = {
   product: Product
@@ -32,12 +33,10 @@ function HomeProductCardInner({
   const shipsInLabel = useShippingEtaLabel()
   const imageSrc = productImageSrc(product)
   const lang = i18n.language
-  const productName = lang === 'ar' && product.name_ar ? product.name_ar : product.name_en
+  const isAr = lang?.startsWith('ar')
+  const productName = isAr && product.name_ar ? product.name_ar : product.name_en
   const caratName = formatProductCaratLabel(product.carat, lang)
-  const categoryName =
-    lang === 'ar' && product.category?.name_ar
-      ? product.category.name_ar
-      : product.category?.name_en
+  const categoryName = categoryDisplayName(product.category, Boolean(isAr)) || undefined
 
   const ft = fetchTrends?.[product.id]
   const trendOverride = ft?.trend ?? null

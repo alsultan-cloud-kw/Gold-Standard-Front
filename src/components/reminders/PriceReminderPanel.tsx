@@ -53,18 +53,25 @@ export function PriceReminderPanel({ onSaved, className }: PriceReminderPanelPro
         >
           {t('priceReminder.deltaLabel')}
         </label>
-        <input
-          id="price-reminder-delta"
-          type="number"
-          inputMode="decimal"
-          step="0.001"
-          min={0}
-          value={deltaInput}
-          onChange={(e) => setDeltaInput(e.target.value)}
-          disabled={inputDisabled}
-          className={INPUT_CLASS}
-          dir="ltr"
-        />
+        <p className="mt-1 text-xs leading-relaxed text-[#64748B]">{t('priceReminder.deltaHint')}</p>
+        <div className="relative mt-2">
+          <input
+            id="price-reminder-delta"
+            type="number"
+            inputMode="decimal"
+            step="0.001"
+            min={0}
+            value={deltaInput}
+            onChange={(e) => setDeltaInput(e.target.value)}
+            disabled={inputDisabled}
+            className={INPUT_CLASS + ' mt-0 pr-28'}
+            dir="ltr"
+            placeholder="0.500"
+          />
+          <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs font-medium text-[#64748B]">
+            {t('priceReminder.deltaUnit')}
+          </span>
+        </div>
       </div>
 
       <button

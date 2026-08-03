@@ -9,7 +9,6 @@ import {
   User,
   ArrowRight,
   ArrowLeft,
-  Shield,
   MessageCircle,
   Loader2,
   CreditCard,
@@ -17,7 +16,6 @@ import {
 import { Trans, useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
-import { STOREFRONT_USER_ROLES, type StorefrontUserRole } from '../constants/storefrontRoles'
 import { getSafeUserErrorMessage } from '../utils/apiErrors'
 import { resolveAuthReturnPath } from '../utils/safeNextPath'
 import { resolvePostAuthPath } from '../utils/authRedirect'
@@ -39,12 +37,6 @@ import {
   loadRegisterDraft,
   saveRegisterDraft,
 } from '@/lib/registerFormDraft'
-
-const ROLE_LABEL_KEYS: Record<StorefrontUserRole, string> = {
-  customer: 'auth.roleCustomer',
-  long_term_customer: 'auth.roleLongTerm',
-  trader: 'auth.roleTrader',
-}
 
 type StepId = 'identity' | 'details' | 'verify'
 type RegistrationPath = 'email' | 'phone'
@@ -89,7 +81,6 @@ export default function RegisterPage() {
     phone_number: '',
     password: '',
     confirm_password: '',
-    role: 'customer' as StorefrontUserRole,
   })
 
   const { register, refreshUser } = useAuth()
@@ -117,7 +108,7 @@ export default function RegisterPage() {
     if (!draft) return
     setStep(draft.step === 'verify' ? 'details' : draft.step)
     setRegistrationPath(draft.registrationPath)
-    setFormData((prev) => ({ ...prev, ...draft.formData, role: draft.formData.role as StorefrontUserRole }))
+    setFormData((prev) => ({ ...prev, ...draft.formData }))
     setAcceptedLegal(draft.acceptedLegal)
   }, [])
 
@@ -133,7 +124,6 @@ export default function RegisterPage() {
         civil_id: formData.civil_id,
         email: formData.email,
         phone_number: formData.phone_number,
-        role: formData.role,
       },
       acceptedLegal,
     })
@@ -184,11 +174,17 @@ export default function RegisterPage() {
       toast.error(t('auth.captchaRequired'))
       return
     }
+    const phoneE164 = formData.phone_number.trim()
+      ? normalizeKuwaitPhone(formData.phone_number)
+      : null
+    if (formData.phone_number.trim() && !phoneE164) {
+      toast.error(t('auth.flow.invalidKuwaitPhone'))
+      return
+    }
 
     setIsLoading(true)
     try {
       const channel = registrationPath === 'email' ? 'email' : 'whatsapp'
-      const phoneE164 = normalizeKuwaitPhone(formData.phone_number)
       await register({
         full_name: formData.full_name,
         nationality: formData.nationality.toUpperCase(),
@@ -198,7 +194,7 @@ export default function RegisterPage() {
         phone_number: phoneE164 || undefined,
         password: formData.password,
         confirm_password: formData.confirm_password,
-        role: formData.role,
+        role: 'customer',
         terms_accepted: acceptedLegal,
         privacy_policy_accepted: acceptedLegal,
         kyc_answers: {},
@@ -367,6 +363,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder={t('auth.placeholderEmail')}
                     className={cn(fieldClass, 'ps-10')}
+                    dir="ltr"
                     required
                   />
                 </div>
@@ -377,7 +374,6 @@ export default function RegisterPage() {
                 optional
                 disabled={isLoading}
               />
-              <p className="-mt-2 text-xs text-[#64748B]">{t('auth.flow.phoneOptionalHint')}</p>
             </>
           ) : (
             <>
@@ -400,6 +396,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder={t('auth.placeholderEmail')}
                     className={cn(fieldClass, 'ps-10')}
+                    dir="ltr"
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-[#64748B]">{t('auth.flow.emailOptionalHint')}</p>
@@ -428,27 +425,6 @@ export default function RegisterPage() {
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             {t('auth.flow.back')}
           </button>
-
-          <div>
-            <label className={labelClass}>{t('auth.accountType')}</label>
-            <div className="relative">
-              <Shield className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-              <select
-                value={formData.role}
-                aria-label={t('auth.accountTypeAria')}
-                onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value as StorefrontUserRole })
-                }
-                className={cn(fieldClass, 'appearance-none ps-10')}
-              >
-                {STOREFRONT_USER_ROLES.map((value) => (
-                  <option key={value} value={value}>
-                    {t(ROLE_LABEL_KEYS[value])}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
 
           <div>
             <label className={labelClass}>{t('auth.fullName')}</label>

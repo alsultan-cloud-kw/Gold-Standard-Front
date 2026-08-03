@@ -10,7 +10,6 @@ export type RegisterDraft = {
     civil_id: string
     email: string
     phone_number: string
-    role: string
   }
   acceptedLegal: boolean
 }

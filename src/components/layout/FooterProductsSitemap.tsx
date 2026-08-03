@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowRight } from 'lucide-react'
 import { productsApi } from '@/services/api'
 import type { Category } from '@/types'
+import { categoryDisplayName } from '@/lib/categoryDisplayName'
 
 type CategoryResponse = {
   results?: Category[]
@@ -41,10 +42,8 @@ export function FooterProductsSitemap() {
     return { roots: rootList, childrenByParent: childMap }
   }, [data])
 
-  const label = (cat: Category) => {
-    const name = i18n.language === 'ar' && cat.name_ar ? cat.name_ar : cat.name_en
-    return name.trim()
-  }
+  const label = (cat: Category) =>
+    categoryDisplayName(cat, i18n.language?.startsWith('ar') ?? false)
 
   return (
     <nav aria-label={t('footer.products')}>

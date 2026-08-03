@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { categoryDisplayName } from '@/lib/categoryDisplayName'
 import { RevealSection } from '@/components/motion/RevealSection'
 import { usePageEnter } from '@/motion/usePageEnter'
 
@@ -422,8 +423,8 @@ export default function ProductsPage() {
 
   const fetchTrends = useProductPriceTrendSincePreviousFetch(activeProductList)
 
-  const categoryLabel = (c: { name_en: string; name_ar?: string }) =>
-    isAr && c.name_ar ? c.name_ar : c.name_en
+  const categoryLabel = (c: { name_en: string; name_ar?: string; slug?: string }) =>
+    categoryDisplayName(c, Boolean(isAr))
 
   const pageTitle =
     activeCategory != null
@@ -576,7 +577,7 @@ export default function ProductsPage() {
                   {subcategories.map((sub) => {
                     if (!sub.slug) return null
                     const isActive = category === sub.slug
-                    const subLabel = isAr && sub.name_ar ? sub.name_ar : sub.name_en || sub.slug
+                    const subLabel = categoryDisplayName(sub, Boolean(isAr)) || sub.slug
                     return (
                       <Link
                         key={sub.slug}

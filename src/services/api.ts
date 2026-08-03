@@ -286,6 +286,9 @@ export type DigitalPassportResponse = {
     from_owner_name: string | null
     reason: string | null
     transferred_at: string | null
+    tx_hash?: string | null
+    reference_id?: string | null
+    block_number?: number | string | null
   }>
 }
 
@@ -1244,14 +1247,21 @@ export const adminApi = {
   getGoldStandardGs1MetalPrices: () =>
     apiService.get<DaralsabaekMetalPricesResponse>('/scraping/gold-standard/gs1/metal-prices/'),
 
-  /** Public: URL rates + admin additional amounts (no auth). */
+  /** Public: URL rates + admin additional amounts (no auth). Same Django view as gold-standard alias. */
   getDaralsabaekPublicRates: () =>
     api
-      .get<DaralsabaekPublicRatesResponse>('/scraping/daralsabaek/public-rates/', {
+      .get<DaralsabaekPublicRatesResponse>('/scraping/gold-standard/public-rates/', {
         // Backend returns 502/503 when GoldAPI is down — still JSON; do not treat as a network error.
         validateStatus: (status) => status >= 200 && status < 600,
       })
-      .then((res) => res.data),
+      .then(async (res) => {
+        if (res.status !== 404) return res.data
+        const legacy = await api.get<DaralsabaekPublicRatesResponse>(
+          '/scraping/daralsabaek/public-rates/',
+          { validateStatus: (status) => status >= 200 && status < 600 },
+        )
+        return legacy.data
+      }),
 
   /** Public: saved metal price snapshots for chart (no auth). */
   getMetalPriceHistory: (params: { metal: string; range: string }) =>

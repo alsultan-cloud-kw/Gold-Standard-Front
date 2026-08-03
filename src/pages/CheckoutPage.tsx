@@ -512,26 +512,49 @@ export default function CheckoutPage() {
     if (!returnedFromKnet || !saleId) return
 
     knetReturnHandled.current = true
-    sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+    // Keep pending sale until paid so receipt can clear the cart on late CAPTURED.
 
-    const goToReceipt = () => {
-      navigate(`/payment-receipt/${saleId}`, { replace: true, state: { invoice } })
+    const goToReceipt = (opts?: {
+      status?: string | null
+      reason?: string | null
+      result?: string | null
+    }) => {
+      const qs = new URLSearchParams()
+      if (opts?.status) qs.set('knet_status', opts.status)
+      if (opts?.reason) qs.set('reason', opts.reason)
+      if (opts?.result) qs.set('result', opts.result)
+      if (invoice) qs.set('invoice', invoice)
+      const q = qs.toString()
+      navigate(`/payment-receipt/${saleId}${q ? `?${q}` : ''}`, {
+        replace: true,
+        state: { invoice },
+      })
     }
 
     if (isExplicitKnetFailure(knetStatus, result, reason)) {
-      goToReceipt()
+      // Still open receipt with status — receipt polls Inquiry (cancel ≠ unpaid).
+      goToReceipt({
+        status: knetStatus || 'failed',
+        reason: reason || undefined,
+        result: result || undefined,
+      })
       return
     }
 
     if (isExplicitKnetSuccess(knetStatus, result)) {
       clearCart()
+      sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
       void ordersApi.verifyKnetPayment(saleId).catch(() => {})
-      goToReceipt()
+      goToReceipt({ status: 'success', result: result || undefined })
       return
     }
 
     if (!needsKnetVerification(knetStatus, result, reason)) {
-      goToReceipt()
+      goToReceipt({
+        status: knetStatus || undefined,
+        reason: reason || undefined,
+        result: result || undefined,
+      })
       return
     }
 
@@ -542,12 +565,19 @@ export default function CheckoutPage() {
     const finishSuccess = () => {
       if (cancelled) return
       clearCart()
-      goToReceipt()
+      sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+      goToReceipt({ status: 'success' })
     }
-    const finishFailed = (failReason?: string | null) => {
+    const finishPending = (failReason?: string | null) => {
       if (cancelled) return
       setKnetReturnReason(failReason ?? reason ?? result ?? null)
-      goToReceipt()
+      setKnetReturnPhase('idle')
+      // Leave cart + pending intact; receipt continues Inquiry polling.
+      goToReceipt({
+        status: 'pending',
+        reason: failReason ?? reason ?? 'verification_timeout',
+        result: result || undefined,
+      })
     }
 
     const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
@@ -567,8 +597,12 @@ export default function CheckoutPage() {
             finishSuccess()
             return
           }
-          if (verify.payment_status === 'failed') {
-            finishFailed(reason)
+          if (
+            verify.payment_status === 'failed'
+            && (reason || '').toLowerCase() !== 'missing_trandata'
+            && (reason || '').toLowerCase() !== 'decrypt_failed'
+          ) {
+            finishPending(reason)
             return
           }
         } catch {
@@ -577,13 +611,8 @@ export default function CheckoutPage() {
         await new Promise((r) => setTimeout(r, 1_500))
       }
       if (!cancelled) {
-        const r = (reason || '').toLowerCase()
-        if (r === 'missing_trandata') {
-          // KNET often captures payment but never delivers trandata to our callback.
-          finishSuccess()
-        } else {
-          finishFailed(reason ?? 'verification_timeout')
-        }
+        // Never clear cart on ambiguous timeout — KNET may still CAPTURE late.
+        finishPending(reason ?? 'verification_timeout')
       }
     }
 
@@ -709,7 +738,9 @@ export default function CheckoutPage() {
         }
       }
 
-      if (paymentMethod === 'knet' && data.payment_url) {
+      if (paymentMethod === 'knet') {
+        const paymentUrl =
+          typeof data.payment_url === 'string' ? data.payment_url.trim() : ''
         if (data.id) {
           sessionStorage.setItem(
             KNET_PENDING_SALE_KEY,
@@ -720,7 +751,18 @@ export default function CheckoutPage() {
             } satisfies KnetPendingSale),
           )
         }
-        window.location.assign(data.payment_url)
+        if (paymentUrl) {
+          window.location.assign(paymentUrl)
+          return
+        }
+        // Same as mobile: never treat missing payment_url as a paid order.
+        toast.error(t('checkoutPage.knetPaymentUrlMissing'))
+        if (data.id) {
+          navigate(
+            `/payment-receipt/${data.id}?knet_status=pending&reason=payment_url_missing`,
+            { replace: true, state: { invoice: data.invoice_number } },
+          )
+        }
         return
       }
 

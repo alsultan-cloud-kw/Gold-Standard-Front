@@ -5,6 +5,7 @@ import { productsApi } from '@/services/api'
 import type { Category } from '@/types'
 import { HomeSectionHeader } from '@/components/home/HomeSectionHeader'
 import { VaultCategoryTile } from '@/components/home/VaultCategoryTile'
+import { categoryDisplayName } from '@/lib/categoryDisplayName'
 
 type CategoryResponse = {
   count: number
@@ -56,9 +57,10 @@ export default function CategoryGrid() {
     return null
   }
 
+  const isAr = i18n.language?.startsWith('ar')
   const rootLabel = (cat: Category) => {
-    const name = i18n.language === 'ar' && cat.name_ar ? cat.name_ar : cat.name_en
-    return name.trim().toUpperCase()
+    const name = categoryDisplayName(cat, Boolean(isAr))
+    return isAr ? name : name.trim().toUpperCase()
   }
 
   return (

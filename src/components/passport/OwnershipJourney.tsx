@@ -32,6 +32,15 @@ function reasonKey(reason: string | null | undefined): string {
   return known.includes(r) ? r : 'other'
 }
 
+function explorerTxUrl(network: string | null | undefined, txHash: string | null | undefined): string | null {
+  const hash = (txHash || '').trim()
+  if (!hash) return null
+  if (network === 'polygon-mainnet') return `https://polygonscan.com/tx/${hash}`
+  if (network === 'ethereum-mainnet') return `https://etherscan.io/tx/${hash}`
+  if (network === 'base-mainnet') return `https://basescan.org/tx/${hash}`
+  return `https://amoy.polygonscan.com/tx/${hash}`
+}
+
 function buildTimeline(
   history: HistoryRow[],
   currentOwner: string,
@@ -45,6 +54,8 @@ function buildTimeline(
       from_owner_name: null,
       reason: 'initial_registration',
       transferred_at: ownerSince,
+      tx_hash: null,
+      reference_id: null,
     },
   ]
 }
@@ -100,8 +111,16 @@ export function OwnershipJourney({ data, lang }: Props) {
             {steps.map((step, index) => {
               const isLast = index === steps.length - 1
               const reason = reasonKey(step.reason)
+              const stepTx =
+                explorerTxUrl(chain.network, step.tx_hash)
+                || (reason === 'initial_registration'
+                  ? explorerTxUrl(chain.network, chain.mint_tx_hash)
+                  : null)
               return (
-                <li key={`${step.transferred_at}-${step.to_owner_name}-${index}`} className="relative flex gap-4 pb-8 last:pb-0">
+                <li
+                  key={`${step.transferred_at}-${step.to_owner_name}-${index}`}
+                  className="relative flex gap-4 pb-8 last:pb-0"
+                >
                   {!isLast && (
                     <span
                       className="absolute start-[15px] top-8 bottom-0 w-0.5 bg-gradient-to-b from-[#85E307]/60 to-stone-200"
@@ -143,6 +162,18 @@ export function OwnershipJourney({ data, lang }: Props) {
                         {t(`passport.journeyReason.${reason}`)}
                       </span>
                     </div>
+                    {stepTx ? (
+                      <a
+                        href={stepTx}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 hover:underline"
+                      >
+                        <Hash className="h-3 w-3" />
+                        {(step.tx_hash || chain.mint_tx_hash || '').slice(0, 10)}…
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : null}
                   </div>
                 </li>
               )
@@ -175,7 +206,10 @@ export function OwnershipJourney({ data, lang }: Props) {
               {chain.mint_tx_hash && (
                 <div className="flex flex-wrap justify-between gap-2">
                   <dt className="text-stone-500">Mint TX</dt>
-                  <dd className="max-w-[200px] truncate font-mono text-stone-700 sm:max-w-xs" title={chain.mint_tx_hash}>
+                  <dd
+                    className="max-w-[200px] truncate font-mono text-stone-700 sm:max-w-xs"
+                    title={chain.mint_tx_hash}
+                  >
                     {chain.mint_tx_hash}
                   </dd>
                 </div>

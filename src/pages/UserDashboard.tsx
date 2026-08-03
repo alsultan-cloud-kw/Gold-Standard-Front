@@ -26,6 +26,8 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { RegionFlagImg } from '../components/RegionFlagImg'
 import { RegionSelectField } from '@/components/auth/RegionSelectField'
+import { KuwaitPhoneField } from '@/components/auth/KuwaitPhoneField'
+import { formatKuwaitLocalDisplay, normalizeKuwaitPhone } from '@/lib/kuwaitPhone'
 import {
   accountsApi,
   authApi,
@@ -1047,7 +1049,7 @@ function ProfileTab() {
   useEffect(() => {
     setFullName(user?.full_name ?? '')
     setEmail(user?.email ?? '')
-    setPhoneNumber(user?.phone_number ?? '')
+    setPhoneNumber(formatKuwaitLocalDisplay(user?.phone_number ?? ''))
     const rawDob = user?.date_of_birth
     if (typeof rawDob === 'string' && rawDob.trim()) {
       setDateOfBirth(rawDob.slice(0, 10))
@@ -1120,12 +1122,20 @@ function ProfileTab() {
       toast.error(t('userDashboard.profile.toasts.nationalityRequired'))
       return
     }
+    let phoneE164: string | null = null
+    if (phoneNumber.trim()) {
+      phoneE164 = normalizeKuwaitPhone(phoneNumber)
+      if (!phoneE164) {
+        toast.error(t('auth.flow.invalidKuwaitPhone'))
+        return
+      }
+    }
     setSaving(true)
     try {
       await updateUser({
         full_name: fullName.trim() || user.full_name,
         email: email.trim() || null,
-        phone_number: phoneNumber.trim() || null,
+        phone_number: phoneE164,
         date_of_birth: dateOfBirth.trim(),
         nationality: nationalityCode,
       })
@@ -1262,15 +1272,12 @@ function ProfileTab() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={dashboardLabelClass}>{t('userDashboard.profile.phone')}</label>
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="dashboard-field"
-            />
-          </div>
+          <KuwaitPhoneField
+            value={phoneNumber}
+            onChange={setPhoneNumber}
+            optional
+            disabled={saving}
+          />
           <div>
             <label className={dashboardLabelClass}>
               {t('userDashboard.profile.dateOfBirth')}
@@ -2710,6 +2717,10 @@ function NotificationsTab() {
       return 0
     }
   })
+  const [webPushOn, setWebPushOn] = useState(true)
+  const [webPushSupported, setWebPushSupported] = useState(false)
+  const [webPushBusy, setWebPushBusy] = useState(false)
+  const [vapidReady, setVapidReady] = useState<boolean | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['priceAlerts'],
@@ -2726,6 +2737,24 @@ function NotificationsTab() {
       setLastSeenAtMs(new Date(nowIso).getTime())
     } catch {
       // ignore localStorage issues
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const { getWebPushPreference, isWebPushSupported, fetchVapidPublicKey } = await import(
+        '@/lib/webPush'
+      )
+      const { isFirebaseWebConfigured } = await import('@/lib/firebase')
+      if (cancelled) return
+      setWebPushSupported(isWebPushSupported())
+      setWebPushOn(await getWebPushPreference())
+      const key = await fetchVapidPublicKey()
+      if (!cancelled) setVapidReady(Boolean(key) && isFirebaseWebConfigured())
+    })()
+    return () => {
+      cancelled = true
     }
   }, [])
 
@@ -2746,10 +2775,63 @@ function NotificationsTab() {
       return bd - ad
     })
 
+  const onToggleWebPush = async (next: boolean) => {
+    setWebPushBusy(true)
+    setWebPushOn(next)
+    try {
+      const { setWebPushEnabled } = await import('@/lib/webPush')
+      const ok = await setWebPushEnabled(next)
+      if (next && !ok) {
+        setWebPushOn(false)
+        toast.error(t('userDashboard.notificationsPanel.webPushFailed'))
+      } else if (next) {
+        toast.success(t('userDashboard.notificationsPanel.webPushEnabled'))
+      }
+    } catch {
+      setWebPushOn(!next)
+      toast.error(t('userDashboard.notificationsPanel.webPushFailed'))
+    } finally {
+      setWebPushBusy(false)
+    }
+  }
+
   return (
     <div className={dashboardPanelClass}>
       <h2 className="dashboard-panel__title">{t('userDashboard.tabs.notifications')}</h2>
       <p className="dashboard-panel__subtitle">{t('userDashboard.notificationsPanel.intro')}</p>
+
+      {webPushSupported ? (
+        <div className="dashboard-inset-panel mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-base font-semibold text-[#0B0F19]">
+                {t('userDashboard.notificationsPanel.webPushTitle')}
+              </h3>
+              <p className="mt-1 text-sm text-[#64748B]">
+                {vapidReady === false
+                  ? t('userDashboard.notificationsPanel.webPushWaitingCreds')
+                  : t('userDashboard.notificationsPanel.webPushHint')}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={webPushOn}
+              disabled={webPushBusy}
+              onClick={() => void onToggleWebPush(!webPushOn)}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                webPushOn ? 'bg-[#85E307]' : 'bg-zinc-300'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  webPushOn ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p className="dashboard-empty">{t('common.loading')}</p>

@@ -44,15 +44,18 @@ export default function KnetReceiptPage() {
 
     const load = async () => {
       try {
-        // Ambiguous KNET returns (missing trandata) often land with knet_status=failed/pending
-        // while the charge was actually CAPTURED — poll Inquiry until paid or deadline.
         const urlStatus = (searchParams.get('knet_status') || '').toLowerCase()
         const reason = (searchParams.get('reason') || '').toLowerCase()
+        const userCancelled =
+          reason === 'cancelled' || reason === 'canceled' || reason === 'user_cancel'
         const shouldPoll =
           urlStatus === 'pending' ||
           urlStatus === 'failed' ||
           reason === 'missing_trandata' ||
           reason === 'decrypt_failed' ||
+          reason === 'resume' ||
+          reason === 'payment_url_missing' ||
+          userCancelled ||
           !urlStatus
 
         let paid = false
@@ -65,7 +68,12 @@ export default function KnetReceiptPage() {
                 paid = true
                 break
               }
-              if (verify.payment_status === 'failed' && reason !== 'missing_trandata' && reason !== 'decrypt_failed') {
+              if (
+                verify.payment_status === 'failed' &&
+                reason !== 'missing_trandata' &&
+                reason !== 'decrypt_failed' &&
+                !userCancelled
+              ) {
                 break
               }
             } catch {
@@ -93,18 +101,8 @@ export default function KnetReceiptPage() {
           if (urlStatus && urlStatus !== 'success') {
             navigate(`/payment-receipt/${saleId}?knet_status=success`, { replace: true })
           }
-          const pendingRaw = sessionStorage.getItem('gs_knet_pending_sale')
-          if (pendingRaw) {
-            try {
-              const pending = JSON.parse(pendingRaw)
-              if (pending.saleId === saleId) {
-                clearCart()
-                sessionStorage.removeItem('gs_knet_pending_sale')
-              }
-            } catch {
-              // ignore parse errors
-            }
-          }
+          clearCart()
+          sessionStorage.removeItem('gs_knet_pending_sale')
         }
       } catch {
         if (!cancelled) setError(t('knetReceipt.loadError'))
