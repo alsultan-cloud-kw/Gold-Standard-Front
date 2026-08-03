@@ -59,6 +59,7 @@ export default function KnetReceiptPage() {
           !urlStatus
 
         let paid = false
+        let sawFailed = false
         if (shouldPoll) {
           const deadline = Date.now() + VERIFY_DEADLINE_MS
           while (!cancelled && Date.now() < deadline) {
@@ -74,6 +75,7 @@ export default function KnetReceiptPage() {
                 reason !== 'decrypt_failed' &&
                 !userCancelled
               ) {
+                sawFailed = true
                 break
               }
             } catch {
@@ -86,6 +88,21 @@ export default function KnetReceiptPage() {
             await ordersApi.verifyKnetPayment(saleId)
           } catch {
             /* still load latest receipt snapshot */
+          }
+        }
+
+        if (
+          !cancelled &&
+          !paid &&
+          (sawFailed || userCancelled || urlStatus === 'failed' || reason === 'payment_url_missing')
+        ) {
+          try {
+            const abandoned = await ordersApi.abandonUnpaidKnet(saleId)
+            if (abandoned.payment_status === 'paid') {
+              paid = true
+            }
+          } catch {
+            /* inventory may still release via KNET error callback */
           }
         }
 

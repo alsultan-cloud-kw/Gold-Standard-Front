@@ -19,6 +19,7 @@ import KnetReceiptPage from './pages/KnetReceiptPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SsoCallbackPage from './pages/SsoCallbackPage'
+import MobileAuthDonePage from './pages/MobileAuthDonePage'
 import ClerkAuthBridge from './components/auth/ClerkAuthBridge'
 import AuthSuccessNotifier from './components/auth/AuthSuccessNotifier'
 import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
@@ -153,6 +154,7 @@ function App() {
                   </Route>
                   <Route path="/company-activate" element={<CompanyActivatePage />} />
                   <Route path="/sso-callback" element={<SsoCallbackPage />} />
+                  <Route path="/mobile-auth-done" element={<MobileAuthDonePage />} />
                   <Route path="/join-club" element={<JoinClubPage />} />
                   <Route
                     path="/dashboard"

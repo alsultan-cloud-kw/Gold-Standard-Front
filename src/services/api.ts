@@ -613,6 +613,16 @@ export const ordersApi = {
       total_amount: string
     }>(`/accounting/sales/${id}/verify-knet/`),
 
+  /** After cancel/timeout: inquire once, then fail + restock if still unpaid. */
+  abandonUnpaidKnet: (id: string) =>
+    apiService.post<{
+      sale_id: string
+      invoice_number?: string
+      payment_status: string
+      status?: string
+      inventory_released?: boolean
+    }>(`/accounting/sales/${id}/abandon-unpaid-knet/`),
+
   getKnetReceipt: (id: string) =>
     apiService.get<KnetReceiptDetails>(`/accounting/sales/${id}/knet-receipt/`),
 

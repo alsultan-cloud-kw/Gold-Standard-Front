@@ -22,6 +22,10 @@ export function resolvePostAuthPath(
   returnUrlRaw?: string | null,
 ): string {
   const next = resolveAuthReturnPath(nextRaw, returnUrlRaw)
+  // Mobile app WebView handoff — never divert to OTP / dashboard before RN captures the session.
+  if (next && (next === '/mobile-auth-done' || next.startsWith('/mobile-auth-done?'))) {
+    return next
+  }
   // Google/Apple OAuth users are verified by the provider — skip OTP gate.
   if (
     user &&
