@@ -7,6 +7,8 @@ export const SESSION_EXPIRED_EVENT = 'gs:session-expired'
 
 let expiredNotified = false
 let pendingExpiredUi = false
+/** Modal is visible — hold protected redirects until the user picks an action. */
+let sessionExpiredUiOpen = false
 
 export function decodeJwtExpMs(token: string): number | null {
   try {
@@ -40,6 +42,7 @@ function writeSessionExpiresAt(expiresAt: number) {
 export function beginAuthSession(_access: string, _refresh: string) {
   expiredNotified = false
   pendingExpiredUi = false
+  sessionExpiredUiOpen = false
   writeSessionExpiresAt(Date.now() + SESSION_DURATION_MS)
 }
 
@@ -84,6 +87,7 @@ export function clearAuthTokensAndDeadline() {
 export function resetSessionExpiredFlag() {
   expiredNotified = false
   pendingExpiredUi = false
+  sessionExpiredUiOpen = false
 }
 
 /** Clear tokens and broadcast once — UI shows the branded session modal. */
@@ -97,15 +101,26 @@ export function notifySessionExpired() {
   }
 }
 
-/** True once if expiry fired before the modal listener was ready. */
-export function consumePendingSessionExpiredUi(): boolean {
-  if (!pendingExpiredUi) return false
-  pendingExpiredUi = false
-  return true
+/** True while a session-expired UI should take priority over route redirects. */
+export function isSessionExpiredUiActive(): boolean {
+  return pendingExpiredUi || sessionExpiredUiOpen
 }
 
+/** True once if expiry fired before the modal listener was ready. */
+export function consumePendingSessionExpiredUi(): boolean {
+  return pendingExpiredUi
+}
+
+/** Modal is on screen — keep holding protected routes. */
 export function acknowledgeSessionExpiredUi() {
   pendingExpiredUi = false
+  sessionExpiredUiOpen = true
+}
+
+/** User chose Sign in / Continue browsing — allow normal redirects again. */
+export function dismissSessionExpiredUi() {
+  pendingExpiredUi = false
+  sessionExpiredUiOpen = false
 }
 
 export function msUntilSessionExpiry(): number {

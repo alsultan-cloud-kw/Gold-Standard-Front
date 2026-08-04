@@ -8,6 +8,7 @@ import { RouteErrorBoundary } from '@/components/routing/RouteErrorBoundary'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
 import { isStaffRole, isOAuthVerifiedSession, resolvePostAuthPath } from '../../utils/authRedirect'
+import { isSessionExpiredUiActive } from '@/lib/authSession'
 
 export { isStaffRole }
 
@@ -45,6 +46,10 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    // Hold the route shell so SessionExpiredModal can show before /login redirect.
+    if (isSessionExpiredUiActive()) {
+      return <AuthLoadingFallback />
+    }
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/login?next=${next}`} replace />
   }
@@ -119,6 +124,9 @@ export function StaffRoute() {
   }
 
   if (!isAuthenticated) {
+    if (isSessionExpiredUiActive()) {
+      return <AuthLoadingFallback />
+    }
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/login?next=${next}`} replace />
   }
@@ -153,6 +161,9 @@ export function CatalogManagerRoute() {
   }
 
   if (!isAuthenticated) {
+    if (isSessionExpiredUiActive()) {
+      return <AuthLoadingFallback />
+    }
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/login?next=${next}`} replace />
   }

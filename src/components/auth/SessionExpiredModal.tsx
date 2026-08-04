@@ -16,6 +16,7 @@ import {
   acknowledgeSessionExpiredUi,
   clearSessionDeadline,
   consumePendingSessionExpiredUi,
+  dismissSessionExpiredUi,
   hydrateSessionDeadline,
   isAuthSessionExpired,
   msUntilSessionExpiry,
@@ -40,9 +41,9 @@ export function SessionExpiredModal() {
 
   const showExpired = useCallback(() => {
     acknowledgeSessionExpiredUi()
-    if (AUTH_PATHS.has(location.pathname)) return
+    // Always show — even on /login — so ProtectedRoute redirects don't skip the message.
     setOpen(true)
-  }, [location.pathname])
+  }, [])
 
   useEffect(() => {
     if (consumePendingSessionExpiredUi()) {
@@ -96,19 +97,26 @@ export function SessionExpiredModal() {
       : `${location.pathname}${location.search}`
 
   const handleSignIn = () => {
+    dismissSessionExpiredUi()
     setOpen(false)
+    if (AUTH_PATHS.has(location.pathname)) {
+      // Already on sign-in / register — just close; form is ready.
+      return
+    }
     const q = encodeURIComponent(returnPath)
     navigate(`/login?next=${q}&returnUrl=${q}`)
   }
 
   const handleContinueBrowsing = () => {
+    dismissSessionExpiredUi()
     setOpen(false)
     clearSessionDeadline()
     const onProtected =
       location.pathname.startsWith('/dashboard') ||
       location.pathname.startsWith('/admin') ||
       location.pathname.startsWith('/checkout') ||
-      location.pathname.startsWith('/verify-account')
+      location.pathname.startsWith('/verify-account') ||
+      AUTH_PATHS.has(location.pathname)
     if (onProtected) {
       navigate('/', { replace: true })
     }
