@@ -703,9 +703,9 @@ export default function CheckoutPage() {
         try {
           await ordersApi.uploadPickupDelegation(data.id, formData)
         } catch {
+          // Order + KNET session already created (stock held). Never strand the
+          // customer without payment redirect — delegation can be fixed later.
           toast.error(t('checkoutPage.delegateUploadFailed'))
-          setSubmitting(false)
-          return
         }
       }
 
