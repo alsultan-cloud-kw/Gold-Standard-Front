@@ -30,7 +30,7 @@ const AUTH_PATHS = new Set([
   '/register',
   '/forgot-password',
   '/sso-callback',
-  '/mobile-sso-callback',
+  '/mobile-auth-done',
 ])
 
 /**
