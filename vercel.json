@@ -18,6 +18,7 @@
   "rewrites": [
     { "source": "/__clerk/:path*", "destination": "/api/clerk-fapi/:path*" },
     { "source": "/.well-known/(.*)", "destination": "/.well-known/$1" },
-    { "source": "/((?!\\.well-known/).*)", "destination": "/index.html" }
+    { "source": "/mobile-sso-callback.html", "destination": "/mobile-sso-callback.html" },
+    { "source": "/((?!\\.well-known/|mobile-sso-callback\\.html).*)", "destination": "/index.html" }
   ]
 }
