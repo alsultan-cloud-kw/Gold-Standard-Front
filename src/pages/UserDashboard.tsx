@@ -1590,6 +1590,7 @@ type LockedItem = {
   carat_value: number | null
   carat_display: string | null
   weight_grams_available: number
+  unit_price_kwd?: number | null
 }
 
 function LockedGoldTab() {
