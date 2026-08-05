@@ -25,7 +25,13 @@ import {
 } from '@/lib/authSession'
 import { cn } from '@/lib/utils'
 
-const AUTH_PATHS = new Set(['/login', '/register', '/forgot-password', '/sso-callback'])
+const AUTH_PATHS = new Set([
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/sso-callback',
+  '/mobile-sso-callback',
+])
 
 /**
  * Watches the absolute 30-minute session and shows a branded re-auth modal.

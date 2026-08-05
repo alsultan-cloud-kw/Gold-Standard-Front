@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.goldstandardkw.mobile",
+      "sha256_cert_fingerprints": [
+        "FD:ED:61:72:38:40:23:01:F5:2B:00:BC:4A:25:77:69:DB:B2:3A:70:FB:E5:5F:9A:52:C0:04:3D:1A:2D:EB:5B"
+      ]
+    }
+  }
+]

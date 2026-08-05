@@ -42,6 +42,9 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const nextPath = resolveAuthReturnPath(searchParams.get('next'), searchParams.get('returnUrl'))
+  const oauthParam = searchParams.get('oauth')
+  const autoProvider =
+    oauthParam === 'apple' || oauthParam === 'google' ? oauthParam : null
   const registerHref =
     nextPath != null
       ? `/register?next=${encodeURIComponent(nextPath)}&returnUrl=${encodeURIComponent(nextPath)}`
@@ -133,7 +136,12 @@ export default function LoginPage() {
         </div>
       }
     >
-      <SocialSignInButtons mode="sign-in" redirectComplete={nextPath ?? '/'} disabled={isLoading} />
+      <SocialSignInButtons
+        mode="sign-in"
+        redirectComplete={nextPath ?? '/'}
+        disabled={isLoading}
+        autoProvider={autoProvider}
+      />
 
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">

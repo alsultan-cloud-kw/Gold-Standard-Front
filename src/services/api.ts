@@ -728,16 +728,39 @@ export const tradingApi = {
   placeSellOrder: (data: {
     items: { sale_item_id: string; weight_grams?: number }[]
     payment_method?: string
+    payout_preference?: 'bank_transfer' | 'payment_link' | 'wallet'
     customer_name?: string
     customer_phone?: string
     customer_email?: string
     notes?: string
+    customer_notes?: string
   }) =>
     apiService.post<unknown>('/accounting/gold-buybacks/place-sell-order/', data),
+
+  requestBuyback: (data: {
+    items: { sale_item_id: string; weight_grams?: number }[]
+    payout_preference?: 'bank_transfer' | 'payment_link' | 'wallet'
+    customer_notes?: string
+  }) =>
+    apiService.post<unknown>('/accounting/gold-buybacks/request-buyback/', data),
 
   /** Admin: update buyback status. */
   updateBuyback: (id: string, data: { status?: string }) =>
     apiService.patch<unknown>(`/accounting/gold-buybacks/${id}/`, data),
+}
+
+/** Loyalty points → KWD cashback (Hub-reviewed). */
+export const pointsCashbackApi = {
+  getRate: () =>
+    apiService.get<{
+      points_per_kwd: number
+      loyalty_points: number
+      kwd_equivalent: number
+      currency: string
+    }>('/accounts/points-cashback-requests/rate/'),
+  list: () => apiService.get<unknown>('/accounts/points-cashback-requests/'),
+  request: (data: { points: number; customer_notes?: string }) =>
+    apiService.post<unknown>('/accounts/points-cashback-requests/request/', data),
 }
 
 // Virtual gold grams trading (buy/sell by grams or KWD amount)

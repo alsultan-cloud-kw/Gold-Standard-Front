@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "6K3CUSQT22.com.goldstandard.app",
+        "paths": ["/products", "/products/*"]
+      }
+    ]
+  }
+}

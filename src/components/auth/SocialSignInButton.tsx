@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useClerk } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -16,6 +16,8 @@ type SocialSignInButtonProps = {
   mode: 'sign-in' | 'sign-up'
   redirectComplete: string
   disabled?: boolean
+  /** When true, start OAuth once Clerk is loaded (mobile WebView handoff). */
+  autoStart?: boolean
 }
 
 function ProviderIcon({ provider }: { provider: ClerkOAuthProvider }) {
@@ -57,10 +59,12 @@ export default function SocialSignInButton({
   mode,
   redirectComplete,
   disabled,
+  autoStart,
 }: SocialSignInButtonProps) {
   const { t } = useTranslation()
   const { loaded, client } = useClerk()
   const [busy, setBusy] = useState(false)
+  const autoStartedRef = useRef(false)
   const isLastUsed = getLastAuthMethod() === provider
 
   const labelKey =
@@ -106,6 +110,13 @@ export default function SocialSignInButton({
       setBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (!autoStart || autoStartedRef.current || disabled || !loaded || !client) return
+    autoStartedRef.current = true
+    void handleClick()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start once when Clerk ready
+  }, [autoStart, disabled, loaded, client])
 
   return (
     <div className="relative">

@@ -275,7 +275,7 @@ export default function AddressesTabPanel() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="address-editor-title"
-            className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-black/5 bg-white shadow-xl sm:rounded-2xl"
+            className="max-h-[92vh] w-full max-w-lg overflow-y-auto overflow-x-visible rounded-t-2xl border border-black/5 bg-white shadow-xl sm:rounded-2xl"
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-5 py-4">
               <h3 id="address-editor-title" className="text-base font-bold text-[#0B0F19]">

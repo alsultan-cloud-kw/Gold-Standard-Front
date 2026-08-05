@@ -34,6 +34,7 @@ import {
   ordersApi,
   walletApi,
   tradingApi,
+  pointsCashbackApi,
   invoicesApi,
   clubsApi,
   apiService,
@@ -1633,9 +1634,15 @@ function LockedGoldTab() {
     mutationFn: (item: LockedItem) =>
       tradingApi.getSellQuote({
         items: [{ sale_item_id: item.sale_item_id, weight_grams: item.weight_grams_available }],
-      }) as Promise<{ total_weight: number; total_amount: number; currency: string }>,
+      }) as Promise<{
+        total_weight: number
+        total_amount: number
+        currency: string
+        bank_approved?: boolean
+      }>,
     onSuccess: (data, item) => {
       setConfirmItem(item)
+      setQuoteBankApproved(data.bank_approved !== false)
       setQuote({
         total_weight: data.total_weight,
         total_amount: data.total_amount,
@@ -1648,19 +1655,56 @@ function LockedGoldTab() {
     },
   })
 
+  const [payoutPreference, setPayoutPreference] = useState<'bank_transfer' | 'payment_link' | 'wallet'>(
+    'bank_transfer',
+  )
+  const [customerNotes, setCustomerNotes] = useState('')
+  const [quoteBankApproved, setQuoteBankApproved] = useState(true)
+
+  const { data: bankProfileData } = useQuery({
+    queryKey: ['myCustomerProfile'],
+    queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
+  })
+  const bankProfile = asSingleProfile(bankProfileData)
+  const hasApprovedBank = Boolean(bankProfile?.bank_name?.trim() && bankProfile?.iban?.trim())
+
+  const { data: buybackHistoryRaw } = useQuery({
+    queryKey: ['myBuybacks'],
+    queryFn: () => tradingApi.getBuybacks() as Promise<unknown>,
+  })
+  const buybackHistory = useMemo(() => {
+    const raw = buybackHistoryRaw as { results?: unknown[] } | unknown[] | undefined
+    const list = Array.isArray(raw) ? raw : Array.isArray(raw?.results) ? raw.results : []
+    return list as Array<{
+      id: string
+      buyback_number?: string
+      status?: string
+      status_display?: string
+      total_amount?: number | string
+      total_weight?: number | string
+      created_at?: string
+    }>
+  }, [buybackHistoryRaw])
+
   const sellMutation = useMutation({
     mutationFn: async (payload: { sale_item_id: string }) =>
-      tradingApi.placeSellOrder({
+      tradingApi.requestBuyback({
         items: [{ sale_item_id: payload.sale_item_id }],
-        payment_method: 'wallet',
+        payout_preference: payoutPreference,
+        customer_notes: customerNotes.trim(),
       }),
     onSuccess: () => {
-      toast.success(t('userDashboard.lockedGold.toasts.productSoldSuccess'))
+      toast.success(
+        t('userDashboard.lockedGold.toasts.buybackRequested', {
+          defaultValue: 'Buyback request submitted — under Hub review. Vault gold is reserved until paid or rejected.',
+        }),
+      )
       queryClient.invalidateQueries({ queryKey: ['myLockedGold'] })
-      queryClient.invalidateQueries({ queryKey: ['myWallet'] })
-      queryClient.invalidateQueries({ queryKey: ['walletTransactions'] })
+      queryClient.invalidateQueries({ queryKey: ['myBuybacks'] })
       setConfirmItem(null)
       setQuote(null)
+      setCustomerNotes('')
+      setPayoutPreference('bank_transfer')
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } }
@@ -1669,6 +1713,14 @@ function LockedGoldTab() {
   })
 
   const handleSellClick = (item: LockedItem) => {
+    if (!hasApprovedBank && payoutPreference !== 'wallet') {
+      toast.error(
+        t('userDashboard.lockedGold.toasts.bankRequired', {
+          defaultValue: 'Link an approved bank account before requesting a buyback payout.',
+        }),
+      )
+      return
+    }
     quoteMutation.mutate(item)
   }
 
@@ -1782,11 +1834,17 @@ function LockedGoldTab() {
                         disabled={quoteMutation.isPending || sellMutation.isPending}
                         className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                       >
-                        {quoteMutation.isPending && confirmItem?.sale_item_id === item.sale_item_id
-                          ? t('userDashboard.lockedGold.selling.preparingQuote')
-                          : sellMutation.isPending
-                          ? t('userDashboard.lockedGold.selling.selling')
-                          : t('userDashboard.lockedGold.selling.sellThisProduct')}
+                        {!hasApprovedBank
+                          ? t('userDashboard.lockedGold.selling.addBankFirst', {
+                              defaultValue: 'Add bank to request buyback',
+                            })
+                          : quoteMutation.isPending && confirmItem?.sale_item_id === item.sale_item_id
+                            ? t('userDashboard.lockedGold.selling.preparingQuote')
+                            : sellMutation.isPending
+                              ? t('userDashboard.lockedGold.selling.selling')
+                              : t('userDashboard.lockedGold.selling.requestBuyback', {
+                                  defaultValue: 'Request buyback',
+                                })}
                       </button>
                     ) : (
                       <p className="mt-2 text-xs font-medium text-[#3F6F00]">
@@ -1835,9 +1893,34 @@ function LockedGoldTab() {
         </div>
       )}
 
+      {buybackHistory.length > 0 ? (
+        <div className={dashboardPanelClass}>
+          <h3 className="dashboard-panel__title text-base">
+            {t('userDashboard.lockedGold.buybackHistoryTitle', { defaultValue: 'Buyback requests' })}
+          </h3>
+          <ul className="mt-3 divide-y divide-black/[0.06] text-sm">
+            {buybackHistory.slice(0, 8).map((bb) => (
+              <li key={bb.id} className="py-2.5 flex justify-between gap-3">
+                <div>
+                  <p className="font-medium text-[#0B0F19]">{bb.buyback_number}</p>
+                  <p className="text-xs text-[#64748B]">
+                    {bb.status_display || bb.status}
+                    {bb.created_at ? ` · ${new Date(bb.created_at).toLocaleDateString()}` : ''}
+                  </p>
+                </div>
+                <div className="text-right tabular-nums">
+                  <p className="font-medium">{Number(bb.total_amount || 0).toFixed(3)} KWD</p>
+                  <p className="text-xs text-[#64748B]">{Number(bb.total_weight || 0).toFixed(3)} g</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {confirmItem && quote && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
-          <div className="dashboard-panel max-w-md w-full">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+          <div className="dashboard-panel max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-gold-100 mb-3">
               {t('userDashboard.lockedGold.confirmSellFor', {
                 productName:
@@ -1845,8 +1928,18 @@ function LockedGoldTab() {
               })}
             </h3>
             <p className="text-sm text-gold-100/70 mb-2">
-              {t('userDashboard.lockedGold.confirmSellHint')}
+              {t('userDashboard.lockedGold.confirmBuybackHint', {
+                defaultValue:
+                  'This submits a buyback request for Hub review. Your vault gold stays reserved until the request is paid or rejected — it is not sold instantly.',
+              })}
             </p>
+            {!hasApprovedBank && payoutPreference !== 'wallet' ? (
+              <p className="text-sm text-amber-200 mb-2 rounded-md border border-amber-500/40 bg-amber-950/30 px-3 py-2">
+                {t('userDashboard.lockedGold.bankRequiredHint', {
+                  defaultValue: 'Add and get an approved bank account first (Bank account tab).',
+                })}
+              </p>
+            ) : null}
             <div className="mt-3 border border-gold-500/30 rounded-lg p-3 text-sm text-gold-100/80 bg-charcoal-900/60">
               <div className="flex justify-between mb-1">
                 <span>{t('userDashboard.lockedGold.details.lockedWeight')}</span>
@@ -1856,6 +1949,16 @@ function LockedGoldTab() {
                 <span>{t('userDashboard.lockedGold.details.pureWeight')}</span>
                 <span>{quote.total_weight.toFixed(3)} g</span>
               </div>
+              {confirmItem.unit_price_kwd != null && confirmItem.unit_price_kwd > 0 ? (
+                <div className="flex justify-between mb-1 text-xs text-gold-100/60">
+                  <span>
+                    {t('userDashboard.lockedGold.details.purchaseRef', {
+                      defaultValue: 'Original purchase (unit)',
+                    })}
+                  </span>
+                  <span>{Number(confirmItem.unit_price_kwd).toFixed(3)} KWD</span>
+                </div>
+              ) : null}
               <div className="flex justify-between font-semibold mt-2">
                 <span>{t('userDashboard.lockedGold.details.amountYouWillReceive')}</span>
                 <span>
@@ -1863,9 +1966,40 @@ function LockedGoldTab() {
                 </span>
               </div>
             </div>
-            <p className="text-xs text-gold-100/60 mt-3">
-              {t('userDashboard.lockedGold.invoicePreviewHint')}
-            </p>
+            <fieldset className="mt-4 space-y-2">
+              <legend className="text-xs text-gold-100/70 mb-1">
+                {t('userDashboard.lockedGold.payoutPreference', { defaultValue: 'Payout preference' })}
+              </legend>
+              {(
+                [
+                  ['bank_transfer', 'Bank transfer'],
+                  ['payment_link', 'Payment link'],
+                  ['wallet', 'Wallet'],
+                ] as const
+              ).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2 min-h-11 text-sm text-gold-100">
+                  <input
+                    type="radio"
+                    name="payout"
+                    checked={payoutPreference === value}
+                    onChange={() => setPayoutPreference(value)}
+                  />
+                  {t(`userDashboard.lockedGold.payout.${value}`, { defaultValue: label })}
+                </label>
+              ))}
+            </fieldset>
+            <label className="block mt-3 text-xs text-gold-100/70">
+              {t('userDashboard.lockedGold.customerNotes', { defaultValue: 'Notes for Hub (optional)' })}
+              <textarea
+                value={customerNotes}
+                onChange={(e) => setCustomerNotes(e.target.value)}
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-gold-500/40 bg-charcoal-900/60 text-gold-100 px-3 py-2 text-sm"
+                placeholder={t('userDashboard.lockedGold.customerNotesPlaceholder', {
+                  defaultValue: 'e.g. prefer payment link / special instructions',
+                })}
+              />
+            </label>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
@@ -1873,7 +2007,7 @@ function LockedGoldTab() {
                   setConfirmItem(null)
                   setQuote(null)
                 }}
-                className="px-3 py-1 rounded-lg text-xs font-medium border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
+                className="min-h-11 px-4 rounded-lg text-sm font-medium border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
               >
                 {t('userDashboard.lockedGold.cancel')}
               </button>
@@ -1881,12 +2015,24 @@ function LockedGoldTab() {
                 type="button"
                 onClick={() => {
                   if (!confirmItem) return
+                  if (!hasApprovedBank && payoutPreference !== 'wallet') {
+                    toast.error(
+                      t('userDashboard.lockedGold.toasts.bankRequired', {
+                        defaultValue: 'Link an approved bank account before requesting a buyback payout.',
+                      }),
+                    )
+                    return
+                  }
                   sellMutation.mutate({ sale_item_id: confirmItem.sale_item_id })
                 }}
-                disabled={sellMutation.isPending}
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                disabled={sellMutation.isPending || (!quoteBankApproved && payoutPreference !== 'wallet' && !hasApprovedBank)}
+                className="min-h-11 px-4 rounded-lg text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
               >
-                {sellMutation.isPending ? t('userDashboard.lockedGold.selling.selling') : t('userDashboard.lockedGold.confirmSell')}
+                {sellMutation.isPending
+                  ? t('userDashboard.lockedGold.selling.selling')
+                  : t('userDashboard.lockedGold.confirmBuybackRequest', {
+                      defaultValue: 'Submit buyback request',
+                    })}
               </button>
             </div>
           </div>
@@ -2079,9 +2225,20 @@ function BankAccountTab() {
         ) : (
           <>
             <div className="rounded-lg border border-gold-500/25 bg-charcoal-900/40 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-gold-200">
-                {t('userDashboard.bankAccount.currentSavedTitle')}
-              </h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-gold-200">
+                  {t('userDashboard.bankAccount.currentSavedTitle')}
+                </h3>
+                {profile.bank_name?.trim() && profile.iban?.trim() ? (
+                  <span className="inline-flex min-h-8 items-center rounded-md bg-emerald-100 px-2.5 text-xs font-semibold text-emerald-900">
+                    {t('userDashboard.bankAccount.approvedBadge', { defaultValue: 'Approved for payouts' })}
+                  </span>
+                ) : (
+                  <span className="inline-flex min-h-8 items-center rounded-md bg-stone-200 px-2.5 text-xs font-semibold text-stone-800">
+                    {t('userDashboard.bankAccount.missingBadge', { defaultValue: 'No bank on file' })}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gold-100/50">{t('userDashboard.bankAccount.currentSavedHint')}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div>
@@ -2098,7 +2255,7 @@ function BankAccountTab() {
                   href={profile.iban_proof}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border border-gold-500/60 text-gold-100 hover:bg-gold-500/10 mt-2"
+                  className="inline-flex min-h-11 items-center gap-1 text-sm px-3 py-2 rounded-md border border-gold-500/60 text-gold-100 hover:bg-gold-500/10 mt-2"
                 >
                   {t('userDashboard.bankAccount.downloadProof')}
                 </a>
@@ -2159,22 +2316,41 @@ function BankAccountTab() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gold-100 mb-2">
+                    <label className="block text-sm font-medium text-gold-100 mb-2" htmlFor="bank-iban">
                       {t('userDashboard.bankAccount.ibanLabel')}
                     </label>
                     <input
+                      id="bank-iban"
                       type="text"
+                      inputMode="text"
+                      autoComplete="off"
                       value={iban}
-                      onChange={(e) => setIban(e.target.value)}
-                      className="dashboard-field"
-                      placeholder={t('userDashboard.bankAccount.ibanPlaceholder')}
+                      onChange={(e) => setIban(e.target.value.toUpperCase())}
+                      className="dashboard-field min-h-11 font-mono"
+                      placeholder={t('userDashboard.bankAccount.ibanPlaceholder', {
+                        defaultValue: 'KW00XXXX0000000000000000000000',
+                      })}
+                      aria-describedby="bank-iban-hint"
                     />
+                    <p id="bank-iban-hint" className="mt-1.5 text-xs text-gold-100/55">
+                      {t('userDashboard.bankAccount.ibanHint', {
+                        defaultValue:
+                          'Kuwait IBAN starts with KW and is 30 characters (no spaces). Check the bank letter for the checksum digits.',
+                      })}
+                    </p>
                   </div>
                 </div>
 
-                <div className="border border-dashed border-gold-500/40 p-4 rounded-lg text-center hover:border-gold-400 transition">
-                  <label className="cursor-pointer block">
-                    <span className="block mb-2 text-gold-300 text-2xl">📄</span>
+                <div
+                  className={cn(
+                    'border border-dashed border-gold-500/40 p-4 rounded-lg text-center hover:border-gold-400 transition min-h-[7rem]',
+                    ibanProofFile && 'border-emerald-500/50 bg-emerald-950/20',
+                  )}
+                >
+                  <label className="cursor-pointer block min-h-11">
+                    <span className="block mb-2 text-gold-300 text-2xl" aria-hidden>
+                      📄
+                    </span>
                     <span className="text-sm text-gold-100/80">
                       {t('userDashboard.bankAccount.uploadIbanProof')}
                     </span>
@@ -2186,7 +2362,12 @@ function BankAccountTab() {
                     />
                   </label>
                   {ibanProofFile ? (
-                    <p className="mt-2 text-xs text-emerald-400">{ibanProofFile.name}</p>
+                    <p className="mt-2 text-sm text-emerald-400">
+                      {t('userDashboard.bankAccount.proofSelected', {
+                        defaultValue: 'Proof selected',
+                      })}
+                      : {ibanProofFile.name}
+                    </p>
                   ) : (
                     <p className="mt-2 text-xs text-gold-100/40">{t('userDashboard.bankAccount.proofOptionalHint')}</p>
                   )}
@@ -2194,8 +2375,8 @@ function BankAccountTab() {
 
                 <button
                   type="submit"
-                  className="dashboard-primary-btn"
-                  disabled={saving || mutation.isPending}
+                  className="dashboard-primary-btn min-h-11"
+                  disabled={saving || mutation.isPending || !bankName.trim() || !iban.trim()}
                 >
                   {saving || mutation.isPending
                     ? t('userDashboard.bankAccount.submitting')
@@ -2206,6 +2387,172 @@ function BankAccountTab() {
           </>
         )}
       </div>
+
+      <PointsCashbackPanel hasApprovedBank={Boolean(profile?.bank_name?.trim() && profile?.iban?.trim())} />
+    </div>
+  )
+}
+
+function PointsCashbackPanel({ hasApprovedBank }: { hasApprovedBank: boolean }) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [points, setPoints] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const { data: rate, isLoading } = useQuery({
+    queryKey: ['pointsCashbackRate'],
+    queryFn: () => pointsCashbackApi.getRate(),
+  })
+
+  const { data: historyRaw } = useQuery({
+    queryKey: ['pointsCashbackList'],
+    queryFn: () => pointsCashbackApi.list() as Promise<unknown>,
+  })
+  const history = useMemo(() => {
+    const raw = historyRaw as { results?: unknown[] } | unknown[] | undefined
+    const list = Array.isArray(raw) ? raw : Array.isArray(raw?.results) ? raw.results : []
+    return list as Array<{
+      id: string
+      request_number?: string
+      points?: number
+      kwd_amount?: number | string
+      status?: string
+      status_display?: string
+      created_at?: string
+    }>
+  }, [historyRaw])
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      pointsCashbackApi.request({
+        points: parseInt(points, 10),
+        customer_notes: notes.trim(),
+      }),
+    onSuccess: () => {
+      toast.success(
+        t('userDashboard.pointsCashback.requested', {
+          defaultValue: 'Cashback request submitted for Hub review.',
+        }),
+      )
+      setPoints('')
+      setNotes('')
+      queryClient.invalidateQueries({ queryKey: ['pointsCashbackRate'] })
+      queryClient.invalidateQueries({ queryKey: ['pointsCashbackList'] })
+      queryClient.invalidateQueries({ queryKey: ['myCustomerProfile'] })
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } }
+      toast.error(
+        e?.response?.data?.detail ||
+          t('userDashboard.pointsCashback.failed', { defaultValue: 'Could not request cashback.' }),
+      )
+    },
+  })
+
+  const available = rate?.loyalty_points ?? 0
+  const perKwd = rate?.points_per_kwd ?? 100
+  const previewKwd =
+    points && !Number.isNaN(parseInt(points, 10))
+      ? (parseInt(points, 10) / perKwd).toFixed(3)
+      : (rate?.kwd_equivalent ?? 0).toFixed(3)
+
+  return (
+    <div className="dashboard-panel space-y-4 mt-4">
+      <h3 className="dashboard-panel__title text-base">
+        {t('userDashboard.pointsCashback.title', { defaultValue: 'Loyalty points cashback' })}
+      </h3>
+      <p className="text-sm text-gold-100/70">
+        {t('userDashboard.pointsCashback.hint', {
+          defaultValue:
+            'Redeem points to KWD paid to your approved bank account. Hub reviews every request.',
+        })}
+      </p>
+      {isLoading ? (
+        <p className="text-sm text-gold-100/50">{t('userDashboard.bankAccount.loading')}</p>
+      ) : (
+        <div className="rounded-lg border border-gold-500/25 bg-charcoal-900/40 p-4 text-sm space-y-1">
+          <p>
+            {t('userDashboard.pointsCashback.balance', { defaultValue: 'Balance' })}:{' '}
+            <strong>{available}</strong> pts
+          </p>
+          <p>
+            {t('userDashboard.pointsCashback.rate', { defaultValue: 'Rate' })}: {perKwd} pts = 1.000 KWD
+          </p>
+          <p>
+            {t('userDashboard.pointsCashback.equivalent', { defaultValue: '≈' })} {previewKwd} KWD
+          </p>
+        </div>
+      )}
+      {!hasApprovedBank ? (
+        <p className="text-sm text-amber-200 rounded-md border border-amber-500/40 bg-amber-950/30 px-3 py-2">
+          {t('userDashboard.pointsCashback.bankRequired', {
+            defaultValue: 'An approved bank account is required before requesting cashback.',
+          })}
+        </p>
+      ) : (
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const n = parseInt(points, 10)
+            if (!Number.isFinite(n) || n <= 0) {
+              toast.error(
+                t('userDashboard.pointsCashback.invalidPoints', {
+                  defaultValue: 'Enter a valid points amount.',
+                }),
+              )
+              return
+            }
+            mutation.mutate()
+          }}
+        >
+          <label className="block text-sm text-gold-100">
+            {t('userDashboard.pointsCashback.pointsLabel', { defaultValue: 'Points to redeem' })}
+            <input
+              type="number"
+              min={1}
+              max={available}
+              value={points}
+              onChange={(e) => setPoints(e.target.value)}
+              className="dashboard-field min-h-11 mt-1"
+            />
+          </label>
+          <label className="block text-sm text-gold-100">
+            {t('userDashboard.pointsCashback.notesLabel', { defaultValue: 'Notes (optional)' })}
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="dashboard-field mt-1"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={mutation.isPending || available <= 0}
+            className="dashboard-primary-btn min-h-11 disabled:opacity-50"
+          >
+            {mutation.isPending
+              ? t('userDashboard.bankAccount.submitting')
+              : t('userDashboard.pointsCashback.submit', { defaultValue: 'Request cashback' })}
+          </button>
+        </form>
+      )}
+      {history.length > 0 ? (
+        <ul className="divide-y divide-black/[0.06] text-sm">
+          {history.slice(0, 6).map((row) => (
+            <li key={row.id} className="py-2 flex justify-between gap-3">
+              <div>
+                <p className="font-medium">{row.request_number}</p>
+                <p className="text-xs text-gold-100/55">{row.status_display || row.status}</p>
+              </div>
+              <div className="text-right tabular-nums">
+                <p>{row.points} pts</p>
+                <p className="text-xs">{Number(row.kwd_amount || 0).toFixed(3)} KWD</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   )
 }

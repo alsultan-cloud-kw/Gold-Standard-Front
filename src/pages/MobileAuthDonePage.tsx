@@ -14,6 +14,14 @@ const HANDOFF_TYPE = 'gs_mobile_clerk_auth'
 function postToNative(payload: Record<string, unknown>) {
   const json = JSON.stringify(payload)
   try {
+    if (typeof payload.clerk_session_token === 'string' && payload.clerk_session_token) {
+      ;(window as Window & { __GS_MOBILE_CLERK_TOKEN?: string }).__GS_MOBILE_CLERK_TOKEN =
+        payload.clerk_session_token
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
     window.ReactNativeWebView?.postMessage(json)
   } catch {
     /* not in RN WebView */
@@ -44,7 +52,7 @@ export default function MobileAuthDonePage() {
 
     void (async () => {
       // Clerk session can lag briefly after OAuth redirect into this route.
-      while (!cancelled && Date.now() - startedAt < 8_000) {
+      while (!cancelled && Date.now() - startedAt < 20_000) {
         if (!isSignedIn) {
           await new Promise((r) => window.setTimeout(r, 250))
           const probe = await getToken().catch(() => null)

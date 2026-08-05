@@ -1,6 +1,23 @@
 {
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/__clerk/:path*", "destination": "/api/clerk-fapi/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/.well-known/(.*)", "destination": "/.well-known/$1" },
+    { "source": "/((?!\\.well-known/).*)", "destination": "/index.html" }
   ]
 }

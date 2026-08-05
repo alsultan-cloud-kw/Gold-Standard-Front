@@ -458,6 +458,23 @@ export default function Navbar() {
               ) : null}
             </div>
             <div className="flex flex-col gap-2">
+              {/* Same destinations as the profile icon menu — reachable from More on small screens. */}
+              {isAuthenticated && !authPending ? (
+                <Link
+                  to={isStaffRole(user?.role) ? '/admin' : '/dashboard'}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`mobile-nav-link flex min-h-11 items-center gap-2.5 ${
+                    isPathActive(isStaffRole(user?.role) ? '/admin' : '/dashboard')
+                      ? 'mobile-nav-link--active'
+                      : ''
+                  }`}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#ECFCCB]">
+                    <User className="h-3.5 w-3.5 text-[#3F6F00]" strokeWidth={2} aria-hidden />
+                  </span>
+                  {isStaffRole(user?.role) ? t('nav.adminPanel') : t('nav.dashboard')}
+                </Link>
+              ) : null}
               {moreSheetLinks.map((link) => (
                 <Link
                   key={link.nameKey}
@@ -512,7 +529,21 @@ export default function Navbar() {
                 >
                   {t('nav.loginRegister')}
                 </Link>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    handleLogout()
+                  }}
+                  className="mobile-nav-link mt-1 flex min-h-11 items-center gap-2.5 text-red-600"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-50">
+                    <LogOut className="h-3.5 w-3.5 text-red-600" strokeWidth={2} aria-hidden />
+                  </span>
+                  {t('nav.logout')}
+                </button>
+              )}
               <Link
                 to="/products"
                 onClick={() => setIsMenuOpen(false)}

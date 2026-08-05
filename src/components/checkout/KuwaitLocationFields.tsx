@@ -83,8 +83,8 @@ export function KuwaitLocationFields({
   )
 
   const contentClass = cn(
-    'z-[80] max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl',
-    'border border-black/8 bg-white p-0 text-[#0B0F19]',
+    'z-[120] max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl',
+    'border border-black/8 bg-white p-1.5 text-[#0B0F19]',
     'shadow-[0_12px_28px_-18px_rgba(11,15,25,0.22)]',
   )
 
@@ -97,16 +97,22 @@ export function KuwaitLocationFields({
     '[&_svg]:text-[#3F6F00]',
   )
 
+  const labelClass = cn(
+    'mb-1.5 block text-xs font-semibold tracking-wide',
+    variant === 'light' ? 'text-[#64748B]' : 'text-gold-100/70',
+  )
+
   const governorateField = (
-    <Select
-      value={governorateEn}
-      onValueChange={handleGovernorateChange}
-    >
-      <SelectTrigger className={triggerClass} aria-label={t('checkoutPage.governoratePh')}>
-        <SelectValue placeholder={t('checkoutPage.selectGovernorate')} />
-      </SelectTrigger>
-      <SelectContent position="popper" align="start" className={contentClass} sideOffset={6}>
-        <div className="max-h-72 overflow-y-auto p-1.5">
+    <div className="min-w-0 w-full">
+      <label className={labelClass}>{t('checkoutPage.governoratePh')}</label>
+      <Select
+        value={governorateEn || undefined}
+        onValueChange={handleGovernorateChange}
+      >
+        <SelectTrigger className={triggerClass} aria-label={t('checkoutPage.governoratePh')}>
+          <SelectValue placeholder={t('checkoutPage.selectGovernorate')} />
+        </SelectTrigger>
+        <SelectContent position="popper" align="start" className={contentClass} sideOffset={6}>
           {governorates.map((gov) => (
             <SelectItem key={gov.id} value={gov.nameEn} className={itemClass}>
               {locale === 'ar' ? gov.nameAr : gov.nameEn}
@@ -117,9 +123,9 @@ export function KuwaitLocationFields({
               {governorate}
             </SelectItem>
           ) : null}
-        </div>
-      </SelectContent>
-    </Select>
+        </SelectContent>
+      </Select>
+    </div>
   )
 
   const cityPlaceholder = governorateEn
@@ -127,16 +133,17 @@ export function KuwaitLocationFields({
     : t('checkoutPage.selectGovernorateFirst')
 
   const cityField = (
-    <Select
-      value={city.trim()}
-      onValueChange={onCityChange}
-      disabled={!governorateEn}
-    >
-      <SelectTrigger className={triggerClass} aria-label={t('checkoutPage.cityPh')}>
-        <SelectValue placeholder={cityPlaceholder} />
-      </SelectTrigger>
-      <SelectContent position="popper" align="start" className={contentClass} sideOffset={6}>
-        <div className="max-h-72 overflow-y-auto p-1.5">
+    <div className="min-w-0 w-full">
+      <label className={labelClass}>{t('checkoutPage.cityPh')}</label>
+      <Select
+        value={city.trim() || undefined}
+        onValueChange={onCityChange}
+        disabled={!governorateEn}
+      >
+        <SelectTrigger className={triggerClass} aria-label={t('checkoutPage.cityPh')}>
+          <SelectValue placeholder={cityPlaceholder} />
+        </SelectTrigger>
+        <SelectContent position="popper" align="start" className={contentClass} sideOffset={6}>
           {areas.map((area) => {
             const label = areaLabel(area, locale)
             return (
@@ -150,9 +157,9 @@ export function KuwaitLocationFields({
               {city}
             </SelectItem>
           ) : null}
-        </div>
-      </SelectContent>
-    </Select>
+        </SelectContent>
+      </Select>
+    </div>
   )
 
   if (governorateFirst) {

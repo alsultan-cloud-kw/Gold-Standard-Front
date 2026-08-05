@@ -87,6 +87,9 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const nextPath = resolveAuthReturnPath(searchParams.get('next'), searchParams.get('returnUrl'))
+  const oauthParam = searchParams.get('oauth')
+  const autoProvider =
+    oauthParam === 'apple' || oauthParam === 'google' ? oauthParam : null
   const loginHref =
     nextPath != null
       ? `/login?next=${encodeURIComponent(nextPath)}&returnUrl=${encodeURIComponent(nextPath)}`
@@ -302,6 +305,7 @@ export default function RegisterPage() {
             mode="sign-up"
             redirectComplete={nextPath ?? '/'}
             disabled={isLoading}
+            autoProvider={autoProvider}
           />
 
           <div className="relative my-2">
