@@ -279,6 +279,22 @@ export default function ProductDetailPage() {
                   ) : null}
                 </div>
               ) : null}
+              {(() => {
+                const cashbackPct = Number(p.buyback_cashback_percent ?? 0)
+                const cashbackKwd = Number(p.buyback_cashback_amount_kwd ?? 0)
+                if (!(cashbackPct > 0)) return null
+                return (
+                  <p dir="auto" className="mt-3 text-sm font-medium text-[#3F6F00] tabular-nums">
+                    {t('productDetail.buybackCashback', {
+                      percent: formatLatinNumber(cashbackPct, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 3,
+                      }),
+                      amount: formatKwd(cashbackKwd),
+                    })}
+                  </p>
+                )
+              })()}
             </div>
 
             {/* Specs */}

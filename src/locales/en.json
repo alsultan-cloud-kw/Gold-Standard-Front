@@ -1129,6 +1129,17 @@
     "journeyBlockchainNote": "This bar is linked to an on-chain ERC-721 record for independent verification.",
     "journeyNetwork": "Network",
     "journeyAuditNote": "This timeline is maintained by Gold Standard and mirrored on our secure registry. Anyone can verify it using the QR code or serial number.",
+    "capabilitiesTitle": "What does the digital bar record enable?",
+    "capabilitiesItems": [
+      "Transfer bullion ownership from one person to another.",
+      "List the bar for sale on the GOLD STANDARD platform.",
+      "Record owner history and transfers.",
+      "Digitally freeze the bar when theft or loss is reported.",
+      "Help ensure it has not been sold or pledged to two parties.",
+      "Link to buyback and insurance services in the future.",
+      "Execute ownership transfer and payment around the clock — even when the shop is closed."
+    ],
+    "capabilitiesDisclaimer": "This bar is registered with a verified digital identity on blockchain technology, enhancing transparency, documenting the bar’s origin, ownership history, and transfers, and helping reduce counterfeiting risks and support compliance and anti–money laundering efforts. Registration is not a substitute for customer identity verification or applicable legal and regulatory requirements.",
     "journeyReason": {
       "initial_registration": "Initial registration",
       "sale": "Sale to customer",
@@ -1146,6 +1157,7 @@
     "snapshotSellRateHint": "From saved list pricing (live sell rate unavailable).",
     "noImage": "No Image Available",
     "liveRate": "live rate",
+    "buybackCashback": "Buyback cashback {{percent}}% · ≈ {{amount}} KWD",
     "metalSellWeight": "Metal (sell rate × weight): {{value}} KWD",
     "buyRatePerGram": "Buy rate: {{value}} KWD/g",
     "makingCharge": "Making Charge: {{value}} KWD",
@@ -1784,8 +1796,26 @@
     "login": "Login",
     "register": "Register",
     "signIn": "Sign In",
-    "signInSubtitle": "Sign in to your account",
-    "welcomeBack": "Welcome Back",
+    "signInSubtitle": "Sign in with Google, Apple, or a one-time code by email or mobile — choose one.",
+    "welcomeBack": "Log in or sign up",
+    "continueWithEmail": "Continue with email",
+    "continueWithPhone": "Continue with phone",
+    "continueCta": "Continue",
+    "orDivider": "OR",
+    "otpTitle": "Enter verification code",
+    "otpSubtitleEmail": "We sent a 6-digit code to your email.",
+    "otpSubtitlePhone": "We sent a 6-digit code to your WhatsApp.",
+    "otpSentTo": "Code sent to {{destination}}",
+    "otpLabel": "6-digit code",
+    "otpVerify": "Verify & sign in",
+    "otpResend": "Resend code",
+    "otpInvalid": "Invalid or expired code. Try again.",
+    "otpSendFailed": "Could not send the code. Try again.",
+    "otpCodeSent": "Code sent — check your inbox or WhatsApp.",
+    "otpBack": "Use a different email or mobile",
+    "usePasswordInstead": "Use password instead",
+    "useOtpInstead": "Use one-time code instead",
+    "chooseOneMethod": "Choose email or mobile — not both.",
     "sessionExpired": {
       "kicker": "Gold Standard Security",
       "title": "Session expired",
@@ -1919,7 +1949,29 @@
       "requiredToBuy": "Complete verification to buy",
       "requiredToBuyDesc": "Before adding items or checking out, complete your profile (including date of birth), verification questions, and upload both sides of your Civil ID in the dashboard.",
       "completeTitle": "Ministry verification questions",
-      "completeHint": "Required under Ministry of Commerce due-diligence rules before you can purchase or trade.",
+      "completeHint": "Required under Ministry of Commerce due-diligence rules before you can purchase or trade — to protect customers and comply with Kuwait’s anti–money laundering laws.",
+      "legal": {
+        "knowMore": "Learn more — why we ask for this",
+        "title": "Why do we collect KYC information?",
+        "intro": "Kuwait’s anti–money laundering law requires gold and precious-metals dealers to apply Know Your Customer (KYC) procedures before transactions. We collect this information to protect you and to stay compliant — not for any other purpose.",
+        "mainFrameworkTitle": "Main legal framework",
+        "law106Body": "Law 106/2013: the primary legislation requiring financial institutions, businesses, and designated non-financial professions (including gold dealers) to apply due diligence and KYC, and to report suspicious transactions to Kuwait’s Financial Intelligence Unit.",
+        "linkLaw106": "Law 106/2013 (Ministry of Justice)",
+        "decree76Body": "Decree-Law 76/2025: strengthened the implementing framework for Law 106/2013 and set penalties for violations.",
+        "linkDecree76": "Decree-Law 76/2025 (KUNA)",
+        "goldDealersTitle": "KYC for gold dealers",
+        "goldDealersIntro": "Kuwait’s Ministry of Commerce and Industry published a 2025 guide for gold, precious-metals, and gemstone traders on AML obligations, including:",
+        "goldDealerBullets": [
+          "Identifying and assessing money-laundering and terrorist-financing risks in the business.",
+          "Implementing internal compliance policies, procedures, and controls.",
+          "Controls on transactions and payment (e.g. large cash use, or refunds from third parties not linked to the sale)."
+        ],
+        "centralBankBody": "The Central Bank of Kuwait also issues detailed guidance covering categories such as “buying and selling precious metals” within KYC procedures that must be applied before transactions and when money laundering is suspected.",
+        "linkCbk": "CBK guidance (precious metals)",
+        "penaltiesTitle": "Penalties",
+        "penaltiesBody": "The law provides severe penalties for violations, including long prison terms, substantial fines, and confiscation of involved funds.",
+        "close": "Got it"
+      },
       "saveAnswers": "Save verification answers",
       "savedToast": "Verification answers saved",
       "saveFailed": "Could not save verification answers",
@@ -2880,7 +2932,13 @@
       "details": {
         "lockedWeight": "Locked weight",
         "pureWeight": "Pure weight (999.9)",
-        "amountYouWillReceive": "Amount you will receive"
+        "metalAmount": "Metal",
+        "cashbackAmount": "Cashback",
+        "lineTotal": "Line total",
+        "totalMetal": "Total metal",
+        "totalCashback": "Total cashback",
+        "amountYouWillReceive": "Amount you will receive",
+        "buybackCashback": "Buyback cashback {{percent}}% · ≈ {{amount}} KWD"
       },
       "invoicePreviewHint": "This is your sell invoice preview. You can also view and download the receipt later from the Transactions tab.",
       "cancel": "Cancel",
@@ -3189,6 +3247,17 @@
         "title": "A shared ledger, hard to rewrite",
         "body": "Think of blockchain as a distributed electronic ledger: once an entry is recorded under the system’s rules, it is designed so no single party can quietly alter or forge what was written."
       }
-    }
+    },
+    "capabilitiesTitle": "What does the digital bar record enable?",
+    "capabilitiesItems": [
+      "Transfer bullion ownership from one person to another.",
+      "List the bar for sale on the GOLD STANDARD platform.",
+      "Record owner history and transfers.",
+      "Digitally freeze the bar when theft or loss is reported.",
+      "Help ensure it has not been sold or pledged to two parties.",
+      "Link to buyback and insurance services in the future.",
+      "Execute ownership transfer and payment around the clock — even when the shop is closed."
+    ],
+    "capabilitiesDisclaimer": "This bar is registered with a verified digital identity on blockchain technology, enhancing transparency, documenting the bar’s origin, ownership history, and transfers, and helping reduce counterfeiting risks and support compliance and anti–money laundering efforts. Registration is not a substitute for customer identity verification or applicable legal and regulatory requirements."
   }
 }

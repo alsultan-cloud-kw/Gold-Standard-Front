@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Loader2, ShieldCheck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { KycQuestion } from '@/components/auth/KycRegistrationFields'
+import { KycKnowMoreButton } from '@/components/auth/KycLegalInfoModal'
 
 export type KycAnswerMap = Record<string, string | boolean>
 
@@ -287,6 +288,9 @@ export function MinistryKycModal({
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-[#64748B]">
               {t('auth.kyc.ministry.introBody')}
             </p>
+            <div className="mt-3">
+              <KycKnowMoreButton />
+            </div>
             <button
               type="button"
               onClick={() => setStep('questions')}

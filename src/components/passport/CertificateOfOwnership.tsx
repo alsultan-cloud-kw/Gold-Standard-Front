@@ -1,6 +1,7 @@
 import { ExternalLink, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { BullionFrame } from './BullionFrame'
+import { PassportCapabilitiesBlock } from './PassportCapabilitiesBlock'
 import type { DigitalPassportResponse } from '@/services/api'
 import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 
@@ -77,6 +78,8 @@ export function CertificateOfOwnership({ data, lang, verifyUrl }: Props) {
         <p className="mx-auto mt-2 max-w-2xl text-center text-xs leading-relaxed text-stone-500">
           {lang === 'ar' ? t('passport.introEn') : t('passport.introAr')}
         </p>
+
+        <PassportCapabilitiesBlock className="mx-auto mt-6 max-w-2xl" />
 
         <section className="mt-6 rounded-xl border border-[#C9B87A]/30 bg-white/80 p-4">
           <p className="text-center text-[10px] font-bold uppercase tracking-wider text-stone-500">

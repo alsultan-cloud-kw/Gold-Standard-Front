@@ -112,6 +112,19 @@ export function DigitalOwnershipBadge({
       <p className="mt-4 text-sm leading-relaxed text-[#64748B]">
         {t('digitalOwnership.certificateBody')}
       </p>
+      <div className="mt-4 rounded-xl border border-[#3F6F00]/15 bg-white/70 px-4 py-4">
+        <p className="text-sm font-bold text-[#0B0F19]">{t('digitalOwnership.capabilitiesTitle')}</p>
+        <ul className="mt-2 list-disc space-y-1.5 ps-5 text-sm leading-relaxed text-[#64748B]">
+          {(t('digitalOwnership.capabilitiesItems', { returnObjects: true }) as string[]).map(
+            (line) => (
+              <li key={line}>{line}</li>
+            ),
+          )}
+        </ul>
+        <p className="mt-3 text-xs leading-relaxed text-[#64748B]">
+          {t('digitalOwnership.capabilitiesDisclaimer')}
+        </p>
+      </div>
       <Link
         to={verifyHref}
         className="mt-4 inline-flex text-sm font-semibold text-[#3F6F00] underline-offset-2 transition hover:underline"

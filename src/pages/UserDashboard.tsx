@@ -44,11 +44,13 @@ import {
 import { buildWalletTransactionsDocxBlob } from '../utils/walletTransactionsWordExport'
 import {
   TRADING_AND_VIRTUAL_WALLET_ENABLED,
+  WALLET_FUNDING_AND_CHECKOUT_ENABLED,
   BANK_CHANGE_REQUESTS_ENABLED,
   CHECKOUT_VAULT_DELIVERY_ENABLED,
   isTradingDashboardTab,
 } from '../featureFlags'
 import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
+import { KycKnowMoreButton } from '@/components/auth/KycLegalInfoModal'
 import { cn } from '@/lib/utils'
 import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 import { asSingleCustomerProfile } from '@/utils/customerProfile'
@@ -1215,6 +1217,9 @@ function ProfileTab() {
         >
           <p className="font-semibold">{t('auth.kyc.incompleteBanner')}</p>
           <p className="mt-1 text-amber-900/80">{t('auth.kyc.incompleteShopHint')}</p>
+          <div className="mt-2">
+            <KycKnowMoreButton className="text-sm font-semibold text-amber-950 underline-offset-2 hover:underline" />
+          </div>
         </div>
       ) : null}
 
@@ -1223,6 +1228,9 @@ function ProfileTab() {
           <div>
             <h3 className="text-base font-semibold text-[#0B0F19]">{t('auth.kyc.completeTitle')}</h3>
             <p className="mt-1 text-sm text-[#64748B]">{t('auth.kyc.completeHint')}</p>
+            <div className="mt-2">
+              <KycKnowMoreButton />
+            </div>
             {profile?.kyc_registration_complete ? (
               <p className="mt-2 text-xs font-semibold text-[#3F6F00]">✓ {t('auth.kyc.savedToast')}</p>
             ) : null}
@@ -1591,17 +1599,34 @@ type LockedItem = {
   carat_display: string | null
   weight_grams_available: number
   unit_price_kwd?: number | null
+  buyback_cashback_percent?: number | null
+  buyback_cashback_amount_kwd?: number | null
+}
+
+type SellQuoteLine = {
+  sale_item_id: string
+  metal_amount_kwd: number
+  cashback_amount_kwd: number
+  buyback_cashback_percent?: number
+  total_price: number
+  weight_grams?: number
+  carat_display?: string
+}
+
+type SellQuoteState = {
+  total_weight: number
+  total_amount: number
+  currency: string
+  total_metal_kwd?: number
+  total_cashback_kwd?: number
+  items?: SellQuoteLine[]
 }
 
 function LockedGoldTab() {
   const { t } = useTranslation()
   const [lockedView, setLockedView] = useState<'fund' | 'gold' | 'products'>('fund')
   const [confirmItem, setConfirmItem] = useState<LockedItem | null>(null)
-  const [quote, setQuote] = useState<{
-    total_weight: number
-    total_amount: number
-    currency: string
-  } | null>(null)
+  const [quote, setQuote] = useState<SellQuoteState | null>(null)
   const queryClient = useQueryClient()
   const { data: locked, isLoading } = useQuery({
     queryKey: ['myLockedGold'],
@@ -1635,19 +1660,31 @@ function LockedGoldTab() {
     mutationFn: (item: LockedItem) =>
       tradingApi.getSellQuote({
         items: [{ sale_item_id: item.sale_item_id, weight_grams: item.weight_grams_available }],
-      }) as Promise<{
-        total_weight: number
-        total_amount: number
-        currency: string
-        bank_approved?: boolean
-      }>,
+      }),
     onSuccess: (data, item) => {
       setConfirmItem(item)
       setQuoteBankApproved(data.bank_approved !== false)
       setQuote({
-        total_weight: data.total_weight,
-        total_amount: data.total_amount,
-        currency: data.currency,
+        total_weight: Number(data.total_weight ?? 0),
+        total_amount: Number(data.total_amount ?? 0),
+        currency: data.currency ?? 'KWD',
+        total_metal_kwd: data.total_metal_kwd != null ? Number(data.total_metal_kwd) : undefined,
+        total_cashback_kwd:
+          data.total_cashback_kwd != null ? Number(data.total_cashback_kwd) : undefined,
+        items: Array.isArray(data.items)
+          ? data.items.map((line) => ({
+              sale_item_id: String(line.sale_item_id),
+              metal_amount_kwd: Number(line.metal_amount_kwd ?? 0),
+              cashback_amount_kwd: Number(line.cashback_amount_kwd ?? 0),
+              buyback_cashback_percent:
+                line.buyback_cashback_percent != null
+                  ? Number(line.buyback_cashback_percent)
+                  : undefined,
+              total_price: Number(line.total_price ?? 0),
+              weight_grams: line.weight_grams != null ? Number(line.weight_grams) : undefined,
+              carat_display: line.carat_display,
+            }))
+          : undefined,
       })
     },
     onError: (err: unknown) => {
@@ -1710,6 +1747,38 @@ function LockedGoldTab() {
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } }
       toast.error(e?.response?.data?.detail || t('userDashboard.lockedGold.toasts.couldNotPlaceSellOrder'))
+    },
+  })
+
+  const deliveryMutation = useMutation({
+    mutationFn: async (item: LockedItem) =>
+      ordersApi.requestVaultDelivery({
+        sale_item_id: item.sale_item_id,
+        customer_notes: 'Request physical delivery from vault',
+      }),
+    onSuccess: (data) => {
+      const fee = Number(data?.shipping_fee_kwd ?? 0)
+      toast.success(
+        t('userDashboard.lockedGold.toasts.deliveryRequested', {
+          defaultValue:
+            fee > 0
+              ? `Delivery requested (${data.request_number}). Shipping fee ${fee.toFixed(3)} KWD — pay when contacted.`
+              : `Delivery requested (${data.request_number}). Ops will arrange shipment.`,
+          number: data.request_number,
+          fee: fee.toFixed(3),
+        }),
+      )
+      queryClient.invalidateQueries({ queryKey: ['myLockedGold'] })
+      queryClient.invalidateQueries({ queryKey: ['myVaultDeliveries'] })
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } }
+      toast.error(
+        e?.response?.data?.detail ||
+          t('userDashboard.lockedGold.toasts.deliveryFailed', {
+            defaultValue: 'Could not request delivery.',
+          }),
+      )
     },
   })
 
@@ -1852,6 +1921,25 @@ function LockedGoldTab() {
                         {t('userDashboard.orders.lockedInVault')}
                       </p>
                     )}
+                    {CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
+                      <button
+                        type="button"
+                        onClick={() => deliveryMutation.mutate(item)}
+                        disabled={
+                          deliveryMutation.isPending ||
+                          Number(item.weight_grams_available || 0) <= 0
+                        }
+                        className="mt-2 ml-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium border border-stone-300 text-stone-800 hover:bg-stone-50 disabled:opacity-50"
+                      >
+                        {deliveryMutation.isPending
+                          ? t('userDashboard.lockedGold.selling.requestingDelivery', {
+                              defaultValue: 'Requesting…',
+                            })
+                          : t('userDashboard.lockedGold.selling.requestDelivery', {
+                              defaultValue: 'Request delivery',
+                            })}
+                      </button>
+                    ) : null}
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-gold-400">
@@ -1860,6 +1948,14 @@ function LockedGoldTab() {
                     <p className="text-xs text-gold-100/60">
                       {item.order_date ? new Date(item.order_date).toLocaleDateString() : ''}
                     </p>
+                    {Number(item.buyback_cashback_percent ?? 0) > 0 ? (
+                      <p className="mt-1 text-xs font-medium text-[#3F6F00] tabular-nums">
+                        {t('userDashboard.lockedGold.details.buybackCashback', {
+                          percent: String(Number(Number(item.buyback_cashback_percent).toFixed(3))),
+                          amount: Number(item.buyback_cashback_amount_kwd ?? 0).toFixed(3),
+                        })}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1960,6 +2056,49 @@ function LockedGoldTab() {
                   <span>{Number(confirmItem.unit_price_kwd).toFixed(3)} KWD</span>
                 </div>
               ) : null}
+              {quote.items && quote.items.length > 0 ? (
+                <div className="mt-2 space-y-2 border-t border-gold-500/20 pt-2">
+                  {quote.items.map((line) => (
+                    <div key={line.sale_item_id} className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>{t('userDashboard.lockedGold.details.metalAmount')}</span>
+                        <span className="tabular-nums">{line.metal_amount_kwd.toFixed(3)} KWD</span>
+                      </div>
+                      {line.cashback_amount_kwd > 0 ? (
+                        <div className="flex justify-between text-[#3F6F00]">
+                          <span>{t('userDashboard.lockedGold.details.cashbackAmount')}</span>
+                          <span className="tabular-nums">
+                            {line.cashback_amount_kwd.toFixed(3)} KWD
+                            {line.buyback_cashback_percent != null && line.buyback_cashback_percent > 0
+                              ? ` (${String(Number(line.buyback_cashback_percent.toFixed(3)))}%)`
+                              : ''}
+                          </span>
+                        </div>
+                      ) : null}
+                      <div className="flex justify-between font-medium">
+                        <span>{t('userDashboard.lockedGold.details.lineTotal')}</span>
+                        <span className="tabular-nums">{line.total_price.toFixed(3)} KWD</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {(quote.total_metal_kwd != null || quote.total_cashback_kwd != null) && (
+                <div className="mt-2 space-y-1 border-t border-gold-500/20 pt-2">
+                  {quote.total_metal_kwd != null ? (
+                    <div className="flex justify-between">
+                      <span>{t('userDashboard.lockedGold.details.totalMetal')}</span>
+                      <span className="tabular-nums">{quote.total_metal_kwd.toFixed(3)} KWD</span>
+                    </div>
+                  ) : null}
+                  {quote.total_cashback_kwd != null && quote.total_cashback_kwd > 0 ? (
+                    <div className="flex justify-between text-[#3F6F00]">
+                      <span>{t('userDashboard.lockedGold.details.totalCashback')}</span>
+                      <span className="tabular-nums">{quote.total_cashback_kwd.toFixed(3)} KWD</span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
               <div className="flex justify-between font-semibold mt-2">
                 <span>{t('userDashboard.lockedGold.details.amountYouWillReceive')}</span>
                 <span>
@@ -3427,6 +3566,9 @@ function TradeGoldTab() {
         </p>
       </div>
 
+      {/* Self-service funding is hidden until deposits are gateway-backed: this form
+          credited a user-typed amount with no payment step. See featureFlags.ts. */}
+      {WALLET_FUNDING_AND_CHECKOUT_ENABLED ? (
       <div className="rounded-lg border border-amber-500/30 bg-charcoal-800/50 p-4 space-y-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/35 flex items-center justify-center shrink-0">
@@ -3472,6 +3614,7 @@ function TradeGoldTab() {
           {depositMutation.isPending ? t('tradeGold.processing') : t('tradeGold.knetDeposit.cta')}
         </button>
       </div>
+      ) : null}
 
       {isLoading ? (
         <p className="text-gold-100/60 text-sm">{t('userDashboard.tradeGoldPanel.loadingPositions')}</p>

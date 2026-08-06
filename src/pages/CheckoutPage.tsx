@@ -25,7 +25,7 @@ import { CheckoutStepIndicator } from '@/components/checkout/CheckoutStepIndicat
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import knetBadge from '@/assets/trust/knet-badge.png'
 import { cn } from '@/lib/utils'
-import { TRADING_AND_VIRTUAL_WALLET_ENABLED, CHECKOUT_VAULT_DELIVERY_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
+import { TRADING_AND_VIRTUAL_WALLET_ENABLED, WALLET_FUNDING_AND_CHECKOUT_ENABLED, CHECKOUT_VAULT_DELIVERY_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
@@ -339,7 +339,8 @@ export default function CheckoutPage() {
     if (CHECKOUT_COD_ENABLED && cfg.cash) {
       rows.push({ id: 'cod', nameKey: 'checkoutPage.payCod', icon: Truck, disabled: false })
     }
-    if (TRADING_AND_VIRTUAL_WALLET_ENABLED && cfg.wallet) {
+    // Wallet checkout — off until wallet deposits are gateway-backed.
+    if (WALLET_FUNDING_AND_CHECKOUT_ENABLED && TRADING_AND_VIRTUAL_WALLET_ENABLED && cfg.wallet) {
       rows.push({
         id: 'wallet',
         nameKey: null,

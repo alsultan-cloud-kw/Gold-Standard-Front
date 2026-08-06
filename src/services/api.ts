@@ -129,6 +129,20 @@ export const authApi = {
       { clerk_session_token: clerkSessionToken },
     ),
 
+  requestLoginOtp: (data: {
+    email?: string
+    phone_number?: string
+    channel: 'email' | 'whatsapp'
+    turnstile_token?: string
+  }) =>
+    apiService.post<{
+      message?: string
+      error?: string
+      channel?: string
+      user_id?: string
+      delivery?: { channel?: string; destination?: string; user_id?: string }
+    }>('/accounts/users/request_login_otp/', data),
+
   register: (data: unknown) =>
     apiService.post<{ user: unknown; refresh: string; access: string }>('/accounts/users/register/', data),
 
@@ -161,6 +175,8 @@ export const authApi = {
       reset_token?: string
       is_verified?: boolean
       user?: unknown
+      access?: string
+      refresh?: string
     }>('/accounts/users/verify_otp/', data),
 
   /** Resend registration confirmation OTP (email SES or WhatsApp). */
@@ -707,6 +723,28 @@ export const ordersApi = {
   /** List current user's locked gold (from orders with lock; only these can be sold back). */
   getMyLockedGold: () =>
     apiService.get<unknown[]>('/accounting/sales/my-locked-gold/'),
+
+  /** Quote shipping fee for vault → physical delivery. */
+  getVaultDeliveryQuote: () =>
+    apiService.get<{ shipping_fee_kwd: number; currency: string; note?: string }>(
+      '/accounting/sales/vault-delivery-quote/',
+    ),
+
+  /** Request physical delivery of a locked sale line (reserves grams). */
+  requestVaultDelivery: (data: {
+    sale_item_id: string
+    shipping_address?: string
+    customer_notes?: string
+  }) =>
+    apiService.post<{
+      id: string
+      request_number: string
+      shipping_fee_kwd: number
+      status: string
+    }>('/accounting/sales/request-vault-delivery/', data),
+
+  getMyVaultDeliveries: () =>
+    apiService.get<unknown[]>('/accounting/sales/my-vault-deliveries/'),
 }
 
 // Trading: customer sell gold (buyback) — store pays at sell rate
@@ -720,7 +758,25 @@ export const tradingApi = {
 
   /** Get quote for selling locked gold (no order created). Items must be from getMyLockedGold. */
   getSellQuote: (data: { items: { sale_item_id: string; weight_grams?: number }[] }) =>
-    apiService.post<unknown>('/accounting/gold-buybacks/sell-quote/', data),
+    apiService.post<{
+      items?: Array<{
+        sale_item_id: string
+        carat_value?: number
+        carat_display?: string
+        weight_grams?: number
+        price_per_gram?: number
+        metal_amount_kwd: number
+        cashback_amount_kwd: number
+        buyback_cashback_percent?: number
+        total_price: number
+      }>
+      total_weight: number
+      total_metal_kwd?: number
+      total_cashback_kwd?: number
+      total_amount: number
+      currency: string
+      bank_approved?: boolean
+    }>('/accounting/gold-buybacks/sell-quote/', data),
 
   /** Place sell order (customer sells locked gold to store). Only gold bought here and locked.
    *  NOTE: Backend now always uses the full remaining locked weight; weight_grams is optional.

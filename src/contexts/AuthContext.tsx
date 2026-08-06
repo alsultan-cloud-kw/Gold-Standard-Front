@@ -35,6 +35,12 @@ interface AuthContextType {
     turnstile_token?: string
   }) => Promise<User>
   loginWithClerk: (clerkSessionToken: string) => Promise<User>
+  /** Persist Django JWTs from passwordless OTP verify (purpose=login). */
+  loginWithSession: (payload: {
+    access: string
+    refresh: string
+    user: User
+  }) => Promise<User>
   register: (data: unknown) => Promise<User>
   logout: () => Promise<void>
   updateUser: (data: unknown) => Promise<void>
@@ -167,6 +173,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return nextUser
   }
 
+  const loginWithSession = async (payload: {
+    access: string
+    refresh: string
+    user: User
+  }) => {
+    localStorage.setItem('access_token', payload.access)
+    localStorage.setItem('refresh_token', payload.refresh)
+    beginAuthSession(payload.access, payload.refresh)
+    suppressSignInNudge()
+    setUser(payload.user)
+    setIsLoading(false)
+    markLoginSuccessPending()
+    return payload.user
+  }
+
   const register = async (data: unknown) => {
     const response = await authApi.register(data)
     localStorage.setItem('access_token', response.access)
@@ -225,6 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setClerkSyncing,
         login,
         loginWithClerk,
+        loginWithSession,
         register,
         logout,
         updateUser,

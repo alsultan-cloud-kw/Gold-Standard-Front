@@ -171,6 +171,10 @@ export interface Product {
   live_metal_value_club?: number | null
   live_making_charge_club?: number | null
   live_buy_price_per_gram_club?: number | null
+  /** Buyback cashback % of making (customers see % + KWD only — never “making charge”). */
+  buyback_cashback_percent?: number | string | null
+  buyback_cashback_amount_kwd?: number | string | null
+  buyback_cashback_amount_kwd_club?: number | string | null
   /** vs ~24h snapshot (PriceHistory) when available; else live vs stored current_price */
   price_trend?: 'up' | 'down' | 'same' | null
   price_trend_percent?: number | null
