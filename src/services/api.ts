@@ -668,6 +668,7 @@ export const ordersApi = {
   placeOrder: (data: {
     items: { product_id: string; quantity: number }[]
     delivery_type?: 'physical' | 'locked'
+    quote_token?: string
     payment_method?: string
     customer_name?: string
     customer_phone?: string
@@ -989,14 +990,22 @@ export const clubsApi = {
     apiService.post<unknown>(`/clubs/admin/club-offers/${offerId}/deactivate/`, {}),
 
   /** Logged-in: preview server subtotal + best club/customer offer (matches place_order). */
-  checkoutPreview: (items: { product_id: string; quantity: number }[]) =>
+  checkoutPreview: (
+    items: { product_id: string; quantity: number }[],
+    delivery_type: 'physical' | 'locked',
+  ) =>
     apiService.post<{
       subtotal: string
       discount_amount: string
+      shipping_amount: string
+      tax_amount: string
       total_amount: string
       offer_title: string | null
       offer_id: string | null
-    }>('/clubs/checkout-preview/', { items }),
+      line_prices: unknown
+      quote_token: string
+      expires_at: string
+    }>('/clubs/checkout-preview/', { items, delivery_type }),
 }
 
 // Wallet API (customer wallet balance & movements)
@@ -1210,6 +1219,52 @@ export const priceAlertsApi = {
 
   /** Admin/staff: list all reminders across users. */
   getAllPriceAlertsForAdmin: () => apiService.get('/accounts/price-alerts/'),
+}
+
+/** Gold Standard Zakat Center */
+export type ZakatCalculationRow = {
+  id: string
+  hijri_year: number
+  gregorian_date: string
+  hijri_date_label?: string
+  gold_price_24k_buy_kwd: string | number
+  silver_price_999_buy_kwd?: string | number | null
+  nisab_kwd: string | number
+  pure_gold_equivalent_g: string | number
+  total_assets_kwd: string | number
+  debts_kwd: string | number
+  zakatable_kwd: string | number
+  zakat_due_kwd: string | number
+  above_nisab: boolean
+  hawl_status: string
+  asset_purpose: string
+  status: string
+  status_display?: string
+  methodology_version: string
+  breakdown_json?: Record<string, unknown>
+  notes?: string
+  assets?: unknown[]
+  payments?: unknown[]
+  created_at?: string
+}
+
+export const zakatApi = {
+  nisab: () => apiService.get('/zakat/nisab/'),
+  evaluate: (data: unknown) => apiService.post('/zakat/evaluate/', data),
+  portfolioImport: () =>
+    apiService.get<{ gold_lines: Array<Record<string, unknown>>; count: number; note?: string }>(
+      '/zakat/portfolio-import/',
+    ),
+  listCalculations: () =>
+    apiService.get<{ results?: ZakatCalculationRow[] } | ZakatCalculationRow[]>('/zakat/calculations/'),
+  getCalculation: (id: string) => apiService.get<ZakatCalculationRow>(`/zakat/calculations/${id}/`),
+  createCalculation: (data: unknown) => apiService.post<ZakatCalculationRow>('/zakat/calculations/', data),
+  patchCalculation: (id: string, data: unknown) =>
+    apiService.patch<ZakatCalculationRow>(`/zakat/calculations/${id}/`, data),
+  addPayment: (id: string, data: unknown) =>
+    apiService.post(`/zakat/calculations/${id}/payments/`, data),
+  getProfile: () => apiService.get('/zakat/profile/'),
+  patchProfile: (data: unknown) => apiService.patch('/zakat/profile/', data),
 }
 
 // Invoices API

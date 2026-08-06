@@ -84,6 +84,7 @@ export default function Navbar() {
       { nameKey: 'nav.home', href: '/' },
       { nameKey: 'nav.products', href: '/products' },
       { nameKey: 'nav.prices', href: '/prices' },
+      { nameKey: 'nav.zakat', href: '/zakat', badgeKey: 'nav.zakatBetaBadge', badgeHintKey: 'nav.zakatBetaHint' },
       { nameKey: 'nav.customerKyc', href: '/gs-kyc' },
       ...(showHoldingsNav
         ? [

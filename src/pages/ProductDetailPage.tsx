@@ -4,14 +4,16 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ShoppingCart, Share2, ChevronRight, Minus, Plus } from 'lucide-react'
-import { productsApi } from '../services/api'
+import { clubsApi, productsApi } from '../services/api'
 import type { Product } from '../types'
 import { useCart } from '../contexts/CartContext'
 import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import ProductPriceTrendArrow from '../components/ProductPriceTrendArrow'
 import { useProductPriceTrendSincePreviousFetch } from '../hooks/useProductPriceTrendSincePreviousFetch'
 import {
-  productUnitPrice,
+  productUnitPriceForMember,
+  productUnitPriceRegular,
+  clubSavingsPerUnit,
   liveSellPricePerGramForProduct,
   impliedListSellPerGramFromSnapshot,
   formatKwd,
@@ -45,6 +47,14 @@ export default function ProductDetailPage() {
     queryFn: () => productsApi.getProduct(slug!),
     enabled: !!slug,
   })
+  const { data: membershipData } = useQuery({
+    queryKey: ['clubMembership'],
+    queryFn: () => clubsApi.getMyMembership() as Promise<{
+      membership?: { role?: string } | null
+    }>,
+    enabled: isAuthenticated,
+    staleTime: 30_000,
+  })
   const trendProducts = useMemo(
     () => (product ? [product as Product] : []),
     [product],
@@ -76,12 +86,18 @@ export default function ProductDetailPage() {
   }
 
   const productName = isAr && p.name_ar ? p.name_ar : p.name_en
+  const membershipRole = membershipData?.membership?.role
+  const clubPricingActive =
+    isAuthenticated && (membershipRole === 'head' || membershipRole === 'member')
+  const regularPrice = productUnitPriceRegular(p)
+  const applicablePrice = productUnitPriceForMember(p, clubPricingActive)
+  const memberSavings = clubPricingActive ? clubSavingsPerUnit(p) : 0
   const caratLabel = formatProductCaratLabel(p.carat, isAr ? 'ar' : 'en')
   const descriptionText = (
     isAr ? (p.description_ar || p.description_en || '') : (p.description_en || p.description_ar || '')
   ).trim()
 
-  const sellPerGramLive = liveSellPricePerGramForProduct(p)
+  const sellPerGramLive = liveSellPricePerGramForProduct(p, clubPricingActive)
   const sellPerGramSnapshot = impliedListSellPerGramFromSnapshot(p)
   const sellPerGramDisplay = sellPerGramLive ?? sellPerGramSnapshot
   const sellPerGramIsSnapshot = sellPerGramLive == null && sellPerGramSnapshot != null
@@ -252,7 +268,7 @@ export default function ProductDetailPage() {
                   percentOverride={detailTrend?.percent ?? null}
                 />
                 <span className="text-3xl font-bold tabular-nums text-[#0C1512]">
-                  {formatKwd(productUnitPrice(p))} KWD
+                  {formatKwd(applicablePrice)} KWD
                 </span>
                 {p.live_total_price != null ? (
                   <span className="rounded-full bg-[#ECFCCB] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#3F6F00]">
@@ -260,6 +276,19 @@ export default function ProductDetailPage() {
                   </span>
                 ) : null}
               </div>
+              {memberSavings > 0 ? (
+                <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="font-semibold text-[#3F6F00]">
+                    {t('productDetail.memberPrice')}
+                  </span>
+                  <span className="tabular-nums text-[#94A3B8] line-through">
+                    {t('productDetail.regularPrice')}: {formatKwd(regularPrice)} KWD
+                  </span>
+                  <span className="font-medium tabular-nums text-[#059669]">
+                    {t('productDetail.memberSavings', { amount: formatKwd(memberSavings) })}
+                  </span>
+                </div>
+              ) : null}
               {sellPerGramDisplay != null ? (
                 <div className="space-y-1 text-sm text-[#64748B]">
                   <p dir="auto" className="tabular-nums">

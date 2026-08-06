@@ -32,6 +32,7 @@ import { SultanGoldTrustStats } from '@/components/home/SultanGoldTrustStats'
 import { InvestorsClubSection } from '@/components/home/InvestorsClubSection'
 import { SecurityTrustSection } from '@/components/home/SecurityTrustSection'
 import { ShariaCompliantSection } from '@/components/home/ShariaCompliantSection'
+import { ZakatTeaserSection } from '@/components/home/ZakatTeaserSection'
 import { HomeFaqSection } from '@/components/home/HomeFaqSection'
 import { RevealSection } from '@/components/motion/RevealSection'
 import { ensureGsap, useGSAP } from '@/motion/gsap'
@@ -248,6 +249,12 @@ export default function HomePage() {
       <div className="order-3 lg:order-none">
         <RevealSection as="div" mode="section" y="sm">
           <ShariaCompliantSection />
+        </RevealSection>
+      </div>
+
+      <div className="order-3 lg:order-none">
+        <RevealSection as="div" mode="section" y="sm">
+          <ZakatTeaserSection />
         </RevealSection>
       </div>
 

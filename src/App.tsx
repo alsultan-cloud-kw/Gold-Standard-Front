@@ -38,6 +38,7 @@ import CustomerBlacklistScreenPage from './pages/CustomerBlacklistScreenPage'
 import ContactPage from './pages/ContactPage'
 import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
+import ZakatPage from './pages/ZakatPage'
 import CompanyPricesPage from './pages/CompanyPricesPage'
 // News temporarily hidden — re-enable with nav.news + HomeNewsSection
 // import NewsPage from './pages/NewsPage'
@@ -179,6 +180,7 @@ function App() {
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/branches" element={<BranchesPage />} />
                   <Route path="/prices" element={<PricesPage />} />
+                  <Route path="/zakat" element={<ZakatPage />} />
                   <Route path="/company-prices" element={<CompanyPricesPage />} />
                   {/* News temporarily hidden
                   <Route path="/news" element={<NewsPage />} />

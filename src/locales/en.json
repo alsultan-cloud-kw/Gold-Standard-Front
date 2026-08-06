@@ -38,7 +38,10 @@
     "trading": "Trading",
     "holdings": "Holdings",
     "holdingsNewBadge": "Beta",
-    "holdingsNewHint": "Experimental — not live yet"
+    "holdingsNewHint": "Experimental — not live yet",
+    "zakat": "Zakat",
+    "zakatBetaBadge": "Beta",
+    "zakatBetaHint": "Planning tool — not a personal fatwa. Verify with Awqaf or your advisor."
   },
   "legal": {
     "combined": {
@@ -596,6 +599,24 @@
     "heroClub": {
       "title": "Investors Club",
       "summary": "Member prices below market — offers applied automatically at checkout"
+    },
+    "zakat": {
+      "kicker": "Zakat Center",
+      "title": "Calculate your gold & silver zakat",
+      "subtitle": "Using today’s live market prices in Kuwaiti Dinar — with Awqaf-aligned nisab and a yearly record book.",
+      "liveGold": "Live gold prices",
+      "liveSilver": "Live silver prices",
+      "kwd": "Kuwaiti Dinar",
+      "instant": "Instant calculation",
+      "nisab": "Based on Islamic nisab",
+      "cta": "Open Zakat Center",
+      "cardKicker": "مركز الزكاة",
+      "cardTitle": "Gold Standard Zakat Center",
+      "cardBody": "Not just grams → number. Your complete zakat companion for every Hijri year.",
+      "statNisab": "Nisab",
+      "statRate": "Rate",
+      "betaBadge": "Beta",
+      "betaNote": "Beta planning tool. Not a personal fatwa — confirm with Awqaf or a qualified advisor."
     }
   },
   "newsPage": {
@@ -708,6 +729,10 @@
     "holdings": {
       "title": "Gold Holdings · Metal Wallet | Gold Standard",
       "description": "Plan and build your gold holdings at live Kuwait rates — instant acquisition and target-price orders coming soon."
+    },
+    "zakat": {
+      "title": "Zakat Center | Gold Standard Kuwait",
+      "description": "Calculate gold and silver zakat with live Kuwait prices, Awqaf-aligned nisab, and saved Hijri-year records."
     }
   },
   "priceReminder": {
@@ -1157,6 +1182,9 @@
     "snapshotSellRateHint": "From saved list pricing (live sell rate unavailable).",
     "noImage": "No Image Available",
     "liveRate": "live rate",
+    "memberPrice": "Club member price",
+    "regularPrice": "Regular price",
+    "memberSavings": "You save {{amount}} KWD",
     "buybackCashback": "Buyback cashback {{percent}}% · ≈ {{amount}} KWD",
     "metalSellWeight": "Metal (sell rate × weight): {{value}} KWD",
     "buyRatePerGram": "Buy rate: {{value}} KWD/g",
@@ -1393,6 +1421,9 @@
     "subtotal": "Subtotal",
     "totalDue": "Total due",
     "walletTooLow": "Wallet balance is too low for this total. Choose another payment method or top up your wallet.",
+    "quoteLoading": "Refreshing total…",
+    "quoteUnavailable": "The current checkout quote is not ready. Wait for the total to refresh and try again.",
+    "quoteReviewRequired": "Your checkout quote changed or expired. Review the refreshed amounts before placing the order again.",
     "placing": "Placing…",
     "placeOrder": "Place Order",
     "memberRateSavings": "Member rate savings",
@@ -1430,8 +1461,8 @@
     "vaultHeldBody": "This purchase is stored with Gold Standard and was not shipped. It appears as vault-held on your orders and invoice.",
     "paymentId": "Payment ID",
     "transactionId": "Transaction ID",
-    "trackId": "Track / Reference ID",
-    "referenceId": "Gateway reference",
+    "trackId": "Merchant Track ID",
+    "referenceId": "Reference ID",
     "amount": "Amount",
     "dateTime": "Date and time",
     "status": "Result / status",
@@ -2682,7 +2713,8 @@
       "bankAccount": "Bank account",
       "wishlist": "Wishlist",
       "addresses": "Addresses",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "zakat": "My Zakat (Beta)"
     },
     "notificationsPanel": {
       "intro": "Browser alerts and price reminders you set on the Prices page.",
@@ -3073,6 +3105,16 @@
         "downloadComplete": "Word document downloaded.",
         "downloadFailed": "Could not build the Word file. Please try again."
       }
+    },
+    "zakat": {
+      "title": "My Zakat",
+      "subtitle": "Saved annual calculations with frozen prices — never recalculated with new rates.",
+      "newCalc": "New calculation",
+      "loading": "Loading records…",
+      "loadFailed": "Could not load records.",
+      "retry": "Retry",
+      "empty": "No saved calculations yet. Open the Zakat Center to create one.",
+      "hijriYear": "Hijri {{year}}"
     }
   },
   "tradingPage": {
@@ -3259,5 +3301,136 @@
       "Execute ownership transfer and payment around the clock — even when the shop is closed."
     ],
     "capabilitiesDisclaimer": "This bar is registered with a verified digital identity on blockchain technology, enhancing transparency, documenting the bar’s origin, ownership history, and transfers, and helping reduce counterfeiting risks and support compliance and anti–money laundering efforts. Registration is not a substitute for customer identity verification or applicable legal and regulatory requirements."
+  },
+  "zakatPage": {
+    "kicker": "Kuwait · Ministry of Awqaf guidance",
+    "title": "Gold Standard Zakat Center",
+    "subtitle": "Calculate zakat on gold, silver, cash, and business inventory using today’s live Kuwait prices — with transparent purity conversion, nisab, and a saved Hijri-year record book.",
+    "liveGold": "Live gold (24K)",
+    "liveSilver": "Live silver",
+    "kwdPerG": "KWD/g",
+    "todayNisab": "Today’s nisab",
+    "importHoldings": "Import my GS holdings",
+    "myRecords": "My Zakat records",
+    "importFailed": "Could not import holdings. Sign in and try again.",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "assets": "Assets",
+      "eligibility": "Eligibility",
+      "gold": "Gold",
+      "silver": "Silver",
+      "cash": "Cash",
+      "business": "Business",
+      "debts": "Debts",
+      "result": "Result",
+      "learn": "Learn"
+    },
+    "assetsTitle": "What would you like to calculate?",
+    "optGold": "Gold",
+    "optSilver": "Silver",
+    "optGoldSilver": "Gold + Silver",
+    "optCash": "Cash",
+    "optBusiness": "Business inventory",
+    "optComplete": "Complete wealth",
+    "hawlTitle": "Have you owned these assets for one Hijri year (hawl)?",
+    "hawl": {
+      "yes": "Yes",
+      "no": "No",
+      "unsure": "Not sure"
+    },
+    "hawlNotDue": "Based on your answer, zakat may not yet be due. You can still estimate for planning.",
+    "purposeTitle": "Are these assets mainly…",
+    "purpose": {
+      "savings": "Personal savings",
+      "investment": "Investment",
+      "business": "Business inventory",
+      "jewelry": "Personal jewelry",
+      "mixed": "Mixed"
+    },
+    "jewelryTitle": "Personal jewelry (scholarly difference)",
+    "jewelryHint": "Kuwaiti guidance and classical schools differ on worn jewelry. Choose the opinion you follow, or consult Awqaf.",
+    "jewelryOpinion": {
+      "include": "Include jewelry value (stricter)",
+      "exclude": "Exclude worn personal jewelry",
+      "ask_scholar": "I will ask a scholar / Awqaf"
+    },
+    "jewelryValue": "Jewelry value (KWD)",
+    "goldTitle": "Gold by karat",
+    "goldHint": "Weights convert live to pure-gold equivalent (24K basis).",
+    "pureGold": "pure gold",
+    "silverTitle": "Silver by fineness",
+    "cashTitle": "Cash",
+    "cashLabel": "Cash (KWD)",
+    "businessTitle": "Business inventory",
+    "businessLabel": "Inventory value (KWD)",
+    "debtsTitle": "Short-term debts due now?",
+    "debtsYes": "Yes",
+    "debtsNo": "No",
+    "debtsAmount": "Debt amount (KWD)",
+    "dueTitle": "Zakat due",
+    "notDueTitle": "Below nisab — no zakat due on this estimate",
+    "currentWealth": "Current wealth",
+    "nisab": "Nisab",
+    "rate": "Zakat rate",
+    "pureGoldEq": "Pure gold equivalent",
+    "explainTitle": "How every number was calculated",
+    "disclaimer": "Methodology version kw-awqaf-v1: nisab = 85g pure gold × live 24K buy; rate 2.5%. This tool supports planning and records; it is not a personal fatwa. Areas of scholarly difference (e.g. jewelry) are disclosed so you can follow Kuwait Ministry of Awqaf guidance or your advisor.",
+    "saveRecord": "Save to My Zakat",
+    "savedOk": "Saved. Open My Zakat in your dashboard anytime.",
+    "saveFailed": "Could not save. Sign in and try again.",
+    "learnTitle": "Learn",
+    "learnCta": "Open learning cards",
+    "backToResult": "Back to result",
+    "back": "Back",
+    "next": "Next",
+    "learn": {
+      "source": "Source: Kuwait Ministry of Awqaf guidance · scholarly differences noted where relevant",
+      "whatIsZakat": {
+        "title": "What is Zakat?",
+        "body": "An obligatory purifying dues on zakatable wealth when nisab and hawl conditions are met."
+      },
+      "whatIsNisab": {
+        "title": "What is Nisab?",
+        "body": "Kuwait Awqaf cites the equivalent of 85 grams of pure gold as the wealth threshold for monetary zakat."
+      },
+      "whatIsHawl": {
+        "title": "What is Hawl?",
+        "body": "One full Hijri year of ownership above nisab before zakat becomes due."
+      },
+      "whichAssets": {
+        "title": "Which assets require Zakat?",
+        "body": "Typically gold, silver, cash, and trade goods held for growth or business — subject to conditions."
+      },
+      "personalJewelry": {
+        "title": "Personal jewelry",
+        "body": "Valid scholarly differences exist. We do not hard-code one view; pick your opinion or consult Awqaf."
+      },
+      "investmentGold": {
+        "title": "Investment gold",
+        "body": "Bullion and investment holdings are generally treated as zakatable wealth when conditions are met."
+      },
+      "silver": {
+        "title": "Silver",
+        "body": "Silver is converted to fine equivalent and valued at live market rates in this calculator."
+      },
+      "cash": {
+        "title": "Cash",
+        "body": "Liquid cash and equivalents ready for use are included when selecting cash or complete wealth."
+      },
+      "business": {
+        "title": "Business goods",
+        "body": "Inventory held for trade is valued and included when you select business or complete wealth."
+      },
+      "debts": {
+        "title": "Debts",
+        "body": "Short-term debts due now may be subtracted before assessing zakatable wealth, per chosen methodology."
+      },
+      "mistakes": {
+        "title": "Common mistakes",
+        "body": "Using old prices on past years, skipping hawl, or mixing personal jewelry opinions without disclosure."
+      }
+    },
+    "betaBadge": "Beta",
+    "betaBanner": "Beta: useful for planning and records. Not a personal fatwa. Jewelry and some debt treatments involve scholarly differences — verify with Kuwait Awqaf or your advisor before paying."
   }
 }

@@ -39,7 +39,9 @@ import {
   clubsApi,
   apiService,
   goldTradingApi,
+  zakatApi,
   type BankChangeRequestRow,
+  type ZakatCalculationRow,
 } from '../services/api'
 import { buildWalletTransactionsDocxBlob } from '../utils/walletTransactionsWordExport'
 import {
@@ -104,6 +106,7 @@ const DASHBOARD_TABS = new Set([
   'bank_account',
   'addresses',
   'notifications',
+  'zakat',
   'holdings',
 ])
 
@@ -277,6 +280,7 @@ export default function UserDashboard() {
     { id: 'addresses', name: t('userDashboard.tabs.addresses'), icon: MapPin },
     // { id: 'payments', name: 'Payment Methods', icon: CreditCard },
     { id: 'notifications', name: t('userDashboard.tabs.notifications'), icon: Bell },
+    { id: 'zakat', name: t('userDashboard.tabs.zakat'), icon: Scale },
     { id: 'holdings', name: t('nav.holdings'), icon: Layers },
   ]
 
@@ -362,6 +366,7 @@ export default function UserDashboard() {
               {BANK_CHANGE_REQUESTS_ENABLED && activeTab === 'bank_account' && <BankAccountTab />}
               {activeTab === 'addresses' && <AddressesTabPanel />}
               {activeTab === 'notifications' && <NotificationsTab />}
+              {activeTab === 'zakat' && <ZakatRecordsTab />}
               {activeTab === 'holdings' && <HoldingsOverviewTab />}
             </div>
           </div>
@@ -3190,6 +3195,71 @@ type PriceAlertRow = {
   } | null
   created_at?: string | null
   triggered_at?: string | null
+}
+
+function ZakatRecordsTab() {
+  const { t } = useTranslation()
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['zakatCalculations'],
+    queryFn: async () => {
+      const res = await zakatApi.listCalculations()
+      if (Array.isArray(res)) return res
+      return (res as { results?: ZakatCalculationRow[] }).results || []
+    },
+  })
+
+  const rows = data || []
+
+  return (
+    <div className={dashboardPanelClass}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-[#0B0F19]">{t('userDashboard.zakat.title')}</h2>
+          <p className="mt-1 text-sm text-[#64748B]">{t('userDashboard.zakat.subtitle')}</p>
+        </div>
+        <Link to="/zakat" className={dashboardPrimaryBtnClass}>
+          {t('userDashboard.zakat.newCalc')}
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <p className="mt-6 text-sm text-[#64748B]">{t('userDashboard.zakat.loading')}</p>
+      ) : error ? (
+        <div className="mt-6">
+          <p className="text-sm text-rose-700">{t('userDashboard.zakat.loadFailed')}</p>
+          <button type="button" className={`${dashboardSecondaryBtnClass} mt-3`} onClick={() => void refetch()}>
+            {t('userDashboard.zakat.retry')}
+          </button>
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="mt-6 text-sm text-[#64748B]">{t('userDashboard.zakat.empty')}</p>
+      ) : (
+        <ul className="mt-6 space-y-3">
+          {rows.map((row) => (
+            <li
+              key={row.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/8 bg-[#F7F9F5] px-4 py-3"
+            >
+              <div>
+                <p className="font-semibold text-[#0B0F19]">
+                  {t('userDashboard.zakat.hijriYear', { year: row.hijri_year })}
+                </p>
+                <p className="text-sm text-[#64748B]">
+                  {row.hijri_date_label || row.gregorian_date} · {row.status_display || row.status}
+                </p>
+              </div>
+              <div className="text-end">
+                <p className="font-semibold text-[#0B0F19]">
+                  {Number(row.zakat_due_kwd).toFixed(3)} KWD
+                </p>
+                <p className="text-xs text-[#64748B]">{row.methodology_version}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 function NotificationsTab() {

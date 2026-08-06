@@ -24,6 +24,10 @@ const PUBLIC_ROUTES: Array<{ match: (path: string) => boolean; seo: PageSeo }> =
     seo: { titleKey: 'seo.prices.title', descKey: 'seo.prices.description', path: '/prices' },
   },
   {
+    match: (p) => p === '/zakat',
+    seo: { titleKey: 'seo.zakat.title', descKey: 'seo.zakat.description', path: '/zakat' },
+  },
+  {
     match: (p) => p === '/gs-kyc',
     seo: {
       titleKey: 'seo.customerKyc.title',
