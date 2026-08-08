@@ -667,7 +667,10 @@
     "defaultDocumentTitle": "جولد ستاندرد — ذهب استثماري معتمد · الكويت",
     "instagram": "إنستغرام",
     "dismissSignInPrompt": "إغلاق تنبيه تسجيل الدخول",
-    "skipToContent": "تخطّي إلى المحتوى الرئيسي"
+    "skipToContent": "تخطّي إلى المحتوى الرئيسي",
+    "tryAgain": "حاول مرة أخرى",
+    "errorBoundaryTitle": "حدث خطأ ما",
+    "errorBoundaryBody": "واجهت هذه الصفحة خطأً غير متوقع. يمكنك إعادة المحاولة أو العودة إلى لوحة التحكم."
   },
   "seo": {
     "default": {
@@ -2931,6 +2934,9 @@
       "downloadInvoice": "تنزيل الفاتورة",
       "paymentActionsTitle": "إجراءات الدفع",
       "paymentActionsLoading": "جاري تحميل سجل الدفع…",
+      "paymentActionOpen": "فتح",
+      "paymentActionVoid": "إلغاء",
+      "paymentActionPaid": "مدفوع",
       "item": "عنصر",
       "more": "المزيد",
       "lockedInVault": "محفوظ داخل الخزنة",

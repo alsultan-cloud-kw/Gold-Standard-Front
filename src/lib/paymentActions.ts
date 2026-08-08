@@ -19,11 +19,23 @@ export type PaymentActionEvent = {
 }
 
 export function unwrapPaymentActions(data: unknown): PaymentActionEvent[] {
+  if (data == null) return []
   if (Array.isArray(data)) return data as PaymentActionEvent[]
+  if (typeof data !== 'object') return []
   const wrapped = data as { results?: PaymentActionEvent[]; actions?: PaymentActionEvent[] }
-  return wrapped.results ?? wrapped.actions ?? []
+  if (Array.isArray(wrapped.results)) return wrapped.results
+  if (Array.isArray(wrapped.actions)) return wrapped.actions
+  return []
 }
 
+export function paymentActionLabelKey(action: string): string {
+  if (action === 'open') return 'userDashboard.orders.paymentActionOpen'
+  if (action === 'void') return 'userDashboard.orders.paymentActionVoid'
+  if (action === 'paid') return 'userDashboard.orders.paymentActionPaid'
+  return ''
+}
+
+/** @deprecated Prefer i18n via paymentActionLabelKey — kept for admin/non-i18n callers. */
 export function paymentActionLabel(action: string): string {
   if (action === 'open') return 'Open'
   if (action === 'void') return 'Void'

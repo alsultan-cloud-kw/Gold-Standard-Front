@@ -37,23 +37,18 @@ export class RouteErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
+      const isAr = (i18n.language || '').toLowerCase().startsWith('ar')
       return (
-        <div className="page-shell page-section">
+        <div className="page-shell page-section" dir={isAr ? 'rtl' : 'ltr'} lang={isAr ? 'ar' : 'en'}>
           <div className="dashboard-panel mx-auto max-w-lg text-center">
-            <h2 className="dashboard-panel__title">
-              {i18n.t('common.errorBoundaryTitle', { defaultValue: 'Something went wrong' })}
-            </h2>
-            <p className="dashboard-panel__subtitle">
-              {i18n.t('common.errorBoundaryBody', {
-                defaultValue: 'This page hit an unexpected error. You can retry or return to your dashboard.',
-              })}
-            </p>
+            <h2 className="dashboard-panel__title">{i18n.t('common.errorBoundaryTitle')}</h2>
+            <p className="dashboard-panel__subtitle">{i18n.t('common.errorBoundaryBody')}</p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <button type="button" onClick={this.handleRetry} className="dashboard-primary-btn">
-                {i18n.t('common.tryAgain', { defaultValue: 'Try again' })}
+                {i18n.t('common.tryAgain')}
               </button>
               <button type="button" onClick={this.handleGoBack} className="dashboard-secondary-btn">
-                {i18n.t('nav.dashboard', { defaultValue: 'Dashboard' })}
+                {i18n.t('nav.dashboard')}
               </button>
             </div>
           </div>

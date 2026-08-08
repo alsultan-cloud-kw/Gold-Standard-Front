@@ -667,7 +667,10 @@
     "defaultDocumentTitle": "Gold Standard — Investment Gold Bullion · Kuwait",
     "instagram": "Instagram",
     "dismissSignInPrompt": "Dismiss sign-in prompt",
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "tryAgain": "Try again",
+    "errorBoundaryTitle": "Something went wrong",
+    "errorBoundaryBody": "This page hit an unexpected error. You can retry or return to your dashboard."
   },
   "seo": {
     "default": {
@@ -2931,6 +2934,9 @@
       "downloadInvoice": "Download invoice",
       "paymentActionsTitle": "Payment actions",
       "paymentActionsLoading": "Loading payment history…",
+      "paymentActionOpen": "Open",
+      "paymentActionVoid": "Void",
+      "paymentActionPaid": "Paid",
       "item": "Item",
       "more": "more",
       "lockedInVault": "Locked in vault",

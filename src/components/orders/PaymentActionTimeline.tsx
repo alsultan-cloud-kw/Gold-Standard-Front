@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ordersApi } from '@/services/api'
 import {
-  paymentActionLabel,
+  paymentActionLabelKey,
   unwrapPaymentActions,
   type PaymentActionKind,
 } from '@/lib/paymentActions'
@@ -31,15 +31,15 @@ export function PaymentActionTimeline({ saleId, className, dense }: Props) {
     retry: false,
   })
 
-  const events = unwrapPaymentActions(data)
-
   if (isLoading) {
     return (
       <p className={cn('text-xs text-[#64748B]', className)}>
-        {t('userDashboard.orders.paymentActionsLoading', { defaultValue: 'Loading payment history…' })}
+        {t('userDashboard.orders.paymentActionsLoading')}
       </p>
     )
   }
+
+  const events = unwrapPaymentActions(data)
 
   if (isError || events.length === 0) {
     return null
@@ -48,11 +48,12 @@ export function PaymentActionTimeline({ saleId, className, dense }: Props) {
   return (
     <div className={cn(dense ? 'mt-2' : 'mt-3', className)}>
       <p className="text-xs font-medium text-[#0B0F19] mb-1.5">
-        {t('userDashboard.orders.paymentActionsTitle', { defaultValue: 'Payment actions' })}
+        {t('userDashboard.orders.paymentActionsTitle')}
       </p>
       <ol className="space-y-1.5">
         {events.map((ev) => {
           const kind = (ev.action || '') as PaymentActionKind
+          const labelKey = paymentActionLabelKey(ev.action)
           return (
             <li key={ev.id} className="flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
               <span
@@ -61,7 +62,7 @@ export function PaymentActionTimeline({ saleId, className, dense }: Props) {
                   pillClass[kind] ?? 'bg-stone-50 text-stone-700 border-stone-200',
                 )}
               >
-                {paymentActionLabel(ev.action)}
+                {labelKey ? t(labelKey) : ev.action}
               </span>
               <span>
                 {ev.created_at
