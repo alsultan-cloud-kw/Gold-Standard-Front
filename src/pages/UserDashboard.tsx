@@ -3309,6 +3309,7 @@ function NotificationsTab() {
       if (cancelled) return
       setWebPushSupported(isWebPushSupported())
       setWebPushOn(await getWebPushPreference())
+      // VAPID comes from Django (VAPID_PUBLIC_KEY / FIREBASE_VAPID_KEY) — not Vercel.
       const key = await fetchVapidPublicKey()
       if (!cancelled) setVapidReady(Boolean(key) && isFirebaseWebConfigured())
     })()

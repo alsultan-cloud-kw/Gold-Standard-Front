@@ -27,18 +27,12 @@ export const firebaseWebConfig = {
     (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '').trim() || 'G-39JGSRJVFJ',
 }
 
-export const firebaseVapidKey = (
-  import.meta.env.VITE_FIREBASE_VAPID_KEY ||
-  'BAGbC2Otp2ju5tW7xAUgHKpSX7g_vim9DyvewItHGGNabUHwgQUckFE3djbpqSJ9YvgOEBMVSedg8VNY8XOheRw'
-).trim()
-
 export function isFirebaseWebConfigured(): boolean {
   return Boolean(
     firebaseWebConfig.apiKey &&
       firebaseWebConfig.projectId &&
       firebaseWebConfig.messagingSenderId &&
-      firebaseWebConfig.appId &&
-      firebaseVapidKey,
+      firebaseWebConfig.appId,
   )
 }
 

@@ -1,9 +1,5 @@
 import { apiService } from '@/services/api'
-import {
-  firebaseVapidKey,
-  getFirebaseMessaging,
-  isFirebaseWebConfigured,
-} from '@/lib/firebase'
+import { getFirebaseMessaging, isFirebaseWebConfigured } from '@/lib/firebase'
 import { deleteToken, getToken, onMessage } from 'firebase/messaging'
 
 const SW_PATH = '/firebase-messaging-sw.js'
@@ -12,6 +8,8 @@ const DEVICE_UUID_KEY = 'gs_web_push_device_uuid'
 const TOKEN_KEY = 'gs_web_fcm_token'
 
 let foregroundListenerAttached = false
+/** Cached Django VAPID public key — never from VITE_* / Vercel. */
+let cachedVapidKey: string | null | undefined
 
 function localeForPush(): string {
   const lang =
@@ -69,14 +67,19 @@ type VapidResponse = {
   vapid?: { ready?: boolean; mode?: string }
 }
 
-/** Prefer Vite env VAPID; fall back to Django so Hub can rotate without redeploy. */
+/**
+ * Load Web Push VAPID public key from Django only (do not bake into Vite/Vercel).
+ * Server env: VAPID_PUBLIC_KEY or FIREBASE_VAPID_KEY.
+ */
 export async function fetchVapidPublicKey(): Promise<string | null> {
-  if (firebaseVapidKey) return firebaseVapidKey
+  if (cachedVapidKey !== undefined) return cachedVapidKey
   try {
     const data = await apiService.get<VapidResponse>('/accounts/push/web/vapid-public-key/')
     const key = (data?.public_key || '').trim()
-    return key || null
+    cachedVapidKey = key || null
+    return cachedVapidKey
   } catch {
+    cachedVapidKey = null
     return null
   }
 }
@@ -119,7 +122,7 @@ async function unregisterTokenWithBackend(token: string | null): Promise<void> {
 export async function subscribeWebPush(): Promise<string | null> {
   if (!isWebPushSupported()) return null
   if (!isFirebaseWebConfigured()) {
-    // Missing VITE_FIREBASE_APP_ID (create Web app in Firebase Console).
+    // Missing Firebase web app config (create Web app in Firebase Console).
     return null
   }
 
@@ -135,7 +138,7 @@ export async function subscribeWebPush(): Promise<string | null> {
   const messaging = await getFirebaseMessaging()
   if (!messaging) return null
 
-  const vapidKey = (await fetchVapidPublicKey()) || firebaseVapidKey
+  const vapidKey = await fetchVapidPublicKey()
   if (!vapidKey) return null
 
   const token = await getToken(messaging, {
