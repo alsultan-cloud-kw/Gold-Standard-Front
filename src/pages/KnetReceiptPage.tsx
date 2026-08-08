@@ -51,10 +51,12 @@ export default function KnetReceiptPage() {
         const shouldPoll =
           urlStatus === 'pending' ||
           urlStatus === 'failed' ||
+          urlStatus === 'success' ||
           reason === 'missing_trandata' ||
           reason === 'decrypt_failed' ||
           reason === 'resume' ||
           reason === 'payment_url_missing' ||
+          reason === 'awaiting_server_confirm' ||
           userCancelled ||
           !urlStatus
 

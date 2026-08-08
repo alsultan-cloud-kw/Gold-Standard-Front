@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, WALLET_FUNDING_AND_CHECKOUT_ENABLED, CHECKOUT_VAULT_DELIVERY_ENABLED, CHECKOUT_CREDIT_CARD_ENABLED, CHECKOUT_COD_ENABLED } from '@/featureFlags'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
+import { sanitizeKnetPaymentUrl } from '@/lib/knetPaymentUrl'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
   cartClubPricingBreakdown,
@@ -55,6 +56,8 @@ type SaleResponse = {
   payment_status?: string
   payment_method?: string
   payment_url?: string
+  /** Server replayed an order already created from this checkout quote. */
+  duplicate_submission?: boolean
 }
 
 type KnetReturnPhase = 'idle' | 'verifying' | 'success' | 'failed'
@@ -535,11 +538,33 @@ export default function CheckoutPage() {
     }
 
     if (isExplicitKnetSuccess(knetStatus, result)) {
-      clearCart()
-      sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
-      void ordersApi.verifyKnetPayment(saleId).catch(() => {})
-      goToReceipt({ status: 'success', result: result || undefined })
-      return
+      // URL success is UX only — clear cart after server verify proves paid.
+      setKnetReturnPhase('verifying')
+      let cancelled = false
+      const run = async () => {
+        try {
+          const verify = await ordersApi.verifyKnetPayment(saleId)
+          if (cancelled) return
+          if (verify.payment_status === 'paid') {
+            clearCart()
+            sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+            goToReceipt({ status: 'success', result: result || undefined })
+            return
+          }
+        } catch {
+          /* fall through to receipt polling */
+        }
+        if (cancelled) return
+        goToReceipt({
+          status: knetStatus || 'pending',
+          result: result || undefined,
+          reason: 'awaiting_server_confirm',
+        })
+      }
+      void run()
+      return () => {
+        cancelled = true
+      }
     }
 
     if (!needsKnetVerification(knetStatus, result, reason)) {
@@ -632,6 +657,13 @@ export default function CheckoutPage() {
       toast.error(t('checkoutPage.quoteUnavailable'))
       return
     }
+    // Never send a lapsed lock to KNET: the customer would be charged a price they never saw.
+    if (summary.quoteExpired) {
+      setQuoteReviewRequired(true)
+      await summary.refetchPreview()
+      toast.error(t('checkoutPage.priceLockExpired'))
+      return
+    }
 
     if (isTurnstileConfigured && !turnstileToken) {
       toast.error(t('auth.captchaRequired'))
@@ -689,6 +721,18 @@ export default function CheckoutPage() {
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })) as SaleResponse
 
+      // The quote was already spent by an earlier submit (retry, double-click, second tab).
+      // The original order stands — send the customer to its receipt, which polls and runs the
+      // KNET inquiry, instead of creating or implying a second order.
+      if (data.duplicate_submission && data.id) {
+        toast.info(t('checkoutPage.duplicateOrder'))
+        navigate(`/payment-receipt/${data.id}?knet_status=pending&reason=resume`, {
+          replace: true,
+          state: { invoice: data.invoice_number },
+        })
+        return
+      }
+
       if (wantsDelegation && data.id) {
         const formData = new FormData()
         formData.append('delegate_full_name', delegateFullName.trim())
@@ -737,8 +781,9 @@ export default function CheckoutPage() {
       }
 
       if (paymentMethod === 'knet') {
-        const paymentUrl =
-          typeof data.payment_url === 'string' ? data.payment_url.trim() : ''
+        const paymentUrl = sanitizeKnetPaymentUrl(
+          typeof data.payment_url === 'string' ? data.payment_url : null,
+        )
         if (data.id) {
           sessionStorage.setItem(
             KNET_PENDING_SALE_KEY,
@@ -753,7 +798,7 @@ export default function CheckoutPage() {
           window.location.assign(paymentUrl)
           return
         }
-        // Same as mobile: never treat missing payment_url as a paid order.
+        // Same as mobile: never treat missing/unsafe payment_url as a paid order.
         toast.error(t('checkoutPage.knetPaymentUrlMissing'))
         if (data.id) {
           navigate(
@@ -889,6 +934,18 @@ export default function CheckoutPage() {
   const formatQuotedKwd = (value: number) =>
     summary.useServerPreview ? formatOrderKwd(value) : '—'
 
+  const quoteCountdown = (() => {
+    const totalSeconds = Math.ceil(summary.quoteRemainingMs / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes}:${String(seconds).padStart(2, '0')}`
+  })()
+
+  const handleRefreshQuote = async () => {
+    setQuoteReviewRequired(false)
+    await summary.refetchPreview()
+  }
+
   if (knetReturnPhase === 'verifying') {
     return (
       <AppLoadingScreen
@@ -1012,6 +1069,7 @@ export default function CheckoutPage() {
     submitting ||
     summary.previewLoading ||
     !summary.quoteToken ||
+    summary.quoteExpired ||
     walletTooLow ||
     hasUnavailableItems ||
     (isTurnstileConfigured && !turnstileToken) ||
@@ -1483,6 +1541,31 @@ export default function CheckoutPage() {
                 {quoteReviewRequired && (
                   <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
                     {t('checkoutPage.quoteReviewRequired')}
+                  </div>
+                )}
+                {summary.useServerPreview && (
+                  <div
+                    className={cn(
+                      'mb-4 flex flex-col gap-2 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between',
+                      summary.quoteExpired
+                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                        : 'border-[#3F6F00]/25 bg-[#ECFCCB]/40 text-[#0B0F19]',
+                    )}
+                  >
+                    <span className="font-medium">
+                      {summary.quoteExpired
+                        ? t('checkoutPage.priceLockExpired')
+                        : t('checkoutPage.priceLockActive', { time: quoteCountdown })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void handleRefreshQuote()}
+                      disabled={summary.previewLoading}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-[#0B0F19] transition hover:bg-[#F9F9FA] disabled:opacity-60"
+                    >
+                      {summary.previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      {t('checkoutPage.priceLockRefresh')}
+                    </button>
                   </div>
                 )}
 

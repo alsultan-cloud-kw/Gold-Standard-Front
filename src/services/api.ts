@@ -642,6 +642,10 @@ export const ordersApi = {
   getKnetReceipt: (id: string) =>
     apiService.get<KnetReceiptDetails>(`/accounting/sales/${id}/knet-receipt/`),
 
+  /** Append-only payment action history: open / void / paid. */
+  getPaymentActions: (id: string) =>
+    apiService.get<unknown>(`/accounting/sales/${id}/payment-actions/`),
+
   createOrder: (data: unknown) =>
     apiService.post('/accounting/sales/', data),
 

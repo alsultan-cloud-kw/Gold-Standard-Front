@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Cart } from '../types'
 import { parseCheckoutMoney } from '../utils/checkoutPreview'
-import { useCheckoutOfferPreview } from './useCheckoutOfferPreview'
+import { checkoutQuoteRemainingMs, useCheckoutOfferPreview } from './useCheckoutOfferPreview'
 import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
 
 /** Format KWD amounts for order summaries (matches dashboard-style precision). */
@@ -53,6 +53,17 @@ export function useOrderSummaryDisplay(
   }, [useServer, preview])
 
   const offerTitle = useServer && preview?.offer_title ? preview.offer_title : null
+  const expiresAt = useServer && preview?.expires_at ? preview.expires_at : null
+
+  // Re-render once a second so the review step can count the locked price down; the value
+  // itself is derived at render time and so is never stale.
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!expiresAt) return
+    const timer = setInterval(() => setTick((n) => n + 1), 1_000)
+    return () => clearInterval(timer)
+  }, [expiresAt])
+  const quoteRemainingMs = checkoutQuoteRemainingMs(expiresAt)
 
   return {
     subtotal,
@@ -63,7 +74,11 @@ export function useOrderSummaryDisplay(
     offerTitle,
     linePrices: useServer ? preview?.line_prices : null,
     quoteToken: useServer && preview?.quote_token ? preview.quote_token : null,
-    expiresAt: useServer && preview?.expires_at ? preview.expires_at : null,
+    expiresAt,
+    /** Milliseconds the displayed total is still guaranteed to equal the KNET charge. */
+    quoteRemainingMs,
+    /** Locked price lapsed — the customer must re-price before we may charge them. */
+    quoteExpired: !!expiresAt && quoteRemainingMs <= 0,
     refetchPreview: previewQuery.refetch,
     /** True while fetching preview for a non-empty cart (logged-in only). */
     previewLoading: isFetching && items.length > 0,

@@ -46,9 +46,17 @@ export function productUnitPrice(product: {
   return productUnitPriceRegular(product)
 }
 
+/**
+ * KWD carries 3 decimals (fils). Always render all three so a product page reads
+ * `491.000`, matching the checkout total, the KNET page and the receipt — KNET
+ * certification compares those four numbers character by character.
+ */
 export function formatKwd(n: number | null | undefined): string {
   if (n == null || Number.isNaN(Number(n))) return '—'
-  return Number(n).toLocaleString(PRICE_NUMBER_LOCALE, { maximumFractionDigits: 3 })
+  return Number(n).toLocaleString(PRICE_NUMBER_LOCALE, {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  })
 }
 
 /**

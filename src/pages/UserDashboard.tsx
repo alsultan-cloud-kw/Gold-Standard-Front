@@ -24,6 +24,7 @@ import {
   Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { PaymentActionTimeline } from '@/components/orders/PaymentActionTimeline'
 import { RegionFlagImg } from '../components/RegionFlagImg'
 import { RegionSelectField } from '@/components/auth/RegionSelectField'
 import { KuwaitPhoneField } from '@/components/auth/KuwaitPhoneField'
@@ -1502,6 +1503,7 @@ function OrdersTab() {
                     </button>
                   </div>
                 </div>
+                {order.id ? <PaymentActionTimeline saleId={order.id} dense /> : null}
                 {order.items && order.items.length > 0 && (
                   <ul className="mt-3 space-y-2 text-sm text-[#64748B]">
                     {order.items.slice(0, 3).map((item) => {

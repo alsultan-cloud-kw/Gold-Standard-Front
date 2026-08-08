@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Search, Filter, Eye, Loader2, FileText, Download, BookOpen, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { ordersApi, invoicesApi } from '../../services/api'
+import { PaymentActionTimeline } from '@/components/orders/PaymentActionTimeline'
 import {
   Dialog,
   DialogContent,
@@ -263,16 +264,6 @@ export default function AdminOrders() {
       if (detailId) queryClient.invalidateQueries({ queryKey: ['admin', 'order', detailId] })
     },
     onError: () => toast.error('Cancel failed (admin only)'),
-  })
-
-  const refundMutation = useMutation({
-    mutationFn: (id: string) => ordersApi.refundSale(id),
-    onSuccess: () => {
-      toast.success('Order marked as refunded')
-      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] })
-      if (detailId) queryClient.invalidateQueries({ queryKey: ['admin', 'order', detailId] })
-    },
-    onError: () => toast.error('Refund failed (admin only)'),
   })
 
   const updateStatusMutation = useMutation({
@@ -705,6 +696,7 @@ export default function AdminOrders() {
                   </ul>
                 </div>
               )}
+              <PaymentActionTimeline saleId={detailData.id} className="text-stone-600" />
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
@@ -717,7 +709,7 @@ export default function AdminOrders() {
               </div>
               {detailData.status !== 'cancelled' &&
                 detailData.status !== 'refunded' && (
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col gap-2 pt-2">
                     <button
                       type="button"
                       className="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs"
@@ -728,16 +720,9 @@ export default function AdminOrders() {
                     >
                       Cancel
                     </button>
-                    <button
-                      type="button"
-                      className="px-3 py-2 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-xs"
-                      disabled={refundMutation.isPending}
-                      onClick={() => {
-                        if (confirm('Mark as refunded?')) refundMutation.mutate(detailData.id)
-                      }}
-                    >
-                      Refund
-                    </button>
+                    <p className="text-[11px] text-stone-500">
+                      Gold purchases are not refundable. Use buyback for customer exit at market price.
+                    </p>
                   </div>
                 )}
             </div>

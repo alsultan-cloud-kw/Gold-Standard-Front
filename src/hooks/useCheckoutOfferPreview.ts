@@ -14,6 +14,21 @@ export type CheckoutPreviewData = {
   line_prices: unknown
   quote_token: string
   expires_at: string
+  ttl_seconds?: number
+}
+
+/**
+ * Refresh the quote this long before the server would reject it, so a customer who
+ * reaches the review step late still submits a token the backend accepts.
+ */
+export const CHECKOUT_QUOTE_REFRESH_MARGIN_MS = 60_000
+
+/** Milliseconds the quote (and the total rendered from it) may still be trusted. */
+export function checkoutQuoteRemainingMs(expiresAt: string | null | undefined): number {
+  if (!expiresAt) return 0
+  const expiry = new Date(expiresAt).getTime()
+  if (!Number.isFinite(expiry)) return 0
+  return Math.max(0, expiry - Date.now())
 }
 
 function stableItemsKey(items: CheckoutPreviewPayload[]): string {
@@ -34,6 +49,17 @@ export function useCheckoutOfferPreview(
     queryKey: ['checkoutOfferPreview', key, deliveryType],
     queryFn: () => clubsApi.checkoutPreview(items, deliveryType) as Promise<CheckoutPreviewData>,
     enabled: hasToken && items.length > 0,
-    staleTime: 0,
+    // The quote is a price lock, not a ticker. Gold re-prices upstream every 60s, so a
+    // background refetch would silently change the total the customer is reading — the exact
+    // "purchase price mismatch" KNET certification rejects. Hold it for its server validity
+    // window and let the customer re-price explicitly (or on a fresh cart / expiry).
+    staleTime: (query) =>
+      Math.max(
+        0,
+        checkoutQuoteRemainingMs(query.state.data?.expires_at) - CHECKOUT_QUOTE_REFRESH_MARGIN_MS,
+      ),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
   })
 }
