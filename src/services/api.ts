@@ -595,8 +595,46 @@ export const inventoryApi = {
   ) => apiService.post<unknown>(`/inventory/stock/${id}/adjust/`, data),
 }
 
-// Cart API (local storage based for now)
+// Cart API — Django SoT for signed-in users (Hub abandoned-cart center).
+export type ServerCartPayload = {
+  ok?: boolean
+  cart?: {
+    items?: Array<{
+      id?: string
+      product_id?: string
+      quantity?: number
+      unit_price?: number
+      total_price?: number
+      product_name_en?: string
+      product_name_ar?: string
+      product_sku?: string
+      product_slug?: string
+      barcode_value?: string
+      serial_number?: string
+      product?: {
+        id?: string
+        slug?: string
+        sku?: string
+        name_en?: string
+        name_ar?: string
+      } | null
+    }>
+    item_count?: number
+    subtotal?: number
+    total_amount?: number
+    updated_at?: string | null
+  }
+}
+
 export const cartApi = {
+  fetchServerCart: () => apiService.get<ServerCartPayload>('/accounts/cart/'),
+
+  syncServerCart: (items: unknown[], source: 'web' | 'mobile' = 'web') =>
+    apiService.put<ServerCartPayload>('/accounts/cart/', { items, source }),
+
+  clearServerCart: () => apiService.delete<ServerCartPayload>('/accounts/cart/'),
+
+  /** @deprecated local-only helpers — prefer server sync */
   getCart: () => {
     const cart = localStorage.getItem('cart')
     return cart ? JSON.parse(cart) : { items: [], subtotal: 0, total_amount: 0 }
@@ -608,6 +646,7 @@ export const cartApi = {
 
   clearCart: () => {
     localStorage.removeItem('cart')
+    localStorage.removeItem('gs_cart_legacy_cleared')
   },
 }
 

@@ -210,6 +210,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setProfile(null)
     clearSignInNudgeSuppress()
+    try {
+      localStorage.removeItem('cart')
+    } catch {
+      /* ignore */
+    }
     if (refreshToken) {
       try {
         await authApi.logout(refreshToken)

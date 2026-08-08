@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import i18n from '../i18n'
 import type { Product, Cart, CartItem } from '../types'
-import { productsApi, clubsApi } from '../services/api'
+import { productsApi, clubsApi, cartApi } from '../services/api'
 import { useAuth } from './AuthContext'
 import {
   cartUnitsForProductId,
@@ -96,22 +96,42 @@ function calculateCartTotals(items: CartItem[]): Cart {
   }
 }
 
-/**
- * Read cart from localStorage synchronously so the first render already has items.
- * Without this, the "save on every change" effect runs once with empty defaultCart
- * and overwrites localStorage before the async load effect runs — cart appears empty after reload.
- */
-function readCartFromStorage(): Cart {
-  if (typeof window === 'undefined') return defaultCart
-  try {
-    const raw = localStorage.getItem('cart')
-    if (!raw) return defaultCart
-    const parsed = JSON.parse(raw) as Partial<Cart>
-    if (!parsed || !Array.isArray(parsed.items)) return defaultCart
-    return calculateCartTotals(parsed.items as CartItem[])
-  } catch {
-    return defaultCart
-  }
+function mapServerCartToLocal(payload: Awaited<ReturnType<typeof cartApi.fetchServerCart>>): Cart {
+  const itemsRaw = payload?.cart?.items
+  if (!Array.isArray(itemsRaw) || itemsRaw.length === 0) return defaultCart
+  const items: CartItem[] = itemsRaw.map((row, idx) => {
+    const p = row.product || {}
+    const id = String(row.product_id || p.id || `line-${idx}`)
+    const product = {
+      id,
+      slug: String(row.product_slug || p.slug || ''),
+      sku: String(row.product_sku || p.sku || ''),
+      name_en: String(row.product_name_en || p.name_en || ''),
+      name_ar: String(row.product_name_ar || p.name_ar || ''),
+    } as Product
+    const quantity = Math.max(1, Number(row.quantity) || 1)
+    const unit_price = Number(row.unit_price) || 0
+    return {
+      id: String(row.id || `${id}-${idx}`),
+      product,
+      quantity,
+      unit_price,
+      total_price: Number(row.total_price) || unit_price * quantity,
+    }
+  })
+  return calculateCartTotals(items)
+}
+
+function itemsForServerSync(items: CartItem[]) {
+  return items.map((item) => ({
+    product_id: item.product.id,
+    product_slug: item.product.slug,
+    product_sku: item.product.sku,
+    product_name_en: item.product.name_en,
+    product_name_ar: item.product.name_ar,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+  }))
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -142,12 +162,14 @@ function unitPriceForMembership(product: Product, clubPricingEnabled: boolean): 
 export function CartProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { isAuthenticated, isLoading: authLoading, user } = useAuth()
-  const [cart, setCart] = useState<Cart>(readCartFromStorage)
+  const [cart, setCart] = useState<Cart>(defaultCart)
   const [clubPricingEnabled, setClubPricingEnabled] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const itemsRef = useRef<CartItem[]>(cart.items)
   const clubPricingEnabledRef = useRef<boolean>(clubPricingEnabled)
   const repriceInFlightRef = useRef(false)
   const lastRepriceStartedAtRef = useRef(0)
+  const skipNextSyncRef = useRef(false)
   const REPRICE_MIN_GAP_MS = 2500
 
   const assertCanPurchase = (): boolean => {
@@ -171,13 +193,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return true
   }
 
+  // Hydrate from Django when signed in; clear UI when logged out.
   useEffect(() => {
-    try {
-      localStorage.setItem('cart', JSON.stringify(cart))
-    } catch (e) {
-      console.error('Failed to save cart:', e)
+    let cancelled = false
+    if (authLoading) return
+    if (!isAuthenticated || !user?.id) {
+      setCart(defaultCart)
+      setHydrated(true)
+      try {
+        localStorage.removeItem('cart')
+      } catch {
+        /* ignore */
+      }
+      return
     }
-  }, [cart])
+    setHydrated(false)
+    void (async () => {
+      try {
+        const data = await cartApi.fetchServerCart()
+        if (cancelled) return
+        skipNextSyncRef.current = true
+        setCart(mapServerCartToLocal(data))
+      } catch {
+        if (!cancelled) {
+          skipNextSyncRef.current = true
+          setCart(defaultCart)
+        }
+      } finally {
+        if (!cancelled) setHydrated(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [authLoading, isAuthenticated, user?.id])
+
+  // Debounced sync to Django while signed in.
+  useEffect(() => {
+    if (!hydrated || !isAuthenticated || !user?.id) return
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false
+      return
+    }
+    const handle = window.setTimeout(() => {
+      void cartApi.syncServerCart(itemsForServerSync(cart.items), 'web').catch(() => {
+        /* soft-fail — checkout still validates on server */
+      })
+    }, 400)
+    return () => window.clearTimeout(handle)
+  }, [cart, hydrated, isAuthenticated, user?.id])
 
   useEffect(() => {
     itemsRef.current = cart.items
@@ -584,7 +648,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setCart(defaultCart)
-    localStorage.removeItem('cart')
+    try {
+      localStorage.removeItem('cart')
+    } catch {
+      /* ignore */
+    }
+    if (isAuthenticated) {
+      void cartApi.clearServerCart().catch(() => undefined)
+    }
     cartToastInfo(i18n.t('cart.toasts.cleared'), i18n.t('cart.toasts.clearedDesc'), 'cart-cleared')
   }
 
