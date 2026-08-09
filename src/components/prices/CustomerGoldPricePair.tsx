@@ -126,7 +126,7 @@ function PriceRow({
         dir="ltr"
         className={cn(
           'customer-gold-price-row__value max-w-full min-w-0 font-bold tabular-nums leading-tight',
-          stacked ? 'text-start text-[12px] sm:text-[13px]' : 'text-end text-[13px] sm:text-sm',
+          stacked ? 'text-start text-[14px] sm:text-[15px]' : 'text-end text-sm sm:text-base',
           dark
             ? emphasis === 'buy'
               ? 'text-[#A3E635]'
@@ -139,7 +139,7 @@ function PriceRow({
         <span className="[overflow-wrap:anywhere]">{value}</span>
         <span
           className={cn(
-            'customer-gold-price-row__unit ms-1 text-[10px] font-semibold',
+            'customer-gold-price-row__unit ms-1 text-[11px] font-semibold',
             dark ? 'text-white/45' : 'text-[#94A3B8]',
           )}
         >

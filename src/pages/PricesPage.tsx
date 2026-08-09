@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw, ShieldCheck, ArrowRight, ChevronDown } from 'lucide-react'
@@ -33,18 +33,17 @@ import {
   GoldWeightScale,
   parseSensitiveGrams,
 } from '@/components/prices/GoldWeightScale'
+import { formatKwd } from '@/utils/productPrice'
+
 const PRECIOUS_METAL_LABEL_KEYS = {
   Silver: 'productsPage.metal.silver',
   Platinum: 'productsPage.metal.platinum',
   Palladium: 'productsPage.metal.palladium',
 } as const
 
-function fmt(n: number | null | undefined) {
-  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
-}
-
-function fmtTotal(n: number | null | undefined) {
-  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(3) : '—'
+/** Customer prices board — KWD fils = 3 decimals (e.g. 43.195), never 4. */
+function fmtKwd(n: number | null | undefined) {
+  return formatKwd(n)
 }
 
 function isFeaturedKarat(key: string) {
@@ -67,10 +66,28 @@ export default function PricesPage() {
   const [gramsInput, setGramsInput] = useState('10')
   /** Weight scale stays collapsed on mobile so the chart is visible above the fold. */
   const [weightOpen, setWeightOpen] = useState(false)
+  const [ratesFlash, setRatesFlash] = useState(false)
   const ratesSectionRef = useRef<HTMLElement>(null)
   const grams = parseSensitiveGrams(gramsInput)
   const gramsValid = Number.isFinite(grams) && grams > 0
   const gramsLabel = gramsValid ? formatGramsLabel(grams) : gramsInput
+  const prevGramsRef = useRef(gramsLabel)
+
+  useEffect(() => {
+    if (!gramsValid) return
+    if (prevGramsRef.current === gramsLabel) return
+    prevGramsRef.current = gramsLabel
+    setRatesFlash(true)
+    const id = window.setTimeout(() => setRatesFlash(false), 900)
+    return () => window.clearTimeout(id)
+  }, [gramsLabel, gramsValid])
+
+  const scrollToRates = () => {
+    setWeightOpen(false)
+    ratesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setRatesFlash(true)
+    window.setTimeout(() => setRatesFlash(false), 1200)
+  }
 
   const { data, isLoading, isError, refetch, isFetching } = useEnrichedPublicRates(20_000)
   const { data: kuwaitConfigRaw } = useQuery({
@@ -150,7 +167,7 @@ export default function PricesPage() {
         <div className="page-shell relative py-3 sm:py-12 lg:py-14">
           <div className="flex items-start justify-between gap-2 sm:flex-col sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0 max-w-2xl">
-              <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#85E307] sm:mb-3 sm:text-[11px] sm:tracking-[0.22em]">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#85E307] sm:mb-3 sm:tracking-[0.22em]">
                 {t('pricesPage.kicker')}
               </p>
               <h1 className="type-page-title text-base leading-snug sm:text-4xl">
@@ -168,22 +185,27 @@ export default function PricesPage() {
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-wrap justify-end gap-1.5 sm:gap-3">
+            <div className="flex shrink-0 flex-wrap justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => refetch()}
-                className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/10 sm:min-h-0 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                aria-label={t('pricesPage.refresh')}
+                aria-busy={isFetching || undefined}
+                className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
               >
-                <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={cn('h-4 w-4 shrink-0', isFetching && 'animate-spin motion-reduce:animate-none')}
+                  aria-hidden
+                />
                 <span className="hidden sm:inline">{t('pricesPage.refresh')}</span>
               </button>
               {isStaff ? (
                 <Link
                   to="/company-prices"
-                  className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white/80 transition hover:bg-white/10 sm:min-h-0 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
                 >
                   <span className="max-w-[6.5rem] truncate sm:max-w-none">{t('nav.deskPriceBoard')}</span>
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 rtl:rotate-180" />
+                  <ArrowRight className="h-4 w-4 shrink-0 sm:h-4 sm:w-4 rtl:rotate-180" aria-hidden />
                 </Link>
               ) : null}
             </div>
@@ -211,7 +233,7 @@ export default function PricesPage() {
                     <p className="prices-quote-rail__label">
                       {t('pricesPage.sell')} · {t('common.kwd')}
                     </p>
-                    <p className="prices-quote-rail__value text-[#85E307]">{fmtTotal(ounceKwdSell)}</p>
+                    <p className="prices-quote-rail__value text-[#85E307]">{fmtKwd(ounceKwdSell)}</p>
                   </div>
                 ) : null}
                 {ounceKwdBuy != null ? (
@@ -219,7 +241,7 @@ export default function PricesPage() {
                     <p className="prices-quote-rail__label">
                       {t('pricesPage.buy')} · {t('common.kwd')}
                     </p>
-                    <p className="prices-quote-rail__value">{fmtTotal(ounceKwdBuy)}</p>
+                    <p className="prices-quote-rail__value">{fmtKwd(ounceKwdBuy)}</p>
                   </div>
                 ) : null}
               </div>
@@ -249,7 +271,7 @@ export default function PricesPage() {
                         {t('pricesPage.sell')} · {t('common.kwd')}
                       </p>
                       <p className="text-xl font-bold tabular-nums tracking-tight text-[#85E307]">
-                        {fmtTotal(ounceKwdSell)}
+                        {fmtKwd(ounceKwdSell)}
                       </p>
                       <p className="mt-0.5 text-[10px] text-white/40">{t('pricesPage.perTroyOunceKwd')}</p>
                     </div>
@@ -259,7 +281,7 @@ export default function PricesPage() {
                       <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide text-white/45">
                         {t('pricesPage.buy')} · {t('common.kwd')}
                       </p>
-                      <p className="text-xl font-bold tabular-nums tracking-tight">{fmtTotal(ounceKwdBuy)}</p>
+                      <p className="text-xl font-bold tabular-nums tracking-tight">{fmtKwd(ounceKwdBuy)}</p>
                     </div>
                   ) : null}
                 </div>
@@ -268,34 +290,49 @@ export default function PricesPage() {
               <div className="mt-2 sm:mt-0">
                 <button
                   type="button"
-                  className="mb-2 flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-[#85E307]/25 bg-[#85E307]/10 px-3 py-2.5 text-start sm:hidden"
+                  id="prices-weight-toggle"
+                  className="mb-2 flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-[#85E307]/25 bg-[#85E307]/10 px-3 py-2.5 text-start transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:hidden"
                   aria-expanded={weightOpen}
+                  aria-controls="prices-weight-panel"
                   onClick={() => setWeightOpen((o) => !o)}
                 >
                   <span className="min-w-0">
                     <span className="block text-xs font-bold text-white">{t('pricesPage.weightGrams')}</span>
                     {gramsValid ? (
-                      <span className="block text-[10px] tabular-nums text-white/55">
+                      <span className="block text-[11px] tabular-nums text-white/55">
+                        {t('pricesPage.weightHintShort')} ·{' '}
                         {t('pricesPage.ratesForWeight', { grams: gramsLabel })}
                       </span>
-                    ) : null}
+                    ) : (
+                      <span className="block text-[11px] text-white/55">{t('pricesPage.weightHintShort')}</span>
+                    )}
                   </span>
                   <ChevronDown
                     className={cn(
-                      'h-4 w-4 shrink-0 text-[#85E307] transition-transform duration-200',
+                      'h-4 w-4 shrink-0 text-[#85E307] transition-transform duration-200 motion-reduce:transition-none',
                       weightOpen && 'rotate-180',
                     )}
                     aria-hidden
                   />
                 </button>
 
-                <div className={cn('sm:block', weightOpen ? 'block' : 'hidden')}>
-                  <GoldWeightScale value={gramsInput} onChange={setGramsInput} variant="hero" />
+                <div
+                  id="prices-weight-panel"
+                  role="region"
+                  aria-labelledby="prices-weight-toggle"
+                  className={cn('sm:block', weightOpen ? 'block' : 'hidden')}
+                >
+                  <GoldWeightScale
+                    value={gramsInput}
+                    onChange={setGramsInput}
+                    variant="hero"
+                    onViewRates={scrollToRates}
+                  />
                 </div>
               </div>
 
               {res.updateIntervalInSeconds != null ? (
-                <p className="mt-2 text-center text-[9px] text-white/35 sm:mt-0 sm:text-[10px]">
+                <p className="mt-2 text-center text-[11px] text-white/45 sm:mt-0 sm:text-xs">
                   {t('pricesPage.updateEvery', { seconds: res.updateIntervalInSeconds })}
                 </p>
               ) : null}
@@ -313,14 +350,34 @@ export default function PricesPage() {
         ) : null}
 
         {isError ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 py-10 text-center text-sm text-red-900">
-            {t('pricesPage.errorUnavailable')}
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-10 text-center text-sm text-red-900"
+          >
+            <p>{t('pricesPage.errorUnavailable')}</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-900 transition duration-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            >
+              {t('pricesPage.refresh')}
+            </button>
           </div>
         ) : null}
 
         {!isLoading && !isError && res && !res.succeeded ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 py-10 text-center text-sm text-amber-950">
-            {t('pricesPage.loadFailed')}
+          <div
+            role="status"
+            className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-10 text-center text-sm text-amber-950"
+          >
+            <p>{t('pricesPage.loadFailed')}</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-950 transition duration-200 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+            >
+              {t('pricesPage.refresh')}
+            </button>
           </div>
         ) : null}
 
@@ -331,13 +388,29 @@ export default function PricesPage() {
               ref={ratesSectionRef}
               className="scroll-mt-[calc(var(--nav-offset)+4.5rem)]"
             >
-              <div className="mb-3 flex items-end justify-between gap-3 sm:mb-4">
-                <h2 className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-[#0B0F19] sm:text-xl">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3 sm:mb-4">
+                <h2
+                  className={cn(
+                    'flex min-w-0 items-center gap-2.5 text-lg font-bold tracking-tight text-[#0B0F19] transition-[box-shadow,background-color] duration-300 sm:text-xl',
+                    ratesFlash &&
+                      'rounded-lg bg-[#ECFCCB]/70 px-2 py-1 ring-2 ring-[#85E307]/45 motion-reduce:transition-none',
+                  )}
+                >
                   <span className="h-5 w-1.5 shrink-0 rounded-full bg-[#85E307]" aria-hidden />
-                  {gramsValid
-                    ? t('pricesPage.ratesForWeight', { grams: gramsLabel })
-                    : t('pricesPage.buySellPerGram')}
+                  <span className="min-w-0">
+                    {gramsValid
+                      ? t('pricesPage.ratesForWeight', { grams: gramsLabel })
+                      : t('pricesPage.buySellPerGram')}
+                  </span>
                 </h2>
+                {gramsValid ? (
+                  <p
+                    className="text-xs font-semibold text-[#3F6F00]"
+                    aria-live="polite"
+                  >
+                    {t('pricesPage.ratesLiveForWeight', { grams: gramsLabel })}
+                  </p>
+                ) : null}
               </div>
               <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-4">
                 {carats.map((c) => {
@@ -374,7 +447,7 @@ export default function PricesPage() {
                         <CustomerGoldPricePair
                           buyGoldTotal={pairBuy}
                           sellGoldTotal={pairSell}
-                          formatTotal={gramsValid ? fmtTotal : fmt}
+                          formatTotal={fmtKwd}
                           className="mt-1"
                         />
                       </div>
@@ -431,7 +504,7 @@ export default function PricesPage() {
                         <CustomerGoldPricePair
                           buyGoldTotal={pairBuy}
                           sellGoldTotal={pairSell}
-                          formatTotal={gramsValid ? fmtTotal : fmt}
+                          formatTotal={fmtKwd}
                           className="mt-1"
                         />
                       </div>
@@ -441,14 +514,14 @@ export default function PricesPage() {
               </div>
               {res?.silverKiloPrice != null && typeof res.silverKiloPrice === 'number' ? (
                 <p className="mt-3 text-xs text-[#64748B]">
-                  {t('pricesPage.silverKilo', { price: fmt(res.silverKiloPrice) })}
+                  {t('pricesPage.silverKilo', { price: fmtKwd(res.silverKiloPrice) })}
                 </p>
               ) : null}
             </section>
 
             <PricesHistoryChart rates={res} showSectionHeader={false} />
 
-            <p className="text-center text-[10px] text-[#64748B] sm:text-xs">{t('pricesPage.disclaimer')}</p>
+            <p className="text-center text-xs leading-relaxed text-[#64748B]">{t('pricesPage.disclaimer')}</p>
           </div>
         ) : null}
       </div>

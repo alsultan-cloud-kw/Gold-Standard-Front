@@ -14,9 +14,10 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { isStaffRole } from '@/utils/authRedirect'
 import CompanyPricesGateLanding from '@/components/company/CompanyPricesGateLanding'
+import { formatKwd } from '@/utils/productPrice'
 
 function fmt(n: number | null | undefined) {
-  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
+  return formatKwd(n)
 }
 
 function isFeaturedKarat(key: string) {

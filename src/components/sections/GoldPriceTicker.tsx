@@ -16,6 +16,7 @@ import {
 } from '../../services/api'
 import { cn } from '@/lib/utils'
 import type { PriceTrendDir } from '@/components/ProductPriceTrendArrow'
+import { formatKwd } from '@/utils/productPrice'
 
 const FLASH_MS = 1800
 
@@ -243,8 +244,7 @@ export default function GoldPriceTicker() {
   const tickerItems = useMemo(() => buildTickerItems(res), [res])
   const pulse = useTickerPricePulse(tickerItems)
 
-  const fmt = (n: number | null | undefined) =>
-    typeof n === 'number' && Number.isFinite(n) ? n.toFixed(4) : '—'
+  const fmt = (n: number | null | undefined) => formatKwd(n)
 
   const renderTickerTrack = (loopKey: string, compact = false) => (
     <>

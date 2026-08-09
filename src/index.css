@@ -5579,7 +5579,7 @@ html[dir='rtl'] .gs-app-loader__trust {
 
 .prices-quote-rail__value {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 1.05rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -6030,7 +6030,7 @@ html[dir='rtl'] .price-rate-card__weight-label {
   }
 
   .customer-gold-price-row__value {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -6045,7 +6045,7 @@ html[dir='rtl'] .price-rate-card__weight-label {
   }
 
   .customer-gold-price-row__value {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
   }
 }
 

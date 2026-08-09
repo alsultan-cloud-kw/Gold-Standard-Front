@@ -1,4 +1,4 @@
-import { Gem, Minus, Plus } from 'lucide-react'
+import { Minus, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
@@ -55,12 +55,20 @@ type Props = {
   /** Compact dark hero surface on /prices. */
   variant?: 'hero' | 'light'
   className?: string
+  /** Jump to karat board so clients see live totals for this weight. */
+  onViewRates?: () => void
 }
 
 /**
- * Gold weight entry — presets + ±, sanitized decimal input only.
+ * Gold weight entry — precision scale mark, presets + ±, live totals cue.
  */
-export function GoldWeightScale({ value, onChange, variant = 'hero', className }: Props) {
+export function GoldWeightScale({
+  value,
+  onChange,
+  variant = 'hero',
+  className,
+  onViewRates,
+}: Props) {
   const { t } = useTranslation()
   const grams = parseSensitiveGrams(value)
   const valid = Number.isFinite(grams)
@@ -85,6 +93,9 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
     onChange(draft)
   }
 
+  const hintId = 'gold-weight-scale-hint'
+  const liveId = 'gold-weight-scale-live'
+
   return (
     <div
       className={cn(
@@ -95,19 +106,37 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
         className,
       )}
     >
-      <div className="mb-2.5 flex items-center gap-2.5">
+      <div className="mb-2 flex items-start gap-2.5">
         <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0B0F19] text-[#85E307]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#0B0F19] ring-1 ring-[#85E307]/25"
           aria-hidden
         >
-          <Gem className="h-4 w-4" strokeWidth={1.75} />
+          <img
+            src="/brand/gold-weight-scale-icon.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 object-cover"
+            decoding="async"
+          />
         </span>
-        <label
-          htmlFor="gold-weight-scale"
-          className={cn('min-w-0 flex-1 text-xs font-bold', dark ? 'text-white' : 'text-[#0B0F19]')}
-        >
-          {t('pricesPage.weightGrams')}
-        </label>
+        <div className="min-w-0 flex-1">
+          <label
+            htmlFor="gold-weight-scale"
+            className={cn('block text-xs font-bold', dark ? 'text-white' : 'text-[#0B0F19]')}
+          >
+            {t('pricesPage.weightGrams')}
+          </label>
+          <p
+            id={hintId}
+            className={cn(
+              'mt-0.5 text-[11px] leading-snug sm:text-xs',
+              dark ? 'text-white/55' : 'text-[#64748B]',
+            )}
+          >
+            {t('pricesPage.weightHint')}
+          </p>
+        </div>
       </div>
 
       <div className="flex items-stretch gap-2">
@@ -116,7 +145,7 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
           onClick={() => nudge(-1)}
           disabled={!valid || grams <= GOLD_SCALE_MIN_G}
           className={cn(
-            'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition',
+            'inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg transition duration-200 enabled:cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50',
             dark
               ? 'bg-[#0B0F19] text-[#85E307] hover:bg-[#1F2937] disabled:opacity-40'
               : 'border border-black/10 bg-[#F9F9FA] text-[#0B0F19] hover:bg-[#F1F5F9] disabled:opacity-40',
@@ -144,12 +173,12 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
               onInputChange(e.clipboardData.getData('text') || '')
             }}
             className={cn(
-              'h-11 w-full rounded-lg border px-3 pe-10 text-base font-semibold tabular-nums outline-none transition focus:ring-2',
+              'h-11 w-full rounded-lg border px-3 pe-10 text-base font-semibold tabular-nums outline-none transition duration-200 focus:ring-2',
               dark
                 ? 'border-white/15 bg-white/10 text-white placeholder:text-white/35 focus:border-[#85E307] focus:bg-white/15 focus:ring-[#85E307]/25'
                 : 'border-black/10 bg-white text-[#0B0F19] placeholder:text-[#94A3B8] focus:border-[#85E307] focus:ring-[#85E307]/25',
             )}
-            aria-describedby="gold-weight-scale-unit"
+            aria-describedby={`${hintId} ${liveId} gold-weight-scale-unit`}
           />
           <span
             id="gold-weight-scale-unit"
@@ -167,7 +196,7 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
           onClick={() => nudge(1)}
           disabled={valid && grams >= GOLD_SCALE_MAX_G}
           className={cn(
-            'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition',
+            'inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg transition duration-200 enabled:cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50',
             dark
               ? 'bg-[#0B0F19] text-[#85E307] hover:bg-[#1F2937] disabled:opacity-40'
               : 'border border-black/10 bg-[#F9F9FA] text-[#0B0F19] hover:bg-[#F1F5F9] disabled:opacity-40',
@@ -179,7 +208,7 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
       </div>
 
       <div
-        className="mt-2.5 flex flex-wrap gap-1.5"
+        className="mt-2.5 flex flex-wrap gap-2"
         role="group"
         aria-label={t('pricesPage.calculatorQuickPick')}
       >
@@ -190,8 +219,9 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
               key={preset}
               type="button"
               onClick={() => setExact(preset)}
+              aria-pressed={active}
               className={cn(
-                'min-h-9 rounded-lg px-2.5 text-xs font-bold tabular-nums transition',
+                'min-h-11 min-w-[2.75rem] cursor-pointer rounded-lg px-3 text-xs font-bold tabular-nums transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50',
                 active
                   ? dark
                     ? 'bg-[#85E307] text-[#0B0F19]'
@@ -205,6 +235,46 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
             </button>
           )
         })}
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p
+          id={liveId}
+          className={cn(
+            'inline-flex min-h-8 items-center gap-2 text-[11px] font-semibold sm:text-xs',
+            dark ? 'text-[#ECFCCB]' : 'text-[#3F6F00]',
+          )}
+          aria-live="polite"
+        >
+          <span
+            className={cn(
+              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+              valid ? 'bg-[#85E307]' : dark ? 'bg-white/35' : 'bg-[#94A3B8]',
+            )}
+            aria-hidden
+          />
+          {valid
+            ? t('pricesPage.calculatorActiveBadge', { grams: formatGramsLabel(grams) })
+            : t('pricesPage.weightCtaDisabled')}
+        </p>
+
+        {onViewRates ? (
+          <button
+            type="button"
+            onClick={onViewRates}
+            disabled={!valid}
+            className={cn(
+              'inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-bold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/50 disabled:cursor-not-allowed disabled:opacity-40',
+              dark
+                ? 'bg-[#85E307] text-[#0B0F19] hover:bg-[#A3E635]'
+                : 'bg-[#0B0F19] text-[#85E307] hover:bg-[#1F2937]',
+            )}
+          >
+            {valid
+              ? t('pricesPage.weightSeeAllKarats', { grams: formatGramsLabel(grams) })
+              : t('pricesPage.weightCta')}
+          </button>
+        ) : null}
       </div>
     </div>
   )
