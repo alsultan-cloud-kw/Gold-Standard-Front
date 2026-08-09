@@ -99,7 +99,7 @@ export default function BranchesPage() {
               <span dir="ltr">{GS_CONTACT.phone}</span>
             </a>
             <GoogleReviewsBadge />
-            {!isLoading && branches.length > 0 ? (
+            {!isLoading && branches.length > 1 ? (
               <span className="branches-hero-chip inline-flex items-center rounded-full border border-[#85E307]/25 bg-[#ECFCCB]/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#3F6F00]">
                 {t('branchesPage.branchCount', { count: branches.length })}
               </span>

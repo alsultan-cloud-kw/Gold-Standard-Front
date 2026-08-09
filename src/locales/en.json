@@ -6,7 +6,7 @@
     "news": "News",
     "tradeGold": "Trade gold",
     "sellGold": "Sell gold",
-    "branches": "Branches",
+    "branches": "Showroom",
     "about": "About",
     "contact": "Contact",
     "login": "Login",
@@ -118,8 +118,8 @@
   "footer": {
     "aboutUs": "About Us",
     "aboutUsDesc": "Our story, licensing, and commitment to Kuwait investors",
-    "ourBranches": "Our Branches",
-    "ourBranchesDesc": "Visit a showroom across Kuwait",
+    "ourBranches": "Our showroom",
+    "ourBranchesDesc": "Visit us in the Central Gold Market",
     "careers": "Careers",
     "newsUpdates": "News",
     "contactUs": "Contact",
@@ -180,8 +180,8 @@
     "tickerOunceUsd": "USD",
     "tickerOunceKwd": "KWD",
     "tickerOunceKwdHint": "USD/oz × rate + admin additions (KWD/oz)",
-    "secureDelivery": "Real branches, real people",
-    "secureDeliveryDesc": "Order online or walk into any of our Kuwait branches — same prices, same team, and your piece in hand.",
+    "secureDelivery": "Real showroom, real people",
+    "secureDeliveryDesc": "Order online or visit our showroom in Kuwait’s Central Gold Market — same prices, same team, and your piece in hand.",
     "bestRates": "Support before and after the sale",
     "bestRatesDesc": "Our team answers by phone and WhatsApp — from choosing a piece to selling it back, you deal with people, not a bot.",
     "newArrivals": "New Arrivals",
@@ -332,13 +332,13 @@
     "heroCardRatesTitle": "Live rates",
     "heroCardRatesDesc": "KWD per gram, refreshed from the market so you always see fair numbers.",
     "exploreCollection": "Explore Collection",
-    "visitBranches": "Visit Our Branches",
+    "visitBranches": "Visit the showroom",
     "yearsExperience": "Years Experience",
     "happyCustomers": "Happy Customers",
     "certifiedGold": "Certified Gold",
-    "branchesCount": "Branches",
+    "branchesCount": "Showroom",
     "whyChooseUs": "Why Gold Standard",
-    "whyChooseUsDesc": "What sets us apart starts after checkout — verify your piece, sell it back anytime, and visit us in person.",
+    "whyChooseUsDesc": "What sets us apart starts after checkout — verify your piece, sell it back anytime, and visit our showroom in the Central Gold Market.",
     "whyKicker": "The difference",
     "wealthProtection": {
       "kicker": "Value that lasts",
@@ -477,7 +477,7 @@
         },
         "buyback": {
           "q": "Can I sell my gold back?",
-          "a": "Yes. Gold Standard offers a buyback on eligible bullion and coins at live sell rates. Visit a branch or contact us for current buyback prices in KWD — the same transparent rates you see on our prices page."
+          "a": "Yes. Gold Standard offers a buyback on eligible bullion and coins at live sell rates. Visit our showroom or contact us for current buyback prices in KWD — the same transparent rates you see on our prices page."
         },
         "insuredDelivery": {
           "q": "Is delivery really insured?",
@@ -485,7 +485,7 @@
         },
         "storage": {
           "q": "Can I collect or store gold with you?",
-          "a": "You can pick up at any Gold Standard branch in Kuwait, or choose insured home delivery at checkout. For members with trading accounts, vault lock-in may be available — contact us or ask in-branch for current options."
+          "a": "You can pick up at our Gold Standard showroom in the Central Gold Market, or choose insured home delivery at checkout. For members with trading accounts, vault lock-in may be available — contact us or ask in-showroom for current options."
         },
         "payments": {
           "q": "What payment methods do you accept?",
@@ -494,9 +494,9 @@
       }
     },
     "featuredCollection": "Featured Collection",
-    "ourBranches": "Our Branches",
-    "ourBranchesDesc": "Visit any of our branches across Kuwait for personalized service",
-    "viewAllBranches": "View All Branches",
+    "ourBranches": "Our showroom",
+    "ourBranchesDesc": "Visit us in the Central Gold Market for in-person service at the same live rates",
+    "viewAllBranches": "Showroom hours & directions",
     "readyToTrade": "Start shopping gold with confidence",
     "readyToTradeDesc": "Create a free account to follow live rates, save alerts, and unlock member benefits on investment coins and bars.",
     "readyKicker": "Get started",
@@ -708,11 +708,11 @@
     },
     "contact": {
       "title": "Contact Gold Standard Kuwait",
-      "description": "Contact Gold Standard for gold purchases, buyback, and branch support in Kuwait."
+      "description": "Contact Gold Standard for gold purchases, buyback, and showroom visits in Kuwait."
     },
     "branches": {
-      "title": "Gold Standard Branches & Locations · Kuwait",
-      "description": "Find Gold Standard branches in Kuwait — hours, maps, and directions."
+      "title": "Gold Standard Showroom · Central Gold Market · Kuwait",
+      "description": "Visit the Gold Standard showroom in Kuwait’s Central Gold Market — hours, map, and directions."
     },
     "cart": {
       "title": "Your Cart | Gold Standard",
@@ -1254,15 +1254,15 @@
     "secureCheckoutNote": "Secure checkout — KNET and SSL-encrypted payments in Kuwait"
   },
   "branchesPage": {
-    "kicker": "Locations",
-    "title": "Our branches",
-    "subtitle": "Visit a Gold Standard location in Kuwait for in-person service, or shop online with live KWD pricing and insured delivery.",
-    "loadError": "Could not load branches. Please try again later.",
-    "emptyTitle": "Branch list unavailable",
-    "emptyBody": "We could not load store locations right now. Contact us and we will help you find the nearest showroom.",
+    "kicker": "Visit us",
+    "title": "Our showroom",
+    "subtitle": "Visit the Gold Standard showroom in Kuwait’s Central Gold Market for in-person service, or shop online with live KWD pricing and insured delivery.",
+    "loadError": "Could not load location details. Please try again later.",
+    "emptyTitle": "Showroom details unavailable",
+    "emptyBody": "We could not load the showroom location right now. Contact us and we will share the address and directions.",
     "mainBadge": "Main",
     "type": {
-      "main": "Main branch",
+      "main": "Showroom",
       "showroom": "Showroom",
       "warehouse": "Warehouse",
       "kiosk": "Kiosk"
@@ -1276,11 +1276,11 @@
     "branchCount": "{{count}} locations",
     "mapKicker": "Map",
     "mapSectionTitle": "Find us in Kuwait",
-    "mapSectionSubtitle": "Select a branch to highlight it on the map, or tap a pin to view details.",
-    "selectBranch": "All branches",
-    "mapPartialHint": "Some branches show by address only until map coordinates are updated.",
-    "mapAria": "Branch locations map",
-    "mapFitAll": "Show all branches on map",
+    "mapSectionSubtitle": "Review the address on the map, or tap the pin for details.",
+    "selectBranch": "Location",
+    "mapPartialHint": "The location may show by address only until map coordinates are updated.",
+    "mapAria": "Showroom location map",
+    "mapFitAll": "Show showroom on map",
     "ctaKicker": "Need help?",
     "ctaTitle": "Questions before you visit?",
     "ctaBody": "Message our team or browse the shop online — same live rates and certified products.",
@@ -1518,8 +1518,8 @@
     "hoursLine": "Sat–Thu · 9:00 AM – 9:00 PM · Fri · 2:00 PM – 9:00 PM",
     "social": "Instagram",
     "visitKicker": "In person",
-    "visitBody": "Prefer to visit? See our branches for locations and directions across Kuwait.",
-    "viewBranches": "View branches",
+    "visitBody": "Prefer to visit? See our showroom in the Central Gold Market for address, map, and directions.",
+    "viewBranches": "Showroom details",
     "formTitle": "Send a message",
     "formHint": "Send your message directly to our team — we reply during store hours.",
     "name": "Full name",
@@ -1697,21 +1697,21 @@
     "visionTitle": "Our vision",
     "visionBody": "To become the preferred choice for investors — individuals and companies — seeking distinguished bullion services in Kuwait and the Gulf: manufacturing depth, regulatory compliance, digital convenience, and trust that lasts beyond a single transaction.",
     "ctaKicker": "Next step",
-    "ctaTitle": "See live prices or visit a branch",
-    "ctaBody": "Check today’s rates in KWD, or find a Gold Standard location near you.",
+    "ctaTitle": "See live prices or visit the showroom",
+    "ctaBody": "Check today’s rates in KWD, or find us in the Central Gold Market.",
     "ctaPrices": "Live prices",
-    "ctaBranches": "Our branches",
+    "ctaBranches": "Our showroom",
     "licenceKicker": "Credentials",
     "licenceTitle": "Licensed in Kuwait",
     "licenceBody": "Gold Standard operates as a licensed precious-metals business in Kuwait. Investment gold sold through our channels is tested and stamped under Ministry of Commerce and Industry (MOCI) Precious Metals Department rules before retail — Licence No. 279/2026.",
     "licenceViewDocument": "View commercial licence",
-    "licenceContactForCopy": "For a copy of our commercial registration, contact us at info@goldstandardkw.com or visit any branch.",
+    "licenceContactForCopy": "For a copy of our commercial registration, contact us at info@goldstandardkw.com or visit the showroom.",
     "licenceMociTitle": "MOCI hallmark & stamp",
     "licenceMociBody": "Under Kuwait law, gold and precious metals must be tested and stamped by the Ministry of Commerce and Industry — Precious Metals Department (ختم المعادن الثمينة). The official stamp confirms karat purity and protects buyers from unstamped or counterfeit pieces.",
     "licenceTradeTitle": "Licensed dealer of gold dedicated to investment",
     "licenceTradeBody": "We supply coins and bars with transparent live KWD pricing, secure KNET checkout, insured delivery, and product verification through our official catalog and authenticity tools.",
     "statYears": "Years of Experience",
-    "statBranches": "Branches",
+    "statBranches": "Showroom",
     "statCustomers": "Happy Customers",
     "statCertified": "Certified Products",
     "v": {
@@ -1756,13 +1756,13 @@
       },
       "firstBranch": {
         "year": "",
-        "title": "First Branch",
-        "description": "Opened our first branch in the Central Gold Market"
+        "title": "Showroom",
+        "description": "Opened our showroom in the Central Gold Market"
       },
       "expansion": {
         "year": "",
-        "title": "Expansion",
-        "description": "Expanded to 3 branches across Kuwait"
+        "title": "Digital reach",
+        "description": "Expanded access through digital channels and insured delivery across Kuwait"
       },
       "digital": {
         "year": "",

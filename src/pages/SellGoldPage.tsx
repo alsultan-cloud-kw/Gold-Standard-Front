@@ -328,7 +328,7 @@ export default function SellGoldPage() {
         )}
 
         <p className="mt-4 text-sm text-stone-500 text-center">
-          After placing the order, visit the branch with your ID to complete the transaction and receive payment.
+          After placing the order, visit the showroom with your ID to complete the transaction and receive payment.
         </p>
       </div>
     </div>

@@ -28,7 +28,7 @@ const CLAUSES_EN: NumberedClause[] = [
   },
   {
     title: 'Pure gold (investment grade)',
-    text: `"Pure gold" means 24-karat investment metal (e.g. 999.9 fineness) priced per gram without workmanship unless you select a specific bar or coin with a quoted making charge. Pickup of investment products is generally at our authorised branches (including the Central Gold Market where applicable). Serial numbers and weights are recorded at sale. Repeated micro-transactions without legitimate investment purpose may lead to restricted trading privileges.`,
+    text: `"Pure gold" means 24-karat investment metal (e.g. 999.9 fineness) priced per gram without workmanship unless you select a specific bar or coin with a quoted making charge. Pickup of investment products is generally at our authorised showroom (Central Gold Market). Serial numbers and weights are recorded at sale. Repeated micro-transactions without legitimate investment purpose may lead to restricted trading privileges.`,
   },
   {
     title: 'Payment',
@@ -68,7 +68,7 @@ const CLAUSES_EN: NumberedClause[] = [
   },
   {
     title: 'Delivery within Kuwait',
-    text: `Where delivery is offered, fees and carriers are shown at checkout (insured specialist carriers may apply). Risk transfers to the carrier upon handover; Gold Standard is not responsible for carrier delay or loss thereafter, within the limits of applicable law and insurance. Refused deliveries may incur redelivery fees; repeated refusal may require branch pickup.`,
+    text: `Where delivery is offered, fees and carriers are shown at checkout (insured specialist carriers may apply). Risk transfers to the carrier upon handover; Gold Standard is not responsible for carrier delay or loss thereafter, within the limits of applicable law and insurance. Refused deliveries may incur redelivery fees; repeated refusal may require showroom pickup.`,
   },
   {
     title: 'Governing law',
@@ -103,7 +103,7 @@ const CLAUSES_AR: NumberedClause[] = [
   },
   {
     title: 'الذهب الصافي (استثماري)',
-    text: `«الذهب الصافي» يعني معدن استثماري عيار 24 (مثل نقاوة 999.9) يُسعّر بالجرام دون مصنعية ما لم تختر سبيكة أو عملة بمصنعية محددة. الاستلام غالبًا من فروعنا المعتمدة (بما فيها سوق الذهب المركزي حيث ينطبق). تُسجَّل الأرقام التسلسلية والأوزان عند البيع. قد تُقيَّد صلاحيات التداول عند معاملات متكررة صغيرة بلا غرض استثماري مشروع.`,
+    text: `«الذهب الصافي» يعني معدن استثماري عيار 24 (مثل نقاوة 999.9) يُسعّر بالجرام دون مصنعية ما لم تختر سبيكة أو عملة بمصنعية محددة. الاستلام غالبًا من صالة عرضنا المعتمدة في سوق الذهب المركزي. تُسجَّل الأرقام التسلسلية والأوزان عند البيع. قد تُقيَّد صلاحيات التداول عند معاملات متكررة صغيرة بلا غرض استثماري مشروع.`,
   },
   {
     title: 'الدفع',
@@ -143,7 +143,7 @@ const CLAUSES_AR: NumberedClause[] = [
   },
   {
     title: 'التوصيل داخل الكويت',
-    text: `عند توفر التوصيل تُعرض الرسوم والناقل عند الدفع (قد يُستخدم ناقل متخصص مؤمَّن). تنتقل المسؤولية للناقل عند التسليم له ضمن حدود القانون والتأمين. رفض الاستلام قد يترتب عليه رسوم إعادة توصيل أو الاستلام من الفرع.`,
+    text: `عند توفر التوصيل تُعرض الرسوم والناقل عند الدفع (قد يُستخدم ناقل متخصص مؤمَّن). تنتقل المسؤولية للناقل عند التسليم له ضمن حدود القانون والتأمين. رفض الاستلام قد يترتب عليه رسوم إعادة توصيل أو الاستلام من صالة العرض.`,
   },
   {
     title: 'القانون الحاكم',
