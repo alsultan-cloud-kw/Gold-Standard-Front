@@ -51,15 +51,6 @@ function isFeaturedKarat(key: string) {
   return normalizeCaratKey(key).startsWith('24')
 }
 
-function karatDescKey(key: string) {
-  const norm = normalizeCaratKey(key)
-  if (/^24/.test(norm)) return 'pricesPage.karatDesc.24K'
-  if (/^22/.test(norm)) return 'pricesPage.karatDesc.22K'
-  if (/^21/.test(norm)) return 'pricesPage.karatDesc.21K'
-  if (/^18/.test(norm)) return 'pricesPage.karatDesc.18K'
-  return 'companyPricesPage.karatLabel'
-}
-
 function goldAccountKaratLabel(key: string) {
   return normalizeCaratKey(key).replace(/K$/i, '')
 }
@@ -378,7 +369,6 @@ export default function PricesPage() {
                           <h3 className="price-rate-card__karat">
                             {t('pricesPage.goldAccountTitle', { karat: goldAccountKaratLabel(c.key) })}
                           </h3>
-                          <p className="price-rate-card__desc">{t(karatDescKey(c.key))}</p>
                         </header>
 
                         <CustomerGoldPricePair
