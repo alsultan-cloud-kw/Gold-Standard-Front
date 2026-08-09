@@ -101,6 +101,12 @@ type PLData = {
   gross_margin?: number
   buyback_cost?: number
   operating_expenses?: number
+  operating_profit?: number
+  operating_margin?: number
+  other_income?: number
+  other_expenses?: number
+  finance_costs?: number
+  tax_expense?: number
   net_profit?: number
   net_margin?: number
   expense_breakdown?: { category_display?: string; category: string; total: number }[]
@@ -380,10 +386,11 @@ export default function AdminReports() {
     downloadCsv(`profit_loss_${dateWindow.start}_${dateWindow.end}`, ['Line', 'KWD'], [
       ['Revenue', pl.revenue ?? 0],
       ['COGS', pl.cost_of_goods_sold ?? 0],
-      ['Purchases', pl.purchases ?? 0],
       ['Gross profit', pl.gross_profit ?? 0],
-      ...(TRADING_AND_VIRTUAL_WALLET_ENABLED ? [['Buybacks', pl.buyback_cost ?? 0] as [string, number]] : []),
+      ['Purchases (informational)', pl.purchases ?? 0],
       ['Operating expenses', pl.operating_expenses ?? 0],
+      ['Operating profit', pl.operating_profit ?? (pl.gross_profit ?? 0) - (pl.operating_expenses ?? 0)],
+      ...(TRADING_AND_VIRTUAL_WALLET_ENABLED ? [['Customer vault buybacks', pl.buyback_cost ?? 0] as [string, number]] : []),
       ['Net profit', pl.net_profit ?? 0],
     ])
   }
@@ -807,10 +814,17 @@ export default function AdminReports() {
                 {[
                   ['Revenue', pl.revenue],
                   ['COGS', pl.cost_of_goods_sold],
-                  ['Purchases', pl.purchases],
                   ['Gross profit', pl.gross_profit, pl.gross_margin],
-                  ...(TRADING_AND_VIRTUAL_WALLET_ENABLED ? [['Buyback cost', pl.buyback_cost] as const] : []),
+                  ['Purchases (info)', pl.purchases],
                   ['Operating expenses', pl.operating_expenses],
+                  [
+                    'Operating profit',
+                    pl.operating_profit ?? (pl.gross_profit ?? 0) - (pl.operating_expenses ?? 0),
+                    pl.operating_margin,
+                  ],
+                  ...(TRADING_AND_VIRTUAL_WALLET_ENABLED
+                    ? [['Vault buybacks', pl.buyback_cost] as const]
+                    : []),
                   ['Net profit', pl.net_profit, pl.net_margin],
                 ].map(([label, val, pct]) => (
                   <div key={String(label)} className="p-3 bg-white rounded-lg flex justify-between">

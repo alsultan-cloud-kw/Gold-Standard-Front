@@ -297,13 +297,15 @@ export default function ProductsPage() {
         page_size: search ? 100 : 40,
       }),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => productsApi.getCategories(),
-    staleTime: 60_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   })
 
   const { data: categoryDetail, isPending: categoryDetailPending } = useQuery({

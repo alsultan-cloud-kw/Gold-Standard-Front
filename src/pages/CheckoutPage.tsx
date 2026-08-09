@@ -238,13 +238,17 @@ export default function CheckoutPage() {
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileMountReady, setTurnstileMountReady] = useState(false)
   const [quoteReviewRequired, setQuoteReviewRequired] = useState(false)
+  const [discountCodeInput, setDiscountCodeInput] = useState('')
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState('')
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
     turnstileRef.current?.reset()
   }, [])
   const { cart, clearCart } = useCart()
-  const summary = useOrderSummaryDisplay(cart, deliveryType)
+  const summary = useOrderSummaryDisplay(cart, deliveryType, {
+    discountCode: appliedDiscountCode,
+  })
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =
     useMemo(() => cartClubPricingBreakdown(cart.items), [cart.items])
   const displayTotalAfterClub = summary.useServerPreview ? summary.subtotal : chargedSubtotal
@@ -1662,6 +1666,54 @@ export default function CheckoutPage() {
                       </div>
                     )
                   })}
+                </div>
+
+                <div className="mb-4 rounded-xl border border-black/5 bg-[#F8FAFC] p-3">
+                  <p className="mb-2 text-xs font-semibold text-[#0B0F19]">
+                    {t('checkoutPage.discountCode', { defaultValue: 'Discount code' })}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      className={`${checkoutFieldClass} min-w-0 flex-1 font-mono uppercase`}
+                      value={discountCodeInput}
+                      onChange={(e) => setDiscountCodeInput(e.target.value.toUpperCase())}
+                      placeholder={t('checkoutPage.discountCodePlaceholder', {
+                        defaultValue: 'Enter code',
+                      })}
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      className={checkoutSecondaryBtnClass}
+                      onClick={() => {
+                        setAppliedDiscountCode(discountCodeInput.trim().toUpperCase())
+                        void summary.refetchPreview()
+                      }}
+                    >
+                      {t('checkoutPage.applyDiscount', { defaultValue: 'Apply' })}
+                    </button>
+                    {appliedDiscountCode ? (
+                      <button
+                        type="button"
+                        className={checkoutSecondaryBtnClass}
+                        onClick={() => {
+                          setAppliedDiscountCode('')
+                          setDiscountCodeInput('')
+                        }}
+                      >
+                        {t('checkoutPage.clearDiscount', { defaultValue: 'Clear' })}
+                      </button>
+                    ) : null}
+                  </div>
+                  {appliedDiscountCode && summary.discountAmount > 0 ? (
+                    <p className="mt-2 text-xs text-[#059669]">
+                      {t('checkoutPage.discountAppliedSave', {
+                        defaultValue: 'You save {{amount}} {{kwd}}',
+                        amount: formatOrderKwd(summary.discountAmount),
+                        kwd: t('common.kwd'),
+                      })}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="checkout-totals mb-5 space-y-2">

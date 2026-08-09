@@ -41,7 +41,8 @@ export default function CategoryGrid() {
   const { data, isLoading } = useQuery({
     queryKey: ['categories-home'],
     queryFn: () => productsApi.getCategories({ page: 1, page_size: 100 }),
-    staleTime: 5 * 60_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   })
 
   const roots = useMemo(() => {

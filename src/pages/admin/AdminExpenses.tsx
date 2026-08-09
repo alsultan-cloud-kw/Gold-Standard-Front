@@ -8,14 +8,31 @@ import { accountingApi, inventoryApi } from '../../services/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const EXPENSE_CATEGORIES = [
+  { value: 'salaries', label: 'Salaries & benefits' },
   { value: 'rent', label: 'Rent' },
   { value: 'utilities', label: 'Utilities' },
-  { value: 'salaries', label: 'Salaries' },
   { value: 'marketing', label: 'Marketing' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'supplies', label: 'Supplies' },
+  { value: 'delivery', label: 'Delivery & shipping' },
+  { value: 'payment_fees', label: 'Payment / KNET fees' },
+  { value: 'software', label: 'Software' },
+  { value: 'hosting', label: 'Hosting' },
   { value: 'insurance', label: 'Insurance' },
+  { value: 'maintenance', label: 'Repairs & maintenance' },
+  { value: 'professional', label: 'Professional / legal' },
+  { value: 'telecom', label: 'Telephone & internet' },
+  { value: 'office', label: 'Office' },
+  { value: 'security', label: 'Security' },
+  { value: 'bank_charges', label: 'Bank charges' },
+  { value: 'supplies', label: 'Supplies' },
   { value: 'taxes', label: 'Taxes' },
+  { value: 'other', label: 'Other operating' },
+]
+
+const PAYMENT_METHODS = [
+  { value: 'bank_transfer', label: 'Bank transfer' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'knet', label: 'KNET' },
+  { value: 'credit_card', label: 'Card' },
   { value: 'other', label: 'Other' },
 ]
 
@@ -44,6 +61,8 @@ export default function AdminExpenses() {
     description: '',
     amount: '',
     receipt_number: '',
+    vendor_name: '',
+    payment_method: 'bank_transfer',
   })
 
   const { data: branchesData } = useQuery({
@@ -81,6 +100,8 @@ export default function AdminExpenses() {
       description: '',
       amount: '',
       receipt_number: '',
+      vendor_name: '',
+      payment_method: 'bank_transfer',
     })
   }
 
@@ -103,6 +124,9 @@ export default function AdminExpenses() {
       description: form.description.trim() || '—',
       amount: amount.toFixed(3),
       receipt_number: form.receipt_number.trim() || null,
+      vendor_name: form.vendor_name.trim(),
+      payment_method: form.payment_method,
+      status: 'posted',
     })
   }
 
@@ -310,6 +334,27 @@ export default function AdminExpenses() {
                   className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white"
                   placeholder="0.000"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Vendor / payee</label>
+                <input
+                  type="text"
+                  value={form.vendor_name}
+                  onChange={(e) => setForm((f) => ({ ...f, vendor_name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Payment method</label>
+                <select
+                  value={form.payment_method}
+                  onChange={(e) => setForm((f) => ({ ...f, payment_method: e.target.value }))}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white"
+                >
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Receipt number (optional)</label>

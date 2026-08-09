@@ -21,7 +21,8 @@ export function FooterProductsSitemap() {
   const { data, isLoading } = useQuery({
     queryKey: ['categories-home'],
     queryFn: () => productsApi.getCategories({ page: 1, page_size: 100 }),
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   })
 
   const { roots, childrenByParent } = useMemo(() => {

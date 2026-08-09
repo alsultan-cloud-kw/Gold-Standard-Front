@@ -16,13 +16,16 @@ export function formatOrderKwd(n: number): string {
 export function useOrderSummaryDisplay(
   cart: Cart,
   deliveryType: 'physical' | 'locked' = 'locked',
+  opts?: { discountCode?: string },
 ) {
   const items = useMemo(
     () => cart.items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
     [cart.items],
   )
 
-  const previewQuery = useCheckoutOfferPreview(items, deliveryType)
+  const previewQuery = useCheckoutOfferPreview(items, deliveryType, {
+    discountCode: opts?.discountCode,
+  })
   const { data: preview, isFetching, isError, isSuccess } = previewQuery
 
   const useServer = isSuccess && !!preview && items.length > 0 && !isError

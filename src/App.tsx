@@ -26,6 +26,7 @@ import GoogleOneTapPrompt from './components/auth/GoogleOneTapPrompt'
 import AuthTransitionOverlay from './components/auth/AuthTransitionOverlay'
 import MinistryKycGate from './components/auth/MinistryKycGate'
 import { SessionExpiredModal } from './components/auth/SessionExpiredModal'
+import PromoPopupOverlay from './components/promo/PromoPopupOverlay'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import CompanyActivatePage from './pages/CompanyActivatePage'
 import { KycRequiredRoute } from './components/routing/KycRequiredRoute'
@@ -115,6 +116,7 @@ function App() {
             <AuthTransitionOverlay />
             <MinistryKycGate />
             <SessionExpiredModal />
+            <PromoPopupOverlay />
             <AppChrome>
               <SkipToContentLink />
               <main id="main-content" className="main-with-bottom-nav" tabIndex={-1}>

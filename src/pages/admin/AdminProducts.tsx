@@ -297,10 +297,15 @@ export default function AdminProducts() {
       return created
     },
     onSuccess: (created) => {
-      queryClient.invalidateQueries({ queryKey: ['adminProducts'] })
-      queryClient.invalidateQueries({ queryKey: ['inventoryStock'] })
-      queryClient.invalidateQueries({ queryKey: ['lowStock'] })
-      queryClient.invalidateQueries({ queryKey: ['inventoryDashboardSummary'] })
+      void queryClient.invalidateQueries({ queryKey: ['adminProducts'] })
+      void queryClient.invalidateQueries({ queryKey: ['inventoryStock'] })
+      void queryClient.invalidateQueries({ queryKey: ['lowStock'] })
+      void queryClient.invalidateQueries({ queryKey: ['inventoryDashboardSummary'] })
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      void queryClient.invalidateQueries({ queryKey: ['featuredProducts'] })
+      void queryClient.invalidateQueries({ queryKey: ['newArrivals'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories-home'] })
       const serial = created?.serial_number
       toast.success(
         editingSlug
@@ -318,7 +323,10 @@ export default function AdminProducts() {
   const deleteMutation = useMutation({
     mutationFn: (slug: string) => productsApi.deleteProduct(slug),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminProducts'] })
+      void queryClient.invalidateQueries({ queryKey: ['adminProducts'] })
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      void queryClient.invalidateQueries({ queryKey: ['featuredProducts'] })
+      void queryClient.invalidateQueries({ queryKey: ['newArrivals'] })
       toast.success('Product deleted')
     },
     onError: () => toast.error('Delete failed'),

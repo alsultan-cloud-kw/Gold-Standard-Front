@@ -53,7 +53,8 @@ export default function ProductDetailPage() {
       membership?: { role?: string } | null
     }>,
     enabled: isAuthenticated,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   })
   const trendProducts = useMemo(
     () => (product ? [product as Product] : []),

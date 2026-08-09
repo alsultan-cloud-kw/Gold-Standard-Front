@@ -110,13 +110,15 @@ export default function HomePage() {
   const { data: featuredProducts } = useQuery({
     queryKey: ['featuredProducts'],
     queryFn: productsApi.getFeaturedProducts,
-    staleTime: 5 * 60_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   })
 
   const { data: newArrivals } = useQuery({
     queryKey: ['newArrivals'],
     queryFn: productsApi.getNewArrivals,
-    staleTime: 5 * 60_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   })
 
   const homeTrendProducts = useMemo(() => {

@@ -1,8 +1,9 @@
 import wathaqLogo from '@/assets/partners/wathaq-logo.png'
 import sultanGoldLogo from '@/assets/partners/sultan-gold.png'
-import kfhLogo from '@/assets/partners/kfh.jpg'
+import burganLogo from '@/assets/partners/burgan.png'
+import cbkLogo from '@/assets/partners/cbk.png'
 
-export type AboutPartnerId = 'wathaq' | 'sultanGold' | 'kfh'
+export type AboutPartnerId = 'wathaq' | 'sultanGold' | 'burgan' | 'cbk'
 
 export type AboutPartner = {
   id: AboutPartnerId
@@ -10,8 +11,8 @@ export type AboutPartner = {
   logoSrc: string
   logoClassName?: string
   logoBgClassName?: string
-    featured?: boolean
-  }
+  featured?: boolean
+}
 
 export const ABOUT_PARTNERS: AboutPartner[] = [
   {
@@ -29,10 +30,17 @@ export const ABOUT_PARTNERS: AboutPartner[] = [
     logoClassName: 'h-11 sm:h-12',
   },
   {
-    id: 'kfh',
-    href: 'https://www.kfh.com/',
-    logoSrc: kfhLogo,
+    id: 'burgan',
+    href: 'https://www.burgan.com/',
+    logoSrc: burganLogo,
     logoBgClassName: 'bg-white',
-    logoClassName: 'h-9 sm:h-10',
+    logoClassName: 'h-12 sm:h-14 max-w-[85%] object-contain',
+  },
+  {
+    id: 'cbk',
+    href: 'https://www.cbk.com/',
+    logoSrc: cbkLogo,
+    logoBgClassName: 'bg-white',
+    logoClassName: 'h-10 sm:h-12 max-w-[90%] object-contain',
   },
 ]

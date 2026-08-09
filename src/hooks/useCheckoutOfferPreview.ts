@@ -39,15 +39,21 @@ function stableItemsKey(items: CheckoutPreviewPayload[]): string {
 export function useCheckoutOfferPreview(
   items: CheckoutPreviewPayload[],
   deliveryType: 'physical' | 'locked' = 'physical',
+  opts?: { discountCode?: string },
 ) {
   const key = useMemo(() => stableItemsKey(items), [items])
+  const discountCode = (opts?.discountCode || '').trim().toUpperCase()
 
   const hasToken =
     typeof window !== 'undefined' && !!localStorage.getItem('access_token')
 
   return useQuery({
-    queryKey: ['checkoutOfferPreview', key, deliveryType],
-    queryFn: () => clubsApi.checkoutPreview(items, deliveryType) as Promise<CheckoutPreviewData>,
+    queryKey: ['checkoutOfferPreview', key, deliveryType, discountCode || ''],
+    queryFn: () =>
+      clubsApi.checkoutPreview(items, deliveryType, {
+        channel: 'website',
+        ...(discountCode ? { discount_code: discountCode } : {}),
+      }) as Promise<CheckoutPreviewData>,
     enabled: hasToken && items.length > 0,
     // The quote is a price lock, not a ticker. Gold re-prices upstream every 60s, so a
     // background refetch would silently change the total the customer is reading — the exact

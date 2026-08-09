@@ -38,6 +38,8 @@ import {
   pointsCashbackApi,
   invoicesApi,
   clubsApi,
+  ownershipReportsApi,
+  type OwnershipReportRow,
   apiService,
   goldTradingApi,
   zakatApi,
@@ -1411,12 +1413,49 @@ function asOrderList(data: unknown): OrderSummary[] {
   return p?.results ?? []
 }
 
+function reportStatusLabel(
+  t: (key: string) => string,
+  status: OwnershipReportRow['status'] | string | undefined,
+): string {
+  switch (status) {
+    case 'pending':
+      return t('userDashboard.orders.reportStatusPending')
+    case 'under_review':
+      return t('userDashboard.orders.reportStatusUnderReview')
+    case 'confirmed':
+      return t('userDashboard.orders.reportStatusConfirmed')
+    case 'resolved':
+      return t('userDashboard.orders.reportStatusResolved')
+    case 'rejected':
+      return t('userDashboard.orders.reportStatusRejected')
+    default:
+      return status || ''
+  }
+}
+
 function OrdersTab() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['myOrders'],
     queryFn: () => ordersApi.getOrders({ page_size: '100' }) as Promise<unknown>,
   })
+  const { data: reportsData } = useQuery({
+    queryKey: ['myOwnershipReports'],
+    queryFn: () => ownershipReportsApi.listMine(),
+  })
+  const reportsByItem = useMemo(() => {
+    const map = new Map<string, OwnershipReportRow>()
+    const rows = reportsData?.results ?? []
+    for (const row of rows) {
+      if (!row.sale_item_id) continue
+      const prev = map.get(row.sale_item_id)
+      if (!prev || (row.created_at || '') > (prev.created_at || '')) {
+        map.set(row.sale_item_id, row)
+      }
+    }
+    return map
+  }, [reportsData])
   const orders = asOrderList(data)
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -1426,6 +1465,14 @@ function OrdersTab() {
   const end = start + pageSize
   const pageItems = orders.slice(start, end)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [reportModal, setReportModal] = useState<{
+    saleItemId: string
+    productName: string
+    reportType: 'lost' | 'stolen'
+  } | null>(null)
+  const [reportNotes, setReportNotes] = useState('')
+  const [policeRef, setPoliceRef] = useState('')
+  const [submittingReport, setSubmittingReport] = useState(false)
 
   const handleDownloadInvoice = async (order: OrderSummary) => {
     if (!order.id) {
@@ -1441,6 +1488,41 @@ function OrdersTab() {
       toast.error(detail || t('userDashboard.orders.toasts.couldNotLoadInvoice'))
     } finally {
       setDownloadingId(null)
+    }
+  }
+
+  const openReport = (saleItemId: string, productName: string, reportType: 'lost' | 'stolen') => {
+    setReportModal({ saleItemId, productName, reportType })
+    setReportNotes('')
+    setPoliceRef('')
+  }
+
+  const submitReport = async () => {
+    if (!reportModal) return
+    setSubmittingReport(true)
+    try {
+      await ownershipReportsApi.create({
+        sale_item_id: reportModal.saleItemId,
+        report_type: reportModal.reportType,
+        customer_notes: reportNotes.trim(),
+        police_report_ref:
+          reportModal.reportType === 'stolen' ? policeRef.trim() : undefined,
+      })
+      toast.success(t('userDashboard.orders.reportSuccess'))
+      setReportModal(null)
+      await queryClient.invalidateQueries({ queryKey: ['myOwnershipReports'] })
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === 'object' && 'response' in err
+          ? String(
+              (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || '',
+            )
+          : err instanceof Error
+            ? err.message
+            : ''
+      toast.error(detail || t('userDashboard.orders.reportError'))
+    } finally {
+      setSubmittingReport(false)
     }
   }
 
@@ -1506,7 +1588,7 @@ function OrdersTab() {
                 {order.id ? <PaymentActionTimeline saleId={order.id} dense /> : null}
                 {order.items && order.items.length > 0 && (
                   <ul className="mt-3 space-y-2 text-sm text-[#64748B]">
-                    {order.items.slice(0, 3).map((item) => {
+                    {order.items.map((item) => {
                       const registryUrl = resolveGsw3RegistryUrl(item.gsw3_verify_url, item.gsw3_bar_id)
                       const passportUrl = !registryUrl && item.django_verify_url?.includes('/verify/passport')
                         ? item.django_verify_url
@@ -1517,6 +1599,14 @@ function OrdersTab() {
                       const showOwnershipLink =
                         ownershipUrl &&
                         ['paid', 'delivered', 'locked', 'shipped'].includes(order.status)
+                      const canReport =
+                        showOwnershipLink &&
+                        Boolean(item.id) &&
+                        Boolean(item.unit_serial_number || item.gsw3_bar_id)
+                      const existing = item.id ? reportsByItem.get(item.id) : undefined
+                      const openReportExists =
+                        existing &&
+                        ['pending', 'under_review', 'confirmed'].includes(existing.status)
                       return (
                         <li key={item.id} className="space-y-1">
                           <div>
@@ -1524,34 +1614,69 @@ function OrdersTab() {
                             {item.total_price && ` — ${Number(item.total_price).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD`}
                           </div>
                           {showOwnershipLink && (
-                            ownershipUrl.startsWith('http') ? (
-                              <a
-                                href={ownershipUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-medium text-[#3F6F00] hover:underline"
-                              >
-                                {t('userDashboard.orders.viewDigitalOwnership')}
-                                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                              </a>
-                            ) : (
-                              <Link
-                                to={ownershipUrl}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-[#3F6F00] hover:underline"
-                              >
-                                {t('userDashboard.orders.viewDigitalOwnership')}
-                                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                              </Link>
-                            )
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                              {ownershipUrl.startsWith('http') ? (
+                                <a
+                                  href={ownershipUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-[#3F6F00] hover:underline"
+                                >
+                                  {t('userDashboard.orders.viewDigitalOwnership')}
+                                  <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                </a>
+                              ) : (
+                                <Link
+                                  to={ownershipUrl}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-[#3F6F00] hover:underline"
+                                >
+                                  {t('userDashboard.orders.viewDigitalOwnership')}
+                                  <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                </Link>
+                              )}
+                              {canReport && !openReportExists ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="text-xs font-medium text-amber-800 hover:underline"
+                                    onClick={() =>
+                                      openReport(
+                                        item.id,
+                                        item.product_name || t('userDashboard.orders.item'),
+                                        'lost',
+                                      )
+                                    }
+                                  >
+                                    {t('userDashboard.orders.reportLost')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-xs font-medium text-red-800 hover:underline"
+                                    onClick={() =>
+                                      openReport(
+                                        item.id,
+                                        item.product_name || t('userDashboard.orders.item'),
+                                        'stolen',
+                                      )
+                                    }
+                                  >
+                                    {t('userDashboard.orders.reportStolen')}
+                                  </button>
+                                </>
+                              ) : null}
+                              {existing ? (
+                                <span className="text-xs text-[#64748B]">
+                                  {reportStatusLabel(t, existing.status)}
+                                  {existing.report_type === 'stolen'
+                                    ? ` · ${t('userDashboard.orders.reportTypeStolen')}`
+                                    : ` · ${t('userDashboard.orders.reportTypeLost')}`}
+                                </span>
+                              ) : null}
+                            </div>
                           )}
                         </li>
                       )
                     })}
-                    {order.items.length > 3 && (
-                      <li className="text-[#94A3B8]">
-                        +{order.items.length - 3} {t('userDashboard.orders.more')}
-                      </li>
-                    )}
                   </ul>
                 )}
                 {order.delivery_type === 'locked' && (
@@ -1562,6 +1687,62 @@ function OrdersTab() {
           </div>
         )}
       </div>
+      {reportModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-lg"
+          >
+            <h3 className="text-base font-semibold text-[#0B0F19]">
+              {t('userDashboard.orders.reportTitle')}
+            </h3>
+            <p className="mt-1 text-sm text-[#64748B]">
+              {reportModal.productName} ·{' '}
+              {reportModal.reportType === 'stolen'
+                ? t('userDashboard.orders.reportTypeStolen')
+                : t('userDashboard.orders.reportTypeLost')}
+            </p>
+            <label className="mt-4 block text-xs font-medium text-[#475569]">
+              {t('userDashboard.orders.reportNotes')}
+              <textarea
+                className="mt-1 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm text-[#0B0F19]"
+                rows={3}
+                value={reportNotes}
+                onChange={(e) => setReportNotes(e.target.value)}
+              />
+            </label>
+            {reportModal.reportType === 'stolen' ? (
+              <label className="mt-3 block text-xs font-medium text-[#475569]">
+                {t('userDashboard.orders.reportPoliceRef')}
+                <input
+                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm text-[#0B0F19]"
+                  value={policeRef}
+                  onChange={(e) => setPoliceRef(e.target.value)}
+                />
+              </label>
+            ) : null}
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className={dashboardSecondaryBtnClass}
+                disabled={submittingReport}
+                onClick={() => setReportModal(null)}
+              >
+                {t('userDashboard.orders.reportCancel')}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-[#0B0F19] px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                disabled={submittingReport}
+                onClick={() => void submitReport()}
+              >
+                {t('userDashboard.orders.reportSubmit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {!isLoading && total > pageSize && (
         <div className={cn(dashboardPanelClass, 'flex flex-wrap items-center justify-between gap-3 text-xs text-[#64748B]')}>
           <div>

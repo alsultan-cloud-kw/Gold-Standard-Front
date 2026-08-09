@@ -1,9 +1,11 @@
+import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   Award,
   Building2,
+  ChevronDown,
   ClipboardCheck,
   Eye,
   Factory,
@@ -24,6 +26,7 @@ import {
   BadgeCheck,
   Smartphone,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { GS_BUSINESS } from '@/constants/businessCredentials'
 import { HeroTrustIcon } from '@/components/home/HeroTrustIcon'
 import { AboutPartnersSection } from '@/components/about/AboutPartnersSection'
@@ -93,9 +96,71 @@ const QC_GATES = [
 
 const STORY_PARAS = ['p1', 'p2', 'p3', 'p4', 'p5'] as const
 
+type OfferingId = (typeof OFFERINGS)[number]
+
+function OfferingCard({
+  id,
+  open,
+  onToggle,
+}: {
+  id: OfferingId
+  open: boolean
+  onToggle: () => void
+}) {
+  const { t } = useTranslation()
+  const panelId = useId()
+  const title = t(`aboutPage.offerings.${id}.title`)
+  const body = t(`aboutPage.offerings.${id}.body`)
+
+  return (
+    <li className="motion-card min-w-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className={cn(
+          'group flex h-full w-full flex-col rounded-xl border bg-white px-4 py-3.5 text-start transition',
+          open
+            ? 'border-[#85E307]/55 shadow-[0_0_0_1px_rgba(133,227,7,0.12)]'
+            : 'border-black/10 hover:border-[#85E307]/35 hover:bg-[#F9F9FA]',
+        )}
+      >
+        <span className="flex items-start justify-between gap-3">
+          <span className="text-sm font-semibold leading-snug text-[#0B0F19]">{title}</span>
+          <ChevronDown
+            className={cn(
+              'mt-0.5 h-4 w-4 shrink-0 text-[#64748B] transition-transform duration-200',
+              open && 'rotate-180 text-[#3F6F00]',
+            )}
+            aria-hidden
+          />
+        </span>
+        <span
+          id={panelId}
+          className={cn(
+            'grid transition-[grid-template-rows] duration-200 ease-out',
+            open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <span className="overflow-hidden">
+            <span className="mt-2.5 block border-t border-black/5 pt-2.5 text-xs font-normal leading-relaxed text-[#64748B] sm:text-[13px]">
+              {body}
+            </span>
+          </span>
+        </span>
+        <span className="mt-2 text-[11px] font-medium text-[#94A3B8] group-hover:text-[#3F6F00]">
+          {open ? t('aboutPage.offeringsCollapseHint') : t('aboutPage.offeringsExpandHint')}
+        </span>
+      </button>
+    </li>
+  )
+}
+
 export default function AboutPage() {
   const { t } = useTranslation()
   const heroRef = usePageEnter()
+  const [openOffering, setOpenOffering] = useState<(typeof OFFERINGS)[number] | null>(null)
 
   return (
     <div className="storefront-static-page min-h-screen">
@@ -341,12 +406,12 @@ export default function AboutPage() {
           </div>
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {OFFERINGS.map((id) => (
-              <li
+              <OfferingCard
                 key={id}
-                className="motion-card rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-semibold text-[#0B0F19]"
-              >
-                {t(`aboutPage.offerings.${id}`)}
-              </li>
+                id={id}
+                open={openOffering === id}
+                onToggle={() => setOpenOffering((prev) => (prev === id ? null : id))}
+              />
             ))}
           </ul>
         </div>

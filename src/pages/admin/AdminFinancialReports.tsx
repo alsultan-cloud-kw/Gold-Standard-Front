@@ -24,6 +24,12 @@ type PLData = {
   gross_margin?: number
   buyback_cost?: number
   operating_expenses?: number
+  operating_profit?: number
+  operating_margin?: number
+  other_income?: number
+  other_expenses?: number
+  finance_costs?: number
+  tax_expense?: number
   expense_breakdown?: { category: string; category_display?: string; total: number; count: number }[]
   net_profit?: number
   net_margin?: number
@@ -169,13 +175,6 @@ export default function AdminFinancialReports() {
                       <td className="py-2 text-right font-medium text-lime-800">{fmt(pl.gross_profit ?? 0)} {pl.currency ?? CURRENCY}</td>
                       <td className="py-2 text-right text-sm text-lime-800">{fmtPct(pl.gross_margin ?? 0)}</td>
                     </tr>
-                    {(TRADING_AND_VIRTUAL_WALLET_ENABLED && (pl.buyback_cost ?? 0) !== 0) && (
-                      <tr>
-                        <td className="py-1 text-stone-800">Buyback cost (trading)</td>
-                        <td className="py-1 text-right">{fmtCost(pl.buyback_cost!)}</td>
-                        <td className="py-1" />
-                      </tr>
-                    )}
                     <tr>
                       <td className="py-1 text-stone-800">Operating expenses</td>
                       <td className="py-1 text-right">{fmtCost(pl.operating_expenses ?? 0)}</td>
@@ -195,6 +194,21 @@ export default function AdminFinancialReports() {
                             </tbody>
                           </table>
                         </td>
+                      </tr>
+                    )}
+                    <tr className="border-b border-stone-200">
+                      <td className="py-2 font-medium text-black">Operating profit</td>
+                      <td className="py-2 text-right font-medium text-lime-800">
+                        {fmt(pl.operating_profit ?? (pl.gross_profit ?? 0) - (pl.operating_expenses ?? 0))}{' '}
+                        {pl.currency ?? CURRENCY}
+                      </td>
+                      <td className="py-2 text-right text-sm text-lime-800">{fmtPct(pl.operating_margin ?? 0)}</td>
+                    </tr>
+                    {(TRADING_AND_VIRTUAL_WALLET_ENABLED && (pl.buyback_cost ?? 0) !== 0) && (
+                      <tr>
+                        <td className="py-1 text-stone-800">Customer vault buybacks</td>
+                        <td className="py-1 text-right">{fmtCost(pl.buyback_cost!)}</td>
+                        <td className="py-1" />
                       </tr>
                     )}
                     <tr className="border-t-2 border-black/15">

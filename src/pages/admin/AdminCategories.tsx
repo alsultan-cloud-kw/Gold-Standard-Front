@@ -48,7 +48,9 @@ export default function AdminCategories() {
         image: imageFile || undefined,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminCategoriesTree'] })
+      void queryClient.invalidateQueries({ queryKey: ['adminCategoriesTree'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories-home'] })
       toast.success(editing ? 'Category updated' : 'Category created')
       setDialogOpen(false)
       resetForm()
@@ -70,7 +72,9 @@ export default function AdminCategories() {
       return productsApi.updateCategory(editing.slug, payload)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminCategoriesTree'] })
+      void queryClient.invalidateQueries({ queryKey: ['adminCategoriesTree'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories-home'] })
       toast.success('Category updated')
       setDialogOpen(false)
       setEditing(null)
@@ -82,7 +86,9 @@ export default function AdminCategories() {
   const deleteMutation = useMutation({
     mutationFn: (slug: string) => productsApi.deleteCategory(slug),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminCategoriesTree'] })
+      void queryClient.invalidateQueries({ queryKey: ['adminCategoriesTree'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories'] })
+      void queryClient.invalidateQueries({ queryKey: ['categories-home'] })
       toast.success('Category deleted')
     },
     onError: () => toast.error('Delete failed — category may have products'),

@@ -113,6 +113,30 @@ export const contactApi = {
     apiService.post<{ ok: boolean; message: string }>('/contact/', data),
 }
 
+export const promoPopupApi = {
+  getPublic: (channel: 'website' | 'mobile') =>
+    apiService.get<import('@/lib/promoPopup').PromoPopupPublic>('/accounts/promo-popup/', {
+      params: { channel },
+    }),
+}
+
+export const handpriceDiscountApi = {
+  apply: (code: string, channel: 'website' | 'mobile', source: 'promo' | 'checkout' = 'checkout') =>
+    apiService.post<{ ok: boolean; code?: string; title?: string; title_ar?: string }>(
+      '/clubs/handprice-discount/apply/',
+      { code, channel, source },
+    ),
+  clear: (channel: 'website' | 'mobile' = 'website') =>
+    apiService.post<{ ok: boolean }>('/clubs/handprice-discount/clear/', { channel }),
+  active: (channel: 'website' | 'mobile') =>
+    apiService.get<{
+      active: boolean
+      code?: string
+      title?: string
+      title_ar?: string
+    }>('/clubs/handprice-discount/active/', { params: { channel } }),
+}
+
 // Auth API
 export const authApi = {
   login: (credentials: {
@@ -1036,6 +1060,7 @@ export const clubsApi = {
   checkoutPreview: (
     items: { product_id: string; quantity: number }[],
     delivery_type: 'physical' | 'locked',
+    opts?: { channel?: 'website' | 'mobile'; discount_code?: string },
   ) =>
     apiService.post<{
       subtotal: string
@@ -1045,10 +1070,16 @@ export const clubsApi = {
       total_amount: string
       offer_title: string | null
       offer_id: string | null
+      discount_source?: string | null
       line_prices: unknown
       quote_token: string
       expires_at: string
-    }>('/clubs/checkout-preview/', { items, delivery_type }),
+    }>('/clubs/checkout-preview/', {
+      items,
+      delivery_type,
+      channel: opts?.channel || 'website',
+      ...(opts?.discount_code ? { discount_code: opts.discount_code } : {}),
+    }),
 }
 
 // Wallet API (customer wallet balance & movements)
@@ -1244,6 +1275,37 @@ export const accountsApi = {
   /** Submit bank detail change for admin approval (multipart). */
   createBankChangeRequest: (formData: FormData) =>
     apiService.post<BankChangeRequestRow>('/accounts/bank-change-requests/', formData),
+}
+
+export type OwnershipReportRow = {
+  id: string
+  report_type: 'lost' | 'stolen'
+  status: 'pending' | 'under_review' | 'confirmed' | 'resolved' | 'rejected'
+  customer_notes?: string
+  police_report_ref?: string
+  unit_serial_number?: string
+  product_name?: string
+  sale_id?: string
+  sale_item_id?: string
+  created_at?: string | null
+}
+
+export const ownershipReportsApi = {
+  listMine: (params?: { sale_item_id?: string }) =>
+    apiService.get<{ ok?: boolean; results?: OwnershipReportRow[] }>('/accounts/ownership-reports/', {
+      params,
+    }),
+
+  create: (data: {
+    sale_item_id: string
+    report_type: 'lost' | 'stolen'
+    customer_notes?: string
+    police_report_ref?: string
+  }) =>
+    apiService.post<{ ok?: boolean; report?: OwnershipReportRow; detail?: string }>(
+      '/accounts/ownership-reports/',
+      data,
+    ),
 }
 
 // Price Alerts API (gold price reminders)

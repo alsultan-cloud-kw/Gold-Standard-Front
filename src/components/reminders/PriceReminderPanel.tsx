@@ -2,8 +2,11 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePriceReminder } from './usePriceReminder'
 
+const INPUT_SHELL =
+  'mt-2 flex w-full items-stretch overflow-hidden rounded-xl border border-black/10 bg-[#F9F9FA] transition focus-within:border-[#85E307] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#85E307]/25'
+
 const INPUT_CLASS =
-  'mt-2 w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-base font-medium tabular-nums text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25 disabled:cursor-not-allowed disabled:opacity-60'
+  'min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-base font-medium tabular-nums text-[#0B0F19] outline-none placeholder:text-[#94A3B8] disabled:cursor-not-allowed disabled:opacity-60'
 
 type PriceReminderPanelProps = {
   onSaved?: () => void
@@ -54,7 +57,7 @@ export function PriceReminderPanel({ onSaved, className }: PriceReminderPanelPro
           {t('priceReminder.deltaLabel')}
         </label>
         <p className="mt-1 text-xs leading-relaxed text-[#64748B]">{t('priceReminder.deltaHint')}</p>
-        <div className="relative mt-2">
+        <div className={INPUT_SHELL}>
           <input
             id="price-reminder-delta"
             type="number"
@@ -64,11 +67,15 @@ export function PriceReminderPanel({ onSaved, className }: PriceReminderPanelPro
             value={deltaInput}
             onChange={(e) => setDeltaInput(e.target.value)}
             disabled={inputDisabled}
-            className={INPUT_CLASS + ' mt-0 pr-28'}
+            className={INPUT_CLASS}
             dir="ltr"
             placeholder="0.500"
+            aria-describedby="price-reminder-delta-unit"
           />
-          <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs font-medium text-[#64748B]">
+          <span
+            id="price-reminder-delta-unit"
+            className="flex shrink-0 items-center border-s border-black/10 bg-white/70 px-3 text-xs font-medium text-[#64748B]"
+          >
             {t('priceReminder.deltaUnit')}
           </span>
         </div>
