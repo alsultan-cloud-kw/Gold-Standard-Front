@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 export const GOLD_SCALE_STEP_G = 0.001
 export const GOLD_SCALE_MIN_G = 0.001
 export const GOLD_SCALE_MAX_G = 10_000
+/** Board default — also used when the field is cleared / left invalid. */
+export const GOLD_WEIGHT_DEFAULT_G = 1
 /** Cap raw keystrokes before parsing (blocks oversized injection payloads). */
 const MAX_WEIGHT_INPUT_LEN = 12
 const WEIGHT_PRESETS_G = [1, 5, 10, 50, 100] as const
@@ -168,6 +170,9 @@ export function GoldWeightScale({
             placeholder={t('pricesPage.gramsPlaceholder')}
             value={value}
             onChange={(e) => onInputChange(e.target.value)}
+            onBlur={() => {
+              if (!valid) setExact(GOLD_WEIGHT_DEFAULT_G)
+            }}
             onPaste={(e) => {
               e.preventDefault()
               onInputChange(e.clipboardData.getData('text') || '')

@@ -941,7 +941,7 @@
     "weightCta": "عرض الأسعار أدناه",
     "weightCtaDisabled": "أدخل وزناً لتحديث الأسعار",
     "weightSeeAllKarats": "عرض أسعار {{grams}} غ",
-    "gramsPlaceholder": "مثال: 10",
+    "gramsPlaceholder": "مثال: 1",
     "ratesForWeight": "أسعار {{grams}} غ",
     "ratesLiveForWeight": "محدَّثة لـ {{grams}} غ",
     "buySellPerGram": "شراء / بيع د.ك/غ",

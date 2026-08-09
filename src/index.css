@@ -5743,7 +5743,7 @@ html[dir='rtl'] .price-rate-card__live {
 .price-rate-card__karat {
   margin: 0;
   font-family: inherit;
-  font-size: clamp(0.95rem, 5.5cqi, 1.35rem);
+  font-size: clamp(0.875rem, 4.2cqi, 1.125rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0b0f19;
@@ -5987,7 +5987,7 @@ html[dir='rtl'] .price-rate-card__weight-label {
   }
 
   .price-rate-card__karat {
-    font-size: clamp(0.9rem, 6cqi, 1.15rem);
+    font-size: clamp(0.85rem, 5.5cqi, 1.05rem);
   }
 
   .price-rate-card__desc {
@@ -6026,11 +6026,19 @@ html[dir='rtl'] .price-rate-card__weight-label {
   }
 
   .customer-gold-price-pair {
-    padding: 0.35rem !important;
+    padding: 0.45rem !important;
+  }
+
+  .customer-gold-price-row__label {
+    font-size: 0.75rem;
   }
 
   .customer-gold-price-row__value {
-    font-size: 0.8125rem;
+    font-size: clamp(1.05rem, 7.5cqi, 1.2rem) !important;
+  }
+
+  .customer-gold-price-row__unit {
+    font-size: 0.8125rem !important;
   }
 }
 
@@ -6045,7 +6053,7 @@ html[dir='rtl'] .price-rate-card__weight-label {
   }
 
   .customer-gold-price-row__value {
-    font-size: 0.75rem;
+    font-size: clamp(1rem, 8.5cqi, 1.125rem) !important;
   }
 }
 
@@ -6288,7 +6296,7 @@ html[dir='rtl'] .price-desk-card--featured::before {
   }
 
   .price-rate-card__karat {
-    font-size: clamp(0.95rem, 7cqi, 1.2rem);
+    font-size: clamp(0.85rem, 6cqi, 1.05rem);
   }
 
   .price-rate-card__desc {

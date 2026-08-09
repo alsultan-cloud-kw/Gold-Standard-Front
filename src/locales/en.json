@@ -941,7 +941,7 @@
     "weightCta": "See rates below",
     "weightCtaDisabled": "Enter a weight to update prices",
     "weightSeeAllKarats": "View prices for {{grams}} g",
-    "gramsPlaceholder": "e.g. 10",
+    "gramsPlaceholder": "e.g. 1",
     "ratesForWeight": "Prices for {{grams}} g",
     "ratesLiveForWeight": "Updated for {{grams}} g",
     "buySellPerGram": "Buy / Sell KWD/g",

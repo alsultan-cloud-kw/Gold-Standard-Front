@@ -66,7 +66,7 @@ export function CustomerGoldPricePair({
   return (
     <div
       className={cn(
-        'customer-gold-price-pair space-y-1.5 rounded-xl border border-black/8 bg-[#F9F9FA] p-1.5 sm:space-y-2 sm:p-2.5',
+        'customer-gold-price-pair space-y-2 rounded-xl border border-black/8 bg-[#F9F9FA] p-2 sm:space-y-2.5 sm:p-2.5',
         className,
       )}
     >
@@ -108,14 +108,14 @@ function PriceRow({
       className={cn(
         'customer-gold-price-row min-w-0 rounded-lg',
         stacked
-          ? 'flex flex-col gap-0.5 px-2 py-1.5 sm:px-2.5 sm:py-2'
-          : 'flex items-baseline justify-between gap-x-2 gap-y-1 px-2.5 py-2 sm:px-3 sm:py-2.5',
+          ? 'flex flex-col gap-1 px-2.5 py-2 sm:px-3 sm:py-2.5'
+          : 'flex items-baseline justify-between gap-x-2 gap-y-1 px-2.5 py-2.5 sm:px-3 sm:py-3',
         dark ? 'bg-[#0B0F19]/40' : 'bg-white',
       )}
     >
       <span
         className={cn(
-          'customer-gold-price-row__label shrink-0 text-[11px] font-medium sm:text-xs',
+          'customer-gold-price-row__label shrink-0 text-xs font-medium sm:text-[13px]',
           dark ? 'text-white/60' : 'text-[#64748B]',
         )}
       >
@@ -125,8 +125,10 @@ function PriceRow({
       <span
         dir="ltr"
         className={cn(
-          'customer-gold-price-row__value max-w-full min-w-0 font-bold tabular-nums leading-tight',
-          stacked ? 'text-start text-[14px] sm:text-[15px]' : 'text-end text-sm sm:text-base',
+          'customer-gold-price-row__value max-w-full min-w-0 font-extrabold tabular-nums tracking-tight leading-none',
+          stacked
+            ? 'text-start text-[1.125rem] sm:text-[1.25rem] md:text-[1.35rem]'
+            : 'text-end text-base sm:text-lg md:text-xl',
           dark
             ? emphasis === 'buy'
               ? 'text-[#A3E635]'
@@ -139,7 +141,7 @@ function PriceRow({
         <span className="[overflow-wrap:anywhere]">{value}</span>
         <span
           className={cn(
-            'customer-gold-price-row__unit ms-1 text-[11px] font-semibold',
+            'customer-gold-price-row__unit ms-1.5 text-sm font-semibold sm:text-[0.9375rem]',
             dark ? 'text-white/45' : 'text-[#94A3B8]',
           )}
         >

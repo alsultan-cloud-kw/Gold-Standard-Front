@@ -30,6 +30,7 @@ import { PreciousMetalMark, preciousMetalIdFromRowKey } from '@/components/price
 import { CustomerGoldPricePair } from '@/components/prices/CustomerGoldPricePair'
 import {
   formatGramsLabel,
+  GOLD_WEIGHT_DEFAULT_G,
   GoldWeightScale,
   parseSensitiveGrams,
 } from '@/components/prices/GoldWeightScale'
@@ -62,15 +63,17 @@ export default function PricesPage() {
   const { user } = useAuth()
   const rootRef = usePageEnter()
   const isStaff = isStaffRole(user?.role)
-  /** Default 10 g so karat cards match the reference «أسعار 10 غ» board. */
-  const [gramsInput, setGramsInput] = useState('10')
+  /** Default 1 g (per-gram board). Cleared / invalid input restores to 1 on blur. */
+  const [gramsInput, setGramsInput] = useState(String(GOLD_WEIGHT_DEFAULT_G))
   /** Weight scale stays collapsed on mobile so the chart is visible above the fold. */
   const [weightOpen, setWeightOpen] = useState(false)
   const [ratesFlash, setRatesFlash] = useState(false)
   const ratesSectionRef = useRef<HTMLElement>(null)
-  const grams = parseSensitiveGrams(gramsInput)
-  const gramsValid = Number.isFinite(grams) && grams > 0
-  const gramsLabel = gramsValid ? formatGramsLabel(grams) : gramsInput
+  const parsedGrams = parseSensitiveGrams(gramsInput)
+  const gramsValid = Number.isFinite(parsedGrams) && parsedGrams > 0
+  /** Empty / invalid drafts still price the board at 1 g — never snap back to a 10 g example. */
+  const grams = gramsValid ? parsedGrams : GOLD_WEIGHT_DEFAULT_G
+  const gramsLabel = formatGramsLabel(grams)
   const prevGramsRef = useRef(gramsLabel)
 
   useEffect(() => {
@@ -298,14 +301,10 @@ export default function PricesPage() {
                 >
                   <span className="min-w-0">
                     <span className="block text-xs font-bold text-white">{t('pricesPage.weightGrams')}</span>
-                    {gramsValid ? (
-                      <span className="block text-[11px] tabular-nums text-white/55">
-                        {t('pricesPage.weightHintShort')} ·{' '}
-                        {t('pricesPage.ratesForWeight', { grams: gramsLabel })}
-                      </span>
-                    ) : (
-                      <span className="block text-[11px] text-white/55">{t('pricesPage.weightHintShort')}</span>
-                    )}
+                    <span className="block text-[11px] tabular-nums text-white/55">
+                      {t('pricesPage.weightHintShort')} ·{' '}
+                      {t('pricesPage.ratesForWeight', { grams: gramsLabel })}
+                    </span>
                   </span>
                   <ChevronDown
                     className={cn(
@@ -398,28 +397,21 @@ export default function PricesPage() {
                 >
                   <span className="h-5 w-1.5 shrink-0 rounded-full bg-[#85E307]" aria-hidden />
                   <span className="min-w-0">
-                    {gramsValid
-                      ? t('pricesPage.ratesForWeight', { grams: gramsLabel })
-                      : t('pricesPage.buySellPerGram')}
+                    {t('pricesPage.ratesForWeight', { grams: gramsLabel })}
                   </span>
                 </h2>
-                {gramsValid ? (
-                  <p
-                    className="text-xs font-semibold text-[#3F6F00]"
-                    aria-live="polite"
-                  >
-                    {t('pricesPage.ratesLiveForWeight', { grams: gramsLabel })}
-                  </p>
-                ) : null}
+                <p
+                  className="text-xs font-semibold text-[#3F6F00]"
+                  aria-live="polite"
+                >
+                  {t('pricesPage.ratesLiveForWeight', { grams: gramsLabel })}
+                </p>
               </div>
               <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-4">
                 {carats.map((c) => {
-                  const buyTotal = c.buyTotal != null ? c.buyTotal : null
-                  const sellTotal = c.sellTotal != null ? c.sellTotal : null
-                  const buyForWeight = gramsValid ? caratGramTotals(c, grams).buyTotal : null
-                  const sellForWeight = gramsValid ? caratGramTotals(c, grams).sellTotal : null
-                  const pairBuy = gramsValid ? sellForWeight : sellTotal
-                  const pairSell = gramsValid ? buyForWeight : buyTotal
+                  const { buyTotal: buyForWeight, sellTotal: sellForWeight } = caratGramTotals(c, grams)
+                  const pairBuy = sellForWeight
+                  const pairSell = buyForWeight
                   const tileDir = resolveDir(c.key)
                   const featured = isFeaturedKarat(c.key)
 
@@ -469,12 +461,12 @@ export default function PricesPage() {
                   const metalId = preciousMetalIdFromRowKey(key)
                   const spot = m ?? { key, buyTotal: null, sellTotal: null }
                   const tileDir = resolveDir(spot.key)
-                  const buyTotal = spot.buyTotal != null ? spot.buyTotal : null
-                  const sellTotal = spot.sellTotal != null ? spot.sellTotal : null
-                  const buyForWeight = gramsValid ? caratGramTotals(spot, grams).buyTotal : null
-                  const sellForWeight = gramsValid ? caratGramTotals(spot, grams).sellTotal : null
-                  const pairBuy = gramsValid ? sellForWeight : sellTotal
-                  const pairSell = gramsValid ? buyForWeight : buyTotal
+                  const { buyTotal: buyForWeight, sellTotal: sellForWeight } = caratGramTotals(
+                    spot,
+                    grams,
+                  )
+                  const pairBuy = sellForWeight
+                  const pairSell = buyForWeight
 
                   return (
                     <article key={key} className="price-rate-card">
