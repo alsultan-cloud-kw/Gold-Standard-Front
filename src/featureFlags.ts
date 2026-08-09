@@ -1,8 +1,9 @@
 /**
- * TRADING & VIRTUAL WALLET — temporarily disabled.
- * Routes, nav links, dashboard tabs, and wallet checkout are gated on this flag.
+ * TRADING & VIRTUAL WALLET — OFF (commented out of customer UI).
+ * Routes, nav links (تداول الذهب), dashboard tabs, and wallet checkout are gated on this flag.
+ * Keep code in repo; flip to `true` only when the trading desk is ready to ship.
  */
-export const TRADING_AND_VIRTUAL_WALLET_ENABLED = true;
+export const TRADING_AND_VIRTUAL_WALLET_ENABLED = false;
 
 /**
  * Wallet funding + wallet-as-payment — OFF until deposits are gateway-backed.
