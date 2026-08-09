@@ -742,6 +742,10 @@ export const ordersApi = {
     customer_email?: string
     notes?: string
     turnstile_token?: string
+    /** Sales channel for GSW3 / Hub ops (website | mobile | pos). */
+    channel?: 'website' | 'mobile' | 'pos'
+    /** Device platform tag for Hub history. */
+    platform?: 'ios' | 'android' | 'web' | 'pos' | 'mobile'
   }) =>
     apiService.post<unknown>('/accounting/sales/place-order/', data),
 

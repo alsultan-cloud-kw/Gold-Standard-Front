@@ -722,6 +722,8 @@ export default function CheckoutPage() {
         customer_phone: phone || undefined,
         customer_email: customerEmail,
         notes,
+        channel: 'website',
+        platform: 'web',
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })) as SaleResponse
 
