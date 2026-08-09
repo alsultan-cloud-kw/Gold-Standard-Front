@@ -51,23 +51,13 @@ function usePrefersReducedMotion(): boolean {
 }
 
 function buildTickerItems(res: DaralsabaekPublicRatesResponse | undefined): DaralsabaekPublicCarat[] {
-  const items: DaralsabaekPublicCarat[] = [...(res?.carats ?? [])]
-  const seen = new Set(items.map((c) => normalizeMetalKey(c.key)))
-
-  const append = (spot: DaralsabaekPublicCarat | null | undefined, fallbackKey: string) => {
-    if (!spot) return
-    const key = normalizeMetalKey(String(spot.key || fallbackKey))
-    if (seen.has(key)) return
-    if (spot.buyTotal == null && spot.sellTotal == null) return
-    seen.add(key)
-    items.push(spot)
-  }
-
-  append(res?.silver ?? null, 'AG')
-  append(res?.platinum ?? null, 'PT')
-  append(res?.palladium ?? null, 'PD')
-
-  return items
+  // Gold karats only — do not append silver / platinum / palladium.
+  return (res?.carats ?? []).filter((c) => {
+    const key = normalizeMetalKey(c.key)
+    if (!key) return false
+    if (/^(AG|XAG|SILVER|PT|XPT|PLATINUM|PD|XPD|PALLADIUM)/.test(key)) return false
+    return c.buyTotal != null || c.sellTotal != null
+  })
 }
 
 type TickerPulse = {

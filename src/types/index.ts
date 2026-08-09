@@ -158,6 +158,9 @@ export interface Product {
   making_charge_amount: number
   description_ar?: string
   description_en?: string
+  /** Optional factory / workshop notes (customer-facing when set). */
+  factory_notes_ar?: string
+  factory_notes_en?: string
   current_price: number
   metal_value: number
   making_charge_value: number

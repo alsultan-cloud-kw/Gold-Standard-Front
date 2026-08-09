@@ -5740,13 +5740,13 @@ html[dir='rtl'] .price-rate-card__live {
 
 .price-rate-card__karat {
   margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: clamp(1.35rem, 5vw, 1.75rem);
+  font-family: inherit;
+  font-size: clamp(1.05rem, 3.8vw, 1.35rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: #0b0f19;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1.25;
 }
 
 .price-rate-card__desc {

@@ -235,10 +235,7 @@ export default function HomePage() {
       </section>
       </div>
 
-      <div className="order-7 lg:order-none">
-        <SultanGoldTrustStats bullionDockRef={bullionTrustRef} />
-      </div>
-
+      {/* Live chart — directly under hero */}
       <div className="order-2 lg:order-none">
         <RevealSection as="div" mode="section" y="sm">
           <LiveGoldMarketSection />
@@ -264,19 +261,15 @@ export default function HomePage() {
         </RevealSection>
       </div>
 
-      <div className="order-8 lg:order-none">
-        <WealthProtectionSection />
-      </div>
-
-      <div className="order-9 lg:order-none">
-        <RevealSection as="div" mode="section" y="md">
-          <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
-        </RevealSection>
-      </div>
-
       <div className="order-4 lg:order-none">
         <RevealSection as="div" mode="section" y="sm">
           <CategoryGrid />
+        </RevealSection>
+      </div>
+
+      <div className="order-5 lg:order-none">
+        <RevealSection as="div" mode="section" y="sm">
+          <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
         </RevealSection>
       </div>
 
@@ -291,17 +284,26 @@ export default function HomePage() {
         </RevealSection>
       </div>
 
-      <div className="order-5 lg:order-none">
-        <RevealSection as="div" mode="section" y="sm">
-          <NewArrivalsSection products={(newArrivals as Product[]) ?? []} fetchTrends={fetchTrends} />
+      <div className="order-7 lg:order-none">
+        <InvestorsClubSection />
+      </div>
+
+      {/* Sultan Gold heritage stats — after products, categories, and club */}
+      <div className="order-8 lg:order-none">
+        <SultanGoldTrustStats bullionDockRef={bullionTrustRef} />
+      </div>
+
+      <div className="order-9 lg:order-none">
+        <WealthProtectionSection />
+      </div>
+
+      <div className="order-10 lg:order-none">
+        <RevealSection as="div" mode="section" y="md">
+          <GoldAssetComparisonSection bullionDockRef={bullionFinalRef} />
         </RevealSection>
       </div>
 
       <div className="order-11 lg:order-none">
-        <InvestorsClubSection />
-      </div>
-
-      <div className="order-12 lg:order-none">
         <RevealSection as="div" mode="section" y="sm">
           <HomeFaqSection />
         </RevealSection>
@@ -313,7 +315,7 @@ export default function HomePage() {
       <HomeNewsSection />
       */}
 
-      <div className="order-[13] lg:order-none">
+      <div className="order-12 lg:order-none">
       <RevealSection as="div" mode="section" y="md">
       <section className="home-section">
         <div className="home-section-inner">

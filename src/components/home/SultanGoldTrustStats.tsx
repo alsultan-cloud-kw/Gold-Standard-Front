@@ -9,7 +9,7 @@ import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
 type Props = {
   /** Primary settle — heritage logo / kicker block */
   bullionDockRef?: RefObject<HTMLDivElement | null>
-  /** Exit — end of trust stats, before live chart */
+  /** Optional exit dock at end of trust stats */
   bullionTrustEndRef?: RefObject<HTMLDivElement | null>
 }
 

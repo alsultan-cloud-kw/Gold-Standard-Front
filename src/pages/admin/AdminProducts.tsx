@@ -76,6 +76,8 @@ export default function AdminProducts() {
     making_charge_amount: '0',
     description_ar: '',
     description_en: '',
+    factory_notes_ar: '',
+    factory_notes_en: '',
     brand: 'Gold Standard',
     status: 'active',
     is_featured: false,
@@ -168,6 +170,8 @@ export default function AdminProducts() {
       making_charge_amount: '0',
       description_ar: '',
       description_en: '',
+      factory_notes_ar: '',
+      factory_notes_en: '',
       status: 'active',
       is_featured: false,
       brand: 'Gold Standard',
@@ -219,6 +223,8 @@ export default function AdminProducts() {
         making_charge_amount: String(detail.making_charge_amount ?? '0'),
         description_ar: String(detail.description_ar ?? ''),
         description_en: String(detail.description_en ?? ''),
+        factory_notes_ar: String(detail.factory_notes_ar ?? ''),
+        factory_notes_en: String(detail.factory_notes_en ?? ''),
         brand: String(detail.brand ?? 'Gold Standard'),
         status: String(detail.status ?? 'active'),
         is_featured: Boolean(detail.is_featured),
@@ -270,6 +276,8 @@ export default function AdminProducts() {
         making_charge_amount: making,
         description_ar: form.description_ar.trim(),
         description_en: form.description_en.trim(),
+        factory_notes_ar: form.factory_notes_ar.trim(),
+        factory_notes_en: form.factory_notes_en.trim(),
         brand: form.brand.trim() || 'Gold Standard',
         status: form.status,
         is_featured: form.is_featured,
@@ -488,6 +496,31 @@ export default function AdminProducts() {
                   placeholder="تفاصيل للعميل — مطلوب إنجليزي أو عربي على الأقل."
                   value={form.description_ar}
                   onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-black/80">
+                  Factory / workshop notes (EN) — optional
+                </label>
+                <textarea
+                  className={inputClass + ' min-h-[72px] resize-y'}
+                  rows={3}
+                  placeholder="Optional notes from the factory or workshop…"
+                  value={form.factory_notes_en}
+                  onChange={(e) => setForm({ ...form, factory_notes_en: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-black/80">
+                  ملاحظات المصنع / الورشة (عربي) — اختياري
+                </label>
+                <textarea
+                  className={inputClass + ' min-h-[72px] resize-y'}
+                  rows={3}
+                  dir="rtl"
+                  placeholder="ملاحظات اختيارية من المصنع أو الورشة…"
+                  value={form.factory_notes_ar}
+                  onChange={(e) => setForm({ ...form, factory_notes_ar: e.target.value })}
                 />
               </div>
               {roots.length > 0 ? (

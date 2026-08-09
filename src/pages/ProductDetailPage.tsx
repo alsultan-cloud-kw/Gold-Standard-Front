@@ -71,6 +71,8 @@ export default function ProductDetailPage() {
     name_en?: string
     description_ar?: string
     description_en?: string
+    factory_notes_ar?: string
+    factory_notes_en?: string
     barcode_image_url?: string
     barcode_value?: string
     images?: { image: string | null }[]
@@ -96,6 +98,11 @@ export default function ProductDetailPage() {
   const caratLabel = formatProductCaratLabel(p.carat, isAr ? 'ar' : 'en')
   const descriptionText = (
     isAr ? (p.description_ar || p.description_en || '') : (p.description_en || p.description_ar || '')
+  ).trim()
+  const factoryNotesText = (
+    isAr
+      ? (p.factory_notes_ar || p.factory_notes_en || '')
+      : (p.factory_notes_en || p.factory_notes_ar || '')
   ).trim()
 
   const sellPerGramLive = liveSellPricePerGramForProduct(p, clubPricingActive)
@@ -219,20 +226,6 @@ export default function ProductDetailPage() {
                     )}
                   </button>
                 ))}
-              </div>
-            ) : null}
-
-            {descriptionText ? (
-              <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
-                <h2 className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#64748B]">
-                  {t('productDetail.descriptionHeading')}
-                </h2>
-                <p
-                  dir="auto"
-                  className="text-sm leading-relaxed text-[#475569] sm:text-base whitespace-pre-wrap"
-                >
-                  {descriptionText}
-                </p>
               </div>
             ) : null}
           </div>
@@ -409,6 +402,44 @@ export default function ProductDetailPage() {
                   </div>
                 ) : null}
               </>
+            ) : null}
+
+            {/* Description — after barcode, before quantity (same stack order on mobile + desktop) */}
+            {descriptionText ? (
+              <div className="mb-5 rounded-2xl border border-black/10 bg-white p-5">
+                <h2 className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#64748B]">
+                  {t('productDetail.descriptionHeading')}
+                </h2>
+                <p
+                  dir="auto"
+                  className="whitespace-pre-wrap text-sm leading-relaxed text-[#475569] sm:text-base"
+                >
+                  {descriptionText}
+                </p>
+              </div>
+            ) : null}
+
+            {factoryNotesText ? (
+              <details className="mb-5 group rounded-2xl border border-black/10 bg-white open:shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-[#0C1512] marker:content-none [&::-webkit-details-marker]:hidden">
+                  <span>{t('productDetail.factoryNotesHeading')}</span>
+                  <span
+                    className="text-lg font-normal leading-none text-[#94A3B8] transition group-open:rotate-0"
+                    aria-hidden
+                  >
+                    <span className="group-open:hidden">+</span>
+                    <span className="hidden group-open:inline">−</span>
+                  </span>
+                </summary>
+                <div className="border-t border-black/5 px-5 pb-5 pt-3">
+                  <p
+                    dir="auto"
+                    className="whitespace-pre-wrap text-sm leading-relaxed text-[#475569] sm:text-base"
+                  >
+                    {factoryNotesText}
+                  </p>
+                </div>
+              </details>
             ) : null}
 
             {outOfStock ? (

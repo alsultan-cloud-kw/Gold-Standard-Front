@@ -517,6 +517,8 @@ export const productsApi = {
     making_charge_amount?: number
     description_ar?: string
     description_en?: string
+    factory_notes_ar?: string
+    factory_notes_en?: string
     brand?: string
     status?: string
     is_featured?: boolean
@@ -550,6 +552,9 @@ export const productsApi = {
       making_charge_amount: number
       description_ar: string
       description_en: string
+      factory_notes_ar: string
+      factory_notes_en: string
+      brand: string
       status: string
       is_featured: boolean
     }>
