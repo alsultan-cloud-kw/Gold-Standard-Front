@@ -274,11 +274,11 @@ export default function PricesPage() {
                 >
                   <span className="min-w-0">
                     <span className="block text-xs font-bold text-white">{t('pricesPage.weightGrams')}</span>
-                    <span className="block text-[10px] tabular-nums text-white/55">
-                      {gramsValid
-                        ? t('pricesPage.ratesForWeight', { grams: gramsLabel })
-                        : t('pricesPage.scalePrecision')}
-                    </span>
+                    {gramsValid ? (
+                      <span className="block text-[10px] tabular-nums text-white/55">
+                        {t('pricesPage.ratesForWeight', { grams: gramsLabel })}
+                      </span>
+                    ) : null}
                   </span>
                   <ChevronDown
                     className={cn(
@@ -339,7 +339,7 @@ export default function PricesPage() {
                     : t('pricesPage.buySellPerGram')}
                 </h2>
               </div>
-              <div className="price-rate-board grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
+              <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-4">
                 {carats.map((c) => {
                   const buyTotal = c.buyTotal != null ? c.buyTotal : null
                   const sellTotal = c.sellTotal != null ? c.sellTotal : null
@@ -389,8 +389,9 @@ export default function PricesPage() {
                 <span className="h-5 w-1.5 shrink-0 rounded-full bg-[#85E307]" aria-hidden />
                 {t('pricesPage.preciousKicker')}
               </h2>
-              <div className="price-rate-board grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4">
-                {preciousRows.map(({ key, data: m }, metalIndex) => {
+              {/* 3-up only from xl — iPad 3-col was clipping د.ك amounts */}
+              <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-3">
+                {preciousRows.map(({ key, data: m }) => {
                   const metalLabel = t(PRECIOUS_METAL_LABEL_KEYS[key])
                   const metalId = preciousMetalIdFromRowKey(key)
                   const spot = m ?? { key, buyTotal: null, sellTotal: null }
@@ -403,13 +404,7 @@ export default function PricesPage() {
                   const pairSell = gramsValid ? buyForWeight : buyTotal
 
                   return (
-                    <article
-                      key={key}
-                      className={cn(
-                        'price-rate-card',
-                        metalIndex === preciousRows.length - 1 && 'col-span-2 sm:col-span-1',
-                      )}
-                    >
+                    <article key={key} className="price-rate-card">
                       <div className="price-rate-card__rail" aria-hidden="true" />
                       <div className="price-rate-card__body">
                         <div className="price-rate-card__top">

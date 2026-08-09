@@ -1,38 +1,50 @@
-import { Minus, Plus, Scale } from 'lucide-react'
+import { Gem, Minus, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
-/** Jeweler-grade step — 1 milligram. */
+/** Fine step for ± controls — 1 milligram. */
 export const GOLD_SCALE_STEP_G = 0.001
 export const GOLD_SCALE_MIN_G = 0.001
 export const GOLD_SCALE_MAX_G = 10_000
+/** Cap raw keystrokes before parsing (blocks oversized injection payloads). */
+const MAX_WEIGHT_INPUT_LEN = 12
 const WEIGHT_PRESETS_G = [1, 5, 10, 50, 100] as const
 
+/**
+ * Sanitize weight draft: digits + one decimal only.
+ * Strips control chars, markup, and injection punctuation — never trust raw input.
+ */
 export function normalizeWeightDraft(raw: string): string {
-  return raw
-    .trim()
+  if (typeof raw !== 'string') return ''
+  const capped = raw.length > 64 ? raw.slice(0, 64) : raw
+  return capped
+    .replace(/[\u0000-\u001F\u007F\u0080-\u009F]/g, '')
+    .replace(/[<>"'`\\;/(){}[\]$=]/g, '')
     .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
     .replace(/,/g, '.')
     .replace(/[^\d.]/g, '')
     .replace(/(\..*)\./g, '$1')
+    .slice(0, MAX_WEIGHT_INPUT_LEN)
 }
 
-/** Parse grams for a sensitive gold scale (up to 0.001 g). */
+/** Parse grams after sanitization (up to 0.001 g). Rejects non-numeric / malicious shapes. */
 export function parseSensitiveGrams(input: string): number {
   const normalized = normalizeWeightDraft(input)
   if (!normalized || normalized === '.') return Number.NaN
-  if (!/^(?:\d+\.?\d{0,3}|\.\d{1,3})$/.test(normalized)) return Number.NaN
+  // Strict decimal only — no exp, hex, or trailing junk.
+  if (!/^(?:\d{1,7}(?:\.\d{0,3})?|\.\d{1,3})$/.test(normalized)) return Number.NaN
   const n = Number(normalized)
   if (!Number.isFinite(n) || n <= 0) return Number.NaN
-  return Math.min(GOLD_SCALE_MAX_G, Math.round(n * 1000) / 1000)
+  if (n > GOLD_SCALE_MAX_G) return GOLD_SCALE_MAX_G
+  return Math.round(n * 1000) / 1000
 }
 
 export function formatGramsLabel(grams: number): string {
   return String(Number(grams.toFixed(3)))
 }
 
-function clampScale(n: number): number {
+function clampGrams(n: number): number {
   const rounded = Math.round(n * 1000) / 1000
   return Math.min(GOLD_SCALE_MAX_G, Math.max(GOLD_SCALE_MIN_G, rounded))
 }
@@ -46,7 +58,7 @@ type Props = {
 }
 
 /**
- * Sensitive gold weight scale — 0.001 g steps, quick picks, live totals via parent state.
+ * Gold weight entry — presets + ±, sanitized decimal input only.
  */
 export function GoldWeightScale({ value, onChange, variant = 'hero', className }: Props) {
   const { t } = useTranslation()
@@ -54,7 +66,7 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
   const valid = Number.isFinite(grams)
   const dark = variant === 'hero'
 
-  const setExact = (n: number) => onChange(formatGramsLabel(clampScale(n)))
+  const setExact = (n: number) => onChange(formatGramsLabel(clampGrams(n)))
 
   const nudge = (dir: 1 | -1) => {
     const base = valid ? grams : 0
@@ -63,12 +75,12 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
 
   const onInputChange = (raw: string) => {
     const draft = normalizeWeightDraft(raw)
-    // Allow empty / trailing decimal while typing; reject >3 decimal places.
     if (draft === '' || draft === '.') {
       onChange(draft)
       return
     }
     const parts = draft.split('.')
+    if (parts[0] && parts[0].length > 7) return
     if (parts[1] && parts[1].length > 3) return
     onChange(draft)
   }
@@ -85,25 +97,17 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
     >
       <div className="mb-2.5 flex items-center gap-2.5">
         <span
-          className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-            dark ? 'bg-[#0B0F19] text-[#85E307]' : 'bg-[#0B0F19] text-[#85E307]',
-          )}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0B0F19] text-[#85E307]"
           aria-hidden
         >
-          <Scale className="h-4 w-4" strokeWidth={1.75} />
+          <Gem className="h-4 w-4" strokeWidth={1.75} />
         </span>
-        <div className="min-w-0 flex-1">
-          <label
-            htmlFor="gold-weight-scale"
-            className={cn('block text-xs font-bold', dark ? 'text-white' : 'text-[#0B0F19]')}
-          >
-            {t('pricesPage.weightGrams')}
-          </label>
-          <p className={cn('text-[10px] tabular-nums', dark ? 'text-white/50' : 'text-[#64748B]')}>
-            {t('pricesPage.scalePrecision')}
-          </p>
-        </div>
+        <label
+          htmlFor="gold-weight-scale"
+          className={cn('min-w-0 flex-1 text-xs font-bold', dark ? 'text-white' : 'text-[#0B0F19]')}
+        >
+          {t('pricesPage.weightGrams')}
+        </label>
       </div>
 
       <div className="flex items-stretch gap-2">
@@ -128,10 +132,17 @@ export function GoldWeightScale({ value, onChange, variant = 'hero', className }
             type="text"
             inputMode="decimal"
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
             spellCheck={false}
+            maxLength={MAX_WEIGHT_INPUT_LEN}
             placeholder={t('pricesPage.gramsPlaceholder')}
             value={value}
             onChange={(e) => onInputChange(e.target.value)}
+            onPaste={(e) => {
+              e.preventDefault()
+              onInputChange(e.clipboardData.getData('text') || '')
+            }}
             className={cn(
               'h-11 w-full rounded-lg border px-3 pe-10 text-base font-semibold tabular-nums outline-none transition focus:ring-2',
               dark

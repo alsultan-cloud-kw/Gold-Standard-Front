@@ -459,8 +459,8 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
-                    disabled={outOfStock}
-                    className="px-3 py-2.5 text-[#3F6F00] transition-colors hover:bg-[#ECFCCB] disabled:opacity-40"
+                    disabled={outOfStock || selectedQuantity <= 1}
+                    className="px-3 py-2.5 text-[#3F6F00] transition-colors hover:bg-[#ECFCCB] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     aria-label={t('cartPage.decreaseQty')}
                   >
                     <Minus className="h-4 w-4" />
@@ -478,7 +478,7 @@ export default function ProductDetailPage() {
                         outOfStock ? 1 : clampPurchaseQuantity(p, Number.isFinite(next) ? next : 1),
                       )
                     }}
-                    className="w-14 border-x border-[#3F6F00]/20 bg-transparent py-2.5 text-center text-sm font-bold tabular-nums text-[#0C1512] [appearance:textfield] disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-14 border-x border-[#3F6F00]/20 bg-transparent py-2.5 text-center text-sm font-bold tabular-nums text-[#0C1512] [appearance:textfield] disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
@@ -488,7 +488,7 @@ export default function ProductDetailPage() {
                       )
                     }
                     disabled={outOfStock || selectedQuantity >= maxSelectableQty}
-                    className="px-3 py-2.5 text-[#3F6F00] transition-colors hover:bg-[#ECFCCB] disabled:opacity-40"
+                    className="px-3 py-2.5 text-[#3F6F00] transition-colors hover:bg-[#ECFCCB] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     aria-label={t('cartPage.increaseQty')}
                   >
                     <Plus className="h-4 w-4" />

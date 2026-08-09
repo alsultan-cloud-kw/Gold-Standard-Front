@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Product } from '../types'
 import { resolveProductPriceTrend } from '../utils/productPrice'
@@ -36,6 +36,12 @@ export function PriceTrendBadge({
   size?: 'sm' | 'md'
 }) {
   const { t } = useTranslation()
+
+  if (dir !== 'up' && dir !== 'down') {
+    // Flat / unknown — no dash icon (reads as a broken minus control)
+    return null
+  }
+
   const pctValue =
     percent != null && Number.isFinite(percent) && Math.abs(percent) > 0
       ? Math.abs(percent)
@@ -47,11 +53,9 @@ export function PriceTrendBadge({
       ? pctStr
         ? t('productsPage.priceTrendUp', { percent: pctStr })
         : t('productsPage.priceTrendUpShort')
-      : dir === 'down'
-        ? pctStr
-          ? t('productsPage.priceTrendDown', { percent: pctStr })
-          : t('productsPage.priceTrendDownShort')
-        : t('productsPage.priceTrendNoChange')
+      : pctStr
+        ? t('productsPage.priceTrendDown', { percent: pctStr })
+        : t('productsPage.priceTrendDownShort')
 
   const iconSize = size === 'sm' ? 'h-3 w-3 sm:h-3.5 sm:w-3.5' : 'h-3.5 w-3.5 sm:h-4 sm:w-4'
   const textSize = size === 'sm' ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-[11px]'
@@ -74,35 +78,19 @@ export function PriceTrendBadge({
     )
   }
 
-  if (dir === 'down') {
-    return (
-      <span
-        className={`inline-flex items-center gap-0.5 tabular-nums ${
-          variant === 'light' ? 'text-[#DC2626]' : 'text-[#F87171]'
-        } ${className}`}
-        title={title}
-        role="img"
-        aria-label={title}
-      >
-        <ArrowDown className={`${iconSize} shrink-0 stroke-[2.5]`} aria-hidden />
-        {showPercent && pctStr ? (
-          <span className={`${textSize} font-semibold`}>{pctStr}%</span>
-        ) : null}
-      </span>
-    )
-  }
-
   return (
     <span
       className={`inline-flex items-center gap-0.5 tabular-nums ${
-        variant === 'light' ? 'text-[#94A3B8]' : 'text-white/45'
+        variant === 'light' ? 'text-[#DC2626]' : 'text-[#F87171]'
       } ${className}`}
       title={title}
       role="img"
       aria-label={title}
     >
-      <Minus className={`${iconSize} shrink-0 stroke-[2.5]`} aria-hidden />
-      {showPercent ? <span className={`${textSize} font-medium`}>0.00%</span> : null}
+      <ArrowDown className={`${iconSize} shrink-0 stroke-[2.5]`} aria-hidden />
+      {showPercent && pctStr ? (
+        <span className={`${textSize} font-semibold`}>{pctStr}%</span>
+      ) : null}
     </span>
   )
 }

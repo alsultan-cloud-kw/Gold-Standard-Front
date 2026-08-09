@@ -5621,6 +5621,7 @@ html[dir='rtl'] .gs-app-loader__trust {
   display: flex;
   min-width: 0;
   overflow: hidden;
+  cursor: default;
   container-type: inline-size;
   container-name: price-card;
   border-radius: 1.15rem;
@@ -5676,8 +5677,9 @@ html[dir='rtl'] .gs-app-loader__trust {
   flex: 1;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 0.9rem 0.95rem 0.95rem;
-  padding-inline-start: calc(var(--price-card-rail) + 0.85rem);
+  padding-block: 0.9rem 0.95rem;
+  padding-inline-end: 0.85rem;
+  padding-inline-start: calc(var(--price-card-rail) + 0.75rem);
 }
 
 /* Featured karat (24K) — the anchor card customers look for first */
@@ -5741,12 +5743,13 @@ html[dir='rtl'] .price-rate-card__live {
 .price-rate-card__karat {
   margin: 0;
   font-family: inherit;
-  font-size: clamp(1.05rem, 3.8vw, 1.35rem);
+  font-size: clamp(0.95rem, 5.5cqi, 1.35rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0b0f19;
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .price-rate-card__desc {
@@ -5971,15 +5974,20 @@ html[dir='rtl'] .price-rate-card__weight-label {
   overflow-wrap: anywhere;
 }
 
-@container price-card (max-width: 17.5rem) {
+@container price-card (max-width: 26rem) {
+  .price-rate-card {
+    --price-card-rail: 1.15rem;
+  }
+
   .price-rate-card__body {
     gap: 0.4rem;
-    padding: 0.75rem 0.7rem 0.8rem;
-    padding-inline-start: calc(var(--price-card-rail) + 0.65rem);
+    padding-block: 0.7rem 0.75rem;
+    padding-inline-end: 0.6rem;
+    padding-inline-start: calc(var(--price-card-rail) + 0.5rem);
   }
 
   .price-rate-card__karat {
-    font-size: 1.2rem;
+    font-size: clamp(0.9rem, 6cqi, 1.15rem);
   }
 
   .price-rate-card__desc {
@@ -6015,6 +6023,29 @@ html[dir='rtl'] .price-rate-card__weight-label {
   .price-rate-card__live {
     font-size: 0.625rem;
     padding: 0.2rem 0.45rem;
+  }
+
+  .customer-gold-price-pair {
+    padding: 0.35rem !important;
+  }
+
+  .customer-gold-price-row__value {
+    font-size: 0.75rem;
+  }
+}
+
+@container price-card (max-width: 16rem) {
+  .price-rate-card {
+    --price-card-rail: 0.85rem;
+  }
+
+  .price-rate-card__body {
+    padding-inline-end: 0.5rem;
+    padding-inline-start: calc(var(--price-card-rail) + 0.4rem);
+  }
+
+  .customer-gold-price-row__value {
+    font-size: 0.6875rem;
   }
 }
 
@@ -6247,8 +6278,9 @@ html[dir='rtl'] .price-desk-card--featured::before {
 
   .price-rate-card__body {
     gap: 0.35rem;
-    padding: 0.65rem 0.6rem 0.7rem;
-    padding-inline-start: calc(var(--price-card-rail) + 0.55rem);
+    padding-block: 0.65rem 0.7rem;
+    padding-inline-end: 0.5rem;
+    padding-inline-start: calc(var(--price-card-rail) + 0.45rem);
   }
 
   .price-rate-card__live {
@@ -6256,7 +6288,7 @@ html[dir='rtl'] .price-desk-card--featured::before {
   }
 
   .price-rate-card__karat {
-    font-size: 1.35rem;
+    font-size: clamp(0.95rem, 7cqi, 1.2rem);
   }
 
   .price-rate-card__desc {

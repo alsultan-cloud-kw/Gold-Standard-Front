@@ -270,7 +270,8 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white sm:h-10 sm:w-10"
+                          disabled={item.quantity <= 1}
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent sm:h-10 sm:w-10"
                           aria-label={t('cartPage.decreaseQty')}
                         >
                           <Minus className="h-4 w-4" />
@@ -282,7 +283,7 @@ export default function CartPage() {
                           type="button"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           disabled={itemOutOfStock || item.quantity >= itemMaxQty}
-                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#0B0F19] transition hover:bg-white enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
                           aria-label={t('cartPage.increaseQty')}
                         >
                           <Plus className="h-4 w-4" />

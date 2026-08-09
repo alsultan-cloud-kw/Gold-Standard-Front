@@ -922,7 +922,6 @@
     "weightGrams": "Weight (grams)",
     "weightHint": "Enter grams — buy/sell totals below update instantly (KWD/g × grams).",
     "weightHintShort": "Totals update instantly",
-    "scalePrecision": "Scale sensitivity 0.001 g",
     "scaleStepUp": "Increase by 0.001 g",
     "scaleStepDown": "Decrease by 0.001 g",
     "enterGramsLabel": "Enter quantity in grams",
