@@ -2,8 +2,9 @@ import wathaqLogo from '@/assets/partners/wathaq-logo.png'
 import sultanGoldLogo from '@/assets/partners/sultan-gold.png'
 import burganLogo from '@/assets/partners/burgan.png'
 import cbkLogo from '@/assets/partners/cbk.png'
+import openSanctionsLogo from '@/assets/partners/opensanctions-logo.svg'
 
-export type AboutPartnerId = 'wathaq' | 'sultanGold' | 'burgan' | 'cbk'
+export type AboutPartnerId = 'wathaq' | 'sultanGold' | 'burgan' | 'cbk' | 'openSanctions'
 
 export type AboutPartner = {
   id: AboutPartnerId
@@ -42,5 +43,12 @@ export const ABOUT_PARTNERS: AboutPartner[] = [
     logoSrc: cbkLogo,
     logoBgClassName: 'bg-white',
     logoClassName: 'h-10 sm:h-12 max-w-[90%] object-contain',
+  },
+  {
+    id: 'openSanctions',
+    href: 'https://www.opensanctions.org/',
+    logoSrc: openSanctionsLogo,
+    logoBgClassName: 'bg-white',
+    logoClassName: 'h-8 sm:h-9 max-w-[92%] object-contain',
   },
 ]

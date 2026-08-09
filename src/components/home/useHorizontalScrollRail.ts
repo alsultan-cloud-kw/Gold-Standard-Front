@@ -13,6 +13,21 @@ function getNormalizedScrollLeft(el: HTMLElement): number {
   return el.scrollLeft
 }
 
+/**
+ * Scroll a child into the horizontal rail using visual geometry.
+ * Prefer this over scrollIntoView — that API scrolls ancestor pages and
+ * often no-ops or misbehaves inside RTL overflow-x carousels.
+ */
+function scrollChildIntoRail(rail: HTMLElement, child: HTMLElement) {
+  const railRect = rail.getBoundingClientRect()
+  const childRect = child.getBoundingClientRect()
+  const railCenter = railRect.left + railRect.width / 2
+  const childCenter = childRect.left + childRect.width / 2
+  const delta = childCenter - railCenter
+  if (Math.abs(delta) < 1) return
+  rail.scrollBy({ left: delta, behavior: 'smooth' })
+}
+
 export function useHorizontalScrollRail(contentKey?: string | number) {
   const railRef = useRef<HTMLDivElement>(null)
   const [canScrollBack, setCanScrollBack] = useState(false)
@@ -27,34 +42,39 @@ export function useHorizontalScrollRail(contentKey?: string | number) {
     setCanScrollForward(pos < max - 4)
   }, [])
 
-  const scrollToAdjacent = useCallback((direction: -1 | 1) => {
-    const el = railRef.current
-    if (!el) return
+  const scrollToAdjacent = useCallback(
+    (direction: -1 | 1) => {
+      const el = railRef.current
+      if (!el) return
 
-    const children = [...el.children] as HTMLElement[]
-    if (children.length < 2) return
+      const children = [...el.children] as HTMLElement[]
+      if (children.length < 2) return
 
-    const containerRect = el.getBoundingClientRect()
-    let activeIndex = 0
-    let bestVisible = -1
+      const containerRect = el.getBoundingClientRect()
+      let activeIndex = 0
+      let bestVisible = -1
 
-    children.forEach((child, index) => {
-      const rect = child.getBoundingClientRect()
-      const visible =
-        Math.min(rect.right, containerRect.right) - Math.max(rect.left, containerRect.left)
-      if (visible > bestVisible) {
-        bestVisible = visible
-        activeIndex = index
-      }
-    })
+      children.forEach((child, index) => {
+        const rect = child.getBoundingClientRect()
+        const visible =
+          Math.min(rect.right, containerRect.right) - Math.max(rect.left, containerRect.left)
+        if (visible > bestVisible) {
+          bestVisible = visible
+          activeIndex = index
+        }
+      })
 
-    const nextIndex = Math.max(0, Math.min(children.length - 1, activeIndex + direction))
-    children[nextIndex]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    })
-  }, [])
+      const nextIndex = Math.max(0, Math.min(children.length - 1, activeIndex + direction))
+      const next = children[nextIndex]
+      if (!next) return
+
+      scrollChildIntoRail(el, next)
+      // Smooth scroll fires 'scroll' mid-animation; refresh edges after it settles.
+      window.setTimeout(updateScrollState, 320)
+      window.setTimeout(updateScrollState, 520)
+    },
+    [updateScrollState],
+  )
 
   useEffect(() => {
     const el = railRef.current

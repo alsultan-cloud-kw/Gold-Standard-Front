@@ -1819,7 +1819,7 @@
     "clientsIntro": "Our clients include savers building long-term positions, jewellers sourcing certified inventory, bullion desks, banks, corporate treasuries, and government-related entities — anyone who needs documented physical gold with professional service.",
     "partnersKicker": "Strategic partners",
     "partnersTitle": "Our partners",
-    "partnersIntro": "Gold Standard is built on trusted relationships — from legal counsel and manufacturing heritage to banking infrastructure that supports secure, Sharia-aligned commerce.",
+    "partnersIntro": "Gold Standard is built on trusted relationships — from legal counsel and manufacturing heritage to banking infrastructure and AML screening that support secure, Sharia-aligned commerce.",
     "partnersNote": "We continue to expand our partner network across compliance, logistics, and institutional channels.",
     "partnersVisit": "Visit website",
     "partnersVisitExternal": "Visit {{name}} website (opens in new tab)",
@@ -1849,6 +1849,11 @@
         "role": "Banking partner",
         "name": "Al-Tijari (Commercial Bank of Kuwait)",
         "body": "A banking partner supporting the payment and banking infrastructure around secure customer transactions."
+      },
+      "openSanctions": {
+        "role": "AML screening partner",
+        "name": "OpenSanctions",
+        "body": "Open-source sanctions, PEP, and watchlist data we use to screen counterparties — strengthening AML checks across customer onboarding and ongoing compliance."
       }
     },
     "clients": {
