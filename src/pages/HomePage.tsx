@@ -7,7 +7,9 @@ import {
   ScanLine,
   Repeat,
   MapPin,
-  Headset,
+  Link2,
+  Factory,
+  ShieldCheck,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED } from '@/featureFlags'
@@ -135,10 +137,12 @@ export default function HomePage() {
   const fetchTrends = useProductPriceTrendSincePreviousFetch(homeTrendProducts)
 
   const features = [
+    { icon: Link2, titleKey: 'home.blockchainOwnership', descKey: 'home.blockchainOwnershipDesc' },
     { icon: ScanLine, titleKey: 'home.certifiedQuality', descKey: 'home.certifiedQualityDesc' },
+    { icon: Factory, titleKey: 'home.localManufacturing', descKey: 'home.localManufacturingDesc' },
+    { icon: ShieldCheck, titleKey: 'home.hallmarkTrust', descKey: 'home.hallmarkTrustDesc' },
     { icon: Repeat, titleKey: 'home.livePrices', descKey: 'home.livePricesDesc' },
     { icon: MapPin, titleKey: 'home.secureDelivery', descKey: 'home.secureDeliveryDesc' },
-    { icon: Headset, titleKey: 'home.bestRates', descKey: 'home.bestRatesDesc' },
   ]
 
   return (
