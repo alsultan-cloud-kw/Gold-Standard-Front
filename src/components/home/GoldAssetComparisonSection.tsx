@@ -159,38 +159,42 @@ function AssetCard({ asset, index }: { asset: ComparisonAsset; index: number }) 
         </div>
       ) : null}
 
-      <div className="why-gold__card-head">
-        <span className={cn('why-gold__card-icon', isGold && 'why-gold__card-icon--gold')}>
-          <Icon strokeWidth={1.6} aria-hidden />
-        </span>
-        <h3 className="why-gold__card-title">{t(ASSET_LABEL_KEYS[asset])}</h3>
+      <div className="why-gold__card-body">
+        <div className="why-gold__card-head">
+          <span className={cn('why-gold__card-icon', isGold && 'why-gold__card-icon--gold')}>
+            <Icon strokeWidth={1.75} aria-hidden />
+          </span>
+          <h3 className={cn('why-gold__card-title', isGold && 'why-gold__card-title--gold')}>
+            {t(ASSET_LABEL_KEYS[asset])}
+          </h3>
+        </div>
+
+        <ul className="why-gold__criteria">
+          {COMPARISON_CRITERIA.map((row) => {
+            const CritIcon = row.icon
+            const score = row.ratings[asset]
+            return (
+              <li key={row.id} className="why-gold__criterion">
+                <span className="why-gold__criterion-label">{t(row.labelKey)}</span>
+                <div className="why-gold__criterion-score">
+                  <RatingDots score={score} highlight={isGold} />
+                  {isGold ? (
+                    <CritIcon
+                      className="why-gold__criterion-glyph"
+                      strokeWidth={1.6}
+                      aria-hidden
+                    />
+                  ) : null}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+
+        {isGold ? (
+          <p className="why-gold__card-foot">{t('home.goldComparison.goldFooter')}</p>
+        ) : null}
       </div>
-
-      <ul className="why-gold__criteria">
-        {COMPARISON_CRITERIA.map((row) => {
-          const CritIcon = row.icon
-          const score = row.ratings[asset]
-          return (
-            <li key={row.id} className="why-gold__criterion">
-              <span className="why-gold__criterion-label">{t(row.labelKey)}</span>
-              <div className="why-gold__criterion-score">
-                <RatingDots score={score} highlight={isGold} />
-                {isGold ? (
-                  <CritIcon
-                    className="why-gold__criterion-glyph"
-                    strokeWidth={1.6}
-                    aria-hidden
-                  />
-                ) : null}
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-
-      {isGold ? (
-        <p className="why-gold__card-foot">{t('home.goldComparison.goldFooter')}</p>
-      ) : null}
     </article>
   )
 }
@@ -222,7 +226,6 @@ export function GoldAssetComparisonSection({
       <div className="why-gold__inner home-section-inner min-w-0">
         <div className="why-gold__hero">
           <div className="why-gold__copy why-gold__reveal" style={delayStyle(0.06)}>
-            <span className="why-gold__diamond" aria-hidden />
             <h2 id="why-gold-heading" className="why-gold__title">
               <span className="why-gold__title-lead">{titleLead}</span>{' '}
               <span
@@ -240,18 +243,20 @@ export function GoldAssetComparisonSection({
             <p className="why-gold__body">{t('home.goldComparison.heroBody')}</p>
           </div>
 
+          {/* Frame masks hard photo edges into a soft circle — no cream orb behind */}
           <div className="why-gold__visual why-gold__reveal" style={delayStyle(0.14)}>
-            <div className="why-gold__orb" aria-hidden />
-            <img
-              src={whyGoldHeroUrl}
-              alt={t('home.goldComparison.heroAlt')}
-              className="why-gold__hero-img"
-              width={1400}
-              height={933}
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-            />
+            <div className="why-gold__frame">
+              <img
+                src={whyGoldHeroUrl}
+                alt={t('home.goldComparison.heroAlt')}
+                className="why-gold__hero-img"
+                width={1400}
+                height={933}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+              />
+            </div>
           </div>
         </div>
 
