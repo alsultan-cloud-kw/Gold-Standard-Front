@@ -416,7 +416,10 @@
     "securityTrust": {
       "kicker": "Authenticity & security",
       "title": "Authenticity & security, guaranteed",
-      "body": "Gold Standard brings together every practical layer of bullion protection we can deploy — physical marks, holographic seals, serial tracking, and a Digital Ownership Record — so the modern investor gets lasting certainty, not guesswork.",
+      "titlePrefix": "",
+      "titleAccent": "Authenticity & security",
+      "titleSuffix": ", guaranteed",
+      "body": "End-to-end protection for investment gold - from manufacturing and hallmarking to serial tracking, digital ownership, and delivery.",
       "advantageLead": "We were the first in Kuwait to combine a full security stack for gold dedicated to investment — including a Digital Ownership Record secured by blockchain technology, security hologram seals, and our own company stamp for an extra layer of trust you can verify.",
       "items": {
         "insuredShipping": "Fully insured shipping",
@@ -426,34 +429,38 @@
         "serialCatalog": "Serial-tracked product catalog",
         "livePricing": "Live transparent KWD pricing"
       },
+      "ribbonTitleLead": "You invest in gold. ",
+      "ribbonTitleAccent": "We protect your investment.",
+      "ribbonBody": "A multi-layer authenticity system - physical marks, digital records, and insured custody - so what you buy stays verifiable.",
+      "productsCta": "View our products",
       "verifyCtaTitle": "Confirm authenticity in seconds",
       "verifyCtaBody": "Scan the QR or enter the serial from your bar or packaging on our authenticity page.",
       "verifyCta": "Verify a product",
       "methods": {
         "qr": {
-          "title": "Unique serialized QR",
-          "description": "Every investment piece carries a unique serial identity and QR you can scan on our website to confirm registration in our official catalog."
+          "title": "Unique serial QR",
+          "description": "Every investment piece carries a unique serial identity and QR you can scan on our site to confirm it in our official catalog."
         },
         "blockchain": {
           "title": "Digital Ownership Record",
-          "description": "Eligible investment pieces can be linked to a Digital Ownership Record — a digital trail of ownership protected with blockchain technology. It works like a shared electronic ledger: once recorded under the system’s rules, entries are designed so they cannot be quietly altered or forged, which supports clearer verification when you buy, hold, or sell.",
+          "description": "Eligible pieces can link to a Digital Ownership Record secured with blockchain technology - a trail designed so entries cannot be quietly altered.",
           "badge": "Gulf pioneer"
         },
         "hologram": {
-          "title": "Security hologram seal",
-          "description": "Premium packaging carries a tamper-resistant holographic mark — a first visual check that the bar and seal are genuine before you scan or verify online."
+          "title": "Security stamp & hologram",
+          "description": "Tamper-resistant holographic seals give a first visual check that the bar and packaging are genuine before you verify online."
         },
         "companyStamp": {
-          "title": "Gold Standard company stamp",
-          "description": "Every piece carries the Gold Standard company stamp alongside official hallmarking — a branded physical mark you can match to our catalog, receipts, and verify page."
+          "title": "Company stamp & unique serial",
+          "description": "Gold Standard branding and a unique serial sit on every piece - match them to our catalog, receipts, and verify page."
         },
         "ministry": {
-          "title": "Ministry stamp on the gold",
-          "description": "Gold is tested and stamped under Kuwait’s Ministry of Commerce and Industry — Precious Metals Department — confirming karat before sale."
+          "title": "Professional quality inspection",
+          "description": "Gold is tested and stamped under Kuwait’s Ministry of Commerce and Industry - Precious Metals Department - confirming karat before sale."
         },
         "receipt": {
-          "title": "Official stamped receipt",
-          "description": "Your purchase includes a Gold Standard stamped receipt — clear documentary proof for custody, buyback, and personal or institutional records."
+          "title": "Official certificate issued",
+          "description": "Your purchase includes stamped documentary proof from Gold Standard for custody, buyback, and personal or institutional records."
         }
       },
       "credentialsKicker": "Licensed credentials",

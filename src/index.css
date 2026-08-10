@@ -1576,38 +1576,399 @@
     container-type: inline-size;
   }
 
-  /* Anchor jumps from hero CTA land below the fixed top chrome */
+  /* Trust & authenticity band */
   #security-trust,
   #investors-club {
     scroll-margin-top: calc(var(--nav-offset, 5.75rem) + 0.75rem);
   }
 
-  /* Trust & authenticity — dark bento (landing standout band) */
-  .security-trust-bento {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'blockchain'
-      'qr'
-      'ministry'
-      'hologram'
-      'company-stamp'
-      'receipt';
+  /*
+   * SecurityTrustSection — responsive behavior:
+   * - Continuous: clamp type/spacing; min-width:0; overflow-wrap
+   * - Cards: stacked image→copy by default; side-by-side when card ≥28rem (container)
+   * - Grid: 1 col → 2 cols @640 → keep 2 @1440 (equal cards)
+   * - Ultra-narrow ≤359: tighter pad, wrap ribbon titles, full-width CTAs
+   * - Touch: primary/secondary CTAs ≥44px
+   */
+  .security-trust-section {
+    overflow-x: clip;
   }
 
-  .security-trust-bento__blockchain { grid-area: blockchain; }
-  .security-trust-bento__qr { grid-area: qr; }
-  .security-trust-bento__ministry { grid-area: ministry; }
-  .security-trust-bento__hologram { grid-area: hologram; }
-  .security-trust-bento__company-stamp { grid-area: company-stamp; }
-  .security-trust-bento__receipt { grid-area: receipt; }
+  .security-trust-section__inner {
+    min-width: 0;
+    padding-block: var(--space-section-y-top) var(--space-section-y-bottom);
+  }
+
+  .security-trust-section__header {
+    margin-inline: auto;
+    margin-bottom: clamp(1.75rem, 4vw, 3rem);
+    max-width: 42rem;
+    text-align: center;
+  }
+
+  .security-trust-section__badge {
+    display: flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-inline: auto;
+    margin-bottom: 1rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(133 227 7 / 0.45);
+    background: rgb(133 227 7 / 0.1);
+    color: #85e307;
+    box-shadow: 0 0 28px rgb(133 227 7 / 0.22);
+  }
+
+  .security-trust-section__title {
+    text-wrap: balance;
+    font-size: clamp(1.35rem, 4.2vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .security-trust-section__body {
+    margin-inline: auto;
+    margin-top: 0.75rem;
+    max-width: 36rem;
+    text-wrap: pretty;
+    font-size: clamp(0.875rem, 2.4vw, 1rem);
+    line-height: 1.65;
+    color: rgb(255 255 255 / 0.55);
+    overflow-wrap: anywhere;
+  }
+
+  .security-trust-section__rule {
+    width: 4rem;
+    height: 1px;
+    margin-inline: auto;
+    margin-top: 1.25rem;
+    background: #85e307;
+  }
+
+  .security-trust-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    margin-inline: auto;
+    max-width: 64rem;
+    min-width: 0;
+  }
 
   @media (min-width: 640px) {
-    .security-trust-bento {
+    .security-trust-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-areas:
-        'blockchain qr'
-        'company-stamp hologram'
-        'ministry receipt';
+      gap: 1rem;
+    }
+  }
+
+  .security-trust-card {
+    container-type: inline-size;
+    container-name: security-card;
+    min-width: 0;
+    min-height: 0;
+    overflow: clip;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: #10141c;
+    transition: border-color 0.2s ease;
+  }
+
+  .security-trust-card:hover {
+    border-color: rgb(133 227 7 / 0.35);
+  }
+
+  .security-trust-card__layout {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .security-trust-card__media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    flex-shrink: 0;
+    overflow: clip;
+    background: #0a0d14;
+  }
+
+  .security-trust-card__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.5s ease-out;
+  }
+
+  .security-trust-card:hover .security-trust-card__img {
+    transform: scale(1.03);
+  }
+
+  .security-trust-card__fade {
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2.5rem;
+    background: linear-gradient(to top, #10141c, transparent);
+  }
+
+  .security-trust-card__body {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 1rem 1rem 1.15rem;
+  }
+
+  .security-trust-card__icon {
+    display: flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(133 227 7 / 0.4);
+    background: rgb(133 227 7 / 0.1);
+    color: #85e307;
+  }
+
+  .security-trust-card__title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: #85e307;
+    overflow-wrap: anywhere;
+  }
+
+  .security-trust-card__desc {
+    margin-top: 0.35rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: rgb(255 255 255 / 0.55);
+    overflow-wrap: anywhere;
+  }
+
+  /* Side-by-side when the card container is wide enough */
+  @container security-card (min-width: 28rem) {
+    .security-trust-card__layout {
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    .security-trust-card__media {
+      width: 42%;
+      max-width: 15rem;
+      aspect-ratio: auto;
+      min-height: 9.5rem;
+      align-self: stretch;
+    }
+
+    .security-trust-card__fade {
+      inset-block: 0;
+      inset-inline-end: 0;
+      inset-inline-start: auto;
+      width: 2.5rem;
+      height: auto;
+      background: linear-gradient(to left, #10141c, transparent);
+    }
+
+    html[dir='rtl'] .security-trust-card__fade {
+      background: linear-gradient(to right, #10141c, transparent);
+    }
+
+    .security-trust-card__body {
+      flex: 1;
+      padding: 1.15rem 1.25rem;
+      gap: 0.75rem;
+    }
+
+    .security-trust-card__title {
+      font-size: 1rem;
+    }
+
+    .security-trust-card__desc {
+      font-size: 0.875rem;
+    }
+  }
+
+  .security-trust-ribbon {
+    display: flex;
+    min-width: 0;
+    margin-inline: auto;
+    margin-top: clamp(1.25rem, 3vw, 2rem);
+    max-width: 64rem;
+    flex-direction: column;
+    gap: 1.15rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: #0c1018;
+    padding: 1.15rem 1.15rem;
+  }
+
+  .security-trust-ribbon__copy {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .security-trust-ribbon__shield {
+    display: flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(133 227 7 / 0.4);
+    background: rgb(133 227 7 / 0.1);
+    color: #85e307;
+  }
+
+  .security-trust-ribbon__title {
+    font-size: clamp(0.95rem, 2.8vw, 1.125rem);
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  .security-trust-ribbon__sub {
+    margin-top: 0.35rem;
+    font-size: clamp(0.75rem, 2.2vw, 0.875rem);
+    line-height: 1.55;
+    color: rgb(255 255 255 / 0.5);
+    overflow-wrap: anywhere;
+  }
+
+  .security-trust-ribbon__actions {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .security-trust-ribbon__cta-primary,
+  .security-trust-ribbon__cta-secondary {
+    display: inline-flex;
+    min-height: 2.75rem; /* 44px */
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding-inline: 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-align: center;
+    white-space: normal;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+
+  .security-trust-ribbon__cta-primary {
+    background: #85e307;
+    color: #0b0f19;
+  }
+
+  .security-trust-ribbon__cta-primary:hover {
+    background: #9aef2a;
+  }
+
+  .security-trust-ribbon__cta-primary:active,
+  .security-trust-ribbon__cta-secondary:active {
+    transform: scale(0.98);
+  }
+
+  .security-trust-ribbon__cta-secondary {
+    border: 1px solid rgb(255 255 255 / 0.15);
+    font-weight: 600;
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .security-trust-ribbon__cta-secondary:hover {
+    border-color: rgb(133 227 7 / 0.4);
+    color: #fff;
+  }
+
+  @media (min-width: 640px) {
+    .security-trust-ribbon {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.75rem;
+      padding: 1.35rem 1.75rem;
+    }
+
+    .security-trust-ribbon__copy {
+      align-items: center;
+      flex: 1;
+    }
+
+    .security-trust-ribbon__shield {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .security-trust-ribbon__actions {
+      width: auto;
+      flex-shrink: 0;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .security-trust-ribbon__cta-primary,
+    .security-trust-ribbon__cta-secondary {
+      width: auto;
+      min-width: 9.5rem;
+    }
+  }
+
+  @media (max-width: 359px) {
+    .security-trust-section__header {
+      margin-bottom: 1.35rem;
+    }
+
+    .security-trust-card__body {
+      padding: 0.85rem 0.85rem 1rem;
+      gap: 0.5rem;
+    }
+
+    .security-trust-card__title {
+      font-size: 0.875rem;
+    }
+
+    .security-trust-card__desc {
+      font-size: 0.75rem;
+      line-height: 1.55;
+    }
+
+    .security-trust-ribbon {
+      padding: 0.95rem;
+      gap: 0.95rem;
+    }
+
+    .security-trust-ribbon__copy {
+      gap: 0.65rem;
+    }
+
+    .security-trust-ribbon__shield {
+      width: 2.5rem;
+      height: 2.5rem;
     }
   }
 

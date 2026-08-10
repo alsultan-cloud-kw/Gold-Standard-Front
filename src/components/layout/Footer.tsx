@@ -152,7 +152,7 @@ export default function Footer() {
               <img
                 src={footerLogo}
                 alt={t('common.logoAlt')}
-                className="h-12 w-auto max-w-[220px] object-contain object-left sm:h-14 sm:max-w-[260px]"
+                className="h-[4.25rem] w-auto max-w-[min(100%,20rem)] object-contain object-left sm:h-[5.25rem] sm:max-w-[min(100%,24rem)] lg:h-24 lg:max-w-[28rem]"
               />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">{t('footer.tagline')}</p>
