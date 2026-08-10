@@ -1,5 +1,11 @@
 import { useEffect } from 'react'
-import { SITE_NAME, SITE_OG_IMAGE, absoluteUrl } from '@/constants/site'
+import {
+  SITE_NAME,
+  SITE_OG_IMAGE,
+  SITE_OG_IMAGE_HEIGHT,
+  SITE_OG_IMAGE_WIDTH,
+  absoluteUrl,
+} from '@/constants/site'
 
 type JsonLd = Record<string, unknown> | Record<string, unknown>[]
 
@@ -46,8 +52,8 @@ function upsertLink(rel: string, href: string, hreflang?: string) {
 
 /**
  * Client-side SEO / social meta for the Vite SPA.
- * Crawlers that execute JS (and in-app browsers) pick these up; index.html
- * still carries strong static defaults for first paint / non-JS scrapers.
+ * Build-time shells in dist/<route>/index.html carry the same tags for
+ * WhatsApp / non-JS scrapers; this layer keeps in-app navigation accurate.
  */
 export function SeoHead({
   title,
@@ -86,8 +92,8 @@ export function SeoHead({
     upsertMeta('property', 'og:url', url)
     upsertMeta('property', 'og:image', ogImage)
     upsertMeta('property', 'og:image:alt', title)
-    upsertMeta('property', 'og:image:width', '512')
-    upsertMeta('property', 'og:image:height', '512')
+    upsertMeta('property', 'og:image:width', String(SITE_OG_IMAGE_WIDTH))
+    upsertMeta('property', 'og:image:height', String(SITE_OG_IMAGE_HEIGHT))
     upsertMeta('property', 'og:locale', locale)
     upsertMeta('property', 'og:locale:alternate', locale.startsWith('ar') ? 'en_US' : 'ar_KW')
 

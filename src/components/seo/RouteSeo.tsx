@@ -6,101 +6,25 @@ import { SITE_NAME, SITE_OG_IMAGE, SITE_ORIGIN, absoluteUrl } from '@/constants/
 import { GS_CONTACT } from '@/constants/contact'
 import { GS_INSTAGRAM } from '@/constants/social'
 import { GS_MAIN_LOCATION } from '@/constants/location'
+import { matchPublicPageSeo } from '@/seo/publicPages'
 
-type PageSeo = {
-  titleKey: string
-  descKey: string
-  path: string
-  noIndex?: boolean
-}
+/** Kuwait showroom hours (Asia/Kuwait) — Sat–Thu 09:00–21:00, Fri 14:00–21:00. */
+const STORE_OPENING_HOURS = [
+  {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+    opens: '09:00',
+    closes: '21:00',
+  },
+  {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: 'Friday',
+    opens: '14:00',
+    closes: '21:00',
+  },
+] as const
 
-const PUBLIC_ROUTES: Array<{ match: (path: string) => boolean; seo: PageSeo }> = [
-  {
-    match: (p) => p === '/',
-    seo: { titleKey: 'seo.home.title', descKey: 'seo.home.description', path: '/' },
-  },
-  {
-    match: (p) => p === '/prices',
-    seo: { titleKey: 'seo.prices.title', descKey: 'seo.prices.description', path: '/prices' },
-  },
-  {
-    match: (p) => p === '/zakat',
-    seo: { titleKey: 'seo.zakat.title', descKey: 'seo.zakat.description', path: '/zakat' },
-  },
-  {
-    match: (p) => p === '/gs-kyc',
-    seo: {
-      titleKey: 'seo.customerKyc.title',
-      descKey: 'seo.customerKyc.description',
-      path: '/gs-kyc',
-    },
-  },
-  {
-    match: (p) => p === '/moci-kyc' || p === '/kyc',
-    seo: {
-      titleKey: 'seo.mociKyc.title',
-      descKey: 'seo.mociKyc.description',
-      path: '/moci-kyc',
-      noIndex: true,
-    },
-  },
-  {
-    match: (p) => p === '/company-prices',
-    seo: {
-      titleKey: 'seo.companyPrices.title',
-      descKey: 'seo.companyPrices.description',
-      path: '/company-prices',
-      noIndex: true,
-    },
-  },
-  {
-    match: (p) => p === '/verify-account',
-    seo: { titleKey: 'seo.auth.title', descKey: 'seo.auth.description', path: '/verify-account', noIndex: true },
-  },
-  {
-    match: (p) => p === '/products' || p.startsWith('/products/'),
-    seo: { titleKey: 'seo.products.title', descKey: 'seo.products.description', path: '/products' },
-  },
-  {
-    match: (p) => p === '/about',
-    seo: { titleKey: 'seo.about.title', descKey: 'seo.about.description', path: '/about' },
-  },
-  {
-    match: (p) => p === '/holdings' || p === '/trading',
-    seo: {
-      titleKey: 'seo.holdings.title',
-      descKey: 'seo.holdings.description',
-      path: '/holdings',
-    },
-  },
-  {
-    match: (p) => p === '/contact',
-    seo: { titleKey: 'seo.contact.title', descKey: 'seo.contact.description', path: '/contact' },
-  },
-  {
-    match: (p) => p === '/branches',
-    seo: { titleKey: 'seo.branches.title', descKey: 'seo.branches.description', path: '/branches' },
-  },
-  {
-    match: (p) => p === '/cart',
-    seo: { titleKey: 'seo.cart.title', descKey: 'seo.cart.description', path: '/cart', noIndex: true },
-  },
-  {
-    match: (p) => p === '/login' || p === '/register' || p === '/forgot-password',
-    seo: { titleKey: 'seo.auth.title', descKey: 'seo.auth.description', path: '/login', noIndex: true },
-  },
-  {
-    match: (p) => p.startsWith('/dashboard') || p.startsWith('/admin') || p.startsWith('/checkout'),
-    seo: {
-      titleKey: 'seo.app.title',
-      descKey: 'seo.app.description',
-      path: '/dashboard',
-      noIndex: true,
-    },
-  },
-]
-
-function organizationJsonLd(lang: string) {
+function organizationJsonLd(lang: string, ogImage: string) {
   const isAr = lang.startsWith('ar')
   return {
     '@context': 'https://schema.org',
@@ -115,16 +39,17 @@ function organizationJsonLd(lang: string) {
           '@type': 'ImageObject',
           url: `${SITE_ORIGIN}/logo.png`,
         },
-        image: SITE_OG_IMAGE,
+        image: ogImage,
         email: GS_CONTACT.email,
         telephone: GS_CONTACT.phoneTel,
         address: {
           '@type': 'PostalAddress',
           addressCountry: 'KW',
           addressLocality: 'Kuwait City',
+          postalCode: '85951',
           streetAddress: isAr ? GS_CONTACT.addressAr : GS_CONTACT.addressEn,
         },
-        sameAs: [GS_INSTAGRAM.url],
+        sameAs: [GS_INSTAGRAM.url, GS_MAIN_LOCATION.placeUrl],
         geo: {
           '@type': 'GeoCoordinates',
           latitude: GS_MAIN_LOCATION.lat,
@@ -132,17 +57,21 @@ function organizationJsonLd(lang: string) {
         },
       },
       {
-        '@type': 'JewelryStore',
+        '@type': ['JewelryStore', 'LocalBusiness'],
         '@id': `${SITE_ORIGIN}/#store`,
         name: isAr ? 'جولد ستاندرد' : SITE_NAME,
         url: SITE_ORIGIN,
-        image: SITE_OG_IMAGE,
+        image: ogImage,
         telephone: GS_CONTACT.phoneTel,
         email: GS_CONTACT.email,
+        priceRange: '$$',
+        currenciesAccepted: 'KWD',
+        paymentAccepted: 'Cash, KNET, Card',
         address: {
           '@type': 'PostalAddress',
           addressCountry: 'KW',
           addressLocality: 'Kuwait City',
+          postalCode: '85951',
           streetAddress: isAr ? GS_CONTACT.addressAr : GS_CONTACT.addressEn,
         },
         geo: {
@@ -150,8 +79,13 @@ function organizationJsonLd(lang: string) {
           latitude: GS_MAIN_LOCATION.lat,
           longitude: GS_MAIN_LOCATION.lng,
         },
+        openingHoursSpecification: STORE_OPENING_HOURS,
         parentOrganization: { '@id': `${SITE_ORIGIN}/#organization` },
         sameAs: [GS_INSTAGRAM.url, GS_MAIN_LOCATION.placeUrl],
+        areaServed: {
+          '@type': 'Country',
+          name: 'Kuwait',
+        },
       },
       {
         '@type': 'WebSite',
@@ -159,7 +93,7 @@ function organizationJsonLd(lang: string) {
         url: SITE_ORIGIN,
         name: isAr ? 'جولد ستاندرد' : SITE_NAME,
         publisher: { '@id': `${SITE_ORIGIN}/#organization` },
-        inLanguage: [isAr ? 'ar' : 'en'],
+        inLanguage: ['ar', 'en'],
         potentialAction: {
           '@type': 'SearchAction',
           target: `${SITE_ORIGIN}/products?search={search_term_string}`,
@@ -176,34 +110,31 @@ export function RouteSeo() {
   const lang = i18n.language || 'ar'
   const locale = lang.startsWith('ar') ? 'ar_KW' : 'en_US'
 
-  const matched = PUBLIC_ROUTES.find((r) => r.match(pathname))
-  const seo = matched?.seo ?? {
+  const matched = matchPublicPageSeo(pathname)
+  const seo = matched ?? {
     titleKey: 'seo.default.title',
     descKey: 'seo.default.description',
     path: pathname,
+    noIndex: undefined as boolean | undefined,
   }
 
   const title = t(seo.titleKey)
   const description = t(seo.descKey)
-  const path = matched ? seo.path : pathname
+  const path = matched ? matched.path : pathname
 
   const jsonLd = useMemo(() => {
-    const base = organizationJsonLd(lang)
-    if (path === '/prices' || path === '/company-prices') {
-      ;(base['@graph'] as Record<string, unknown>[]).push({
-        '@type': 'WebPage',
-        '@id': absoluteUrl(path),
-        url: absoluteUrl(path),
-        name: title,
-        description,
-        isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
-        about: {
-          '@type': 'Thing',
-          name: lang.startsWith('ar') ? 'أسعار الذهب والمعادن' : 'Gold and precious metal prices',
-        },
-        inLanguage: lang.startsWith('ar') ? 'ar' : 'en',
-      })
-    }
+    const base = organizationJsonLd(lang, SITE_OG_IMAGE)
+    const graph = base['@graph'] as Record<string, unknown>[]
+    graph.push({
+      '@type': 'WebPage',
+      '@id': absoluteUrl(path),
+      url: absoluteUrl(path),
+      name: title,
+      description,
+      isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
+      about: { '@id': `${SITE_ORIGIN}/#store` },
+      inLanguage: lang.startsWith('ar') ? 'ar' : 'en',
+    })
     return base
   }, [lang, path, title, description])
 
@@ -213,7 +144,7 @@ export function RouteSeo() {
       description={description}
       path={path}
       image={SITE_OG_IMAGE}
-      noIndex={seo.noIndex}
+      noIndex={Boolean(seo.noIndex)}
       locale={locale}
       jsonLd={jsonLd}
     />

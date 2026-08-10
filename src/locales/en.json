@@ -728,16 +728,16 @@
   },
   "seo": {
     "default": {
-      "title": "Gold Standard — Investment Gold Bullion · Kuwait",
-      "description": "Kuwait company for gold for investment and savings. Certified gold bars and coins at live KWD prices, insured delivery, authenticity verification, and buyback."
+      "title": "Buy Gold in Kuwait · Gold Standard",
+      "description": "Buy certified investment gold in Kuwait at live KWD prices. MOCI-hallmarked bars and coins, insured delivery, buyback, and a showroom in Central Gold Market."
     },
     "home": {
-      "title": "Gold Standard — Investment Gold Bullion · Kuwait",
-      "description": "A branch of Sultan Gold. Certified bars and coins, live prices, insured delivery, and multi-layer authenticity assurance."
+      "title": "Buy Gold Kuwait · Certified Bullion & Coins | Gold Standard",
+      "description": "Kuwait gold dealer for investment and savings. Live prices, MOCI hallmark, insured delivery, authenticity checks, and buyback. Branch of Sultan Gold, Central Gold Market."
     },
     "prices": {
-      "title": "Live Gold Prices Kuwait · Buy & Sell KWD/g | Gold Standard",
-      "description": "Live gold and precious metal buy/sell rates in Kuwaiti dinar. Interactive chart, karat board, and gram calculator — updated continuously."
+      "title": "Gold Price Kuwait Today · Live Buy & Sell KWD/g | Gold Standard",
+      "description": "Live gold price in Kuwait (KWD per gram) for 24K, 22K, 21K, 18K plus silver, platinum, and palladium. Buy and sell rates, chart, and gram calculator updated continuously."
     },
     "customerKyc": {
       "title": "Company customer screening · Gold Standard Kuwait",
@@ -752,20 +752,20 @@
       "description": "Apply to list your company and unlock the sell-by-karat desk board from Gold Standard Kuwait."
     },
     "products": {
-      "title": "Shop Certified Gold Products | Gold Standard Kuwait",
-      "description": "Browse MOCI-hallmarked gold bars and coins for investment and savings. Live KWD pricing, insured shipping, and authenticated products."
+      "title": "Buy Gold Bars & Coins Kuwait · MOCI Certified | Gold Standard",
+      "description": "Shop certified gold bars and coins in Kuwait at live KWD prices. MOCI hallmark, insured shipping, serial authenticity, and transparent making charges."
     },
     "about": {
-      "title": "About Gold Standard · Investment Bullion Company Kuwait",
-      "description": "Gold Standard is a Kuwait company for gold for investment and savings — a branch of Sultan Gold — manufacturing and supplying high-purity bars, coins, and institutional solutions."
+      "title": "About Gold Standard Kuwait · Investment Gold Company",
+      "description": "Gold Standard is a licensed Kuwait gold company for investment and savings — a branch of Sultan Gold — supplying high-purity bars, coins, and institutional solutions from Central Gold Market."
     },
     "contact": {
-      "title": "Contact Gold Standard Kuwait",
-      "description": "Contact Gold Standard for gold purchases, buyback, and showroom visits in Kuwait."
+      "title": "Contact Gold Standard Kuwait · Phone, Email & Showroom",
+      "description": "Contact Gold Standard Kuwait to buy gold, arrange buyback, or visit the Central Gold Market showroom. Call +965 9853 8538 or email info@goldstandardkw.com."
     },
     "branches": {
-      "title": "Gold Standard Showroom · Central Gold Market · Kuwait",
-      "description": "Visit the Gold Standard showroom in Kuwait’s Central Gold Market — hours, map, and directions."
+      "title": "Gold Shop Central Gold Market Kuwait · Gold Standard Showroom",
+      "description": "Visit Gold Standard at No. 147, Central Gold Market, 1st Floor, Kuwait City. Hours, Google Maps directions, and 5.0 showroom rating."
     },
     "cart": {
       "title": "Your Cart | Gold Standard",
@@ -784,12 +784,16 @@
       "description": "Gold Standard trading desk is under development. Live rates, custody, and institutional-grade tools launching soon in Kuwait."
     },
     "holdings": {
-      "title": "Gold Holdings · Metal Wallet | Gold Standard",
-      "description": "Plan and build your gold holdings at live Kuwait rates — instant acquisition and target-price orders coming soon."
+      "title": "Gold Holdings Kuwait · Metal Wallet | Gold Standard",
+      "description": "Plan gold holdings in Kuwait at live market rates. Build savings with certified metal — instant purchase and target-price orders coming soon."
     },
     "zakat": {
-      "title": "Zakat Center | Gold Standard Kuwait",
-      "description": "Calculate gold and silver zakat with live Kuwait prices, Awqaf-aligned nisab, and saved Hijri-year records."
+      "title": "Gold Zakat Calculator Kuwait · Nisab & Live Prices | Gold Standard",
+      "description": "Calculate gold and silver zakat in Kuwait with live KWD prices, Awqaf-aligned nisab, and Hijri-year records. Free zakat center from Gold Standard."
+    },
+    "verify": {
+      "title": "Verify Gold Authenticity Kuwait | Gold Standard",
+      "description": "Verify certified gold product authenticity in Kuwait. Check serials and digital passport records from Gold Standard before you buy or accept a transfer."
     }
   },
   "priceReminder": {
