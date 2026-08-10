@@ -29,6 +29,11 @@ import { TRADING_AND_VIRTUAL_WALLET_ENABLED, WALLET_FUNDING_AND_CHECKOUT_ENABLED
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import { sanitizeKnetPaymentUrl } from '@/lib/knetPaymentUrl'
+import {
+  isExplicitKnetFailure,
+  isExplicitKnetSuccess,
+  needsKnetVerification,
+} from '@/lib/knetReceipt'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
 import {
   cartClubPricingBreakdown,
@@ -148,49 +153,6 @@ function readKnetPendingSale(): KnetPendingSale | null {
   }
 }
 
-function isExplicitKnetSuccess(knetStatus: string | null | undefined, result: string): boolean {
-  const normalized = result.replace(/\+/g, ' ').trim().toUpperCase()
-  return (
-    knetStatus === 'success'
-    || ['CAPTURED', 'SUCCESS', 'PROCESSED', 'APPROVED'].includes(normalized)
-  )
-}
-
-function isExplicitKnetFailure(
-  knetStatus: string | null | undefined,
-  result: string,
-  reason: string | null | undefined,
-): boolean {
-  const normalized = result.replace(/\+/g, ' ').trim().toUpperCase()
-  if (['CANCELED', 'CANCELLED', 'NOT CAPTURED', 'DECLINED', 'DENIED', 'FAILED'].includes(normalized)) {
-    return true
-  }
-  const r = (reason || '').toLowerCase()
-  // Callback-parse gaps are NOT real declines — Inquiry may still find CAPTURED.
-  if (r === 'missing_trandata' || r === 'decrypt_failed') return false
-  if (r.includes('cancel') || r === 'callback_error') return true
-  // Plain failed redirect from KNET errorURL (customer cancelled / declined on bank page).
-  if (
-    knetStatus === 'failed'
-    && !isExplicitKnetSuccess(knetStatus, result)
-  ) {
-    return true
-  }
-  return false
-}
-
-function needsKnetVerification(
-  knetStatus: string | null | undefined,
-  result: string,
-  reason: string | null | undefined,
-): boolean {
-  if (knetStatus === 'pending') return true
-  if (isExplicitKnetSuccess(knetStatus, result) || isExplicitKnetFailure(knetStatus, result, reason)) {
-    return false
-  }
-  const r = (reason || '').toLowerCase()
-  return r === 'missing_trandata' || r === 'decrypt_failed' || Boolean(knetStatus || result)
-}
 
 type CheckoutPayRow = {
   id: 'knet' | 'card' | 'cod' | 'wallet'
@@ -505,9 +467,10 @@ export default function CheckoutPage() {
     const saleId = urlSaleId || pending?.saleId
     const invoice = urlInvoice || pending?.invoice
 
-    // Returned from KNET if URL has sale/knet params OR we stored a pending sale before redirect.
+    // Only treat as a bank return when the URL carries KNET signals.
+    // Pending session alone must not bounce every /checkout visit after a decline.
     const returnedFromKnet = Boolean(
-      saleId && (pending || knetStatus || params.get('result') || params.get('reason')),
+      saleId && (knetStatus || params.get('result') || params.get('reason')),
     )
     if (!returnedFromKnet || !saleId) return
 
@@ -532,7 +495,12 @@ export default function CheckoutPage() {
     }
 
     if (isExplicitKnetFailure(knetStatus, result, reason)) {
-      // Still open receipt with status — receipt polls Inquiry (cancel ≠ unpaid).
+      try {
+        sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+      } catch {
+        /* ignore */
+      }
+      // Open receipt with decline signals — short Inquiry, then Declined UI.
       goToReceipt({
         status: knetStatus || 'failed',
         reason: reason || undefined,

@@ -11,8 +11,9 @@ import {
   Phone,
   type LucideIcon,
 } from 'lucide-react'
-import logo from '@/assets/logo.png'
+import footerLogo from '@/assets/brand/logo-footer.png'
 import { FooterProductsSitemap } from '@/components/layout/FooterProductsSitemap'
+import { FooterTrustStrip } from '@/components/layout/FooterTrustStrip'
 import { scrollToHash } from '@/utils/scrollToHash'
 
 type FooterLink = { nameKey: string; to: To; hashTarget?: string }
@@ -61,8 +62,60 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="relative overflow-hidden bg-[#0B0F19] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(133,227,7,0.08),transparent_60%)]" />
+    <footer className="relative mt-0 text-white">
+      {/* Lime curved ribbon — soft valley into the dark footer (ref: payment footer) */}
+      <div className="pointer-events-none relative z-10 -mb-px h-9 w-full sm:h-11" aria-hidden>
+        <svg
+          className="absolute inset-0 h-full w-full"
+          viewBox="0 0 1440 44"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <filter
+              id="footerRibbonGlow"
+              x="-5%"
+              y="-120%"
+              width="110%"
+              height="340%"
+              colorInterpolationFilters="sRGB"
+            >
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          {/* Dark fill under the curve (site bg shows above) */}
+          <path
+            d="M0 10 C360 10 480 38 720 38 C960 38 1080 10 1440 10 L1440 44 L0 44 Z"
+            fill="#0B0F19"
+          />
+          {/* Soft glow under the ribbon */}
+          <path
+            d="M0 10 C360 10 480 38 720 38 C960 38 1080 10 1440 10"
+            fill="none"
+            stroke="#85E307"
+            strokeOpacity="0.45"
+            strokeWidth="6"
+            strokeLinecap="round"
+          />
+          {/* Lime accent ribbon */}
+          <path
+            d="M0 10 C360 10 480 38 720 38 C960 38 1080 10 1440 10"
+            fill="none"
+            stroke="#85E307"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            filter="url(#footerRibbonGlow)"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      </div>
+
+      <div className="relative overflow-hidden bg-[#0B0F19]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(133,227,7,0.08),transparent_60%)]" />
 
       {/* CTA band */}
       <div className="relative border-b border-white/10">
@@ -97,12 +150,14 @@ export default function Footer() {
           <div className="min-w-0 col-span-2 sm:col-span-2 lg:col-span-3">
             <Link to="/" className="inline-flex items-center gap-2.5">
               <img
-                src={logo}
+                src={footerLogo}
                 alt={t('common.logoAlt')}
-                className="h-10 w-auto object-contain brightness-0 invert"
+                className="h-12 w-auto max-w-[220px] object-contain object-left sm:h-14 sm:max-w-[260px]"
               />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">{t('footer.tagline')}</p>
+
+            <FooterTrustStrip />
 
             <div className="mt-5 flex flex-col gap-2.5">
               <a
@@ -233,6 +288,7 @@ export default function Footer() {
             </a>
           </div>
         </div>
+      </div>
       </div>
     </footer>
   )

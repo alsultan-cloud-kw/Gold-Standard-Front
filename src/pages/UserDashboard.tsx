@@ -1401,10 +1401,35 @@ type OrderSummary = {
   sale_date: string
   status: string
   status_display?: string
+  payment_status?: string
+  payment_status_display?: string
   total_amount: string
   delivery_type?: string
   delivery_type_display?: string
   items?: OrderItemSummary[]
+}
+
+function paymentStatusLabel(
+  t: (key: string) => string,
+  paymentStatus: string | undefined,
+  fallbackDisplay?: string,
+): string {
+  const key = (paymentStatus || '').toLowerCase()
+  if (key === 'paid') return t('userDashboard.orders.paymentStatusPaid')
+  if (key === 'pending') return t('userDashboard.orders.paymentStatusPending')
+  if (key === 'failed') return t('userDashboard.orders.paymentStatusFailed')
+  if (key === 'cancelled' || key === 'canceled') return t('userDashboard.orders.paymentStatusCancelled')
+  if (key === 'refunded') return t('userDashboard.orders.paymentStatusRefunded')
+  return fallbackDisplay || paymentStatus || ''
+}
+
+function paymentStatusPillClass(paymentStatus: string | undefined): string {
+  const key = (paymentStatus || '').toLowerCase()
+  if (key === 'paid') return 'dashboard-status-pill--success'
+  if (key === 'failed' || key === 'cancelled' || key === 'canceled' || key === 'refunded') {
+    return 'dashboard-status-pill--danger'
+  }
+  return 'dashboard-status-pill--neutral'
 }
 
 function asOrderList(data: unknown): OrderSummary[] {
@@ -1569,20 +1594,35 @@ function OrdersTab() {
                       >
                         {order.status_display ?? order.status}
                       </span>
+                      {order.payment_status ? (
+                        <span
+                          className={cn('dashboard-status-pill', paymentStatusPillClass(order.payment_status))}
+                          title={t('userDashboard.orders.paymentStatusLabel')}
+                        >
+                          {t('userDashboard.orders.paymentStatusLabel')}:{' '}
+                          {paymentStatusLabel(t, order.payment_status, order.payment_status_display)}
+                        </span>
+                      ) : null}
                       <span className="text-sm font-semibold text-[#0B0F19]">
                         {Number(order.total_amount).toLocaleString(undefined, { minimumFractionDigits: 3 })} KWD
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleDownloadInvoice(order)}
-                      disabled={downloadingId === order.id}
-                      className={cn(dashboardSecondaryBtnClass, 'mt-1')}
-                    >
-                      {downloadingId === order.id
-                        ? t('userDashboard.orders.downloading')
-                        : t('userDashboard.orders.downloadInvoice')}
-                    </button>
+                    {order.payment_status === 'paid' || order.status === 'paid' || order.status === 'delivered' || order.status === 'locked' ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadInvoice(order)}
+                        disabled={downloadingId === order.id}
+                        className={cn(dashboardSecondaryBtnClass, 'mt-1')}
+                      >
+                        {downloadingId === order.id
+                          ? t('userDashboard.orders.downloading')
+                          : t('userDashboard.orders.downloadInvoice')}
+                      </button>
+                    ) : (
+                      <p className="mt-1 max-w-[14rem] text-end text-[11px] leading-snug text-[#94A3B8]">
+                        {t('userDashboard.orders.downloadInvoicePaidOnly')}
+                      </p>
+                    )}
                   </div>
                 </div>
                 {order.id ? <PaymentActionTimeline saleId={order.id} dense /> : null}

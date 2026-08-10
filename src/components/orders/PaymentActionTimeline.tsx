@@ -17,7 +17,7 @@ type Props = {
 
 const pillClass: Record<PaymentActionKind, string> = {
   open: 'bg-amber-50 text-amber-800 border-amber-200',
-  void: 'bg-stone-100 text-stone-600 border-stone-200',
+  void: 'bg-red-50 text-red-800 border-red-200',
   paid: 'bg-emerald-50 text-emerald-800 border-emerald-200',
 }
 
