@@ -7327,19 +7327,7 @@ html[dir='rtl'] .wealth-duel__vs {
 }
 
 .home-karat-table__karat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
   font-weight: 700;
-}
-
-.home-karat-table__dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 0.12rem;
-  background: linear-gradient(165deg, #e8d48a, #b89a3e);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  flex-shrink: 0;
 }
 
 .home-karat-table__pct {

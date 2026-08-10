@@ -102,7 +102,6 @@ export function HomeKaratRatesTable({ rates, className }: Props) {
                 >
                   <th scope="row">
                     <span className="home-karat-table__karat" dir="ltr">
-                      <span className="home-karat-table__dot" aria-hidden />
                       {t('home.karatTable.karatRow', { karat: row.karat })}
                     </span>
                   </th>
