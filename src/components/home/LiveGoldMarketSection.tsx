@@ -37,7 +37,7 @@ export function LiveGoldMarketSection({ bullionDockRef }: Props) {
   }, [isLoading, showChart])
 
   return (
-    <section className="home-section border-t border-black/5">
+    <section className="home-section home-section--live-market border-t border-black/5">
       <div className="home-section-inner">
         {bullionDockRef ? (
           <BullionEndDock
@@ -68,7 +68,7 @@ export function LiveGoldMarketSection({ bullionDockRef }: Props) {
             <div className="flex justify-center">
               <Link
                 to="/prices"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-[#3F6F00] transition-colors hover:text-[#4F8E00]"
+                className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-[#3F6F00] transition-colors hover:text-[#4F8E00]"
               >
                 {t('home.chart.viewFullPrices')}
                 <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden />

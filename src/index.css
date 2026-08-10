@@ -7145,38 +7145,86 @@ html[dir='rtl'] .wealth-duel__vs {
   }
 }
 
-/* Homepage: live chart + compact karat table side by side */
+/* Homepage: live chart + karat table — stack until container is wide enough */
+.home-section--live-market {
+  overflow-x: clip;
+}
+
+.home-section--live-market .home-section-inner {
+  /* Fill more of phone/tablet width — less empty side gutter */
+  padding-inline: max(0.75rem, calc(var(--page-gutter) * 0.65));
+}
+
+@media (min-width: 1280px) {
+  .home-section--live-market .home-section-inner {
+    padding-inline: var(--page-gutter);
+  }
+}
+
+@media (max-width: 359px) {
+  .home-section--live-market .home-section-inner {
+    padding-inline: 0.75rem;
+  }
+}
+
 .home-live-market-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
+  width: 100%;
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
-  .home-live-market-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(17.5rem, 22rem);
-    gap: 1.25rem;
-    align-items: start;
-  }
-}
-
-@media (max-width: 1023px) {
-  /* Rates first on phones/tablets — chart is tall */
-  .home-live-market-layout__table {
-    order: -1;
-  }
+/* Rates first while stacked — chart is tall */
+.home-live-market-layout__table {
+  order: -1;
+  width: 100%;
+  max-width: none;
 }
 
 .home-live-market-layout__chart,
 .home-live-market-layout__table {
   min-width: 0;
+  width: 100%;
+}
+
+/*
+ * Side-by-side only when the section container is wide enough for a readable
+ * table (≥ ~72rem content). Uses home-section-inner container-type.
+ */
+@container (min-width: 72rem) {
+  .home-live-market-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(24rem, 32rem);
+    gap: 1.35rem;
+    align-items: start;
+  }
+
+  .home-live-market-layout__table {
+    order: 0;
+  }
+}
+
+/* Fallback if container queries unsupported — still avoid cramped tablet 2-col */
+@supports not (container-type: inline-size) {
+  @media (min-width: 1280px) {
+    .home-live-market-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(24rem, 32rem);
+      gap: 1.35rem;
+      align-items: start;
+    }
+
+    .home-live-market-layout__table {
+      order: 0;
+    }
+  }
 }
 
 .home-karat-table {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
   min-width: 0;
   border-radius: 1.15rem;
   border: 1px solid rgba(11, 15, 25, 0.07);
@@ -7188,7 +7236,7 @@ html[dir='rtl'] .wealth-duel__vs {
 }
 
 .home-karat-table__head {
-  padding: 0.9rem 1rem 0.15rem;
+  padding: 0.95rem 1.1rem 0.2rem;
 }
 
 .home-karat-table__eyebrow {
@@ -7202,7 +7250,7 @@ html[dir='rtl'] .wealth-duel__vs {
 
 .home-karat-table__title {
   margin: 0.2rem 0 0;
-  font-size: 1.05rem;
+  font-size: clamp(1.05rem, 2.4vw, 1.2rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #0b0f19;
@@ -7211,7 +7259,7 @@ html[dir='rtl'] .wealth-duel__vs {
 
 .home-karat-table__unit {
   margin: 0.2rem 0 0;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: rgba(11, 15, 25, 0.45);
 }
@@ -7230,8 +7278,8 @@ html[dir='rtl'] .wealth-duel__vs {
 }
 
 .home-karat-table__grid thead th {
-  padding: 0.55rem 0.7rem;
-  font-size: 0.68rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-align: start;
@@ -7247,8 +7295,8 @@ html[dir='rtl'] .wealth-duel__vs {
 
 .home-karat-table__grid tbody th,
 .home-karat-table__grid tbody td {
-  padding: 0.7rem 0.7rem;
-  font-size: 0.84rem;
+  padding: 0.85rem 0.85rem;
+  font-size: clamp(0.84rem, 2.1vw, 0.95rem);
   font-weight: 600;
   color: #0b0f19;
   border-bottom: 1px solid rgba(11, 15, 25, 0.06);
@@ -7299,7 +7347,7 @@ html[dir='rtl'] .wealth-duel__vs {
   align-items: center;
   justify-content: flex-end;
   gap: 0.1rem;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: rgba(11, 15, 25, 0.55);
 }
@@ -7327,34 +7375,25 @@ html[dir='rtl'] .home-karat-table__row--featured {
   background: linear-gradient(-90deg, rgba(133, 227, 7, 0.1), transparent 55%) !important;
 }
 
-@media (max-width: 480px) {
+/* Ultra-narrow: keep readable, not micro-type */
+@media (max-width: 359px) {
   .home-karat-table__head {
-    padding: 0.75rem 0.75rem 0.1rem;
-  }
-
-  .home-karat-table__title {
-    font-size: 0.95rem;
+    padding: 0.8rem 0.75rem 0.15rem;
   }
 
   .home-karat-table__grid thead th {
-    padding: 0.45rem 0.4rem;
-    font-size: 0.62rem;
-    letter-spacing: 0.02em;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.68rem;
   }
 
   .home-karat-table__grid tbody th,
   .home-karat-table__grid tbody td {
-    padding: 0.55rem 0.4rem;
-    font-size: 0.75rem;
+    padding: 0.7rem 0.5rem;
+    font-size: 0.8125rem;
   }
 
   .home-karat-table__pct {
-    font-size: 0.68rem;
-  }
-
-  .home-karat-table__chevron {
-    width: 0.8rem;
-    height: 0.8rem;
+    font-size: 0.72rem;
   }
 }
 
