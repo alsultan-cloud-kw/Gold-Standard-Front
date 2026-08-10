@@ -374,26 +374,33 @@
         "label": "Paper cash",
         "value": "−90%"
       },
-      "vs": "VS",
-      "footnote": "Long-term historical indicator. Not investment advice.",
+      "vs": "Vs",
+      "footnote": "Long-term historical indicator, not investment advice.",
       "cta": "Shop certified gold"
     },
     "goldComparison": {
       "kicker": "Why gold",
-      "title": "Gold outperforms most assets",
-      "subtitle": "Stability and long-term value — scored against cash, bitcoin, stocks, and real estate on twenty years of historical behavior.",
+      "titleLead": "Why",
+      "titleAccent": "gold",
+      "title": "Why gold?",
+      "heroSubtitle": "A real asset, proven over time.",
+      "heroBody": "Gold remains a trusted store of wealth when currencies weaken and markets swing. Physical value you can hold, trade, and pass on.",
+      "heroAlt": "Fine gold bar resting on natural stones",
+      "subtitle": "Stability and long-term value scored against cash, digital currencies, stocks, and real estate.",
       "vs": "VS",
       "vsHint": "Physical gold vs cash on hand",
-      "moneyStackAlt": "Stack of cash — purchasing power that erodes over time",
-      "goldBarAlt": "Gold bar — best long-term store of value",
+      "moneyStackAlt": "Stack of cash - purchasing power that erodes over time",
+      "goldBarAlt": "Gold bar - best long-term store of value",
       "criteriaHeader": "Criteria",
       "bestChoice": "Best choice",
+      "bestLongTerm": "Best for the long term",
+      "goldFooter": "A real asset that protects your purchasing power",
       "recommended": "Recommended",
-      "footnote": "Illustrative scores based on typical long-run behavior — not investment advice.",
+      "footnote": "Illustrative scores based on typical long-run behavior - not investment advice.",
       "assets": {
         "gold": "Gold",
         "cash": "Cash",
-        "bitcoin": "Bitcoin",
+        "bitcoin": "Digital currencies",
         "stocks": "Stocks",
         "realEstate": "Real estate"
       },
@@ -407,9 +414,27 @@
       "criteria": {
         "inflationHedge": "Inflation protection",
         "lowVolatility": "Low volatility",
-        "liquidity": "Liquidity",
-        "crisisResilience": "Crisis resilience",
+        "liquidity": "High liquidity",
+        "crisisResilience": "Performance in crises",
         "longTermValue": "Long-term value"
+      },
+      "features": {
+        "tangible": {
+          "title": "Tangible and real",
+          "body": "Physical gold you can hold and verify."
+        },
+        "value": {
+          "title": "Value preservation",
+          "body": "Built to protect purchasing power over decades."
+        },
+        "liquidity": {
+          "title": "Global liquidity",
+          "body": "Recognized and tradable across world markets."
+        },
+        "storage": {
+          "title": "Safe storage",
+          "body": "Secure custody with clear ownership records."
+        }
       }
     },
     "sultanTrust": {

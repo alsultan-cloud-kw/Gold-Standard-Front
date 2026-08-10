@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
-import goldBarsDuel from '@/assets/home/wealth/gold-bars-duel.png'
-import cashStackDuel from '@/assets/home/wealth/cash-stack-duel.png'
+import goldBarsDuel from '@/assets/home/wealth/gold-bars-duel.webp'
+import cashStackDuel from '@/assets/home/wealth/cash-stack-duel.webp'
 import { cn } from '@/lib/utils'
 
 /** Replays enter animation every time the node scrolls into view. */
@@ -39,18 +39,19 @@ function delayStyle(seconds: number): CSSProperties {
   return { '--reveal-delay': `${seconds}s` } as CSSProperties
 }
 
+/**
+ * Gold vs cash “value that lasts” duel — layout matched to marketing reference:
+ * lime badge, split headline, soft V-wave, huge italic Vs, brown/beige panels, lime CTA.
+ */
 export function WealthProtectionSection() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { ref, active } = useReplayOnView<HTMLDivElement>(0.28)
+  const isRtl = i18n.dir() === 'rtl'
 
   return (
     <section className="home-section home-section--compact" id="wealth-protection">
       <div className="home-section-inner min-w-0">
-        <div
-          ref={ref}
-          className={cn('wealth-duel', active && 'is-active')}
-        >
-          {/* Header */}
+        <div ref={ref} className={cn('wealth-duel', active && 'is-active')}>
           <header className="wealth-duel__header">
             <span className="wealth-duel__badge wealth-duel__reveal" style={delayStyle(0.05)}>
               {t('home.wealthProtection.kicker')}
@@ -64,25 +65,41 @@ export function WealthProtectionSection() {
             </p>
           </header>
 
-          {/* Wave into split stage */}
+          {/* Soft V-curve into the split stage (reference) */}
           <div className="wealth-duel__wave" aria-hidden>
-            <svg viewBox="0 0 1440 48" preserveAspectRatio="none" className="h-full w-full">
+            <svg viewBox="0 0 1440 72" preserveAspectRatio="none" className="h-full w-full">
               <path
-                d="M0 18 C360 18 480 42 720 42 C960 42 1080 18 1440 18 L1440 48 L0 48 Z"
+                d="M0 0 L1440 0 L1440 28 C1180 28 980 68 720 68 C460 68 260 28 0 28 Z"
+                fill="#0B0C10"
+              />
+              <path
+                d="M0 28 C260 28 460 68 720 68 C980 68 1180 28 1440 28 L1440 72 L0 72 Z"
                 fill="url(#wealthWaveFill)"
               />
               <defs>
                 <linearGradient id="wealthWaveFill" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#3A2416" />
-                  <stop offset="50%" stopColor="#2A1C14" />
-                  <stop offset="100%" stopColor="#D9C4A8" />
+                  {isRtl ? (
+                    <>
+                      <stop offset="0%" stopColor="#D9C4A8" />
+                      <stop offset="48%" stopColor="#C9B49A" />
+                      <stop offset="52%" stopColor="#2E1C12" />
+                      <stop offset="100%" stopColor="#3A2416" />
+                    </>
+                  ) : (
+                    <>
+                      <stop offset="0%" stopColor="#3A2416" />
+                      <stop offset="48%" stopColor="#2E1C12" />
+                      <stop offset="52%" stopColor="#C9B49A" />
+                      <stop offset="100%" stopColor="#D9C4A8" />
+                    </>
+                  )}
                 </linearGradient>
               </defs>
             </svg>
           </div>
 
-          {/* Duel panels — gold first (start edge / right in RTL) */}
           <div className="wealth-duel__stage">
+            {/* Gold first = start edge (right in RTL), matches Arabic reading order */}
             <article className="wealth-duel__panel wealth-duel__panel--gold">
               <div className="wealth-duel__visual wealth-duel__reveal" style={delayStyle(0.28)}>
                 <img
@@ -91,13 +108,14 @@ export function WealthProtectionSection() {
                   className="wealth-duel__img"
                   loading="lazy"
                   decoding="async"
+                  draggable={false}
                 />
               </div>
               <div className="wealth-duel__meta wealth-duel__reveal" style={delayStyle(0.38)}>
                 <span className="wealth-duel__pill wealth-duel__pill--gold">
-                  <ArrowUpRight className="h-3.5 w-3.5 text-[#85E307]" strokeWidth={2.5} aria-hidden />
+                  <ArrowUpRight className="wealth-duel__pill-icon wealth-duel__pill-icon--up" strokeWidth={2.5} aria-hidden />
                   <span>{t('home.wealthProtection.gold.pill')}</span>
-                  <ChevronRight className="h-3.5 w-3.5 opacity-50 rtl:rotate-180" aria-hidden />
+                  <ChevronRight className="wealth-duel__pill-chevron rtl:rotate-180" aria-hidden />
                 </span>
                 <p className="wealth-duel__claim wealth-duel__claim--gold">
                   {t('home.wealthProtection.gold.claim')}
@@ -117,13 +135,14 @@ export function WealthProtectionSection() {
                   className="wealth-duel__img"
                   loading="lazy"
                   decoding="async"
+                  draggable={false}
                 />
               </div>
               <div className="wealth-duel__meta wealth-duel__reveal" style={delayStyle(0.42)}>
                 <span className="wealth-duel__pill wealth-duel__pill--cash">
-                  <ArrowDownRight className="h-3.5 w-3.5 text-[#E57373]" strokeWidth={2.5} aria-hidden />
+                  <ArrowDownRight className="wealth-duel__pill-icon wealth-duel__pill-icon--down" strokeWidth={2.5} aria-hidden />
                   <span>{t('home.wealthProtection.cash.pill')}</span>
-                  <ChevronRight className="h-3.5 w-3.5 text-[#E57373]/70 rtl:rotate-180" aria-hidden />
+                  <ChevronRight className="wealth-duel__pill-chevron wealth-duel__pill-chevron--cash rtl:rotate-180" aria-hidden />
                 </span>
                 <p className="wealth-duel__claim wealth-duel__claim--cash">
                   {t('home.wealthProtection.cash.claim')}
@@ -135,18 +154,18 @@ export function WealthProtectionSection() {
               </div>
             </article>
 
+            {/* Giant italic Vs — visual centerpiece of the reference */}
             <span className="wealth-duel__vs" aria-hidden>
               {t('home.wealthProtection.vs')}
             </span>
-          </div>
 
-          {/* CTA */}
-          <div className="wealth-duel__footer wealth-duel__reveal" style={delayStyle(0.5)}>
-            <Link to="/products" className="wealth-duel__cta">
-              <ArrowRight className="h-4 w-4 shrink-0 rtl:rotate-180" aria-hidden />
-              {t('home.wealthProtection.cta')}
-            </Link>
-            <p className="wealth-duel__footnote">{t('home.wealthProtection.footnote')}</p>
+            <div className="wealth-duel__footer wealth-duel__reveal" style={delayStyle(0.5)}>
+              <Link to="/products" className="wealth-duel__cta">
+                <ArrowRight className="h-4 w-4 shrink-0 rtl:rotate-180" aria-hidden />
+                {t('home.wealthProtection.cta')}
+              </Link>
+              <p className="wealth-duel__footnote">{t('home.wealthProtection.footnote')}</p>
+            </div>
           </div>
         </div>
       </div>

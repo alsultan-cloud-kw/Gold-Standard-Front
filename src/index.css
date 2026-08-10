@@ -4890,20 +4890,494 @@ html[dir='rtl'] .gs-app-loader__trust {
   pointer-events: none;
 }
 
-/* Wealth protection — gold vs cash duel (reference layout) */
+/* Why gold — cream/gold asset comparison (marketing reference) */
+.why-gold {
+  --why-gold: #c5a059;
+  --why-navy: #1a202c;
+  --why-cream: #f9f7f2;
+  --why-border: #e2e8f0;
+  --why-muted: #64748b;
+  position: relative;
+  min-width: 0;
+  overflow-x: clip;
+  background: #ffffff;
+  padding-block-end: 0;
+}
+
+.why-gold__inner {
+  padding-block-end: 0;
+}
+
+.why-gold__reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.why-gold.is-active .why-gold__reveal {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .why-gold__reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+.why-gold__hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  padding-block: 0.5rem 1.25rem;
+}
+
+@media (min-width: 900px) {
+  .why-gold__hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 2rem;
+    padding-block: 0.75rem 0.5rem;
+  }
+}
+
+.why-gold__copy {
+  min-width: 0;
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  .why-gold__copy {
+    text-align: start;
+  }
+}
+
+.why-gold__diamond {
+  display: block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-inline: auto;
+  margin-bottom: 0.85rem;
+  rotate: 45deg;
+  border-radius: 0.1rem;
+  background: linear-gradient(145deg, #e8d190, var(--why-gold) 55%, #9a7a3a);
+  box-shadow: 0 2px 8px rgba(197, 160, 89, 0.35);
+}
+
+@media (min-width: 900px) {
+  .why-gold__diamond {
+    margin-inline: 0;
+  }
+}
+
+.why-gold__title {
+  margin: 0;
+  font-size: clamp(2rem, 5.5vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--why-navy);
+}
+
+.why-gold__title-lead {
+  color: var(--why-navy);
+}
+
+.why-gold__title-accent {
+  color: var(--why-gold);
+}
+
+.why-gold__title-mark {
+  color: var(--why-navy);
+  font-weight: 700;
+}
+
+.why-gold__subtitle {
+  margin: 0.85rem 0 0;
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  font-weight: 600;
+  line-height: 1.45;
+  color: #4a5568;
+}
+
+.why-gold__body {
+  margin: 0.75rem 0 0;
+  max-width: 38rem;
+  margin-inline: auto;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--why-muted);
+}
+
+@media (min-width: 900px) {
+  .why-gold__body {
+    margin-inline: 0;
+  }
+}
+
+.why-gold__visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 14rem;
+  padding: 1rem;
+}
+
+.why-gold__orb {
+  position: absolute;
+  inset: 8% 6%;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 40% 35%, #fffefb 0%, var(--why-cream) 42%, #efe8d8 78%, transparent 82%);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.why-gold__hero-img {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 28rem);
+  height: auto;
+  max-height: 22rem;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 40px rgba(26, 32, 44, 0.14));
+}
+
+@media (min-width: 900px) {
+  .why-gold__hero-img {
+    max-height: 26rem;
+  }
+}
+
+.why-gold__rail {
+  display: flex;
+  gap: 0.875rem;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 1.75rem 0.15rem 1.5rem;
+  margin-inline: calc(var(--page-gutter, 1rem) * -0.35);
+  padding-inline: calc(var(--page-gutter, 1rem) * 0.35);
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.why-gold__rail::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .why-gold__rail {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.85rem;
+    overflow: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+    padding-block: 2.25rem 1.75rem;
+    scroll-snap-type: none;
+    align-items: end;
+  }
+}
+
+.why-gold__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 min(16.5rem, 78vw);
+  min-width: 0;
+  min-height: 100%;
+  padding: 1.1rem 1rem 1.15rem;
+  border-radius: 1rem;
+  border: 1px solid var(--why-border);
+  background: #ffffff;
+  box-shadow: 0 8px 28px -20px rgba(26, 32, 44, 0.28);
+  scroll-snap-align: center;
+}
+
+@media (min-width: 1100px) {
+  .why-gold__card {
+    flex: none;
+    width: auto;
+  }
+}
+
+.why-gold__card--gold {
+  z-index: 1;
+  padding-top: 0;
+  border-color: rgba(197, 160, 89, 0.55);
+  background: linear-gradient(180deg, #fbf6ea 0%, #f7f0e0 48%, #f3ead8 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 18px 42px -18px rgba(154, 122, 58, 0.38);
+}
+
+@media (min-width: 1100px) {
+  .why-gold__card--gold {
+    margin-block-start: -1.35rem;
+    padding-bottom: 1.35rem;
+  }
+}
+
+.why-gold__card-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0 -1px;
+  margin-bottom: 0.95rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(90deg, #d4b36a, var(--why-gold) 45%, #b89145);
+  color: #fffef9;
+  text-align: center;
+}
+
+.why-gold__card-banner-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex-shrink: 0;
+}
+
+.why-gold__card-banner-text {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.why-gold__card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.why-gold__card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--why-border);
+  background: #f8fafc;
+  color: var(--why-navy);
+  flex-shrink: 0;
+}
+
+.why-gold__card-icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.why-gold__card-icon--gold {
+  border-color: rgba(197, 160, 89, 0.45);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--why-gold);
+}
+
+.why-gold__card-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--why-navy);
+}
+
+.why-gold__criteria {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1;
+}
+
+.why-gold__criterion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.why-gold__criterion-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--why-muted);
+  overflow-wrap: anywhere;
+}
+
+.why-gold__criterion-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.why-gold__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.why-gold__dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 9999px;
+  background: #d1d5db;
+}
+
+.why-gold__dot--filled {
+  background: #94a3b8;
+}
+
+.why-gold__dot--gold {
+  background: var(--why-gold);
+  box-shadow: 0 0 0 1px rgba(197, 160, 89, 0.2);
+}
+
+.why-gold__criterion-glyph {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  color: var(--why-gold);
+  opacity: 0.9;
+}
+
+.why-gold__card-foot {
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(197, 160, 89, 0.28);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #8a6d35;
+  text-align: center;
+}
+
+.why-gold__features {
+  margin-top: 0.25rem;
+  background: var(--why-cream);
+  border-top: 1px solid rgba(197, 160, 89, 0.14);
+}
+
+.why-gold__features-inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.15rem;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: 1.35rem var(--page-gutter, 1.25rem) 1.6rem;
+}
+
+@media (min-width: 640px) {
+  .why-gold__features-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .why-gold__features-inner {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+    padding-block: 1.6rem 1.85rem;
+  }
+}
+
+.why-gold__feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.why-gold__feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--why-gold);
+}
+
+.why-gold__feature-icon svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.why-gold__feature-copy {
+  min-width: 0;
+}
+
+.why-gold__feature-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--why-navy);
+}
+
+.why-gold__feature-body {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--why-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 359px) {
+  .why-gold__card {
+    flex-basis: min(15.25rem, 86vw);
+    padding: 0.95rem 0.85rem 1rem;
+  }
+
+  .why-gold__title {
+    font-size: clamp(1.75rem, 9vw, 2.15rem);
+  }
+
+  .why-gold__hero-img {
+    max-height: 16rem;
+  }
+
+  .why-gold__features-inner {
+    padding-inline: 0.75rem;
+  }
+}
+
+/* Wealth protection — gold vs cash duel (exact marketing reference) */
 .wealth-duel {
+  --wealth-lime: #85e307;
+  --wealth-coral: #e57373;
+  --wealth-ink: #0b0c10;
+  --wealth-brown: #3a2416;
+  --wealth-beige: #d9c4a8;
   position: relative;
   min-width: 0;
   overflow-x: clip;
   border-radius: 1.5rem;
-  background: #0b0c10;
-  box-shadow: 0 24px 60px -24px rgba(11, 15, 25, 0.55);
+  background: var(--wealth-ink);
+  box-shadow: 0 28px 70px -28px rgba(11, 15, 25, 0.6);
 }
 
 .wealth-duel__header {
   position: relative;
-  z-index: 1;
-  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1rem, 3vw, 2rem) 1.25rem;
+  z-index: 2;
+  padding: clamp(1.85rem, 4.5vw, 3rem) clamp(1rem, 3.5vw, 2.5rem) 0.65rem;
   text-align: center;
 }
 
@@ -4911,43 +5385,41 @@ html[dir='rtl'] .gs-app-loader__trust {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.85rem;
-  padding: 0.2rem 0.85rem;
-  border-radius: 0.45rem;
-  border: 1px solid rgb(133 227 7 / 0.55);
-  background: rgb(11 12 16 / 0.85);
-  color: #85e307;
-  font-size: 0.72rem;
+  min-height: 1.9rem;
+  padding: 0.25rem 0.95rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgb(133 227 7 / 0.6);
+  background: rgb(11 12 16 / 0.92);
+  color: var(--wealth-lime);
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .wealth-duel__title {
-  margin-top: 1rem;
-  max-width: 40rem;
-  margin-inline: auto;
+  margin: 1.1rem auto 0;
+  max-width: 44rem;
   text-wrap: balance;
-  font-size: clamp(1.35rem, 4.2vw, 2.15rem);
+  font-size: clamp(1.45rem, 4.6vw, 2.45rem);
   font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.38;
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
 .wealth-duel__title-lead {
-  color: #f3e6c8;
+  color: #ffffff;
 }
 
 .wealth-duel__title-accent {
-  color: #e8958a;
+  color: var(--wealth-coral);
 }
 
 .wealth-duel__subtitle {
-  margin-top: 0.75rem;
-  margin-inline: auto;
-  max-width: 32rem;
+  margin: 0.85rem auto 0;
+  max-width: 34rem;
   text-wrap: pretty;
-  font-size: clamp(0.8125rem, 2.3vw, 0.95rem);
+  font-size: clamp(0.8125rem, 2.2vw, 0.98rem);
   line-height: 1.65;
   color: rgb(255 255 255 / 0.55);
   overflow-wrap: anywhere;
@@ -4955,8 +5427,8 @@ html[dir='rtl'] .gs-app-loader__trust {
 
 .wealth-duel__wave {
   position: relative;
-  z-index: 1;
-  height: 2rem;
+  z-index: 2;
+  height: clamp(2.5rem, 5vw, 3.75rem);
   margin-bottom: -1px;
   line-height: 0;
 }
@@ -4966,6 +5438,8 @@ html[dir='rtl'] .gs-app-loader__trust {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
+  /* Room for floating CTA over split panels */
+  padding-bottom: 7.5rem;
 }
 
 .wealth-duel__panel {
@@ -4973,27 +5447,27 @@ html[dir='rtl'] .gs-app-loader__trust {
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 1.5rem 1.15rem 1.75rem;
+  gap: 1.1rem;
+  padding: 1.35rem 1.15rem 2.5rem;
   text-align: center;
 }
 
 .wealth-duel__panel--gold {
   background:
-    radial-gradient(ellipse 80% 60% at 50% 20%, rgba(212, 160, 60, 0.22), transparent 55%),
-    linear-gradient(180deg, #3a2416 0%, #2a1810 55%, #1f120c 100%);
+    radial-gradient(ellipse 85% 55% at 50% 18%, rgba(212, 160, 60, 0.28), transparent 58%),
+    linear-gradient(180deg, #4a2e1a 0%, #3a2416 40%, #2a1810 100%);
 }
 
 .wealth-duel__panel--cash {
   background:
-    radial-gradient(ellipse 70% 50% at 50% 15%, rgba(255, 255, 255, 0.35), transparent 50%),
-    linear-gradient(180deg, #e8d7c0 0%, #d9c4a8 55%, #cbb697 100%);
+    radial-gradient(ellipse 75% 50% at 50% 12%, rgba(255, 255, 255, 0.45), transparent 52%),
+    linear-gradient(180deg, #e8d9c4 0%, #d9c4a8 48%, #cbb697 100%);
 }
 
 .wealth-duel__visual {
   display: flex;
   width: 100%;
-  max-width: 16rem;
+  max-width: 17rem;
   aspect-ratio: 4 / 3;
   align-items: center;
   justify-content: center;
@@ -5004,7 +5478,8 @@ html[dir='rtl'] .gs-app-loader__trust {
   height: 100%;
   object-fit: contain;
   object-position: center;
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.35));
+  background: transparent;
+  filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.42));
 }
 
 .wealth-duel__meta {
@@ -5018,29 +5493,56 @@ html[dir='rtl'] .gs-app-loader__trust {
 
 .wealth-duel__pill {
   display: inline-flex;
-  min-height: 2.25rem;
+  min-height: 2.35rem;
   align-items: center;
   gap: 0.45rem;
   border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  font-size: 0.875rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
+.wealth-duel__pill-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+}
+
+.wealth-duel__pill-icon--up {
+  color: var(--wealth-lime);
+}
+
+.wealth-duel__pill-icon--down {
+  color: var(--wealth-coral);
+}
+
+.wealth-duel__pill-chevron {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
+.wealth-duel__pill-chevron--cash {
+  color: var(--wealth-coral);
+  opacity: 0.7;
+}
+
 .wealth-duel__pill--gold {
-  border: 1px solid rgb(255 255 255 / 0.28);
-  background: rgb(12 10 8 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  background: rgb(12 10 8 / 0.78);
   color: #e8c766;
 }
 
 .wealth-duel__pill--cash {
-  border: 1px solid rgb(180 140 120 / 0.45);
-  background: rgb(255 255 255 / 0.55);
-  color: #c45c5c;
+  border: 1px solid rgb(26 20 16 / 0.28);
+  background: rgb(26 20 16 / 0.72);
+  color: var(--wealth-coral);
 }
 
 .wealth-duel__claim {
-  font-size: clamp(1rem, 2.8vw, 1.15rem);
+  margin: 0;
+  font-size: clamp(1.05rem, 2.8vw, 1.2rem);
   font-weight: 800;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -5051,11 +5553,12 @@ html[dir='rtl'] .gs-app-loader__trust {
 }
 
 .wealth-duel__claim--cash {
-  color: #3a2e28;
+  color: #1a1614;
 }
 
 .wealth-duel__caption {
   display: inline-flex;
+  margin: 0;
   max-width: 18rem;
   align-items: flex-start;
   justify-content: center;
@@ -5066,72 +5569,98 @@ html[dir='rtl'] .gs-app-loader__trust {
 }
 
 .wealth-duel__caption--gold {
-  color: rgb(255 255 255 / 0.65);
+  color: rgb(255 255 255 / 0.62);
 }
 
 .wealth-duel__caption--cash {
-  color: rgb(58 46 40 / 0.72);
+  color: rgb(26 22 20 / 0.62);
 }
 
 .wealth-duel__dot {
   display: inline-block;
-  width: 0.35rem;
-  height: 0.35rem;
+  width: 0.38rem;
+  height: 0.38rem;
   flex-shrink: 0;
   margin-top: 0.4rem;
   border-radius: 999px;
 }
 
 .wealth-duel__dot--up {
-  background: #85e307;
+  background: var(--wealth-lime);
 }
 
 .wealth-duel__dot--down {
-  background: #e57373;
+  background: var(--wealth-coral);
 }
 
+/*
+ * Giant italic “Vs” — reference centerpiece (NOT a small pill badge).
+ * Sized to dominate the gap between gold bars and cash stack.
+ */
 .wealth-duel__vs {
-  display: none;
   position: absolute;
-  top: 42%;
+  top: 34%;
   left: 50%;
-  z-index: 2;
-  translate: -50% -50%;
-  border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.18);
-  background: #0b0c10;
-  padding: 0.55rem 0.85rem;
-  font-size: 0.95rem;
+  z-index: 4;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #ffffff;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(3.75rem, 14vw, 8.5rem);
   font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #fff;
-  box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.55);
+  font-style: italic;
+  font-synthesis: style;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
+  text-transform: none;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  text-shadow:
+    0 2px 0 rgb(0 0 0 / 0.12),
+    0 18px 48px rgb(0 0 0 / 0.45);
+  transform: translate(-50%, -50%) skewX(-14deg) rotate(-2deg);
+}
+
+html[dir='rtl'] .wealth-duel__vs {
+  transform: translate(-50%, -50%) skewX(14deg) rotate(2deg);
 }
 
 .wealth-duel__footer {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.85rem;
-  padding: 1.35rem 1.15rem 1.75rem;
-  background: linear-gradient(180deg, #1a120e 0%, #0b0c10 100%);
+  gap: 0.75rem;
+  padding: 0 1.15rem 1.65rem;
+  background: transparent;
   text-align: center;
+  pointer-events: none;
 }
 
 .wealth-duel__cta {
+  pointer-events: auto;
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 3rem;
   width: 100%;
-  max-width: 22rem;
+  max-width: 20rem;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  border-radius: 0.85rem;
-  background: #85e307;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.95rem;
+  gap: 0.55rem;
+  border-radius: 999px;
+  background: var(--wealth-lime);
+  padding: 0.8rem 1.75rem;
+  font-size: 0.98rem;
   font-weight: 800;
   color: #0b0f19;
+  box-shadow: 0 14px 36px -12px rgba(133, 227, 7, 0.55);
   transition:
     background-color 0.15s ease,
     transform 0.1s ease;
@@ -5146,10 +5675,12 @@ html[dir='rtl'] .gs-app-loader__trust {
 }
 
 .wealth-duel__footnote {
+  margin: 0;
   max-width: 28rem;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.38);
+  color: rgb(20 16 14 / 0.58);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.25);
   overflow-wrap: anywhere;
 }
 
@@ -5170,28 +5701,53 @@ html[dir='rtl'] .gs-app-loader__trust {
 @media (min-width: 768px) {
   .wealth-duel__stage {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-bottom: 8.25rem;
   }
 
   .wealth-duel__panel {
-    padding: 2rem 1.75rem 2.25rem;
-    gap: 1.15rem;
+    padding: 1.75rem 1.75rem 5.5rem;
+    gap: 1.25rem;
   }
 
   .wealth-duel__visual {
-    max-width: 18rem;
+    max-width: 20rem;
   }
 
   .wealth-duel__vs {
-    display: inline-flex;
+    top: 36%;
+    font-size: clamp(5.5rem, 11vw, 9.25rem);
   }
 
   .wealth-duel__footer {
-    padding: 1.5rem 2rem 2rem;
+    padding-bottom: 1.85rem;
   }
 
   .wealth-duel__cta {
     width: auto;
-    min-width: 16rem;
+    min-width: 17rem;
+    max-width: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .wealth-duel__vs {
+    font-size: clamp(7rem, 10vw, 10rem);
+  }
+
+  .wealth-duel__visual {
+    max-width: 22rem;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Stacked: place Vs between the two panels */
+  .wealth-duel__vs {
+    top: 50%;
+    font-size: clamp(3.25rem, 18vw, 5rem);
+  }
+
+  .wealth-duel__footnote {
+    color: rgb(255 255 255 / 0.42);
   }
 }
 
@@ -5205,7 +5761,7 @@ html[dir='rtl'] .gs-app-loader__trust {
   }
 
   .wealth-duel__panel {
-    padding: 1.15rem 0.85rem 1.35rem;
+    padding: 1.1rem 0.85rem 2.25rem;
   }
 
   .wealth-duel__visual {
@@ -5214,6 +5770,10 @@ html[dir='rtl'] .gs-app-loader__trust {
 
   .wealth-duel__pill {
     font-size: 0.8125rem;
+  }
+
+  .wealth-duel__stage {
+    padding-bottom: 7.75rem;
   }
 }
 
