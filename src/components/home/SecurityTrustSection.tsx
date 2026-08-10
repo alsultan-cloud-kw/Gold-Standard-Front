@@ -18,7 +18,6 @@ import ministryHallmarkImg from '@/assets/home/security/ministry-hallmark.webp'
 import hologramSealImg from '@/assets/home/security/hologram-seal.webp'
 import companyStampImg from '@/assets/home/security/company-stamp.webp'
 import officialReceiptImg from '@/assets/home/security/official-receipt.webp'
-import { cn } from '@/lib/utils'
 
 type MethodId = 'qr' | 'blockchain' | 'hologram' | 'companyStamp' | 'receipt' | 'ministry'
 
