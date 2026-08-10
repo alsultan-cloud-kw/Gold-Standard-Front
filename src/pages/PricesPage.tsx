@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCw, ShieldCheck, ArrowRight, ChevronDown } from 'lucide-react'
+import {
+  RefreshCw,
+  ShieldCheck,
+  ArrowRight,
+  ChevronDown,
+  SquareArrowOutUpRight,
+  LineChart,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   adminApi,
@@ -72,6 +79,7 @@ export default function PricesPage() {
   const [weightOpen, setWeightOpen] = useState(false)
   const [ratesFlash, setRatesFlash] = useState(false)
   const ratesSectionRef = useRef<HTMLElement>(null)
+  const chartSectionRef = useRef<HTMLElement>(null)
   const parsedGrams = parseSensitiveGrams(gramsInput)
   const gramsValid = Number.isFinite(parsedGrams) && parsedGrams > 0
   /** Empty / invalid drafts still price the board at 1 g — never snap back to a 10 g example. */
@@ -93,6 +101,11 @@ export default function PricesPage() {
     ratesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setRatesFlash(true)
     window.setTimeout(() => setRatesFlash(false), 1200)
+  }
+
+  const scrollToCharts = () => {
+    setWeightOpen(false)
+    chartSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const { data, isLoading, isError, refetch, isFetching } = useEnrichedPublicRates(20_000)
@@ -163,6 +176,18 @@ export default function PricesPage() {
   const goldChp = toFiniteNumber(goldCurrentSnap?.chp)
   const showBoard = !isLoading && res?.succeeded && carats.length > 0
 
+  /** Deep-link hashes (#gold-karat-rates / #prices-charts) after the board mounts. */
+  useEffect(() => {
+    if (!showBoard) return
+    const hash = window.location.hash.replace(/^#/, '')
+    if (hash === 'gold-karat-rates') {
+      window.requestAnimationFrame(() => scrollToRates())
+    } else if (hash === 'prices-charts') {
+      window.requestAnimationFrame(() => scrollToCharts())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when board becomes available
+  }, [showBoard])
+
   return (
     <div className="min-h-screen bg-[#F9F9FA]" ref={rootRef}>
       <section className="prices-hero relative overflow-hidden border-b border-black/5 bg-[#0B0F19] text-white">
@@ -183,6 +208,35 @@ export default function PricesPage() {
               <p className="mt-1 hidden text-xs leading-relaxed text-white/65 sm:mt-3 sm:block sm:text-base">
                 {t('pricesPage.subtitle')}
               </p>
+              <nav
+                className="prices-jump-ctas mt-3 flex w-full max-w-md flex-wrap gap-2 sm:mt-5"
+                aria-label={t('pricesPage.jumpNavAria')}
+              >
+                <a
+                  href="#gold-karat-rates"
+                  className="prices-jump-cta prices-jump-cta--primary"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    scrollToRates()
+                    window.history.replaceState(null, '', '#gold-karat-rates')
+                  }}
+                >
+                  <SquareArrowOutUpRight className="h-4 w-4 shrink-0" aria-hidden />
+                  <span>{t('pricesPage.viewLivePrices')}</span>
+                </a>
+                <a
+                  href="#prices-charts"
+                  className="prices-jump-cta prices-jump-cta--secondary"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    scrollToCharts()
+                    window.history.replaceState(null, '', '#prices-charts')
+                  }}
+                >
+                  <LineChart className="h-4 w-4 shrink-0" aria-hidden />
+                  <span>{t('pricesPage.exploreCharts')}</span>
+                </a>
+              </nav>
               <div className="mt-3 hidden flex-wrap items-center gap-2 text-xs text-white/55 sm:mt-4 sm:flex">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#85E307]/30 bg-[#85E307]/10 px-2.5 py-1 text-[#ECFCCB]">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#85E307]" aria-hidden />
@@ -424,6 +478,33 @@ export default function PricesPage() {
                       className={cn('price-rate-card', featured && 'price-rate-card--featured')}
                     >
                       <div className="price-rate-card__rail" aria-hidden="true" />
+                      {featured ? (
+                        <p className="price-rate-card__traded" aria-label={t('pricesPage.mostTradedBadge')}>
+                          <svg
+                            className="price-rate-card__traded-star"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M12 2.5l2.83 6.64 7.17.7-5.4 4.74 1.6 7.02L12 17.77 5.8 21.6l1.6-7.02-5.4-4.74 7.17-.7L12 2.5z"
+                            />
+                          </svg>
+                          <span className="price-rate-card__traded-label">
+                            {t('pricesPage.mostTradedBadge')}
+                          </span>
+                          <svg
+                            className="price-rate-card__traded-star"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M12 2.5l2.83 6.64 7.17.7-5.4 4.74 1.6 7.02L12 17.77 5.8 21.6l1.6-7.02-5.4-4.74 7.17-.7L12 2.5z"
+                            />
+                          </svg>
+                        </p>
+                      ) : null}
                       <div className="price-rate-card__body">
                         <div className="price-rate-card__top">
                           <span className="price-rate-card__live">
@@ -482,12 +563,11 @@ export default function PricesPage() {
                   const metalLabel = t(PRECIOUS_METAL_LABEL_KEYS[key])
                   const metalId = preciousMetalIdFromRowKey(key)
                   const spot = m ?? { key, buyTotal: null, sellTotal: null }
-                  const { buyTotal: buyForWeight, sellTotal: sellForWeight } = caratGramTotals(
-                    spot,
-                    grams,
-                  )
-                  const pairBuy = sellForWeight
-                  const pairSell = buyForWeight
+                  const { sellTotal: spotForWeight } = caratGramTotals(spot, grams)
+                  const unitLabel =
+                    grams === 1
+                      ? t('pricesPage.kwdPerGramUnit')
+                      : t('pricesPage.kwdForWeightUnit', { grams: gramsLabel })
 
                   return (
                     <article key={key} className="price-rate-card">
@@ -513,17 +593,22 @@ export default function PricesPage() {
                           )}
                         </header>
 
-                        <CustomerGoldPricePair
-                          buyGoldTotal={pairBuy}
-                          sellGoldTotal={pairSell}
-                          formatTotal={fmtKwd}
-                          unitLabel={
-                            grams === 1
-                              ? t('pricesPage.kwdPerGramUnit')
-                              : t('pricesPage.kwdForWeightUnit', { grams: gramsLabel })
-                          }
-                          className="mt-1"
-                        />
+                        {/* Spot metals: one quote (customer buy / shop sell) — not gold buy+sell */}
+                        <div className="customer-gold-price-pair customer-gold-price-pair--editorial mt-1">
+                          <div className="customer-gold-price-row customer-gold-price-row--editorial customer-gold-price-row--buy min-w-0">
+                            <span className="customer-gold-price-row__eyebrow">
+                              {t('pricesPage.preciousSpotPrice')}
+                            </span>
+                            <span dir="ltr" className="customer-gold-price-row__display">
+                              <span className="customer-gold-price-row__amount [overflow-wrap:anywhere]">
+                                {fmtKwd(spotForWeight)}
+                              </span>
+                            </span>
+                            <span dir="ltr" className="customer-gold-price-row__unit-line">
+                              {unitLabel}
+                            </span>
+                          </div>
+                        </div>
 
                         <PriceDayChangeStats
                           {...dayChangeFromPercent(spot, null)}
@@ -541,7 +626,14 @@ export default function PricesPage() {
               ) : null}
             </section>
 
-            <PricesHistoryChart rates={res} showSectionHeader={false} />
+            <section
+              id="prices-charts"
+              ref={chartSectionRef}
+              className="scroll-mt-[calc(var(--nav-offset)+0.75rem)]"
+              aria-label={t('pricesPage.exploreCharts')}
+            >
+              <PricesHistoryChart rates={res} showSectionHeader={false} />
+            </section>
 
             <p className="text-center text-xs leading-relaxed text-[#64748B]">{t('pricesPage.disclaimer')}</p>
           </div>

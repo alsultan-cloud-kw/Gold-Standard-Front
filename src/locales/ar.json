@@ -986,6 +986,10 @@
     "kwdForWeightUnit": "د.ك · {{grams}} غ",
     "dayChangeToday": "اليوم",
     "dayChangeAria": "التغير اليوم {{change}} ({{percent}})",
+    "mostTradedBadge": "الأكثر تداولاً",
+    "jumpNavAria": "الانتقال إلى أقسام الأسعار",
+    "viewLivePrices": "عرض الأسعار المباشرة",
+    "exploreCharts": "استكشف الرسوم البيانية",
     "priceToBuyGold": "سعر الشراء",
     "priceToSellGold": "سعر البيع",
     "priceToBuyGoldHint": "تدفع · شراء ذهب منا",
@@ -1019,6 +1023,7 @@
     "disclaimer": "أسعار إرشادية للمرجع. السعر النهائي عند الدفع قد يختلف مع حركة السوق ورسوم الصناعة.",
     "preciousTitle": "فضة · بلاتين · بلاديوم",
     "preciousKicker": "معادن ثمينة — سعر فوري",
+    "preciousSpotPrice": "السعر الفوري",
     "metalAtomic": "Z {{number}}",
     "silverKilo": "مرجع كيلو الفضة: {{price}} د.ك/كغ (من المصدر)"
   },

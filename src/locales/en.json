@@ -986,6 +986,10 @@
     "kwdForWeightUnit": "KWD · {{grams}} g",
     "dayChangeToday": "today",
     "dayChangeAria": "Change today {{change}} ({{percent}})",
+    "mostTradedBadge": "Most traded",
+    "jumpNavAria": "Jump to prices sections",
+    "viewLivePrices": "View Live Prices",
+    "exploreCharts": "Explore Charts",
     "priceToBuyGold": "Buy price",
     "priceToSellGold": "Sell price",
     "priceToBuyGoldHint": "You pay · buy gold from us",
@@ -1019,6 +1023,7 @@
     "disclaimer": "Indicative rates for reference. Final price at checkout may vary with live market and product making charges.",
     "preciousTitle": "Silver · Platinum · Palladium",
     "preciousKicker": "Precious spot metals",
+    "preciousSpotPrice": "Spot price",
     "metalAtomic": "Z {{number}}",
     "silverKilo": "Silver kilo reference: {{price}} KWD/kg (from feed)"
   },
