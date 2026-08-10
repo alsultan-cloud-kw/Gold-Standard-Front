@@ -9,6 +9,8 @@ type Props = {
   backLabel: string
   forwardLabel: string
   className?: string
+  /** Extra class for the circular buttons (e.g. stronger gold border). */
+  buttonClassName?: string
 }
 
 export function HorizontalScrollControls({
@@ -19,26 +21,35 @@ export function HorizontalScrollControls({
   backLabel,
   forwardLabel,
   className,
+  buttonClassName,
 }: Props) {
+  if (!canScrollBack && !canScrollForward) return null
+
   return (
-    <div className={cn('flex items-center justify-center gap-2 sm:hidden', className)}>
+    <div className={cn('flex items-center justify-center gap-2.5', className)}>
       <button
         type="button"
         onClick={onScrollBack}
         disabled={!canScrollBack}
         aria-label={backLabel}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/15 bg-[var(--site-bg)] text-[#0B0F19] transition disabled:cursor-not-allowed disabled:opacity-35 enabled:hover:border-black/25 enabled:active:scale-95"
+        className={cn(
+          'inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border border-black/15 bg-white text-[#0B0F19] shadow-[0_6px_18px_-10px_rgba(11,15,25,0.45)] transition disabled:cursor-not-allowed disabled:opacity-35 enabled:hover:border-black/25 enabled:active:scale-95',
+          buttonClassName,
+        )}
       >
-        <ChevronLeft className="h-4 w-4 rtl:rotate-180" aria-hidden />
+        <ChevronLeft className="h-5 w-5 rtl:rotate-180" aria-hidden />
       </button>
       <button
         type="button"
         onClick={onScrollForward}
         disabled={!canScrollForward}
         aria-label={forwardLabel}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/15 bg-[var(--site-bg)] text-[#0B0F19] transition disabled:cursor-not-allowed disabled:opacity-35 enabled:hover:border-black/25 enabled:active:scale-95"
+        className={cn(
+          'inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border border-black/15 bg-white text-[#0B0F19] shadow-[0_6px_18px_-10px_rgba(11,15,25,0.45)] transition disabled:cursor-not-allowed disabled:opacity-35 enabled:hover:border-black/25 enabled:active:scale-95',
+          buttonClassName,
+        )}
       >
-        <ChevronRight className="h-4 w-4 rtl:rotate-180" aria-hidden />
+        <ChevronRight className="h-5 w-5 rtl:rotate-180" aria-hidden />
       </button>
     </div>
   )

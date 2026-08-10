@@ -5119,6 +5119,41 @@ html[dir='rtl'] .gs-app-loader__trust {
   }
 }
 
+.why-gold__rail-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.why-gold__rail-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.35rem;
+  padding-inline: 0.1rem;
+}
+
+.why-gold__rail-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.why-gold__rail-btn {
+  border-color: rgba(197, 160, 89, 0.55) !important;
+  background: #fffef9 !important;
+  color: #8a6b2e !important;
+  box-shadow: 0 8px 22px -12px rgba(154, 122, 58, 0.55) !important;
+}
+
+.why-gold__rail-btn:enabled:hover {
+  border-color: rgba(197, 160, 89, 0.85) !important;
+  background: #fbf6ea !important;
+}
+
 .why-gold__rail {
   display: flex;
   gap: 0.875rem;
@@ -5128,8 +5163,30 @@ html[dir='rtl'] .gs-app-loader__trust {
   margin-inline: calc(var(--page-gutter, 1rem) * -0.35);
   padding-inline: calc(var(--page-gutter, 1rem) * 0.35);
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.why-gold__rail--peek {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 0.75rem,
+    #000 calc(100% - 1.35rem),
+    transparent 100%
+  );
+}
+
+html[dir='rtl'] .why-gold__rail--peek {
+  mask-image: linear-gradient(
+    to left,
+    transparent 0,
+    #000 0.75rem,
+    #000 calc(100% - 1.35rem),
+    transparent 100%
+  );
 }
 
 .why-gold__rail::-webkit-scrollbar {
@@ -5137,7 +5194,12 @@ html[dir='rtl'] .gs-app-loader__trust {
 }
 
 @media (min-width: 1100px) {
-  .why-gold__rail {
+  .why-gold__rail-nav {
+    display: none;
+  }
+
+  .why-gold__rail,
+  .why-gold__rail--peek {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.85rem;
@@ -5147,6 +5209,7 @@ html[dir='rtl'] .gs-app-loader__trust {
     padding-block: 2.25rem 1.75rem;
     scroll-snap-type: none;
     align-items: end;
+    mask-image: none;
   }
 }
 
@@ -5730,6 +5793,10 @@ html[dir='rtl'] .why-gold__card-banner {
   transform: translate(-50%, -50%) skewX(-14deg) rotate(-2deg);
 }
 
+.wealth-duel__vs-inner {
+  display: inline-block;
+}
+
 html[dir='rtl'] .wealth-duel__vs {
   transform: translate(-50%, -50%) skewX(14deg) rotate(2deg);
 }
@@ -5788,18 +5855,11 @@ html[dir='rtl'] .wealth-duel__vs {
   overflow-wrap: anywhere;
 }
 
-.wealth-duel__reveal {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.wealth-duel.is-active .wealth-duel__reveal {
-  opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: var(--reveal-delay, 0s);
+/* Hide anim targets until GSAP takes over (avoids flash + reverse jank) */
+@media (prefers-reduced-motion: no-preference) {
+  .wealth-duel [data-wealth-anim] {
+    opacity: 0;
+  }
 }
 
 @media (min-width: 768px) {
@@ -5844,14 +5904,94 @@ html[dir='rtl'] .wealth-duel__vs {
 }
 
 @media (max-width: 767px) {
-  /* Stacked: place Vs between the two panels */
+  .wealth-duel__header {
+    padding: 1.35rem 1.25rem 0.35rem;
+  }
+
+  .wealth-duel__title {
+    margin-top: 0.85rem;
+    font-size: clamp(1.2rem, 5.6vw, 1.5rem);
+    line-height: 1.45;
+  }
+
+  .wealth-duel__subtitle {
+    margin-top: 0.65rem;
+    padding-inline: 0.15rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+  }
+
+  .wealth-duel__wave {
+    height: 2.25rem;
+  }
+
+  /* Stack: Vs + CTA in document flow so nothing overlaps meta text */
+  .wealth-duel__stage {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .wealth-duel__panel {
+    padding: 1.15rem 1.25rem 1.35rem;
+    gap: 0.85rem;
+  }
+
+  .wealth-duel__panel--gold {
+    order: 1;
+  }
+
+  .wealth-duel__panel--cash {
+    order: 3;
+    padding-bottom: 1.1rem;
+  }
+
+  .wealth-duel__visual {
+    max-width: min(13.75rem, 68vw);
+    aspect-ratio: 5 / 4;
+  }
+
   .wealth-duel__vs {
-    top: 50%;
-    font-size: clamp(3.25rem, 18vw, 5rem);
+    order: 2;
+    position: relative;
+    top: auto;
+    left: auto;
+    z-index: 2;
+    align-self: center;
+    margin: -0.55rem 0;
+    font-size: clamp(2.6rem, 15vw, 4rem);
+    transform: skewX(-14deg) rotate(-2deg);
+  }
+
+  html[dir='rtl'] .wealth-duel__vs {
+    transform: skewX(14deg) rotate(2deg);
+  }
+
+  .wealth-duel__footer {
+    order: 4;
+    position: relative;
+    inset: auto;
+    z-index: 2;
+    gap: 0.55rem;
+    padding: 0.35rem 1.25rem 1.35rem;
+    background: linear-gradient(180deg, #cbb697 0%, #c4ae90 100%);
+    pointer-events: auto;
+  }
+
+  .wealth-duel__cta {
+    min-height: 2.75rem;
+    max-width: none;
+    width: 100%;
   }
 
   .wealth-duel__footnote {
-    color: rgb(255 255 255 / 0.42);
+    color: rgb(20 16 14 / 0.58);
+    text-shadow: none;
+  }
+
+  .wealth-duel__caption {
+    max-width: 17rem;
+    font-size: 0.72rem;
   }
 }
 
@@ -5861,31 +6001,36 @@ html[dir='rtl'] .wealth-duel__vs {
   }
 
   .wealth-duel__header {
-    padding-inline: 0.85rem;
+    padding-inline: 1rem;
   }
 
   .wealth-duel__panel {
-    padding: 1.1rem 0.85rem 2.25rem;
+    padding-inline: 1rem;
+  }
+
+  .wealth-duel__footer {
+    padding-inline: 1rem;
   }
 
   .wealth-duel__visual {
-    max-width: 13.5rem;
+    max-width: min(12.25rem, 74vw);
   }
 
   .wealth-duel__pill {
     font-size: 0.8125rem;
+    min-height: 2.2rem;
+    padding-inline: 0.85rem;
   }
 
-  .wealth-duel__stage {
-    padding-bottom: 7.75rem;
+  .wealth-duel__title {
+    font-size: clamp(1.1rem, 6.2vw, 1.35rem);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wealth-duel__reveal {
-    opacity: 1;
-    transform: none;
-    transition: none !important;
+  .wealth-duel [data-wealth-anim] {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 
@@ -6997,6 +7142,226 @@ html[dir='rtl'] .wealth-duel__vs {
 
   .prices-jump-cta:active {
     transform: none;
+  }
+}
+
+/* Homepage: live chart + compact karat table side by side */
+.home-live-market-layout {
+  display: grid;
+  gap: 1rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .home-live-market-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(17.5rem, 22rem);
+    gap: 1.25rem;
+    align-items: start;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Rates first on phones/tablets — chart is tall */
+  .home-live-market-layout__table {
+    order: -1;
+  }
+}
+
+.home-live-market-layout__chart,
+.home-live-market-layout__table {
+  min-width: 0;
+}
+
+.home-karat-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(11, 15, 25, 0.07);
+  background: #fbf9f5;
+  box-shadow:
+    0 1px 0 rgba(11, 15, 25, 0.03),
+    0 14px 36px -24px rgba(11, 15, 25, 0.28);
+  overflow: hidden;
+}
+
+.home-karat-table__head {
+  padding: 0.9rem 1rem 0.15rem;
+}
+
+.home-karat-table__eyebrow {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #3f6f00;
+}
+
+.home-karat-table__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0b0f19;
+  line-height: 1.25;
+}
+
+.home-karat-table__unit {
+  margin: 0.2rem 0 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(11, 15, 25, 0.45);
+}
+
+.home-karat-table__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.home-karat-table__grid {
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-karat-table__grid thead th {
+  padding: 0.55rem 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: start;
+  white-space: nowrap;
+  color: #fff;
+  background: linear-gradient(165deg, #c8b06a 0%, #a8924a 55%, #8f7a3a 100%);
+  border-bottom: 1px solid rgba(11, 15, 25, 0.08);
+}
+
+.home-karat-table__grid thead th:not(:first-child) {
+  text-align: end;
+}
+
+.home-karat-table__grid tbody th,
+.home-karat-table__grid tbody td {
+  padding: 0.7rem 0.7rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #0b0f19;
+  border-bottom: 1px solid rgba(11, 15, 25, 0.06);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.home-karat-table__grid tbody tr:last-child th,
+.home-karat-table__grid tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.home-karat-table__grid tbody tr:nth-child(even) {
+  background: rgba(11, 15, 25, 0.02);
+}
+
+.home-karat-table__grid tbody td {
+  text-align: end;
+  font-weight: 700;
+}
+
+.home-karat-table__buy {
+  color: #3f6f00;
+}
+
+.home-karat-table__row--featured {
+  background: linear-gradient(90deg, rgba(133, 227, 7, 0.1), transparent 55%) !important;
+}
+
+.home-karat-table__karat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.home-karat-table__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 0.12rem;
+  background: linear-gradient(165deg, #e8d48a, #b89a3e);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.home-karat-table__pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(11, 15, 25, 0.55);
+}
+
+.home-karat-table__pct--up {
+  color: #2f6b2f;
+}
+
+.home-karat-table__pct--down {
+  color: #9f2f2d;
+}
+
+.home-karat-table__chevron {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+}
+
+html[dir='rtl'] .home-karat-table__grid thead th:not(:first-child),
+html[dir='rtl'] .home-karat-table__grid tbody td {
+  text-align: start;
+}
+
+html[dir='rtl'] .home-karat-table__row--featured {
+  background: linear-gradient(-90deg, rgba(133, 227, 7, 0.1), transparent 55%) !important;
+}
+
+@media (max-width: 480px) {
+  .home-karat-table__head {
+    padding: 0.75rem 0.75rem 0.1rem;
+  }
+
+  .home-karat-table__title {
+    font-size: 0.95rem;
+  }
+
+  .home-karat-table__grid thead th {
+    padding: 0.45rem 0.4rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+  }
+
+  .home-karat-table__grid tbody th,
+  .home-karat-table__grid tbody td {
+    padding: 0.55rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .home-karat-table__pct {
+    font-size: 0.68rem;
+  }
+
+  .home-karat-table__chevron {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+}
+
+/* Mobile wealth wave: solid brown into the gold panel (no side-by-side split) */
+@media (max-width: 767px) {
+  .wealth-duel__wave path:nth-child(2) {
+    fill: #3a2416;
   }
 }
 

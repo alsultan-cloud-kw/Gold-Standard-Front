@@ -394,6 +394,7 @@
       "criteriaHeader": "Criteria",
       "bestChoice": "Best choice",
       "bestLongTerm": "Best for the long term",
+      "scrollHint": "Swipe or use arrows to compare all assets",
       "goldFooter": "A real asset that protects your purchasing power",
       "recommended": "Recommended",
       "footnote": "Illustrative scores based on typical long-run behavior - not investment advice.",
@@ -619,6 +620,13 @@
         "5y": "5Y",
         "all": "All"
       }
+    },
+    "karatTable": {
+      "eyebrow": "Live board",
+      "title": "Gold karat rates",
+      "colKarat": "Karat",
+      "colPct": "%",
+      "karatRow": "{{karat}}K"
     },
     "newsSection": {
       "title": "Market news",

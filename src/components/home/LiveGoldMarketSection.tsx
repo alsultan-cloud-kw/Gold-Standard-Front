@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
+import { HomeKaratRatesTable } from '@/components/home/HomeKaratRatesTable'
 import { BullionEndDock } from '@/components/home/bullion'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
@@ -58,7 +59,12 @@ export function LiveGoldMarketSection({ bullionDockRef }: Props) {
             className="relative space-y-5 bg-[var(--site-bg)]"
             data-bullion-clear-zone="live-market-chart"
           >
-            <PricesHistoryChart rates={res} />
+            <div className="home-live-market-layout">
+              <div className="home-live-market-layout__chart min-w-0">
+                <PricesHistoryChart rates={res} />
+              </div>
+              <HomeKaratRatesTable rates={res} className="home-live-market-layout__table" />
+            </div>
             <div className="flex justify-center">
               <Link
                 to="/prices"

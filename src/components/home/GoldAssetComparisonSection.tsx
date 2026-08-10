@@ -15,6 +15,8 @@ import {
   type ComparisonAsset,
 } from '@/constants/goldAssetComparison'
 import whyGoldHeroUrl from '@/assets/home/why-gold/gold-bar-stones.webp'
+import { HorizontalScrollControls } from '@/components/home/HorizontalScrollControls'
+import { useHorizontalScrollRail } from '@/components/home/useHorizontalScrollRail'
 import { cn } from '@/lib/utils'
 
 const ASSET_LABEL_KEYS: Record<ComparisonAsset, string> = {
@@ -212,9 +214,12 @@ export function GoldAssetComparisonSection({
   const { ref, active } = useReplayOnView<HTMLElement>(0.18)
   const isRtl = i18n.dir() === 'rtl'
   const cards = isRtl ? CARD_ORDER_RTL : CARD_ORDER_LTR
+  const { railRef, canScrollBack, canScrollForward, scrollBack, scrollForward } =
+    useHorizontalScrollRail(`${i18n.language}:${cards.join(',')}`)
 
   const titleLead = t('home.goldComparison.titleLead')
   const titleAccent = t('home.goldComparison.titleAccent')
+  const showRailNav = canScrollBack || canScrollForward
 
   return (
     <section
@@ -260,10 +265,31 @@ export function GoldAssetComparisonSection({
           </div>
         </div>
 
-        <div className="why-gold__rail" aria-label={t('home.goldComparison.title')}>
-          {cards.map((asset, index) => (
-            <AssetCard key={asset} asset={asset} index={index} />
-          ))}
+        <div className="why-gold__rail-wrap">
+          {showRailNav ? (
+            <div className="why-gold__rail-nav">
+              <p className="why-gold__rail-hint">{t('home.goldComparison.scrollHint')}</p>
+              <HorizontalScrollControls
+                canScrollBack={canScrollBack}
+                canScrollForward={canScrollForward}
+                onScrollBack={scrollBack}
+                onScrollForward={scrollForward}
+                backLabel={t('home.scrollBack')}
+                forwardLabel={t('home.scrollForward')}
+                buttonClassName="why-gold__rail-btn"
+              />
+            </div>
+          ) : null}
+
+          <div
+            ref={railRef}
+            className={cn('why-gold__rail', showRailNav && 'why-gold__rail--peek')}
+            aria-label={t('home.goldComparison.title')}
+          >
+            {cards.map((asset, index) => (
+              <AssetCard key={asset} asset={asset} index={index} />
+            ))}
+          </div>
         </div>
       </div>
 

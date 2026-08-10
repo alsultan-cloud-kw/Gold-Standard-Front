@@ -395,7 +395,7 @@ function ClubPriceCompareRail() {
             onScrollForward={scrollForward}
             backLabel={t('home.scrollBack')}
             forwardLabel={t('home.scrollForward')}
-            className="mb-3"
+            className="mb-3 sm:hidden"
           />
 
           <div
