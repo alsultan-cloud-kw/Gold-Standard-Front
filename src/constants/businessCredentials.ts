@@ -19,7 +19,7 @@ export const SULTAN_GOLD_BRAND = {
   trustStats: [
     { id: 'years', value: '5+', labelKey: 'home.sultanTrust.yearsInKuwait' },
     { id: 'customers', value: '50,000+', labelKey: 'home.sultanTrust.customersServed' },
-    { id: 'goldDelivered', value: '1+', suffixKey: 'home.sultanTrust.goldDeliveredSuffix', labelKey: 'home.sultanTrust.goldDelivered' },
+    { id: 'goldDelivered', value: '250', suffixKey: 'home.sultanTrust.goldDeliveredSuffix', labelKey: 'home.sultanTrust.goldDelivered' },
     { id: 'insured', value: '100%', labelKey: 'home.sultanTrust.ordersInsured' },
     { id: 'rating', value: '4.9', showStar: true, labelKey: 'home.sultanTrust.googleRating' },
   ],
