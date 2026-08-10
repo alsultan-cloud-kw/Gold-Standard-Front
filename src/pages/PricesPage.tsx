@@ -8,6 +8,7 @@ import {
   ChevronDown,
   SquareArrowOutUpRight,
   LineChart,
+  ShoppingBag,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -17,6 +18,7 @@ import {
   type KuwaitMarketConfigResponse,
 } from '../services/api'
 import { PricesHistoryChart } from '@/components/prices/PricesHistoryChart'
+import { PricesFaqSection } from '@/components/prices/PricesFaqSection'
 import { useEnrichedPublicRates } from '@/hooks/useEnrichedPublicRates'
 import { pricingApi } from '@/services/pricingApi'
 import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
@@ -236,7 +238,12 @@ export default function PricesPage() {
                   <LineChart className="h-4 w-4 shrink-0" aria-hidden />
                   <span>{t('pricesPage.exploreCharts')}</span>
                 </a>
+                <Link to="/products" className="prices-jump-cta prices-jump-cta--secondary">
+                  <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
+                  <span>{t('pricesPage.shopGoldCta')}</span>
+                </Link>
               </nav>
+              <p className="mt-2 hidden text-xs text-white/50 sm:block">{t('pricesPage.shopGoldHint')}</p>
               <div className="mt-3 hidden flex-wrap items-center gap-2 text-xs text-white/55 sm:mt-4 sm:flex">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#85E307]/30 bg-[#85E307]/10 px-2.5 py-1 text-[#ECFCCB]">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#85E307]" aria-hidden />
@@ -634,6 +641,8 @@ export default function PricesPage() {
             >
               <PricesHistoryChart rates={res} showSectionHeader={false} />
             </section>
+
+            <PricesFaqSection />
 
             <p className="text-center text-xs leading-relaxed text-[#64748B]">{t('pricesPage.disclaimer')}</p>
           </div>

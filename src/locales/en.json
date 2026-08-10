@@ -298,11 +298,11 @@
     "heroBrandLine": "Gold Standard",
     "heroLiveKuwaitBadge": "LIVE · KUWAIT",
     "heroCertifiedBadge": "Verification stack · Gulf",
-    "heroHeadline": "The first company in the Gulf to deliver a <accent>multi-layer verification system</accent> for gold dedicated to investment.",
-    "heroHeadlineLead": "The first company in the Gulf to deliver a",
+    "heroHeadline": "Buy gold in Kuwait with a <accent>multi-layer verification system</accent> built for investment bars and coins.",
+    "heroHeadlineLead": "Buy gold in Kuwait with a",
     "heroHeadlineAccent": "multi-layer verification system",
-    "heroHeadlineTrail": "for gold dedicated to investment.",
-    "heroSubtext": "From the heart of Kuwait, we are shaping a new future for secure investment. Investment gold bars and coins of our own production, built to the highest standards of global trust. Every bar carries a unique international serial number and is fully linked to blockchain technology — giving you an encrypted, tamper-proof digital record that secures your ownership and enables instant verification of your gold's authenticity anywhere in the world.",
+    "heroHeadlineTrail": "built for investment bars and coins.",
+    "heroSubtext": "From the heart of Kuwait — certified investment bars and coins from our own production, live KWD prices, unique international serials, and blockchain-linked ownership records you can verify anywhere.",
     "heroTrustLine": "Made in Kuwait · Live KWD prices",
     "heroKicker": "Gold coins, minted bars, and live bullion rates — together in Kuwait.",
     "heroIntro": "Shop certified gold coins and investment bars with transparent live pricing and follow the market in real time under Gold Standard.",
@@ -594,7 +594,7 @@
       "rangeAria": "Chart time range",
       "asOf": "As of {{time}}",
       "disclaimer": "Indicative prices only",
-      "viewFullPrices": "View full price board",
+      "viewFullPrices": "Gold price Kuwait today — full board",
       "open": "Open",
       "high": "High",
       "low": "Low",
@@ -745,7 +745,7 @@
     },
     "prices": {
       "title": "Gold Price Kuwait Today · Live Buy & Sell KWD/g | Gold Standard",
-      "description": "Live gold price in Kuwait (KWD per gram) for 24K, 22K, 21K, 18K plus silver, platinum, and palladium. Buy and sell rates, chart, and gram calculator updated continuously."
+      "description": "Live gold price in Kuwait today (KWD/g) for 24K, 22K, 21K, 18K — buy & sell rates, charts, and gram calculator. Updated continuously from Gold Standard."
     },
     "customerKyc": {
       "title": "Company customer screening · Gold Standard Kuwait",
@@ -802,6 +802,10 @@
     "verify": {
       "title": "Verify Gold Authenticity Kuwait | Gold Standard",
       "description": "Verify certified gold product authenticity in Kuwait. Check serials and digital passport records from Gold Standard before you buy or accept a transfer."
+    },
+    "terms": {
+      "title": "Terms & Privacy · Gold Standard Kuwait",
+      "description": "Terms of service and privacy policy for Gold Standard Precious Metals Company in Kuwait — how we handle purchases, data, and customer rights."
     }
   },
   "priceReminder": {
@@ -963,11 +967,25 @@
     }
   },
   "pricesPage": {
-    "kicker": "Price board",
-    "title": "Metals buy & sell",
-    "subtitle": "KWD per gram · refreshed in real time · enter weight for instant totals.",
+    "kicker": "Kuwait live board",
+    "title": "Gold price Kuwait today",
+    "subtitle": "Live buy & sell in KWD per gram for 24K, 22K, 21K, and 18K — plus spot metals, charts, and a gram calculator.",
     "trustedSource": "Trusted source",
     "trustedSourceHint": "Live market rates · updated in real time",
+    "shopGoldCta": "Buy certified gold",
+    "shopGoldHint": "Shop MOCI-hallmarked bars and coins at today’s Kuwait rates",
+    "faqTitle": "Gold price Kuwait — common questions",
+    "faqIntro": "Answers for today’s Kuwait gold rates. Live numbers are on the board above — totals update as the market moves.",
+    "faq": {
+      "q1": "How much is 22K gold in Kuwait today?",
+      "a1": "Open the 22K card on this page for the live buy and sell price in KWD per gram. Enter your weight to see the total instantly — rates refresh continuously.",
+      "q2": "How much is 1 gram of 22 karat gold today?",
+      "a2": "With the weight set to 1 g, the 22K buy price is what you pay per gram and the sell price is what you receive if you sell to us. Switch karats to compare 24K, 21K, and 18K.",
+      "q3": "How much is 18 carat gold in Kuwait?",
+      "a3": "Select the 18K card for today’s Kuwait buy and sell rates in KWD/g. Precious metals (silver, platinum, palladium) appear in the spot section below the karat board.",
+      "q4": "Where can I buy gold online in Kuwait?",
+      "a4": "Shop certified bars and coins on our products page at live KWD prices, with MOCI hallmark and insured delivery — or visit our Central Gold Market showroom in Kuwait City."
+    },
     "refresh": "Refresh",
     "loading": "Loading prices…",
     "errorUnavailable": "Prices are temporarily unavailable. Please try again later.",

@@ -19,11 +19,11 @@ export const PRERENDER_PAGES = [
   {
     path: '/prices',
     titleEn: 'Gold Price Kuwait Today · Live Buy & Sell KWD/g | Gold Standard',
-    titleAr: 'سعر الذهب اليوم الكويت · شراء وبيع د.ك/غ | جولد ستاندرد',
+    titleAr: 'سعر الذهب الكويت اليوم · شراء وبيع د.ك/غ | جولد ستاندرد',
     descEn:
-      'Live gold price in Kuwait (KWD per gram) for 24K, 22K, 21K, 18K plus silver, platinum, and palladium. Buy and sell rates, chart, and gram calculator updated continuously.',
+      'Live gold price in Kuwait today (KWD/g) for 24K, 22K, 21K, 18K — buy & sell rates, charts, and gram calculator. Updated continuously from Gold Standard.',
     descAr:
-      'أسعار الذهب المباشرة في الكويت بالدينار للغرام للعيارات 24 و22 و21 و18 مع الفضة والبلاتين والبلاديوم. أسعار شراء وبيع ومخطط وحاسبة غرام تُحدَّث باستمرار.',
+      'سعر الذهب الكويت اليوم بالدينار للغرام للعيارات 24 و22 و21 و18 — أسعار شراء وبيع مباشرة، مخطط، وحاسبة غرام. تحديث مستمر من جولد ستاندرد.',
     priority: '0.95',
     changefreq: 'hourly',
   },

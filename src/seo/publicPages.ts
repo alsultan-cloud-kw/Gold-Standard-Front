@@ -139,6 +139,14 @@ export const PUBLIC_PAGE_SEO: PublicPageSeo[] = [
     match: (p) => p === '/verify' || p.startsWith('/verify/'),
   },
   {
+    path: '/terms-and-privacy',
+    titleKey: 'seo.terms.title',
+    descKey: 'seo.terms.description',
+    priority: 0.3,
+    changefreq: 'yearly',
+    match: (p) => p === '/terms-and-privacy' || p === '/terms' || p === '/privacy',
+  },
+  {
     path: '/cart',
     titleKey: 'seo.cart.title',
     descKey: 'seo.cart.description',

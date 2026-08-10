@@ -18,6 +18,13 @@ const FAQ_ITEMS = [
   'payments',
 ] as const
 
+export function homeFaqEntries(t: (key: string) => string) {
+  return FAQ_ITEMS.map((id) => ({
+    question: t(`home.faq.items.${id}.q`),
+    answer: t(`home.faq.items.${id}.a`),
+  }))
+}
+
 export function HomeFaqSection() {
   const { t } = useTranslation()
 

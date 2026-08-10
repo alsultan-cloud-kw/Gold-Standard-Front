@@ -7,6 +7,8 @@ import { GS_CONTACT } from '@/constants/contact'
 import { GS_INSTAGRAM } from '@/constants/social'
 import { GS_MAIN_LOCATION } from '@/constants/location'
 import { matchPublicPageSeo } from '@/seo/publicPages'
+import { pricesFaqEntries } from '@/components/prices/PricesFaqSection'
+import { homeFaqEntries } from '@/components/home/HomeFaqSection'
 
 /** Kuwait showroom hours (Asia/Kuwait) — Sat–Thu 09:00–21:00, Fri 14:00–21:00. */
 const STORE_OPENING_HOURS = [
@@ -67,6 +69,7 @@ function organizationJsonLd(lang: string, ogImage: string) {
         priceRange: '$$',
         currenciesAccepted: 'KWD',
         paymentAccepted: 'Cash, KNET, Card',
+        hasMap: GS_MAIN_LOCATION.placeUrl,
         address: {
           '@type': 'PostalAddress',
           addressCountry: 'KW',
@@ -121,22 +124,79 @@ export function RouteSeo() {
   const title = t(seo.titleKey)
   const description = t(seo.descKey)
   const path = matched ? matched.path : pathname
+  const isPrices = path === '/prices'
+  const isHome = path === '/'
 
   const jsonLd = useMemo(() => {
     const base = organizationJsonLd(lang, SITE_OG_IMAGE)
     const graph = base['@graph'] as Record<string, unknown>[]
+    const pageUrl = absoluteUrl(path)
+    const inLanguage = lang.startsWith('ar') ? 'ar' : 'en'
+
     graph.push({
       '@type': 'WebPage',
-      '@id': absoluteUrl(path),
-      url: absoluteUrl(path),
+      '@id': pageUrl,
+      url: pageUrl,
       name: title,
       description,
       isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
       about: { '@id': `${SITE_ORIGIN}/#store` },
-      inLanguage: lang.startsWith('ar') ? 'ar' : 'en',
+      inLanguage,
     })
+
+    if (path !== '/') {
+      graph.push({
+        '@type': 'BreadcrumbList',
+        '@id': `${pageUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: lang.startsWith('ar') ? 'الرئيسية' : 'Home',
+            item: `${SITE_ORIGIN}/`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: title,
+            item: pageUrl,
+          },
+        ],
+      })
+    }
+
+    if (isPrices) {
+      const faqs = pricesFaqEntries(t)
+      graph.push({
+        '@type': 'FAQPage',
+        '@id': `${pageUrl}#faq`,
+        mainEntity: faqs.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer,
+          },
+        })),
+      })
+    } else if (isHome) {
+      const faqs = homeFaqEntries(t)
+      graph.push({
+        '@type': 'FAQPage',
+        '@id': `${pageUrl}#faq`,
+        mainEntity: faqs.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer,
+          },
+        })),
+      })
+    }
+
     return base
-  }, [lang, path, title, description])
+  }, [lang, path, title, description, isPrices, isHome, t])
 
   return (
     <SeoHead
