@@ -8,6 +8,8 @@ type Props = {
   sellGoldTotal: number | null
   formatTotal: (n: number | null | undefined) => string
   variant?: 'hero' | 'card' | 'compact'
+  /** Unit under the amount (e.g. KWD / gram). Defaults to common.kwd. */
+  unitLabel?: string
   className?: string
 }
 
@@ -19,9 +21,11 @@ export function CustomerGoldPricePair({
   sellGoldTotal,
   formatTotal,
   variant = 'card',
+  unitLabel,
   className,
 }: Props) {
   const { t } = useTranslation()
+  const unit = unitLabel ?? t('common.kwd')
 
   if (variant === 'hero') {
     return (
@@ -29,6 +33,7 @@ export function CustomerGoldPricePair({
         <PriceRow
           label={t('pricesPage.priceToBuyGold')}
           value={formatTotal(buyGoldTotal)}
+          unit={unit}
           emphasis="buy"
           dark
           layout="inline"
@@ -36,6 +41,7 @@ export function CustomerGoldPricePair({
         <PriceRow
           label={t('pricesPage.priceToSellGold')}
           value={formatTotal(sellGoldTotal)}
+          unit={unit}
           emphasis="sell"
           dark
           layout="inline"
@@ -50,12 +56,14 @@ export function CustomerGoldPricePair({
         <PriceRow
           label={t('pricesPage.priceToBuyGold')}
           value={formatTotal(buyGoldTotal)}
+          unit={unit}
           emphasis="buy"
           layout="stack"
         />
         <PriceRow
           label={t('pricesPage.priceToSellGold')}
           value={formatTotal(sellGoldTotal)}
+          unit={unit}
           emphasis="sell"
           layout="stack"
         />
@@ -64,23 +72,20 @@ export function CustomerGoldPricePair({
   }
 
   return (
-    <div
-      className={cn(
-        'customer-gold-price-pair space-y-2 rounded-xl border border-black/8 bg-[#F9F9FA] p-2 sm:space-y-2.5 sm:p-2.5',
-        className,
-      )}
-    >
+    <div className={cn('customer-gold-price-pair customer-gold-price-pair--editorial', className)}>
       <PriceRow
         label={t('pricesPage.priceToBuyGold')}
         value={formatTotal(buyGoldTotal)}
+        unit={unit}
         emphasis="buy"
-        layout="stack"
+        layout="editorial"
       />
       <PriceRow
         label={t('pricesPage.priceToSellGold')}
         value={formatTotal(sellGoldTotal)}
+        unit={unit}
         emphasis="sell"
-        layout="stack"
+        layout="editorial"
       />
     </div>
   )
@@ -89,18 +94,40 @@ export function CustomerGoldPricePair({
 function PriceRow({
   label,
   value,
+  unit,
   emphasis,
   dark = false,
   layout = 'stack',
 }: {
   label: string
   value: string
+  unit: string
   emphasis: 'buy' | 'sell'
   dark?: boolean
-  /** stack = label above amount (safe on narrow / 3-up cards); inline = side-by-side */
-  layout?: 'stack' | 'inline'
+  /** stack = label above amount; inline = side-by-side; editorial = reference type scale */
+  layout?: 'stack' | 'inline' | 'editorial'
 }) {
-  const { t } = useTranslation()
+  if (layout === 'editorial') {
+    return (
+      <div
+        className={cn(
+          'customer-gold-price-row customer-gold-price-row--editorial min-w-0',
+          emphasis === 'buy'
+            ? 'customer-gold-price-row--buy'
+            : 'customer-gold-price-row--sell',
+        )}
+      >
+        <span className="customer-gold-price-row__eyebrow">{label}</span>
+        <span dir="ltr" className="customer-gold-price-row__display">
+          <span className="customer-gold-price-row__amount [overflow-wrap:anywhere]">{value}</span>
+        </span>
+        <span dir="ltr" className="customer-gold-price-row__unit-line">
+          {unit}
+        </span>
+      </div>
+    )
+  }
+
   const stacked = layout === 'stack'
 
   return (
@@ -121,7 +148,6 @@ function PriceRow({
       >
         {label}
       </span>
-      {/* LTR keeps digits + د.ك intact; never overflow the card edge */}
       <span
         dir="ltr"
         className={cn(
@@ -145,7 +171,7 @@ function PriceRow({
             dark ? 'text-white/45' : 'text-[#94A3B8]',
           )}
         >
-          {t('common.kwd')}
+          {unit}
         </span>
       </span>
     </div>

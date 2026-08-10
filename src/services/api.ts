@@ -1630,6 +1630,10 @@ export type DaralsabaekPublicCarat = {
   sellTotal: number | null
   buyTotalClub?: number | null
   sellTotalClub?: number | null
+  /** Kuwait session absolute change (KWD/g) on customer buy quote when available. */
+  changeToday?: number | null
+  /** Kuwait session percent change. */
+  changeTodayPercent?: number | null
 }
 
 export type DaralsabaekPublicMetalSpot = DaralsabaekPublicCarat
@@ -1649,6 +1653,8 @@ export type DaralsabaekPublicRatesResponse = {
   silverKiloPrice?: number | null
   /** "goldapi.io" once backend is on the unified upstream. */
   source?: string
+  /** How day-change was computed: snapshot | goldapi | none */
+  dayChangeSource?: string
 }
 
 export type KuwaitMarketMarkupRow = {

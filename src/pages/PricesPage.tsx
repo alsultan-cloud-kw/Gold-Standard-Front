@@ -28,6 +28,7 @@ import {
 } from '@/utils/publicStorefrontRates'
 import { PreciousMetalMark, preciousMetalIdFromRowKey } from '@/components/prices/PreciousMetalMark'
 import { CustomerGoldPricePair } from '@/components/prices/CustomerGoldPricePair'
+import { PriceDayChangeStats } from '@/components/prices/PriceDayChangeStats'
 import {
   formatGramsLabel,
   GOLD_WEIGHT_DEFAULT_G,
@@ -35,6 +36,8 @@ import {
   parseSensitiveGrams,
 } from '@/components/prices/GoldWeightScale'
 import { formatKwd } from '@/utils/productPrice'
+import { dayChangeFromPercent } from '@/utils/dayChangeFallback'
+import { toFiniteNumber } from '@/services/pricingApi'
 
 const PRECIOUS_METAL_LABEL_KEYS = {
   Silver: 'productsPage.metal.silver',
@@ -157,6 +160,7 @@ export default function PricesPage() {
     return ounceCarat ? resolveDir(ounceCarat.key) : null
   })()
 
+  const goldChp = toFiniteNumber(goldCurrentSnap?.chp)
   const showBoard = !isLoading && res?.succeeded && carats.length > 0
 
   return (
@@ -412,7 +416,6 @@ export default function PricesPage() {
                   const { buyTotal: buyForWeight, sellTotal: sellForWeight } = caratGramTotals(c, grams)
                   const pairBuy = sellForWeight
                   const pairSell = buyForWeight
-                  const tileDir = resolveDir(c.key)
                   const featured = isFeaturedKarat(c.key)
 
                   return (
@@ -427,12 +430,21 @@ export default function PricesPage() {
                             <span className="price-rate-card__live-dot" aria-hidden="true" />
                             {t('pricesPage.liveBadge')}
                           </span>
-                          <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
                         </div>
 
                         <header className="price-rate-card__identity">
-                          <h3 className="price-rate-card__karat">
-                            {t('pricesPage.goldAccountTitle', { karat: goldAccountKaratLabel(c.key) })}
+                          <p className="price-rate-card__eyebrow">
+                            {t('pricesPage.goldAccountEyebrow')}
+                          </p>
+                          <h3
+                            className="price-rate-card__karat"
+                            aria-label={t('pricesPage.goldAccountTitle', {
+                              karat: goldAccountKaratLabel(c.key),
+                            })}
+                          >
+                            <span className="price-rate-card__karat-num" dir="ltr">
+                              {goldAccountKaratLabel(c.key)}K
+                            </span>
                           </h3>
                         </header>
 
@@ -440,7 +452,17 @@ export default function PricesPage() {
                           buyGoldTotal={pairBuy}
                           sellGoldTotal={pairSell}
                           formatTotal={fmtKwd}
+                          unitLabel={
+                            grams === 1
+                              ? t('pricesPage.kwdPerGramUnit')
+                              : t('pricesPage.kwdForWeightUnit', { grams: gramsLabel })
+                          }
                           className="mt-1"
+                        />
+
+                        <PriceDayChangeStats
+                          {...dayChangeFromPercent(c, goldChp)}
+                          grams={grams}
                         />
                       </div>
                     </article>
@@ -460,7 +482,6 @@ export default function PricesPage() {
                   const metalLabel = t(PRECIOUS_METAL_LABEL_KEYS[key])
                   const metalId = preciousMetalIdFromRowKey(key)
                   const spot = m ?? { key, buyTotal: null, sellTotal: null }
-                  const tileDir = resolveDir(spot.key)
                   const { buyTotal: buyForWeight, sellTotal: sellForWeight } = caratGramTotals(
                     spot,
                     grams,
@@ -477,7 +498,6 @@ export default function PricesPage() {
                             <span className="price-rate-card__live-dot" aria-hidden="true" />
                             {t('pricesPage.liveBadge')}
                           </span>
-                          <PriceTrendBadge dir={tileDir} variant="light" size="sm" />
                         </div>
 
                         <header className="price-rate-card__identity">
@@ -486,7 +506,7 @@ export default function PricesPage() {
                               metal={metalId}
                               label={metalLabel}
                               variant="card"
-                              className="min-w-0"
+                              className="min-w-0 justify-center"
                             />
                           ) : (
                             <h3 className="price-rate-card__karat">{metalLabel}</h3>
@@ -497,7 +517,17 @@ export default function PricesPage() {
                           buyGoldTotal={pairBuy}
                           sellGoldTotal={pairSell}
                           formatTotal={fmtKwd}
+                          unitLabel={
+                            grams === 1
+                              ? t('pricesPage.kwdPerGramUnit')
+                              : t('pricesPage.kwdForWeightUnit', { grams: gramsLabel })
+                          }
                           className="mt-1"
+                        />
+
+                        <PriceDayChangeStats
+                          {...dayChangeFromPercent(spot, null)}
+                          grams={grams}
                         />
                       </div>
                     </article>
