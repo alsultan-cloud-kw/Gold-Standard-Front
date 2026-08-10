@@ -174,7 +174,7 @@
     "shopNow": "Shop Now",
     "viewPrices": "View Prices",
     "certifiedQuality": "Serial number & QR verification",
-    "certifiedQualityDesc": "Every piece carries a unique serial identity and QR code — scan or enter it on our verify page to confirm it in our official catalog.",
+    "certifiedQualityDesc": "Every piece carries a unique serial identity and QR code — scan or enter it on our verify page to confirm it in our official records.",
     "blockchainOwnership": "Blockchain ownership ledger",
     "blockchainOwnershipDesc": "A digital ownership record secured with blockchain technology — a Gulf-first trail that documents identity and ownership you can verify.",
     "localManufacturing": "Local manufacturing",
@@ -355,18 +355,27 @@
     "wealthProtection": {
       "kicker": "Value that lasts",
       "title": "Gold preserves your wealth. Cash loses it over time.",
+      "titleLead": "Gold preserves your wealth. ",
+      "titleAccent": "Cash loses it over time.",
+      "subtitle": "Over the long term, gold has been a stronger tool for protecting purchasing power.",
       "gold": {
+        "pill": "Gold",
+        "claim": "Holds its value",
+        "caption": "Real value growth since 1970",
+        "imageAlt": "Shiny investment gold bars",
         "label": "Physical gold",
-        "value": "24×",
-        "caption": "Real value growth since 1970"
+        "value": "24×"
       },
       "cash": {
+        "pill": "Cash",
+        "claim": "Loses purchasing power",
+        "caption": "Purchasing power decline since 1970",
+        "imageAlt": "Stack of paper cash losing purchasing power",
         "label": "Paper cash",
-        "value": "−90%",
-        "caption": "Purchasing power lost since 1970"
+        "value": "−90%"
       },
       "vs": "VS",
-      "footnote": "Indicative long-term historical benchmark, not financial advice.",
+      "footnote": "Long-term historical indicator. Not investment advice.",
       "cta": "Shop certified gold"
     },
     "goldComparison": {
@@ -426,7 +435,7 @@
         "mociHallmark": "MOCI hallmark & purity stamp",
         "knetCheckout": "Secure KNET checkout",
         "licensedDealer": "Licensed Kuwait dealer",
-        "serialCatalog": "Serial-tracked product catalog",
+        "serialCatalog": "Serial-tracked product records",
         "livePricing": "Live transparent KWD pricing"
       },
       "ribbonTitleLead": "You invest in gold. ",
@@ -439,7 +448,7 @@
       "methods": {
         "qr": {
           "title": "Unique serial QR",
-          "description": "Every investment piece carries a unique serial identity and QR you can scan on our site to confirm it in our official catalog."
+          "description": "Every investment piece carries a unique serial identity and QR you can scan on our site to confirm it in our official records."
         },
         "blockchain": {
           "title": "Digital Ownership Record",
@@ -452,7 +461,7 @@
         },
         "companyStamp": {
           "title": "Company stamp & unique serial",
-          "description": "Gold Standard branding and a unique serial sit on every piece - match them to our catalog, receipts, and verify page."
+          "description": "Gold Standard branding and a unique serial sit on every piece - match them to our official records, receipts, and verify page."
         },
         "ministry": {
           "title": "Professional quality inspection",
@@ -488,7 +497,7 @@
         },
         "certified": {
           "q": "Is the gold certified?",
-          "a": "Yes — every bar, coin, and piece is sold with clear karat and weight, MOCI precious-metals hallmarking where required, the Gold Standard company stamp, a serial number in our official catalog, and a Digital Ownership Record. Scan the product QR or visit our verify page to confirm registration before you buy."
+          "a": "Yes — every bar, coin, and piece is sold with clear karat and weight, MOCI precious-metals hallmarking where required, the Gold Standard company stamp, a serial number in our official records, and a Digital Ownership Record. Scan the product QR or visit our verify page to confirm registration before you buy."
         },
         "livePricing": {
           "q": "How does live pricing work?",
@@ -1106,7 +1115,7 @@
   "authenticity": {
     "eyebrow": "Authenticity check",
     "pageTitle": "Verify product data and authenticity",
-    "pageSubtitle": "Enter the serial from your piece, or scan the Gold Standard QR, to confirm it is registered in our official catalog.",
+    "pageSubtitle": "Enter the serial from your piece, or scan the Gold Standard QR, to confirm it is registered in our official records.",
     "missingCodeTitle": "Enter a verification code",
     "missingCodeBody": "Type the serial or QR code from your product below, or open the full verification link printed with your item.",
     "browseProducts": "Browse products",
@@ -1131,8 +1140,8 @@
     "printCertificate": "Print certificate",
     "certificateAfterPurchase": "The downloadable certificate is included with your purchased piece — scan the QR on your physical label after delivery.",
     "viewPassport": "View Certificate of Ownership",
-    "registryOnlyNote": "This check confirms catalog registration only. It is not proof of purchase.",
-    "footerNote": "This check confirms catalog registration only. For purchase, pricing, and warranty questions, contact Gold Standard directly.",
+    "registryOnlyNote": "This check confirms registration in our official records only. It is not proof of purchase.",
+    "footerNote": "This check confirms registration in our official records only. For purchase, pricing, and warranty questions, contact Gold Standard directly.",
     "enterCodeTitle": "Verify your gold",
     "enterCodeBody": "Enter the serial number or QR code printed on your bar, coin, or packaging. You can also open this page by scanning the product QR.",
     "codeLabel": "Serial or verification code",
@@ -1240,7 +1249,7 @@
     "trustTitle": "Certified, insured & registered",
     "trustBody": "Every piece includes a Digital Ownership Record secured by blockchain technology, the Gold Standard company stamp, security hologram seal, and clear karat, weight, and serial verification.",
     "verifyCta": "Check registry status",
-    "verifyHint": "Confirm this piece is listed in our official catalog and linked to its Digital Ownership Record.",
+    "verifyHint": "Confirm this piece is listed in our official records and linked to its Digital Ownership Record.",
     "calculatePriceFailed": "Failed to calculate price",
     "authenticityAnchor": "Authenticity assurance"
   },
@@ -1650,7 +1659,7 @@
       }
     },
     "digitalChannelTitle": "See where the story leads",
-    "digitalChannelBody": "Everything you just read ends in a real product — browse the catalog and see the factory’s work for yourself.",
+    "digitalChannelBody": "Everything you just read ends in a real product — browse our products and see the factory’s work for yourself.",
     "securityKicker": "The innovation story",
     "securityTitle": "Why we built a complete verification stack",
     "securityIntro": "In the gold souq, trust was personal: you knew the seller, so you trusted the piece. We wanted trust that does not depend on knowing anyone — so we combined every protection layer that makes sense for physical gold into one system, and were the first in Kuwait to do it.",
@@ -1683,7 +1692,7 @@
         },
         "registration": {
           "title": "Registration & documentation",
-          "body": "The piece is registered under a serial number in our official catalog, and its ownership is documented at sale."
+          "body": "The piece is registered under a serial number in our official records, and its ownership is documented at sale."
         }
       },
       "qcTitle": "Four quality gates, never skipped",
@@ -1702,7 +1711,7 @@
         },
         "serial": {
           "title": "Serial registration",
-          "body": "No piece leaves the factory without a number registered in the catalog."
+          "body": "No piece leaves the factory without a number registered in the official records."
         }
       }
     },
@@ -1754,7 +1763,7 @@
     "licenceMociTitle": "MOCI hallmark & stamp",
     "licenceMociBody": "Under Kuwait law, gold and precious metals must be tested and stamped by the Ministry of Commerce and Industry — Precious Metals Department (ختم المعادن الثمينة). The official stamp confirms karat purity and protects buyers from unstamped or counterfeit pieces.",
     "licenceTradeTitle": "Licensed dealer of gold dedicated to investment",
-    "licenceTradeBody": "We supply coins and bars with transparent live KWD pricing, secure KNET checkout, insured delivery, and product verification through our official catalog and authenticity tools.",
+    "licenceTradeBody": "We supply coins and bars with transparent live KWD pricing, secure KNET checkout, insured delivery, and product verification through our official records and authenticity tools.",
     "statYears": "Years of Experience",
     "statBranches": "Showroom",
     "statCustomers": "Happy Customers",
