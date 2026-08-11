@@ -73,6 +73,32 @@ export function isExplicitKnetSuccess(
 }
 
 /**
+ * CBK Integration Manual — Error redirect params:
+ * `?ErrorCode=TIJxxxx&PayTrackID=…` (and classic KNET `Error` / `ErrorText`).
+ */
+export function knetGatewayErrorCodeFromSearch(
+  params: URLSearchParams | { get: (key: string) => string | null },
+): string | null {
+  const raw =
+    params.get('ErrorCode')
+    || params.get('errorcode')
+    || params.get('Error')
+    || params.get('error')
+  const code = (raw || '').trim()
+  return code || null
+}
+
+/** True for CBK ErrorCode / KNET Error values that mean the payment did not capture. */
+export function isKnetGatewayErrorCode(code?: string | null): boolean {
+  const c = (code || '').trim().toUpperCase()
+  if (!c) return false
+  if (c.startsWith('TIJ')) return true
+  // CBK payment Status codes used as ErrorCode in some flows: 2=Failed, 3=Expired/Cancelled, -1=Invalid
+  if (c === '2' || c === '3' || c === '-1') return true
+  return isKnetTerminalFailResult(c)
+}
+
+/**
  * Checkout / deep-link: definitive decline/cancel.
  * Callback-parse gaps (missing_trandata / decrypt_failed) are NOT declines — Inquiry may still CAPTURE.
  */
@@ -80,11 +106,21 @@ export function isExplicitKnetFailure(
   knetStatus: string | null | undefined,
   result: string,
   reason: string | null | undefined,
+  errorCode?: string | null,
 ): boolean {
+  if (isKnetGatewayErrorCode(errorCode)) return true
   if (isKnetTerminalFailResult(result)) return true
   const r = (reason || '').toLowerCase()
   if (r === 'missing_trandata' || r === 'decrypt_failed') return false
-  if (r.includes('cancel') || r === 'callback_error') return true
+  if (
+    r.includes('cancel')
+    || r === 'callback_error'
+    || r === 'gateway_error'
+    || r === 'payment_failed'
+    || r === 'verification_timeout'
+  ) {
+    return true
+  }
   if (
     (knetStatus || '').toLowerCase() === 'failed'
     && !isExplicitKnetSuccess(knetStatus, result)
@@ -98,9 +134,11 @@ export function needsKnetVerification(
   knetStatus: string | null | undefined,
   result: string,
   reason: string | null | undefined,
+  errorCode?: string | null,
 ): boolean {
+  if (isKnetGatewayErrorCode(errorCode)) return false
   if ((knetStatus || '').toLowerCase() === 'pending') return true
-  if (isExplicitKnetSuccess(knetStatus, result) || isExplicitKnetFailure(knetStatus, result, reason)) {
+  if (isExplicitKnetSuccess(knetStatus, result) || isExplicitKnetFailure(knetStatus, result, reason, errorCode)) {
     return false
   }
   const r = (reason || '').toLowerCase()

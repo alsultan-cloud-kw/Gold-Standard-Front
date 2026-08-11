@@ -10,9 +10,11 @@ import { KnetPaymentDeclinedPanel } from '@/components/checkout/KnetPaymentDecli
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import {
   isExplicitKnetFailure,
+  isKnetGatewayErrorCode,
   isKnetReceiptCaptured,
   isKnetReceiptDefinitelyFailed,
   isKnetTerminalFailResult,
+  knetGatewayErrorCodeFromSearch,
 } from '@/lib/knetReceipt'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +24,7 @@ const KNET_PENDING_SALE_KEY = 'gs_knet_pending_sale'
 const VERIFY_POLL_MS = 1_800
 const VERIFY_DEADLINE_MS = 18_000
 const VERIFY_DEADLINE_FAIL_MS = 4_000
+const FETCH_TIMEOUT_MS = 8_000
 
 export default function KnetReceiptPage() {
   const { t } = useTranslation()
@@ -36,9 +39,11 @@ export default function KnetReceiptPage() {
 
   const urlStatus = (searchParams.get('knet_status') || '').toLowerCase()
   const urlResult = searchParams.get('result') || ''
+  const urlErrorCode = knetGatewayErrorCodeFromSearch(searchParams)
   const urlLooksFailed =
     isKnetTerminalFailResult(urlResult)
-    || isExplicitKnetFailure(urlStatus, urlResult, searchParams.get('reason'))
+    || isKnetGatewayErrorCode(urlErrorCode)
+    || isExplicitKnetFailure(urlStatus, urlResult, searchParams.get('reason'), urlErrorCode)
 
   useEffect(() => {
     if (!saleId) {
@@ -65,7 +70,8 @@ export default function KnetReceiptPage() {
         const parseGap = reason === 'missing_trandata' || reason === 'decrypt_failed'
         const urlFail = !parseGap && (
           isKnetTerminalFailResult(urlResult)
-          || isExplicitKnetFailure(urlStatus, urlResult, reason)
+          || isKnetGatewayErrorCode(urlErrorCode)
+          || isExplicitKnetFailure(urlStatus, urlResult, reason, urlErrorCode)
         )
 
         const shouldPoll =
@@ -76,7 +82,9 @@ export default function KnetReceiptPage() {
           reason === 'resume' ||
           reason === 'payment_url_missing' ||
           reason === 'awaiting_server_confirm' ||
+          reason === 'verification_timeout' ||
           userCancelled ||
+          Boolean(urlErrorCode) ||
           !urlStatus
 
         let paid = false
@@ -107,40 +115,64 @@ export default function KnetReceiptPage() {
           }
         } else {
           try {
-            await ordersApi.verifyKnetPayment(saleId)
+            await withTimeout(ordersApi.verifyKnetPayment(saleId), 7_000)
           } catch {
             /* still load latest receipt snapshot */
           }
         }
 
-        if (
-          !cancelled &&
+        const shouldAbandon =
           !paid &&
-          (sawFailed || userCancelled || urlStatus === 'failed' || urlFail || reason === 'payment_url_missing')
-        ) {
+          (sawFailed
+            || userCancelled
+            || urlStatus === 'failed'
+            || urlFail
+            || reason === 'payment_url_missing'
+            || reason === 'verification_timeout'
+            || reason === 'gateway_error'
+            || reason === 'payment_failed')
+
+        if (!cancelled && shouldAbandon) {
           try {
             sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
           } catch {
             /* ignore */
           }
           try {
-            const abandoned = await ordersApi.abandonUnpaidKnet(saleId)
+            const abandoned = await withTimeout(ordersApi.abandonUnpaidKnet(saleId), FETCH_TIMEOUT_MS)
             if (abandoned.payment_status === 'paid') {
               paid = true
+            } else {
+              sawFailed = true
             }
           } catch {
-            /* inventory may still release via KNET error callback */
+            /* inventory may still release via KNET error callback / beat */
+            sawFailed = sawFailed || urlFail
           }
         }
 
-        const data = await ordersApi.getKnetReceipt(saleId)
+        let data: KnetReceiptDetails | null = null
+        try {
+          data = await withTimeout(ordersApi.getKnetReceipt(saleId), FETCH_TIMEOUT_MS)
+        } catch {
+          if (!cancelled && urlFail) {
+            // Still show declined panel even if receipt snapshot times out.
+            setReceipt(null)
+            setError(t('knetReceipt.loadError'))
+            setLoading(false)
+            return
+          }
+          throw new Error('receipt_load_failed')
+        }
         if (cancelled) return
 
         setReceipt(data)
         setError(null)
 
         const captured = isKnetReceiptCaptured(data) || paid
-        const failed = isKnetReceiptDefinitelyFailed(data) || (urlFail && !captured)
+        const failed =
+          isKnetReceiptDefinitelyFailed(data)
+          || ((urlFail || sawFailed) && !captured)
         if (captured) {
           if (urlStatus && urlStatus !== 'success') {
             navigate(`/payment-receipt/${saleId}?knet_status=success`, { replace: true })
@@ -169,7 +201,7 @@ export default function KnetReceiptPage() {
     return () => {
       cancelled = true
     }
-  }, [saleId, t, clearCart, navigate, searchParams, urlResult, urlStatus])
+  }, [saleId, t, clearCart, navigate, searchParams, urlResult, urlStatus, urlErrorCode])
 
   const downloadInvoice = async () => {
     if (!saleId || !isKnetReceiptCaptured(receipt)) {
@@ -208,7 +240,7 @@ export default function KnetReceiptPage() {
       return (
         <div className="min-h-[100dvh] bg-[#F9F9FA]">
           <div className="page-shell flex min-h-[100dvh] items-center justify-center py-10">
-            <KnetPaymentDeclinedPanel result={urlResult} />
+            <KnetPaymentDeclinedPanel result={urlResult || urlErrorCode || undefined} />
           </div>
         </div>
       )
@@ -231,7 +263,7 @@ export default function KnetReceiptPage() {
   }
 
   const captured = isKnetReceiptCaptured(receipt)
-  const failed = isKnetReceiptDefinitelyFailed(receipt)
+  const failed = isKnetReceiptDefinitelyFailed(receipt) || (urlLooksFailed && !captured)
 
   return (
     <div className={cn('min-h-[100dvh] bg-[#F9F9FA]', failed ? '' : 'py-10 sm:py-12')}>

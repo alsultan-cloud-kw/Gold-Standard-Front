@@ -37,6 +37,8 @@ import {
 import {
   isExplicitKnetFailure,
   isExplicitKnetSuccess,
+  isKnetGatewayErrorCode,
+  knetGatewayErrorCodeFromSearch,
   needsKnetVerification,
 } from '@/lib/knetReceipt'
 import { formatOrderKwd, useOrderSummaryDisplay } from '../hooks/useOrderSummaryDisplay'
@@ -470,37 +472,50 @@ export default function CheckoutPage() {
       .catch(() => {})
   }, [])
 
-  const knetReturnHandled = useRef(false)
+  /** Blocks duplicate handlers for the same search string only (not forever). */
+  const knetReturnSearchHandled = useRef<string | null>(null)
+  const clearCartRef = useRef(clearCart)
+  clearCartRef.current = clearCart
 
   useEffect(() => {
-    if (knetReturnHandled.current) return
-
     const params = new URLSearchParams(location.search)
     const knetStatus = params.get('knet_status')
     const urlSaleId = params.get('sale_id') || undefined
     const urlInvoice = params.get('invoice') || undefined
     const reason = params.get('reason') || undefined
     const result = (params.get('result') || '').toUpperCase()
+    const errorCode = knetGatewayErrorCodeFromSearch(params)
 
     const pending = readKnetPendingSale()
     const saleId = urlSaleId || pending?.saleId
     const invoice = urlInvoice || pending?.invoice
 
-    // Only treat as a bank return when the URL carries KNET signals.
-    // Pending session alone must not bounce every /checkout visit after a decline.
+    // Bank return: classic knet_* params OR CBK ErrorCode / PayTrackID (manual §Error).
     const returnedFromKnet = Boolean(
-      saleId && (knetStatus || params.get('result') || params.get('reason')),
+      saleId && (
+        knetStatus
+        || params.get('result')
+        || params.get('reason')
+        || errorCode
+        || params.get('PayTrackID')
+        || params.get('paytrackid')
+      ),
     )
     if (!returnedFromKnet || !saleId) return
 
-    knetReturnHandled.current = true
-    // Keep pending sale until paid so receipt can clear the cart on late CAPTURED.
+    const handleKey = `${saleId}|${location.search}`
+    if (knetReturnSearchHandled.current === handleKey) return
+    knetReturnSearchHandled.current = handleKey
+
+    let cancelled = false
 
     const goToReceipt = (opts?: {
       status?: string | null
       reason?: string | null
       result?: string | null
     }) => {
+      if (cancelled) return
+      setKnetReturnPhase('idle')
       const qs = new URLSearchParams()
       if (opts?.status) qs.set('knet_status', opts.status)
       if (opts?.reason) qs.set('reason', opts.reason)
@@ -513,33 +528,44 @@ export default function CheckoutPage() {
       })
     }
 
-    if (isExplicitKnetFailure(knetStatus, result, reason)) {
+    const goDeclined = (opts?: { reason?: string | null; result?: string | null }) => {
       try {
         clearKnetPendingSale()
       } catch {
         /* ignore */
       }
-      // Open receipt with decline signals — short Inquiry, then Declined UI.
       goToReceipt({
-        status: knetStatus || 'failed',
-        reason: reason || undefined,
-        result: result || undefined,
+        status: 'failed',
+        reason: opts?.reason || reason || 'payment_failed',
+        result: opts?.result || result || errorCode || 'NOT CAPTURED',
       })
-      return
+    }
+
+    if (isExplicitKnetFailure(knetStatus, result, reason, errorCode) || isKnetGatewayErrorCode(errorCode)) {
+      // Decline / wrong card details / CBK ErrorCode → receipt Declined UI (releases stock).
+      goDeclined({
+        reason: reason || (errorCode ? 'gateway_error' : undefined),
+        result: result || errorCode || undefined,
+      })
+      return () => {
+        cancelled = true
+      }
     }
 
     if (isExplicitKnetSuccess(knetStatus, result)) {
-      // URL success is UX only — clear cart after server verify proves paid.
       setKnetReturnPhase('verifying')
-      let cancelled = false
       const run = async () => {
         try {
           const verify = await ordersApi.verifyKnetPayment(saleId)
           if (cancelled) return
           if (verify.payment_status === 'paid') {
-            clearCart()
+            clearCartRef.current()
             clearKnetPendingSale()
             goToReceipt({ status: 'success', result: result || undefined })
+            return
+          }
+          if (verify.payment_status === 'failed') {
+            goDeclined({ reason: 'payment_failed', result: result || 'NOT CAPTURED' })
             return
           }
         } catch {
@@ -558,35 +584,25 @@ export default function CheckoutPage() {
       }
     }
 
-    if (!needsKnetVerification(knetStatus, result, reason)) {
+    if (!needsKnetVerification(knetStatus, result, reason) && !errorCode) {
       goToReceipt({
         status: knetStatus || undefined,
         reason: reason || undefined,
         result: result || undefined,
       })
-      return
+      return () => {
+        cancelled = true
+      }
     }
 
     // Ambiguous return (e.g. missing_trandata) — short verify, never assume success.
     setKnetReturnPhase('verifying')
 
-    let cancelled = false
     const finishSuccess = () => {
       if (cancelled) return
-      clearCart()
+      clearCartRef.current()
       clearKnetPendingSale()
       goToReceipt({ status: 'success' })
-    }
-    const finishPending = (failReason?: string | null) => {
-      if (cancelled) return
-      setKnetReturnReason(failReason ?? reason ?? result ?? null)
-      setKnetReturnPhase('idle')
-      // Leave cart + pending intact; receipt continues Inquiry polling.
-      goToReceipt({
-        status: 'pending',
-        reason: failReason ?? reason ?? 'verification_timeout',
-        result: result || undefined,
-      })
     }
 
     const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
@@ -611,7 +627,7 @@ export default function CheckoutPage() {
             && (reason || '').toLowerCase() !== 'missing_trandata'
             && (reason || '').toLowerCase() !== 'decrypt_failed'
           ) {
-            finishPending(reason)
+            goDeclined({ reason: reason || 'payment_failed', result: result || 'NOT CAPTURED' })
             return
           }
         } catch {
@@ -620,8 +636,13 @@ export default function CheckoutPage() {
         await new Promise((r) => setTimeout(r, 1_500))
       }
       if (!cancelled) {
-        // Never clear cart on ambiguous timeout — KNET may still CAPTURE late.
-        finishPending(reason ?? 'verification_timeout')
+        // Hand off to receipt — never leave this fullscreen "Confirming payment" forever.
+        // Receipt will inquire + abandon if still unpaid.
+        goToReceipt({
+          status: 'pending',
+          reason: reason ?? 'verification_timeout',
+          result: result || undefined,
+        })
       }
     }
 
@@ -629,7 +650,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true
     }
-  }, [location.search, navigate, clearCart])
+  }, [location.search, navigate])
 
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('access_token')
