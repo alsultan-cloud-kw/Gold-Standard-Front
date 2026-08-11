@@ -182,7 +182,6 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [lastOrder, setLastOrder] = useState<SaleResponse | null>(null)
   const [knetReturnPhase, setKnetReturnPhase] = useState<KnetReturnPhase>('idle')
-  const [knetReturnReason, setKnetReturnReason] = useState<string | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileMountReady, setTurnstileMountReady] = useState(false)
   const [quoteReviewRequired, setQuoteReviewRequired] = useState(false)
@@ -968,9 +967,6 @@ export default function CheckoutPage() {
           </div>
           <h1 className="mb-2 text-xl font-bold text-[#0B0F19]">{t('checkoutPage.knetFailedTitle')}</h1>
           <p className="mb-6 text-sm text-[#64748B]">{t('checkoutPage.knetFailedBody')}</p>
-          {knetReturnReason && (
-            <p className="mb-6 font-mono text-xs text-[#94A3B8]">{knetReturnReason}</p>
-          )}
           <div className="flex flex-wrap justify-center gap-3">
             <button type="button" onClick={() => setKnetReturnPhase('idle')} className={checkoutPrimaryBtnClass}>
               {t('checkoutPage.knetTryAgain')}
