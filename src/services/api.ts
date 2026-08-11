@@ -4,6 +4,7 @@ import {
   isAuthSessionExpired,
   notifySessionExpired,
 } from '@/lib/authSession'
+import { downloadSaleInvoicePdf as downloadSaleInvoicePdfFile } from '@/lib/downloadSaleInvoicePdf'
 import type { KnetReceiptDetails } from '@/types'
 
 // Create axios instance
@@ -1405,7 +1406,7 @@ export const invoicesApi = {
 
   /** Canonical PDF invoice (stored server-side; same file sent on WhatsApp). */
   downloadSaleInvoicePdf: (saleId: string, filenameHint?: string) =>
-    import('@/lib/downloadSaleInvoicePdf').then((m) => m.downloadSaleInvoicePdf(saleId, filenameHint)),
+    downloadSaleInvoicePdfFile(saleId, filenameHint),
 
   getTemplates: () =>
     apiService.get('/invoices/templates/'),

@@ -9,10 +9,12 @@ import {
   initSiteFonts,
 } from './lib/siteFonts'
 import { installMobilePageZoomLock } from './lib/mobilePageZoomLock'
+import { installViteChunkLoadRecovery } from './lib/viteChunkLoadRecovery'
 
 ensureSiteFontsLoaded()
 initSiteFonts()
 installMobilePageZoomLock()
+installViteChunkLoadRecovery()
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 // Only use a proxy when explicitly set. clerk.goldstandardkw.com DNS is verified — a

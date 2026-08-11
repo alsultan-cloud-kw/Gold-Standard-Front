@@ -13,11 +13,20 @@
         { "key": "Content-Type", "value": "application/json" },
         { "key": "Cache-Control", "value": "public, max-age=3600" }
       ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
     }
   ],
   "rewrites": [
     { "source": "/__clerk/:path*", "destination": "/api/clerk-fapi/:path*" },
     { "source": "/.well-known/(.*)", "destination": "/.well-known/$1" },
-    { "source": "/((?!\\.well-known/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!assets/|api/|og/|favicons/|videos/|fonts/|logo\\.png|robots\\.txt|sitemap\\.xml|\\.well-known/).*)",
+      "destination": "/index.html"
+    }
   ]
 }

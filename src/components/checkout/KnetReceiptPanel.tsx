@@ -73,9 +73,9 @@ export function KnetReceiptPanel({
     }
   }, [paymentRef, t])
 
-  // Declined: clean status page only — no receipt field dump.
+  // Declined: same KNET detail fields as success + Declined/X hero (certification).
   if (failed) {
-    return <KnetPaymentDeclinedPanel result={receipt.result} />
+    return <KnetPaymentDeclinedPanel receipt={receipt} result={receipt.result} />
   }
 
   return (

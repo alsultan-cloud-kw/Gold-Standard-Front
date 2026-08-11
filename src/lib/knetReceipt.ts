@@ -168,6 +168,27 @@ export function formatReceiptAmount(amount: string | undefined, currency: string
   return `${n.toFixed(3)} ${code}`
 }
 
+/**
+ * Status row for receipt tables: keep raw gateway text; normalize wrappers so
+ * NOT CAPTURED is always visible for KNET certification screenshots.
+ */
+export function formatKnetGatewayStatusDisplay(
+  result?: string | null,
+  paymentStatus?: string | null,
+  unavailable = 'Unavailable',
+): string {
+  const raw = (result || '').replace(/\+/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!raw) return (paymentStatus || '').trim() || unavailable
+  if (compactKnetResult(raw).includes('NOTCAPTURED')) {
+    // Prefer showing the CBK phrase when the raw string already contains it.
+    if (/not\s*captured/i.test(raw)) {
+      return raw
+    }
+    return 'NOT CAPTURED'
+  }
+  return raw
+}
+
 export type KnetReceiptField = { label: string; value: string }
 
 export function buildKnetReceiptFields(
@@ -204,7 +225,7 @@ export function buildKnetReceiptFields(
     },
     {
       label: t('knetReceipt.status'),
-      value: receipt.result?.trim() || receipt.payment_status || unavailable,
+      value: formatKnetGatewayStatusDisplay(receipt.result, receipt.payment_status, unavailable),
     },
     {
       label: t('knetReceipt.orderStatus'),
