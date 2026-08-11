@@ -9,15 +9,28 @@ export function formatOrderKwd(n: number): string {
   return n.toLocaleString(PRICE_NUMBER_LOCALE, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
 }
 
+type OrderSummaryOpts = {
+  discountCode?: string
+  /**
+   * `quote` (checkout): never fall back to live cart money — show 0 until the signed
+   * lock is ready so the UI cannot flash a newer spot price before the lock.
+   * `cart` (cart page): allow cart totals while preview warms the physical quote cache.
+   */
+  pricingSource?: 'cart' | 'quote'
+}
+
 /**
  * Merges cart line totals with server checkout preview when the user is logged in.
  * Preview uses the same pricing + best customer offer as place_order.
  */
 export function useOrderSummaryDisplay(
   cart: Cart,
-  deliveryType: 'physical' | 'locked' = 'locked',
-  opts?: { discountCode?: string },
+  deliveryType: 'physical' | 'locked' = 'physical',
+  opts?: OrderSummaryOpts,
 ) {
+  const pricingSource = opts?.pricingSource ?? 'cart'
+  const requireQuote = pricingSource === 'quote'
+
   const items = useMemo(
     () => cart.items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
     [cart.items],
@@ -31,9 +44,9 @@ export function useOrderSummaryDisplay(
   const useServer = isSuccess && !!preview && items.length > 0 && !isError
 
   const subtotal = useMemo(() => {
-    if (!useServer || !preview) return cart.subtotal
-    return parseCheckoutMoney(preview.subtotal) ?? cart.subtotal
-  }, [useServer, preview, cart.subtotal])
+    if (!useServer || !preview) return requireQuote ? 0 : cart.subtotal
+    return parseCheckoutMoney(preview.subtotal) ?? (requireQuote ? 0 : cart.subtotal)
+  }, [useServer, preview, cart.subtotal, requireQuote])
 
   const discountAmount = useMemo(() => {
     if (!useServer || !preview) return 0
@@ -41,9 +54,9 @@ export function useOrderSummaryDisplay(
   }, [useServer, preview])
 
   const totalAmount = useMemo(() => {
-    if (!useServer || !preview) return cart.total_amount
-    return parseCheckoutMoney(preview.total_amount) ?? cart.total_amount
-  }, [useServer, preview, cart.total_amount])
+    if (!useServer || !preview) return requireQuote ? 0 : cart.total_amount
+    return parseCheckoutMoney(preview.total_amount) ?? (requireQuote ? 0 : cart.total_amount)
+  }, [useServer, preview, cart.total_amount, requireQuote])
 
   const shippingAmount = useMemo(() => {
     if (!useServer || !preview) return 0

@@ -274,6 +274,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const repriceFromLiveRates = async () => {
       if (cancelled) return
+      // Checkout holds a signed quote lock — do not tick live cart money underneath it.
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/checkout')) {
+        return
+      }
       const now = Date.now()
       if (repriceInFlightRef.current) return
       if (now - lastRepriceStartedAtRef.current < REPRICE_MIN_GAP_MS) return

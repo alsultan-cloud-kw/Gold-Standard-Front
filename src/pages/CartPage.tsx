@@ -134,7 +134,8 @@ export default function CartPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart()
-  const summary = useOrderSummaryDisplay(cart)
+  // Prefetch the same delivery-type quote checkout starts with (physical) so the lock is warm.
+  const summary = useOrderSummaryDisplay(cart, 'physical')
   const { ensureCanPurchase, isAuthenticated, needsVerification, needsKyc, loginHref } =
     usePurchaseAuth()
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =

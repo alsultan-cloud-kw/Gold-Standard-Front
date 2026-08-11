@@ -210,10 +210,12 @@ export default function CheckoutPage() {
   const { cart, clearCart } = useCart()
   const summary = useOrderSummaryDisplay(cart, deliveryType, {
     discountCode: appliedDiscountCode,
+    pricingSource: 'quote',
   })
-  const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings, chargedSubtotal } =
+  const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings } =
     useMemo(() => cartClubPricingBreakdown(cart.items), [cart.items])
-  const displayTotalAfterClub = summary.useServerPreview ? summary.subtotal : chargedSubtotal
+  // Payable totals come only from the signed checkout quote — never live cart fallback.
+  const displayTotalAfterClub = summary.useServerPreview ? summary.subtotal : 0
   const hasUnavailableItems = useMemo(
     () =>
       cart.items.some(
@@ -1471,7 +1473,7 @@ export default function CheckoutPage() {
                           {method.id === 'wallet' && method.disabled ? (
                             <span className="checkout-option__hint">
                               {t('checkoutPage.walletInsufficient', {
-                                total: formatOrderKwd(checkoutTotalDue),
+                                total: formatQuotedKwd(checkoutTotalDue),
                               })}
                             </span>
                           ) : null}
@@ -1569,11 +1571,12 @@ export default function CheckoutPage() {
                 <div className="mb-5 space-y-3">
                   {cart.items.map((item) => {
                     const lineList = cartLineStandardTotal(item)
-                    const cartLineTotal = Number(item.total_price)
-                    const lineTotal =
-                      checkoutPreviewLineTotal(summary.linePrices, item.product.id)
-                      ?? (Number.isFinite(cartLineTotal) ? cartLineTotal : 0)
-                    const lineSave = Math.max(0, lineList - lineTotal)
+                    const quotedLine = checkoutPreviewLineTotal(summary.linePrices, item.product.id)
+                    const lineTotal = quotedLine ?? 0
+                    const lineSave =
+                      summary.useServerPreview && quotedLine != null
+                        ? Math.max(0, lineList - lineTotal)
+                        : 0
                     const imageSrc = productImageSrc(item.product)
                     const productName =
                       isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
@@ -1693,14 +1696,14 @@ export default function CheckoutPage() {
                     <>
                       <div className="flex justify-between text-[#64748B]">
                         <span>{t('checkoutPage.standardListTotal')}</span>
-                        <span className="tabular-nums">{formatOrderKwd(displaySubtotal)} {t('common.kwd')}</span>
+                        <span className="tabular-nums">{formatQuotedKwd(displaySubtotal)} {t('common.kwd')}</span>
                       </div>
                       <div className="flex justify-between text-[#059669]">
                         <span className="inline-flex items-center gap-1.5">
                           <Crown className="h-3.5 w-3.5" />
                           {t('cartPage.clubMemberSavings')}
                         </span>
-                        <span className="tabular-nums">−{formatOrderKwd(clubSavings)} {t('common.kwd')}</span>
+                        <span className="tabular-nums">−{formatQuotedKwd(clubSavings)} {t('common.kwd')}</span>
                       </div>
                       <div className="flex justify-between border-t border-black/5 pt-2 font-medium text-[#0B0F19]">
                         <span>{t('checkoutPage.yourPriceMember')}</span>
@@ -1719,7 +1722,7 @@ export default function CheckoutPage() {
                         <Tag className="h-3.5 w-3.5" />
                         {summary.offerTitle ?? t('cartPage.promotionalOffer')}
                       </span>
-                      <span className="tabular-nums">−{formatOrderKwd(summary.discountAmount)} {t('common.kwd')}</span>
+                      <span className="tabular-nums">−{formatQuotedKwd(summary.discountAmount)} {t('common.kwd')}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-[#64748B]">
@@ -1802,16 +1805,35 @@ export default function CheckoutPage() {
             <div className="sticky top-[var(--nav-offset,7.25rem)] space-y-4">
               <div className="checkout-summary-card">
                 <h2 className="mb-4 text-base font-bold text-[#0B0F19] sm:text-lg">{t('cartPage.orderSummary')}</h2>
+                {summary.useServerPreview ? (
+                  <div
+                    className={cn(
+                      'mb-4 rounded-xl border px-3 py-2 text-xs font-medium',
+                      summary.quoteExpired
+                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                        : 'border-[#3F6F00]/25 bg-[#ECFCCB]/40 text-[#0B0F19]',
+                    )}
+                  >
+                    {summary.quoteExpired
+                      ? t('checkoutPage.priceLockExpired')
+                      : t('checkoutPage.priceLockActive', { time: quoteCountdown })}
+                  </div>
+                ) : summary.previewLoading ? (
+                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-black/8 bg-[#F9F9FA] px-3 py-2 text-xs text-[#64748B]">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {t('checkoutPage.quoteLoading')}
+                  </div>
+                ) : null}
                 <div className="space-y-2.5 text-sm">
                   {clubSavings > 0 ? (
                     <>
                       <div className="flex justify-between gap-2 text-[#64748B]">
                         <span>{t('checkoutPage.standardListTotal')}</span>
-                        <span className="tabular-nums text-[#0B0F19]">{formatOrderKwd(displaySubtotal)} {t('common.kwd')}</span>
+                        <span className="tabular-nums text-[#0B0F19]">{formatQuotedKwd(displaySubtotal)} {t('common.kwd')}</span>
                       </div>
                       <div className="flex justify-between gap-2 text-[#059669]">
                         <span>{t('checkoutPage.memberRateSavings')}</span>
-                        <span className="tabular-nums">−{formatOrderKwd(clubSavings)} {t('common.kwd')}</span>
+                        <span className="tabular-nums">−{formatQuotedKwd(clubSavings)} {t('common.kwd')}</span>
                       </div>
                       <div className="flex justify-between gap-2 border-t border-black/5 pt-2 font-medium text-[#0B0F19]">
                         <span>{t('checkoutPage.yourPrice')}</span>
@@ -1827,7 +1849,7 @@ export default function CheckoutPage() {
                   {summary.discountAmount > 0 && (
                     <div className="flex justify-between gap-2 text-[#059669]">
                       <span>{summary.offerTitle ?? t('cartPage.promotionalOffer')}</span>
-                      <span className="tabular-nums">−{formatOrderKwd(summary.discountAmount)} {t('common.kwd')}</span>
+                      <span className="tabular-nums">−{formatQuotedKwd(summary.discountAmount)} {t('common.kwd')}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-[#64748B]">

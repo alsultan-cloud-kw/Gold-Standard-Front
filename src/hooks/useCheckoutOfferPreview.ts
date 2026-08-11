@@ -2,34 +2,22 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { clubsApi } from '../services/api'
 import type { CheckoutPreviewPayload } from '../utils/checkoutPreview'
+import {
+  checkoutQuoteRemainingMs,
+  checkoutQuoteStorageKey,
+  readCheckoutQuoteSession,
+  writeCheckoutQuoteSession,
+  type CheckoutPreviewData,
+} from '@/lib/checkoutQuoteSession'
 
-export type CheckoutPreviewData = {
-  subtotal: string
-  discount_amount: string
-  shipping_amount: string
-  tax_amount: string
-  total_amount: string
-  offer_title: string | null
-  offer_id: string | null
-  line_prices: unknown
-  quote_token: string
-  expires_at: string
-  ttl_seconds?: number
-}
+export type { CheckoutPreviewData }
+export { checkoutQuoteRemainingMs }
 
 /**
  * Refresh the quote this long before the server would reject it, so a customer who
  * reaches the review step late still submits a token the backend accepts.
  */
 export const CHECKOUT_QUOTE_REFRESH_MARGIN_MS = 60_000
-
-/** Milliseconds the quote (and the total rendered from it) may still be trusted. */
-export function checkoutQuoteRemainingMs(expiresAt: string | null | undefined): number {
-  if (!expiresAt) return 0
-  const expiry = new Date(expiresAt).getTime()
-  if (!Number.isFinite(expiry)) return 0
-  return Math.max(0, expiry - Date.now())
-}
 
 function stableItemsKey(items: CheckoutPreviewPayload[]): string {
   const sorted = [...items].sort((a, b) => String(a.product_id).localeCompare(String(b.product_id)))
@@ -43,22 +31,36 @@ export function useCheckoutOfferPreview(
 ) {
   const key = useMemo(() => stableItemsKey(items), [items])
   const discountCode = (opts?.discountCode || '').trim().toUpperCase()
+  const storageKey = useMemo(
+    () => checkoutQuoteStorageKey(key, deliveryType, discountCode),
+    [key, deliveryType, discountCode],
+  )
 
   const hasToken =
     typeof window !== 'undefined' && !!localStorage.getItem('access_token')
 
+  const sessionQuote = useMemo(
+    () => (hasToken && items.length > 0 ? readCheckoutQuoteSession(storageKey) : undefined),
+    // storageKey encodes cart / delivery / discount identity
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [storageKey, hasToken, items.length],
+  )
+
   return useQuery({
     queryKey: ['checkoutOfferPreview', key, deliveryType, discountCode || ''],
-    queryFn: () =>
-      clubsApi.checkoutPreview(items, deliveryType, {
+    queryFn: async () => {
+      const data = (await clubsApi.checkoutPreview(items, deliveryType, {
         channel: 'website',
         ...(discountCode ? { discount_code: discountCode } : {}),
-      }) as Promise<CheckoutPreviewData>,
+      })) as CheckoutPreviewData
+      writeCheckoutQuoteSession(storageKey, data)
+      return data
+    },
     enabled: hasToken && items.length > 0,
-    // The quote is a price lock, not a ticker. Gold re-prices upstream every 60s, so a
-    // background refetch would silently change the total the customer is reading — the exact
-    // "purchase price mismatch" KNET certification rejects. Hold it for its server validity
-    // window and let the customer re-price explicitly (or on a fresh cart / expiry).
+    // Survive hard refresh with the same signed lock until TTL / explicit refresh.
+    initialData: sessionQuote,
+    initialDataUpdatedAt: sessionQuote ? Date.now() : undefined,
+    // The quote is a price lock, not a ticker. Hold for server validity window.
     staleTime: (query) =>
       Math.max(
         0,
