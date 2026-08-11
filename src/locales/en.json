@@ -2521,6 +2521,7 @@
       "clearedDesc": "All items were removed.",
       "outOfStock": "Out of stock",
       "outOfStockDesc": "{{name}} is not available right now.",
+      "allInCartDesc": "{{name}} — all available units are already in your cart.",
       "maxAvailable": "Only {{count}} available",
       "maxAvailableDesc": "{{name}} — adjusted to available stock."
     }
@@ -2531,6 +2532,7 @@
     "lowStock": "Only {{count}} left",
     "lowStockShort": "Low stock",
     "unavailableHint": "This item is not available for purchase right now.",
+    "allInCartHint": "All available units are already in your cart.",
     "cartBlocked": "Remove out-of-stock items to continue checkout."
   },
   "product": {

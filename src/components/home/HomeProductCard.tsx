@@ -11,7 +11,7 @@ import { formatProductCaratLabel } from '@/utils/productCaratLabel'
 import type { ProductFetchTrendMap } from '@/hooks/useProductPriceTrendSincePreviousFetch'
 import { ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
 import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
-import { isProductOutOfStock, productFineness } from '@/utils/productStock'
+import { cannotAddMoreToCart, productFineness } from '@/utils/productStock'
 import { useShippingEtaLabel } from '@/hooks/useShippingEtaLabel'
 import { categoryDisplayName } from '@/lib/categoryDisplayName'
 
@@ -29,7 +29,7 @@ function HomeProductCardInner({
   showAddButton = true,
 }: Props) {
   const { t, i18n } = useTranslation()
-  const { addToCart } = useCart()
+  const { addToCart, cart } = useCart()
   const shipsInLabel = useShippingEtaLabel()
   const imageSrc = productImageSrc(product)
   const lang = i18n.language
@@ -41,7 +41,7 @@ function HomeProductCardInner({
   const ft = fetchTrends?.[product.id]
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
-  const outOfStock = isProductOutOfStock(product)
+  const outOfStock = cannotAddMoreToCart(product, cart.items)
   const fineness = productFineness(product)
 
   const specParts = [

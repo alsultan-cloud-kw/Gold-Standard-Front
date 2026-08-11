@@ -551,7 +551,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Toast must run after setCart, not inside the updater: React 18 Strict Mode
     // double-invokes state updaters in dev, which duplicated sonner toasts.
-    let toastKind: 'added' | 'increased' | 'capped' | null = null
+    let toastKind: 'added' | 'increased' | 'capped' | 'atMax' | null = null
     let toastQty = quantity
     setCart((prevCart) => {
       if (isProductSerialized(product)) {
@@ -560,7 +560,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const want = Math.max(1, Math.floor(quantity) || 1)
         const toAdd = Math.min(want, room)
         if (toAdd <= 0) {
-          toastKind = 'capped'
+          toastKind = 'atMax'
           toastQty = already
           return prevCart
         }
@@ -582,13 +582,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const existingItem = prevCart.items.find((item) => item.product.id === product.id)
       const existingQty = existingItem?.quantity ?? 0
-      const nextQty = clampPurchaseQuantity(product, existingQty + quantity, 0)
-
-      if (nextQty <= 0) {
+      const room = maxPurchasableQuantity(product, existingQty)
+      if (room <= 0) {
+        toastKind = 'atMax'
+        toastQty = existingQty
         return prevCart
       }
+      const toAdd = Math.min(Math.max(1, Math.floor(quantity) || 1), room)
+      const nextQty = existingQty + toAdd
 
-      if (existingQty + quantity > nextQty) {
+      if (toAdd < Math.max(1, Math.floor(quantity) || 1)) {
         toastKind = 'capped'
         toastQty = nextQty
       }
@@ -602,6 +605,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           existingItem.product.live_total_price !== product.live_total_price ||
           existingItem.product.live_total_price_club !== product.live_total_price_club
         if (existingQty === nextQty && !productSnapshotChanged) {
+          toastKind = toastKind === 'capped' ? 'capped' : 'atMax'
           return prevCart
         }
         if (existingQty === nextQty && productSnapshotChanged) {
@@ -616,6 +620,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 }
               : item,
           )
+          toastKind = null
           return calculateCartTotals(newItems)
         }
         if (toastKind !== 'capped') {
@@ -663,6 +668,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         i18n.t('cart.toasts.qtyIncreasedDesc', { name, qty: toastQty }),
         `cart-qty-${product.id}`,
         { viewCart: true },
+      )
+    } else if (toastKind === 'atMax') {
+      cartToastInfo(
+        i18n.t('cart.toasts.outOfStock'),
+        i18n.t('cart.toasts.allInCartDesc', { name }),
+        `cart-max-${product.id}`,
       )
     } else if (toastKind === 'capped') {
       cartToastInfo(

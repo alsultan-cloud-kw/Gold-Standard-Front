@@ -2521,6 +2521,7 @@
       "clearedDesc": "تمت إزالة جميع المنتجات.",
       "outOfStock": "غير متوفر",
       "outOfStockDesc": "{{name}} غير متاح للشراء حالياً.",
+      "allInCartDesc": "{{name}} — كل الكمية المتاحة موجودة في سلتك بالفعل.",
       "maxAvailable": "المتوفر {{count}} فقط",
       "maxAvailableDesc": "{{name}} — تم ضبط الكمية حسب المخزون المتاح."
     }
@@ -2531,6 +2532,7 @@
     "lowStock": "متبقي {{count}} فقط",
     "lowStockShort": "كمية محدودة",
     "unavailableHint": "هذا المنتج غير متاح للشراء حالياً.",
+    "allInCartHint": "كل الكمية المتاحة موجودة في سلتك بالفعل.",
     "cartBlocked": "أزل المنتجات غير المتوفرة لمتابعة الدفع."
   },
   "product": {

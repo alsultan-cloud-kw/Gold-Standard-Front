@@ -25,9 +25,10 @@ import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { cn } from '@/lib/utils'
 import {
+  cannotAddMoreToCart,
+  cartUnitsForProductId,
   clampPurchaseQuantity,
-  isProductOutOfStock,
-  productAvailableQuantity,
+  maxPurchasableQuantity,
 } from '@/utils/productStock'
 import { formatProductCaratLabel } from '../utils/productCaratLabel'
 
@@ -38,7 +39,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [showBarcodeZoom, setShowBarcodeZoom] = useState(false)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
-  const { addToCart } = useCart()
+  const { addToCart, cart } = useCart()
   const navigate = useNavigate()
   const { ensureCanPurchase, isAuthenticated } = usePurchaseAuth()
 
@@ -115,21 +116,21 @@ export default function ProductDetailPage() {
   }[]
   const detailTrend = detailFetchTrends[p.id]
   const productUrl = typeof window !== 'undefined' ? window.location.href : ''
-  const outOfStock = isProductOutOfStock(p)
-  const availableQty = productAvailableQuantity(p)
-  // Never invent sellable qty when OOS; steppers stay disabled via outOfStock.
-  const maxSelectableQty = outOfStock ? 0 : Math.max(1, availableQty)
+  const outOfStock = cannotAddMoreToCart(p, cart.items)
+  const inCartUnits = cartUnitsForProductId(cart.items, p.id)
+  // Room left after cart hold — never invent sellable qty when sold out for this shopper.
+  const maxSelectableQty = outOfStock ? 0 : Math.max(1, maxPurchasableQuantity(p, inCartUnits))
   const verifyCode = p.serial_number || p.barcode_value || p.sku || null
 
   const handleAddToCart = () => {
     if (outOfStock) return
-    addToCart(p as Product, clampPurchaseQuantity(p, selectedQuantity))
+    addToCart(p as Product, clampPurchaseQuantity(p, selectedQuantity, inCartUnits))
   }
 
   const handleBuyNow = () => {
     if (outOfStock) return
     if (!ensureCanPurchase('/checkout')) return
-    addToCart(p as Product, clampPurchaseQuantity(p, selectedQuantity))
+    addToCart(p as Product, clampPurchaseQuantity(p, selectedQuantity, inCartUnits))
     navigate('/checkout')
   }
 
@@ -235,7 +236,7 @@ export default function ProductDetailPage() {
             <div className="mb-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="mb-3">
-                  <ProductStockBadge product={p} size="md" />
+                  <ProductStockBadge product={p} size="md" respectCartHold />
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight text-[#0C1512] sm:text-3xl">
                   {productName}
@@ -443,9 +444,13 @@ export default function ProductDetailPage() {
             ) : null}
 
             {outOfStock ? (
-              <div className="mb-5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+              <div className="mb-5 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]" role="status">
                 <p className="font-semibold">{t('productDetail.outOfStock')}</p>
-                <p className="mt-1 text-[#991B1B]/90">{t('productDetail.outOfStockHint')}</p>
+                <p className="mt-1 text-[#991B1B]/90">
+                  {inCartUnits > 0
+                    ? t('stock.allInCartHint')
+                    : t('productDetail.outOfStockHint')}
+                </p>
               </div>
             ) : null}
 
@@ -475,7 +480,9 @@ export default function ProductDetailPage() {
                     onChange={(e) => {
                       const next = Number.parseInt(e.target.value, 10)
                       setSelectedQuantity(
-                        outOfStock ? 1 : clampPurchaseQuantity(p, Number.isFinite(next) ? next : 1),
+                        outOfStock
+                          ? 1
+                          : clampPurchaseQuantity(p, Number.isFinite(next) ? next : 1, inCartUnits),
                       )
                     }}
                     className="w-14 border-x border-[#3F6F00]/20 bg-transparent py-2.5 text-center text-sm font-bold tabular-nums text-[#0C1512] [appearance:textfield] disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -484,7 +491,7 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={() =>
                       setSelectedQuantity((q) =>
-                        outOfStock ? 1 : clampPurchaseQuantity(p, q + 1),
+                        outOfStock ? 1 : clampPurchaseQuantity(p, q + 1, inCartUnits),
                       )
                     }
                     disabled={outOfStock || selectedQuantity >= maxSelectableQty}

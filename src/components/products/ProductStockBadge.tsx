@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import type { Product } from '@/types'
 import { cn } from '@/lib/utils'
+import { useCart } from '@/contexts/CartContext'
 import {
+  cannotAddMoreToCart,
   isProductLowStock,
   isProductOutOfStock,
   productAvailableQuantity,
@@ -11,12 +13,25 @@ type ProductStockBadgeProps = {
   product: Product
   className?: string
   size?: 'sm' | 'md'
+  /**
+   * When true (catalog / PDP), treat “all remaining units already in cart” as out of stock.
+   * Leave false on cart/checkout lines — the shopper already holds the piece.
+   */
+  respectCartHold?: boolean
 }
 
-export function ProductStockBadge({ product, className, size = 'sm' }: ProductStockBadgeProps) {
+export function ProductStockBadge({
+  product,
+  className,
+  size = 'sm',
+  respectCartHold = false,
+}: ProductStockBadgeProps) {
   const { t } = useTranslation()
-  const outOfStock = isProductOutOfStock(product)
-  const lowStock = isProductLowStock(product)
+  const { cart } = useCart()
+  const outOfStock = respectCartHold
+    ? cannotAddMoreToCart(product, cart.items)
+    : isProductOutOfStock(product)
+  const lowStock = !outOfStock && isProductLowStock(product)
   const available = productAvailableQuantity(product)
 
   if (!outOfStock && !lowStock) return null
@@ -59,8 +74,9 @@ export function ProductStockBadge({ product, className, size = 'sm' }: ProductSt
  */
 export function ProductStockStatusLabel({ product, className }: { product: Product; className?: string }) {
   const { t } = useTranslation()
-  const outOfStock = isProductOutOfStock(product)
-  const lowStock = isProductLowStock(product)
+  const { cart } = useCart()
+  const outOfStock = cannotAddMoreToCart(product, cart.items)
+  const lowStock = !outOfStock && isProductLowStock(product)
 
   const tone = outOfStock
     ? { dot: 'bg-[#DC2626]', text: 'text-[#B91C1C]', label: t('stock.outOfStock') }
@@ -78,7 +94,8 @@ export function ProductStockStatusLabel({ product, className }: { product: Produ
 
 export function ProductStockOverlay({ product }: { product: Product }) {
   const { t } = useTranslation()
-  if (!isProductOutOfStock(product)) return null
+  const { cart } = useCart()
+  if (!cannotAddMoreToCart(product, cart.items)) return null
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[inherit] bg-white/55 backdrop-blur-[1px]">

@@ -53,6 +53,20 @@ export function isProductOutOfStock(product: Product): boolean {
   return productAvailableQuantity(product) <= 0
 }
 
+/**
+ * True when the shopper cannot add more of this product:
+ * catalog OOS, or cart already holds every available unit (last piece in cart).
+ */
+export function cannotAddMoreToCart(
+  product: Product,
+  cartItems: Array<{ product: Product; quantity: number }>,
+): boolean {
+  if (!hasResolvedStockFields(product)) return false
+  if (isProductOutOfStock(product)) return true
+  const inCart = cartUnitsForProductId(cartItems, product.id)
+  return maxPurchasableQuantity(product, inCart) <= 0
+}
+
 /** Cart/checkout gate: only block when stock is known and insufficient. */
 export function isCartLineUnavailable(product: Product, quantity: number): boolean {
   if (!hasResolvedStockFields(product)) return false

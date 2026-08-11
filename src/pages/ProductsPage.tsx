@@ -22,7 +22,7 @@ import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBad
 import { PriceRangeFilter } from '@/components/products/PriceRangeFilter'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
 import { Skeleton } from '@/components/ui/skeleton'
-import { isProductLowStock, isProductOutOfStock, productFineness } from '@/utils/productStock'
+import { cannotAddMoreToCart, isProductLowStock, productFineness } from '@/utils/productStock'
 import {
   useProductPriceTrendSincePreviousFetch,
   type ProductFetchTrendMap,
@@ -898,7 +898,7 @@ function ProductCard({
   fetchTrends: ProductFetchTrendMap
 }) {
   const { t } = useTranslation()
-  const { addToCart } = useCart()
+  const { addToCart, cart } = useCart()
   const shipsInLabel = useShippingEtaLabel()
   const imageSrc = productImageSrc(product)
   const unitPrice = productUnitPrice(product)
@@ -919,8 +919,8 @@ function ProductCard({
   const ft = fetchTrends[product.id]
   const trendOverride = ft?.trend ?? null
   const percentOverride = ft?.percent ?? null
-  const outOfStock = isProductOutOfStock(product)
-  const lowStock = isProductLowStock(product)
+  const outOfStock = cannotAddMoreToCart(product, cart.items)
+  const lowStock = !outOfStock && isProductLowStock(product)
 
   const addButtonClass =
     'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl bg-[#0B0F19] px-1.5 py-1.5 sm:px-3 sm:py-2.5 text-[10px] sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1F2937] shrink-0 disabled:cursor-not-allowed disabled:bg-[#94A3B8]'
@@ -1026,7 +1026,7 @@ function ProductCard({
             <div className="min-w-0">
               {lowStock ? (
                 <div className="mb-2">
-                  <ProductStockBadge product={product} />
+                  <ProductStockBadge product={product} respectCartHold />
                 </div>
               ) : null}
               <Link to={`/products/${product.slug}`} className="block min-w-0">
