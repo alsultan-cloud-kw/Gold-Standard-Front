@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { XCircle } from 'lucide-react'
@@ -36,6 +36,8 @@ export default function KnetReceiptPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
+  const clearCartRef = useRef(clearCart)
+  clearCartRef.current = clearCart
 
   const urlStatus = (searchParams.get('knet_status') || '').toLowerCase()
   const urlResult = searchParams.get('result') || ''
@@ -99,11 +101,7 @@ export default function KnetReceiptPage() {
                 paid = true
                 break
               }
-              if (
-                verify.payment_status === 'failed' &&
-                !parseGap &&
-                !userCancelled
-              ) {
+              if (verify.payment_status === 'failed') {
                 sawFailed = true
                 break
               }
@@ -130,7 +128,8 @@ export default function KnetReceiptPage() {
             || reason === 'payment_url_missing'
             || reason === 'verification_timeout'
             || reason === 'gateway_error'
-            || reason === 'payment_failed')
+            || reason === 'payment_failed'
+            || parseGap)
 
         if (!cancelled && shouldAbandon) {
           try {
@@ -177,7 +176,7 @@ export default function KnetReceiptPage() {
           if (urlStatus && urlStatus !== 'success') {
             navigate(`/payment-receipt/${saleId}?knet_status=success`, { replace: true })
           }
-          clearCart()
+          clearCartRef.current()
           try {
             sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
           } catch {
@@ -201,7 +200,7 @@ export default function KnetReceiptPage() {
     return () => {
       cancelled = true
     }
-  }, [saleId, t, clearCart, navigate, searchParams, urlResult, urlStatus, urlErrorCode])
+  }, [saleId, t, navigate, searchParams, urlResult, urlStatus, urlErrorCode])
 
   const downloadInvoice = async () => {
     if (!saleId || !isKnetReceiptCaptured(receipt)) {

@@ -621,11 +621,7 @@ export default function CheckoutPage() {
             finishSuccess()
             return
           }
-          if (
-            verify.payment_status === 'failed'
-            && (reason || '').toLowerCase() !== 'missing_trandata'
-            && (reason || '').toLowerCase() !== 'decrypt_failed'
-          ) {
+          if (verify.payment_status === 'failed') {
             goDeclined({ reason: reason || 'payment_failed', result: result || 'NOT CAPTURED' })
             return
           }
