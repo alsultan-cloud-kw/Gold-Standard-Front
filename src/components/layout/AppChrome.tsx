@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer'
 import StaffPreviewBar from '@/components/layout/StaffPreviewBar'
 import FloatingPriceReminder from '@/components/reminders/FloatingPriceReminder'
 import WebPushBootstrap from '@/components/notifications/WebPushBootstrap'
+import { PendingKnetPaymentGuard } from '@/components/checkout/PendingKnetPaymentGuard'
 
 function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/')
@@ -28,6 +29,7 @@ export default function AppChrome({ children }: { children: ReactNode }) {
       <WebPushBootstrap />
       <StaffPreviewBar />
       <Navbar />
+      <PendingKnetPaymentGuard />
       {children}
       <Footer />
       <FloatingPriceReminder />

@@ -30,6 +30,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePurchaseAuth } from '@/hooks/usePurchaseAuth'
 import { sanitizeKnetPaymentUrl } from '@/lib/knetPaymentUrl'
 import {
+  clearKnetPendingSale,
+  readKnetPendingSale,
+  writeKnetPendingSale,
+} from '@/lib/knetPendingSale'
+import {
   isExplicitKnetFailure,
   isExplicitKnetSuccess,
   needsKnetVerification,
@@ -66,7 +71,6 @@ type SaleResponse = {
 
 type KnetReturnPhase = 'idle' | 'verifying' | 'success' | 'failed'
 
-const KNET_PENDING_SALE_KEY = 'gs_knet_pending_sale'
 const CHECKOUT_SHIPPING_KEY = 'gs_checkout_shipping_draft'
 
 type CheckoutShippingDraft = {
@@ -133,25 +137,6 @@ function isValidDelegateCivilImage(file: File | null): boolean {
   const name = (file.name || '').toLowerCase()
   return /\.(jpe?g|png|webp|heic|heif)$/i.test(name) || (file.type || '').startsWith('image/')
 }
-
-type KnetPendingSale = {
-  saleId: string
-  invoice?: string
-  at: number
-}
-
-function readKnetPendingSale(): KnetPendingSale | null {
-  try {
-    const raw = sessionStorage.getItem(KNET_PENDING_SALE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as KnetPendingSale
-    if (!parsed?.saleId) return null
-    return parsed
-  } catch {
-    return null
-  }
-}
-
 
 type CheckoutPayRow = {
   id: 'knet' | 'card' | 'cod' | 'wallet'
@@ -344,11 +329,28 @@ export default function CheckoutPage() {
       address.trim() || (city.trim() && governorate.trim()),
     )
     if (!hasShipping) return false
-    if (savedAddresses.length === 0) return true
-    return !savedAddresses.some((a) =>
-      shippingMatchesSavedAddress(a, { address, city, governorate, postalCode }),
-    )
-  }, [checkoutProfile, savedAddresses, address, city, governorate, postalCode])
+    // Already using a saved card with unchanged fields — no need to save again.
+    if (selectedAddressId) {
+      const selected = savedAddresses.find((a) => a.id === selectedAddressId)
+      if (
+        selected
+        && shippingMatchesSavedAddress(selected, { address, city, governorate, postalCode })
+      ) {
+        return false
+      }
+    }
+    // Allow saving another card even when the street matches an existing one
+    // (repeated address instances / named cards).
+    return true
+  }, [
+    checkoutProfile,
+    savedAddresses,
+    selectedAddressId,
+    address,
+    city,
+    governorate,
+    postalCode,
+  ])
 
   useEffect(() => {
     if (!showSaveAddressPrompt || saveAddressPromptInitialized.current) return
@@ -384,15 +386,34 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (profileHydrated.current) return
     if (savedAddresses.length > 0) {
+      const draft = {
+        address: savedShipping?.address || '',
+        city: savedShipping?.city || '',
+        governorate: savedShipping?.governorate || '',
+        postalCode: savedShipping?.postalCode || '',
+      }
+      const hasDraft = Boolean(
+        draft.address.trim() || (draft.city.trim() && draft.governorate.trim()),
+      )
+      const draftMatch = hasDraft
+        ? savedAddresses.find((a) => shippingMatchesSavedAddress(a, draft))
+        : undefined
       const preferred =
-        savedAddresses.find((a) => a.is_default) || savedAddresses[0]
-      if (preferred && !savedShipping) {
+        draftMatch
+        || savedAddresses.find((a) => a.is_default)
+        || savedAddresses[0]
+
+      if (preferred && !hasDraft) {
         const filled = applySavedAddressToShipping(preferred)
         setAddress(filled.address)
         setCity(filled.city)
         setGovernorate(filled.governorate)
         setPostalCode(filled.postalCode)
         setSelectedAddressId(preferred.id)
+      } else if (draftMatch) {
+        setSelectedAddressId(draftMatch.id)
+      } else {
+        setSelectedAddressId(null)
       }
       profileHydrated.current = true
       return
@@ -494,7 +515,7 @@ export default function CheckoutPage() {
 
     if (isExplicitKnetFailure(knetStatus, result, reason)) {
       try {
-        sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+        clearKnetPendingSale()
       } catch {
         /* ignore */
       }
@@ -517,7 +538,7 @@ export default function CheckoutPage() {
           if (cancelled) return
           if (verify.payment_status === 'paid') {
             clearCart()
-            sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+            clearKnetPendingSale()
             goToReceipt({ status: 'success', result: result || undefined })
             return
           }
@@ -553,7 +574,7 @@ export default function CheckoutPage() {
     const finishSuccess = () => {
       if (cancelled) return
       clearCart()
-      sessionStorage.removeItem(KNET_PENDING_SALE_KEY)
+      clearKnetPendingSale()
       goToReceipt({ status: 'success' })
     }
     const finishPending = (failReason?: string | null) => {
@@ -757,14 +778,11 @@ export default function CheckoutPage() {
           typeof data.payment_url === 'string' ? data.payment_url : null,
         )
         if (data.id) {
-          sessionStorage.setItem(
-            KNET_PENDING_SALE_KEY,
-            JSON.stringify({
-              saleId: data.id,
-              invoice: data.invoice_number,
-              at: Date.now(),
-            } satisfies KnetPendingSale),
-          )
+          writeKnetPendingSale({
+            saleId: data.id,
+            invoice: data.invoice_number,
+            at: Date.now(),
+          })
         }
         if (paymentUrl) {
           window.location.assign(paymentUrl)
@@ -905,13 +923,6 @@ export default function CheckoutPage() {
   }
   const formatQuotedKwd = (value: number) =>
     summary.useServerPreview ? formatOrderKwd(value) : '—'
-
-  const quoteCountdown = (() => {
-    const totalSeconds = Math.ceil(summary.quoteRemainingMs / 1000)
-    const minutes = Math.floor(totalSeconds / 60)
-    const seconds = totalSeconds % 60
-    return `${minutes}:${String(seconds).padStart(2, '0')}`
-  })()
 
   const handleRefreshQuote = async () => {
     setQuoteReviewRequired(false)
@@ -1073,29 +1084,38 @@ export default function CheckoutPage() {
                       <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#64748B]">
                         {t('checkoutPage.savedAddressesHeading')}
                       </p>
-                      <ul className="grid gap-2 sm:grid-cols-2">
+                      <ul
+                        className="grid gap-2 sm:grid-cols-2"
+                        role="radiogroup"
+                        aria-label={t('checkoutPage.savedAddressesHeading')}
+                      >
                         {savedAddresses.map((card) => {
-                          const active =
-                            selectedAddressId === card.id ||
-                            shippingMatchesSavedAddress(card, {
-                              address,
-                              city,
-                              governorate,
-                              postalCode,
-                            })
+                          const active = selectedAddressId === card.id
                           return (
                             <li key={card.id}>
                               <button
                                 type="button"
+                                role="radio"
+                                aria-checked={active}
+                                aria-label={t('checkoutPage.useAddressCardAria', {
+                                  label: card.label,
+                                  defaultValue: 'Use {{label}} for this order',
+                                })}
                                 onClick={() => applyAddressCard(card.id)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    applyAddressCard(card.id)
+                                  }
+                                }}
                                 className={cn(
-                                  'w-full rounded-xl border px-3.5 py-3 text-start transition',
+                                  'w-full rounded-xl border px-3.5 py-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307] focus-visible:ring-offset-2',
                                   active
-                                    ? 'border-[#85E307]/50 bg-[#F4FBEF] ring-1 ring-[#85E307]/30'
-                                    : 'border-black/10 bg-white hover:border-[#3F6F00]/30',
+                                    ? 'border-[#0B0F19] bg-[#F4FBEF] shadow-[inset_0_0_0_1px_#0B0F19] ring-1 ring-[#85E307]/35'
+                                    : 'border-black/10 bg-white hover:border-[#3F6F00]/40 hover:bg-[#FAFDF5]',
                                 )}
                               >
-                                <span className="flex items-center gap-2">
+                                <span className="flex flex-wrap items-center gap-2">
                                   <MapPin
                                     className={cn(
                                       'h-4 w-4 shrink-0',
@@ -1106,6 +1126,11 @@ export default function CheckoutPage() {
                                   <span className="text-sm font-bold text-[#0B0F19]">
                                     {card.label}
                                   </span>
+                                  {active ? (
+                                    <span className="rounded bg-[#0B0F19] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                      {t('checkoutPage.selectedAddressBadge')}
+                                    </span>
+                                  ) : null}
                                   {card.is_default ? (
                                     <span className="rounded bg-[#ECFCCB] px-1.5 py-0.5 text-[10px] font-bold text-[#3F6F00]">
                                       {t('checkoutPage.defaultAddressBadge')}
@@ -1117,6 +1142,11 @@ export default function CheckoutPage() {
                                     .filter(Boolean)
                                     .join(' · ')}
                                 </span>
+                                {!active ? (
+                                  <span className="mt-2 block text-[11px] font-semibold text-[#3F6F00]">
+                                    {t('checkoutPage.tapToUseAddress')}
+                                  </span>
+                                ) : null}
                               </button>
                             </li>
                           )
@@ -1211,7 +1241,9 @@ export default function CheckoutPage() {
                           {t('checkoutPage.saveAddressTitle')}
                         </span>
                         <span className="checkout-option__hint">
-                          {t('checkoutPage.saveAddressHint')}
+                          {savedAddresses.length > 0
+                            ? t('checkoutPage.saveAddressHintAnother')
+                            : t('checkoutPage.saveAddressHint')}
                         </span>
                       </span>
                       <span className="checkout-option__check" aria-hidden>
@@ -1515,20 +1547,9 @@ export default function CheckoutPage() {
                     {t('checkoutPage.quoteReviewRequired')}
                   </div>
                 )}
-                {summary.useServerPreview && (
-                  <div
-                    className={cn(
-                      'mb-4 flex flex-col gap-2 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between',
-                      summary.quoteExpired
-                        ? 'border-amber-300 bg-amber-50 text-amber-900'
-                        : 'border-[#3F6F00]/25 bg-[#ECFCCB]/40 text-[#0B0F19]',
-                    )}
-                  >
-                    <span className="font-medium">
-                      {summary.quoteExpired
-                        ? t('checkoutPage.priceLockExpired')
-                        : t('checkoutPage.priceLockActive', { time: quoteCountdown })}
-                    </span>
+                {summary.useServerPreview && summary.quoteExpired ? (
+                  <div className="mb-4 flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-medium">{t('checkoutPage.priceLockExpired')}</span>
                     <button
                       type="button"
                       onClick={() => void handleRefreshQuote()}
@@ -1539,7 +1560,7 @@ export default function CheckoutPage() {
                       {t('checkoutPage.priceLockRefresh')}
                     </button>
                   </div>
-                )}
+                ) : null}
 
                 {deliveryType === 'locked' ? (
                   <div className="checkout-vault-banner mb-5">
@@ -1800,20 +1821,11 @@ export default function CheckoutPage() {
             <div className="sticky top-[var(--nav-offset,7.25rem)] space-y-4">
               <div className="checkout-summary-card">
                 <h2 className="mb-4 text-base font-bold text-[#0B0F19] sm:text-lg">{t('cartPage.orderSummary')}</h2>
-                {summary.useServerPreview ? (
-                  <div
-                    className={cn(
-                      'mb-4 rounded-xl border px-3 py-2 text-xs font-medium',
-                      summary.quoteExpired
-                        ? 'border-amber-300 bg-amber-50 text-amber-900'
-                        : 'border-[#3F6F00]/25 bg-[#ECFCCB]/40 text-[#0B0F19]',
-                    )}
-                  >
-                    {summary.quoteExpired
-                      ? t('checkoutPage.priceLockExpired')
-                      : t('checkoutPage.priceLockActive', { time: quoteCountdown })}
+                {summary.quoteExpired ? (
+                  <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+                    {t('checkoutPage.priceLockExpired')}
                   </div>
-                ) : summary.previewLoading ? (
+                ) : summary.previewLoading && !summary.useServerPreview ? (
                   <div className="mb-4 flex items-center gap-2 rounded-xl border border-black/8 bg-[#F9F9FA] px-3 py-2 text-xs text-[#64748B]">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     {t('checkoutPage.quoteLoading')}
