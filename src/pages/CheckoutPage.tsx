@@ -42,8 +42,7 @@ import {
 import { productImageSrc } from '../utils/productImage'
 import { ProductStockBadge } from '@/components/products/ProductStockBadge'
 import {
-  isProductOutOfStock,
-  productAvailableQuantity,
+  isCartLineUnavailable,
 } from '@/utils/productStock'
 import {
   asSingleCustomerProfile,
@@ -207,21 +206,18 @@ export default function CheckoutPage() {
     setTurnstileToken('')
     turnstileRef.current?.reset()
   }, [])
-  const { cart, clearCart } = useCart()
+  const { cart, clearCart, checkoutPriceReady } = useCart()
   const summary = useOrderSummaryDisplay(cart, deliveryType, {
     discountCode: appliedDiscountCode,
     pricingSource: 'quote',
+    priceReady: checkoutPriceReady,
   })
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings } =
     useMemo(() => cartClubPricingBreakdown(cart.items), [cart.items])
   // Payable totals come only from the signed checkout quote — never live cart fallback.
   const displayTotalAfterClub = summary.useServerPreview ? summary.subtotal : 0
   const hasUnavailableItems = useMemo(
-    () =>
-      cart.items.some(
-        (item) =>
-          isProductOutOfStock(item.product) || item.quantity > productAvailableQuantity(item.product),
-      ),
+    () => cart.items.some((item) => isCartLineUnavailable(item.product, item.quantity)),
     [cart.items],
   )
 
@@ -1572,15 +1568,14 @@ export default function CheckoutPage() {
                   {cart.items.map((item) => {
                     const lineList = cartLineStandardTotal(item)
                     const quotedLine = checkoutPreviewLineTotal(summary.linePrices, item.product.id)
-                    const lineTotal = quotedLine ?? 0
                     const lineSave =
                       summary.useServerPreview && quotedLine != null
-                        ? Math.max(0, lineList - lineTotal)
+                        ? Math.max(0, lineList - quotedLine)
                         : 0
                     const imageSrc = productImageSrc(item.product)
                     const productName =
                       isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
-                    const itemOutOfStock = isProductOutOfStock(item.product)
+                    const itemOutOfStock = isCartLineUnavailable(item.product, item.quantity)
                     const carat =
                       item.product.carat?.display_name_en
                       || item.product.carat?.display_name_ar
@@ -1621,18 +1616,18 @@ export default function CheckoutPage() {
                           </p>
                         </div>
                         <div className="text-end">
-                          {lineSave > 0 ? (
+                          {lineSave > 0 && quotedLine != null ? (
                             <>
                               <p className="text-xs text-[#94A3B8] line-through tabular-nums">
                                 {formatOrderKwd(lineList)} {t('common.kwd')}
                               </p>
                               <p className="font-bold tabular-nums text-[#0B0F19]">
-                                {formatQuotedKwd(lineTotal)} {t('common.kwd')}
+                                {formatQuotedKwd(quotedLine)} {t('common.kwd')}
                               </p>
                             </>
                           ) : (
                             <p className="font-bold tabular-nums text-[#0B0F19]">
-                              {formatQuotedKwd(lineTotal)} {t('common.kwd')}
+                              {quotedLine != null ? formatQuotedKwd(quotedLine) : '—'} {t('common.kwd')}
                             </p>
                           )}
                         </div>

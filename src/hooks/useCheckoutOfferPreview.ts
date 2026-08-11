@@ -24,13 +24,29 @@ function stableItemsKey(items: CheckoutPreviewPayload[]): string {
   return JSON.stringify(sorted.map((i) => [i.product_id, i.quantity]))
 }
 
+type CheckoutOfferPreviewOpts = {
+  discountCode?: string
+  /** Live cart subtotal — used to reject stale session quotes that no longer match. */
+  cartSubtotal?: number
+  /**
+   * Checkout enter: always fetch a fresh lock (do not keep a cart-prefetch quote).
+   * Cart warm: reuse cache / session when still valid.
+   */
+  lockOnMount?: boolean
+  /** When false, do not fetch yet (wait for checkout entry reprice). */
+  enabled?: boolean
+}
+
 export function useCheckoutOfferPreview(
   items: CheckoutPreviewPayload[],
   deliveryType: 'physical' | 'locked' = 'physical',
-  opts?: { discountCode?: string },
+  opts?: CheckoutOfferPreviewOpts,
 ) {
   const key = useMemo(() => stableItemsKey(items), [items])
   const discountCode = (opts?.discountCode || '').trim().toUpperCase()
+  const lockOnMount = opts?.lockOnMount ?? false
+  const cartSubtotal = opts?.cartSubtotal
+  const optsEnabled = opts?.enabled !== false
   const storageKey = useMemo(
     () => checkoutQuoteStorageKey(key, deliveryType, discountCode),
     [key, deliveryType, discountCode],
@@ -40,10 +56,13 @@ export function useCheckoutOfferPreview(
     typeof window !== 'undefined' && !!localStorage.getItem('access_token')
 
   const sessionQuote = useMemo(
-    () => (hasToken && items.length > 0 ? readCheckoutQuoteSession(storageKey) : undefined),
-    // storageKey encodes cart / delivery / discount identity
+    () =>
+      hasToken && items.length > 0
+        ? readCheckoutQuoteSession(storageKey, { cartTotal: cartSubtotal })
+        : undefined,
+    // storageKey encodes cart / delivery / discount identity; cartSubtotal gates reuse
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [storageKey, hasToken, items.length],
+    [storageKey, hasToken, items.length, cartSubtotal],
   )
 
   return useQuery({
@@ -56,10 +75,12 @@ export function useCheckoutOfferPreview(
       writeCheckoutQuoteSession(storageKey, data)
       return data
     },
-    enabled: hasToken && items.length > 0,
-    // Survive hard refresh with the same signed lock until TTL / explicit refresh.
+    enabled: hasToken && items.length > 0 && optsEnabled,
+    // Only seed from session when recent or still aligned with live cart — never an old lock.
     initialData: sessionQuote,
-    initialDataUpdatedAt: sessionQuote ? Date.now() : undefined,
+    initialDataUpdatedAt: sessionQuote?.saved_at,
+    // Checkout must lock at enter-time rates; cart prefetch must not freeze an older total.
+    refetchOnMount: lockOnMount ? 'always' : true,
     // The quote is a price lock, not a ticker. Hold for server validity window.
     staleTime: (query) =>
       Math.max(

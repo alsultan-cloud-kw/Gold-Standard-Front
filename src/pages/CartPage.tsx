@@ -25,6 +25,9 @@ import { CheckoutTrustBadges } from '@/components/checkout/CheckoutTrustBadges'
 import { ProductStockBadge } from '@/components/products/ProductStockBadge'
 import { formatProductCaratLabel } from '../utils/productCaratLabel'
 import {
+  hasResolvedStockFields,
+  isCartLineUnavailable,
+  isCartProductIncomplete,
   isProductOutOfStock,
   productAvailableQuantity,
 } from '@/utils/productStock'
@@ -133,7 +136,7 @@ function OrderSummaryCard({
 export default function CartPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
-  const { cart, removeFromCart, updateQuantity, clearCart } = useCart()
+  const { cart, removeFromCart, updateQuantity, clearCart, cartHydrated, cartRefreshing } = useCart()
   // Prefetch the same delivery-type quote checkout starts with (physical) so the lock is warm.
   const summary = useOrderSummaryDisplay(cart, 'physical')
   const { ensureCanPurchase, isAuthenticated, needsVerification, needsKyc, loginHref } =
@@ -142,10 +145,18 @@ export default function CartPage() {
     cartClubPricingBreakdown(cart.items)
   const displayTotalAfterClub = chargedSubtotal
   const displayFinalTotal = Math.max(0, displayTotalAfterClub - summary.discountAmount + summary.taxAmount)
-  const hasUnavailableItems = cart.items.some(
-    (item) =>
-      isProductOutOfStock(item.product) || item.quantity > productAvailableQuantity(item.product),
+  const hasIncompleteLines = cart.items.some(
+    (item) => isCartProductIncomplete(item.product) || !(Number(item.unit_price) > 0),
   )
+  const showCartSkeleton =
+    (!cartHydrated && cart.items.length === 0) ||
+    (cart.items.length > 0 && hasIncompleteLines)
+  const hasUnavailableItems = cart.items.some((item) =>
+    isCartLineUnavailable(item.product, item.quantity),
+  )
+
+  // Incomplete hydrate stubs are not OOS — only block known unavailable stock.
+  const checkoutBlocked = hasUnavailableItems || showCartSkeleton
 
   const checkoutHref = !isAuthenticated
     ? loginHref('/checkout')
@@ -156,7 +167,7 @@ export default function CartPage() {
         : '/checkout'
 
   const onCheckoutClick = (e: MouseEvent) => {
-    if (hasUnavailableItems) {
+    if (checkoutBlocked) {
       e.preventDefault()
       return
     }
@@ -166,6 +177,33 @@ export default function CartPage() {
   }
 
   if (cart.items.length === 0) {
+    if (!cartHydrated || cartRefreshing) {
+      return (
+        <div className="min-h-screen bg-[#F9F9FA]">
+          <div className="page-shell py-8 sm:page-section">
+            <div className="space-y-3 sm:space-y-4" aria-busy="true" aria-label={t('cartPage.pageTitle')}>
+              {[0, 1].map((key) => (
+                <div
+                  key={key}
+                  className="flex animate-pulse gap-3 rounded-xl border border-black/10 bg-white p-3 sm:gap-4 sm:rounded-2xl sm:p-5"
+                >
+                  <div className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-lg bg-[#E8E8EA] sm:h-28 sm:w-28" />
+                  <div className="min-w-0 flex-1 space-y-3 py-1">
+                    <div className="h-3 w-24 rounded bg-[#E8E8EA]" />
+                    <div className="h-4 w-3/4 max-w-xs rounded bg-[#E8E8EA]" />
+                    <div className="h-3 w-32 rounded bg-[#E8E8EA]" />
+                    <div className="flex justify-between pt-2">
+                      <div className="h-9 w-28 rounded-full bg-[#E8E8EA]" />
+                      <div className="h-6 w-20 rounded bg-[#E8E8EA]" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="min-h-screen bg-[#F9F9FA]">
         <div className="page-shell flex max-w-lg flex-col items-center py-20 text-center sm:py-28">
@@ -210,15 +248,37 @@ export default function CartPage() {
       <div className="page-shell cart-page-with-mobile-checkout py-4 sm:page-section">
         <div className="commerce-layout">
           <div className="min-w-0 space-y-3 sm:space-y-4">
-            {cart.items.map((item) => {
+            {showCartSkeleton
+              ? cart.items.map((item) => (
+                  <div
+                    key={`skel-${item.id}`}
+                    className="flex animate-pulse gap-3 rounded-xl border border-black/10 bg-white p-3 sm:gap-4 sm:rounded-2xl sm:p-5"
+                    aria-busy="true"
+                  >
+                    <div className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-lg bg-[#E8E8EA] sm:h-28 sm:w-28" />
+                    <div className="min-w-0 flex-1 space-y-3 py-1">
+                      <div className="h-3 w-24 rounded bg-[#E8E8EA]" />
+                      <div className="h-4 w-3/4 max-w-xs rounded bg-[#E8E8EA]" />
+                      <div className="h-3 w-32 rounded bg-[#E8E8EA]" />
+                      <div className="flex justify-between pt-2">
+                        <div className="h-9 w-28 rounded-full bg-[#E8E8EA]" />
+                        <div className="h-6 w-20 rounded bg-[#E8E8EA]" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              : cart.items.map((item) => {
               const imageSrc = productImageSrc(item.product)
               const lineListTotal = cartLineStandardTotal(item)
               const lineMemberSave = cartLineClubMemberSavings(item)
               const productName =
                 isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
               const caratLabel = formatProductCaratLabel(item.product.carat, isAr ? 'ar' : 'en')
+              const stockKnown = hasResolvedStockFields(item.product)
               const itemOutOfStock = isProductOutOfStock(item.product)
-              const itemMaxQty = productAvailableQuantity(item.product)
+              const itemMaxQty = stockKnown ? productAvailableQuantity(item.product) : Number.POSITIVE_INFINITY
+              const lineIncomplete =
+                isCartProductIncomplete(item.product) || !(Number(item.unit_price) > 0)
               return (
                 <div
                   key={item.id}
@@ -234,7 +294,11 @@ export default function CartPage() {
                       <img src={imageSrc} alt={productName} className="h-full w-full object-cover" loading="lazy" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-[10px] text-[#94A3B8] sm:text-sm">
-                        {t('cartPage.noImage')}
+                        {lineIncomplete ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-[#3F6F00]" aria-hidden />
+                        ) : (
+                          t('cartPage.noImage')
+                        )}
                       </div>
                     )}
                   </Link>
@@ -243,7 +307,7 @@ export default function CartPage() {
                     <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <div className="min-w-0">
                         <div className="mb-1 sm:mb-2">
-                          <ProductStockBadge product={item.product} />
+                          {stockKnown ? <ProductStockBadge product={item.product} /> : null}
                         </div>
                         <Link
                           to={`/products/${item.product.slug}`}
@@ -292,7 +356,12 @@ export default function CartPage() {
                       </div>
 
                       <div className="text-end">
-                        {lineMemberSave > 0 ? (
+                        {lineIncomplete ? (
+                          <p className="inline-flex items-center gap-1.5 text-sm font-medium text-[#64748B]">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3F6F00]" aria-hidden />
+                            …
+                          </p>
+                        ) : lineMemberSave > 0 ? (
                           <>
                             <p className="text-[10px] text-[#94A3B8] line-through tabular-nums sm:text-sm">
                               {formatOrderKwd(lineListTotal)} {t('common.kwd')}
@@ -328,33 +397,65 @@ export default function CartPage() {
           </div>
 
           <aside className="commerce-sidebar">
-            <OrderSummaryCard
-              cart={cart}
-              summary={summary}
-              displaySubtotal={displaySubtotal}
-              clubSavings={clubSavings}
-              displayTotalAfterClub={displayTotalAfterClub}
-              displayFinalTotal={displayFinalTotal}
-            />
+            {showCartSkeleton ? (
+              <div
+                className="animate-pulse rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-6"
+                aria-busy="true"
+              >
+                <div className="mb-5 h-5 w-40 rounded bg-[#E8E8EA]" />
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <div className="h-4 w-28 rounded bg-[#E8E8EA]" />
+                    <div className="h-4 w-20 rounded bg-[#E8E8EA]" />
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="h-4 w-24 rounded bg-[#E8E8EA]" />
+                    <div className="h-4 w-16 rounded bg-[#E8E8EA]" />
+                  </div>
+                  <div className="mt-4 flex justify-between border-t border-black/10 pt-4">
+                    <div className="h-5 w-16 rounded bg-[#E8E8EA]" />
+                    <div className="h-7 w-28 rounded bg-[#E8E8EA]" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <OrderSummaryCard
+                cart={cart}
+                summary={summary}
+                displaySubtotal={displaySubtotal}
+                clubSavings={clubSavings}
+                displayTotalAfterClub={displayTotalAfterClub}
+                displayFinalTotal={displayFinalTotal}
+              />
+            )}
 
             <Link
               to={checkoutHref}
               onClick={onCheckoutClick}
-              aria-disabled={hasUnavailableItems}
+              aria-disabled={checkoutBlocked}
               className={`hidden min-h-[3.5rem] w-full items-center justify-center gap-2 rounded-2xl border text-base font-bold shadow-[0_14px_28px_-14px_rgba(133,227,7,0.55)] transition lg:flex sm:text-lg ${
-                hasUnavailableItems
+                checkoutBlocked
                   ? 'pointer-events-none cursor-not-allowed border-[#CBD5E1] bg-[#E2E8F0] text-[#64748B]'
                   : 'border-[#3F6F00] bg-[#85E307] text-[#3F6F00] hover:bg-[#9AEF2A]'
               }`}
             >
-              {hasUnavailableItems
-                ? t('stock.cartBlocked')
-                : !isAuthenticated
-                  ? t('auth.signInToCheckout')
-                  : needsVerification
-                    ? t('auth.verifyToCheckout')
-                    : t('cartPage.proceedCheckout')}
-              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              {hasUnavailableItems ? (
+                t('stock.cartBlocked')
+              ) : showCartSkeleton || hasIncompleteLines ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {t('cartPage.proceedCheckout')}
+                </span>
+              ) : !isAuthenticated ? (
+                t('auth.signInToCheckout')
+              ) : needsVerification ? (
+                t('auth.verifyToCheckout')
+              ) : (
+                t('cartPage.proceedCheckout')
+              )}
+              {!(showCartSkeleton || hasIncompleteLines) ? (
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              ) : null}
             </Link>
 
             <div className="hidden items-center justify-center gap-1.5 text-[11px] text-[#64748B] lg:flex sm:text-xs">
@@ -374,7 +475,13 @@ export default function CartPage() {
               {t('cartPage.total')}
             </p>
             <p className="text-lg font-bold tabular-nums text-[#0B0F19]">
-              {formatOrderKwd(displayFinalTotal)} {t('common.kwd')}
+              {showCartSkeleton || hasIncompleteLines ? (
+                <Loader2 className="inline h-4 w-4 animate-spin text-[#3F6F00]" aria-hidden />
+              ) : (
+                <>
+                  {formatOrderKwd(displayFinalTotal)} {t('common.kwd')}
+                </>
+              )}
             </p>
             <p className="text-[10px] text-[#64748B]">
               {t('cartPage.itemsCount', { count: cart.item_count })}
@@ -383,21 +490,30 @@ export default function CartPage() {
           <Link
             to={checkoutHref}
             onClick={onCheckoutClick}
-            aria-disabled={hasUnavailableItems}
+            aria-disabled={checkoutBlocked}
             className={`inline-flex min-h-11 min-w-[9.5rem] flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 text-sm font-bold transition ${
-              hasUnavailableItems
+              checkoutBlocked
                 ? 'pointer-events-none cursor-not-allowed border-[#CBD5E1] bg-[#E2E8F0] text-[#64748B]'
                 : 'border-[#3F6F00] bg-[#85E307] text-[#3F6F00] hover:bg-[#9AEF2A]'
             }`}
           >
-            {hasUnavailableItems
-              ? t('stock.cartBlocked')
-              : !isAuthenticated
-                ? t('auth.signInToCheckout')
-                : needsVerification
-                  ? t('auth.verifyToCheckout')
-                  : t('cartPage.proceedCheckout')}
-            <ArrowRight className="h-4 w-4 shrink-0 rtl:rotate-180" />
+            {hasUnavailableItems ? (
+              t('stock.cartBlocked')
+            ) : showCartSkeleton || hasIncompleteLines ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {t('cartPage.proceedCheckout')}
+              </span>
+            ) : !isAuthenticated ? (
+              t('auth.signInToCheckout')
+            ) : needsVerification ? (
+              t('auth.verifyToCheckout')
+            ) : (
+              t('cartPage.proceedCheckout')
+            )}
+            {!(showCartSkeleton || hasIncompleteLines) ? (
+              <ArrowRight className="h-4 w-4 shrink-0 rtl:rotate-180" />
+            ) : null}
           </Link>
         </div>
       </div>

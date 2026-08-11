@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import i18n from '../i18n'
 import type { Product, Cart, CartItem } from '../types'
@@ -9,6 +9,7 @@ import {
   cartUnitsForProductId,
   clampCartLineQuantity,
   clampPurchaseQuantity,
+  isCartProductIncomplete,
   isProductOutOfStock,
   isProductSerialized,
   maxPurchasableQuantity,
@@ -18,6 +19,15 @@ import {
 
 interface CartContextType {
   cart: Cart
+  /** True after first server/local hydrate attempt finishes. */
+  cartHydrated: boolean
+  /** True while a full product reprice/refresh is in flight. */
+  cartRefreshing: boolean
+  /**
+   * False only while checkout entry reprice runs — checkout must wait so the
+   * signed lock matches the live cart total at enter.
+   */
+  checkoutPriceReady: boolean
   addToCart: (product: Product, quantity?: number) => void
   removeFromCart: (itemId: string) => void
   updateQuantity: (itemId: string, quantity: number) => void
@@ -96,27 +106,91 @@ function calculateCartTotals(items: CartItem[]): Cart {
   }
 }
 
-function mapServerCartToLocal(payload: Awaited<ReturnType<typeof cartApi.fetchServerCart>>): Cart {
+/** Prefer richer local/catalog fields over thin server-cart stubs. */
+function mergeCartProducts(existing: Product | undefined, incoming: Product): Product {
+  if (!existing) return incoming
+  const merged = { ...existing } as Product
+  const assignIfPresent = <K extends keyof Product>(key: K, value: Product[K] | undefined | null) => {
+    if (value === undefined || value === null) return
+    if (typeof value === 'string' && value.trim() === '') return
+    merged[key] = value
+  }
+
+  assignIfPresent('id', incoming.id)
+  assignIfPresent('slug', incoming.slug)
+  assignIfPresent('sku', incoming.sku)
+  assignIfPresent('name_en', incoming.name_en)
+  assignIfPresent('name_ar', incoming.name_ar)
+  assignIfPresent('status', incoming.status)
+  assignIfPresent('primary_image', incoming.primary_image)
+  if (incoming.images && incoming.images.length > 0) merged.images = incoming.images
+  if (incoming.category) merged.category = incoming.category
+  if (incoming.metal_type) merged.metal_type = incoming.metal_type
+  if (incoming.carat) merged.carat = incoming.carat
+  if (incoming.weight_grams != null && Number.isFinite(Number(incoming.weight_grams))) {
+    merged.weight_grams = incoming.weight_grams
+  }
+  if (incoming.live_total_price != null) merged.live_total_price = incoming.live_total_price
+  if (incoming.live_total_price_club != null) merged.live_total_price_club = incoming.live_total_price_club
+  if (incoming.live_metal_value != null) merged.live_metal_value = incoming.live_metal_value
+  if (incoming.live_making_charge != null) merged.live_making_charge = incoming.live_making_charge
+  if (incoming.current_price != null && Number.isFinite(Number(incoming.current_price))) {
+    merged.current_price = incoming.current_price
+  }
+  if (incoming.available_quantity != null) merged.available_quantity = incoming.available_quantity
+  if (incoming.in_stock != null) merged.in_stock = incoming.in_stock
+  if (incoming.stock_status) merged.stock_status = incoming.stock_status
+  if (incoming.is_featured != null) merged.is_featured = incoming.is_featured
+  // Full catalog refresh: copy remaining known keys from latest without wiping priors.
+  if (!isCartProductIncomplete(incoming)) {
+    return { ...merged, ...incoming, id: incoming.id || merged.id }
+  }
+  return merged
+}
+
+function mapServerCartToLocal(
+  payload: Awaited<ReturnType<typeof cartApi.fetchServerCart>>,
+  previousItems: CartItem[] = [],
+): Cart {
   const itemsRaw = payload?.cart?.items
   if (!Array.isArray(itemsRaw) || itemsRaw.length === 0) return defaultCart
+  const prevByProductId = new Map(previousItems.map((item) => [item.product.id, item]))
+  const prevByLineId = new Map(previousItems.map((item) => [item.id, item]))
   const items: CartItem[] = itemsRaw.map((row, idx) => {
-    const p = row.product || {}
+    const p = (row.product || {}) as Partial<Product>
     const id = String(row.product_id || p.id || `line-${idx}`)
-    const product = {
+    const lineId = String(row.id || `${id}-${idx}`)
+    const stub = {
       id,
       slug: String(row.product_slug || p.slug || ''),
       sku: String(row.product_sku || p.sku || ''),
       name_en: String(row.product_name_en || p.name_en || ''),
       name_ar: String(row.product_name_ar || p.name_ar || ''),
+      ...p,
+      id,
     } as Product
+    const prev =
+      prevByLineId.get(lineId) ||
+      prevByProductId.get(id) ||
+      previousItems.find((item) => item.product.slug && item.product.slug === stub.slug)
+    const product = mergeCartProducts(prev?.product, stub)
     const quantity = Math.max(1, Number(row.quantity) || 1)
-    const unit_price = Number(row.unit_price) || 0
+    const serverUnit = Number(row.unit_price)
+    const unit_price =
+      Number.isFinite(serverUnit) && serverUnit > 0
+        ? serverUnit
+        : Number(prev?.unit_price) > 0
+          ? Number(prev!.unit_price)
+          : 0
+    const serverTotal = Number(row.total_price)
+    const total_price =
+      Number.isFinite(serverTotal) && serverTotal > 0 ? serverTotal : unit_price * quantity
     return {
-      id: String(row.id || `${id}-${idx}`),
+      id: lineId,
       product,
       quantity,
       unit_price,
-      total_price: Number(row.total_price) || unit_price * quantity,
+      total_price,
     }
   })
   return calculateCartTotals(items)
@@ -159,17 +233,36 @@ function unitPriceForMembership(product: Product, clubPricingEnabled: boolean): 
   return clubUnitPrice(product)
 }
 
+function productHasPricableFields(product: Product): boolean {
+  return (
+    (product.live_total_price != null && Number.isFinite(Number(product.live_total_price))) ||
+    (product.live_total_price_club != null && Number.isFinite(Number(product.live_total_price_club))) ||
+    (product.current_price != null &&
+      Number.isFinite(Number(product.current_price)) &&
+      Number(product.current_price) > 0)
+  )
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated, isLoading: authLoading, user } = useAuth()
   const [cart, setCart] = useState<Cart>(defaultCart)
   const [clubPricingEnabled, setClubPricingEnabled] = useState(false)
   const [hydrated, setHydrated] = useState(false)
+  const [cartRefreshing, setCartRefreshing] = useState(false)
+  const [checkoutPriceReady, setCheckoutPriceReady] = useState(
+    () => !location.pathname.startsWith('/checkout'),
+  )
   const itemsRef = useRef<CartItem[]>(cart.items)
   const clubPricingEnabledRef = useRef<boolean>(clubPricingEnabled)
   const repriceInFlightRef = useRef(false)
   const lastRepriceStartedAtRef = useRef(0)
   const skipNextSyncRef = useRef(false)
+  const wasOnCheckoutRef = useRef(location.pathname.startsWith('/checkout'))
+  const forceRepriceRef = useRef<
+    (opts?: { bypassGap?: boolean; allowOnCheckout?: boolean }) => Promise<void>
+  >(async () => undefined)
   const REPRICE_MIN_GAP_MS = 2500
 
   const assertCanPurchase = (): boolean => {
@@ -213,7 +306,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const data = await cartApi.fetchServerCart()
         if (cancelled) return
         skipNextSyncRef.current = true
-        setCart(mapServerCartToLocal(data))
+        setCart((prev) => {
+          const next = mapServerCartToLocal(data, prev.items)
+          itemsRef.current = next.items
+          return next
+        })
+        // Defer so forceReprice is wired and reads the merged items above.
+        queueMicrotask(() => {
+          void forceRepriceRef.current({ bypassGap: true })
+        })
       } catch {
         if (!cancelled) {
           skipNextSyncRef.current = true
@@ -256,7 +357,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!prevCart.items.length) return prevCart
       let changed = false
       const nextItems = prevCart.items.map((item) => {
+        if (!productHasPricableFields(item.product)) return item
         const nextUnit = unitPriceForMembership(item.product, clubPricingEnabled)
+        // Never flash 0.000 from incomplete membership reprice.
+        if (!(nextUnit > 0)) return item
         if (Math.abs((Number(item.unit_price) || 0) - nextUnit) <= 1e-9) return item
         changed = true
         return {
@@ -272,15 +376,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
 
-    const repriceFromLiveRates = async () => {
+    const repriceFromLiveRates = async (opts?: {
+      bypassGap?: boolean
+      /** One-shot when entering checkout so live cart ≈ the lock created on mount. */
+      allowOnCheckout?: boolean
+    }) => {
       if (cancelled) return
-      // Checkout holds a signed quote lock — do not tick live cart money underneath it.
-      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/checkout')) {
-        return
-      }
+      const onCheckout =
+        typeof window !== 'undefined' && window.location.pathname.startsWith('/checkout')
+      // Pause the live ticker under checkout so the locked total does not drift.
+      // Entry may pass allowOnCheckout for a single freshen-before-lock.
+      if (onCheckout && !opts?.allowOnCheckout) return
       const now = Date.now()
       if (repriceInFlightRef.current) return
-      if (now - lastRepriceStartedAtRef.current < REPRICE_MIN_GAP_MS) return
+      if (!opts?.bypassGap && now - lastRepriceStartedAtRef.current < REPRICE_MIN_GAP_MS) return
 
       repriceInFlightRef.current = true
       lastRepriceStartedAtRef.current = now
@@ -290,6 +399,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      setCartRefreshing(true)
       try {
         const isClub = clubPricingEnabledRef.current
 
@@ -321,23 +431,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
             if (!latest) return item
 
             const nextUnit = unitPriceForMembership(latest, isClub)
+            const resolvedUnit =
+              nextUnit > 0 ? nextUnit : Number(item.unit_price) > 0 ? Number(item.unit_price) : 0
             const nextQty = clampCartLineQuantity(latest, item.quantity)
-            const unitChanged = Math.abs((Number(item.unit_price) || 0) - nextUnit) > 1e-9
+            const unitChanged = Math.abs((Number(item.unit_price) || 0) - resolvedUnit) > 1e-9
             const qtyChanged = nextQty !== item.quantity
             const priceMetaChanged =
               (item.product.live_total_price ?? null) !== (latest.live_total_price ?? null) ||
               (item.product.live_total_price_club ?? null) !== (latest.live_total_price_club ?? null)
             const stockChanged = productStockFieldsChanged(item.product, latest)
 
-            if (!unitChanged && !qtyChanged && !priceMetaChanged && !stockChanged) return item
+            if (!unitChanged && !qtyChanged && !priceMetaChanged && !stockChanged) {
+              // Still merge product snapshot (images etc.) when unit math unchanged.
+              if (item.product === latest) return item
+              changed = true
+              return { ...item, product: mergeCartProducts(item.product, latest) }
+            }
 
             changed = true
             return {
               ...item,
-              product: latest,
+              product: mergeCartProducts(item.product, latest),
               quantity: nextQty,
-              unit_price: nextUnit,
-              total_price: nextQty * nextUnit,
+              unit_price: resolvedUnit,
+              total_price: nextQty * resolvedUnit,
             }
           })
 
@@ -347,7 +464,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         // Ignore transient repricing failures; keep last known prices.
       } finally {
         repriceInFlightRef.current = false
+        if (!cancelled) setCartRefreshing(false)
       }
+    }
+
+    forceRepriceRef.current = async (opts) => {
+      await repriceFromLiveRates({ bypassGap: true, ...opts })
     }
 
     void repriceFromLiveRates()
@@ -360,6 +482,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
       window.clearInterval(id)
     }
   }, [])
+
+  // Enter checkout: freshen live prices first, then allow quote lock (cart↔checkout match).
+  // Leave checkout: resume live ticker immediately.
+  useEffect(() => {
+    const onCheckout = location.pathname.startsWith('/checkout')
+    let cancelled = false
+    if (onCheckout && !wasOnCheckoutRef.current) {
+      setCheckoutPriceReady(false)
+      void (async () => {
+        await forceRepriceRef.current({ bypassGap: true, allowOnCheckout: true })
+        if (!cancelled) setCheckoutPriceReady(true)
+      })()
+    } else if (wasOnCheckoutRef.current && !onCheckout) {
+      setCheckoutPriceReady(true)
+      void forceRepriceRef.current({ bypassGap: true })
+    } else if (!onCheckout) {
+      setCheckoutPriceReady(true)
+    }
+    wasOnCheckoutRef.current = onCheckout
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     let cancelled = false
@@ -671,6 +816,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         cart,
+        cartHydrated: hydrated,
+        cartRefreshing,
+        checkoutPriceReady,
         addToCart,
         removeFromCart,
         updateQuantity,

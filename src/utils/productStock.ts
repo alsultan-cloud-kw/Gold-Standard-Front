@@ -4,13 +4,33 @@ export type ProductStockStatus = 'in_stock' | 'low_stock' | 'out_of_stock'
 
 const UNAVAILABLE_STATUSES = new Set(['out_of_stock', 'discontinued', 'inactive'])
 
+/**
+ * True when the product payload includes enough stock fields to decide sellability.
+ * Server cart stubs / hydrate rows often omit these — treat as unresolved, not OOS.
+ */
+export function hasResolvedStockFields(product: Product): boolean {
+  if (product.status && UNAVAILABLE_STATUSES.has(product.status)) return true
+  if (typeof product.available_quantity === 'number' && Number.isFinite(product.available_quantity)) {
+    return true
+  }
+  if (typeof product.in_stock === 'boolean') return true
+  if (
+    product.stock_status === 'in_stock' ||
+    product.stock_status === 'low_stock' ||
+    product.stock_status === 'out_of_stock'
+  ) {
+    return true
+  }
+  return false
+}
+
 export function productAvailableQuantity(product: Product): number {
   if (UNAVAILABLE_STATUSES.has(product.status)) return 0
   if (typeof product.available_quantity === 'number' && Number.isFinite(product.available_quantity)) {
     return Math.max(0, product.available_quantity)
   }
   if (product.in_stock === false) return 0
-  // Missing stock fields → treat as unavailable (never invent sellable qty).
+  // Missing stock fields → unknown qty (never invent sellable qty for clamp math).
   return 0
 }
 
@@ -19,6 +39,7 @@ export function productAvailableQuantity(product: Product): number {
  * disagree with `available_quantity` / catalog `status` (e.g. OOS label with qty > 0).
  */
 export function productStockStatus(product: Product): ProductStockStatus {
+  if (!hasResolvedStockFields(product)) return 'in_stock'
   if (UNAVAILABLE_STATUSES.has(product.status)) return 'out_of_stock'
   const qty = productAvailableQuantity(product)
   if (qty <= 0) return 'out_of_stock'
@@ -27,7 +48,29 @@ export function productStockStatus(product: Product): ProductStockStatus {
 }
 
 export function isProductOutOfStock(product: Product): boolean {
+  // Incomplete hydrate stubs must not flash as "unavailable".
+  if (!hasResolvedStockFields(product)) return false
   return productAvailableQuantity(product) <= 0
+}
+
+/** Cart/checkout gate: only block when stock is known and insufficient. */
+export function isCartLineUnavailable(product: Product, quantity: number): boolean {
+  if (!hasResolvedStockFields(product)) return false
+  if (isProductOutOfStock(product)) return true
+  return quantity > productAvailableQuantity(product)
+}
+
+/** Server-cart stub / pre-reprice row — missing commerce fields used by cart UI. */
+export function isCartProductIncomplete(product: Product): boolean {
+  if (!hasResolvedStockFields(product)) return true
+  const hasLive =
+    (product.live_total_price != null && Number.isFinite(Number(product.live_total_price))) ||
+    (product.live_total_price_club != null && Number.isFinite(Number(product.live_total_price_club)))
+  const hasStored =
+    product.current_price != null &&
+    Number.isFinite(Number(product.current_price)) &&
+    Number(product.current_price) > 0
+  return !hasLive && !hasStored
 }
 
 /**

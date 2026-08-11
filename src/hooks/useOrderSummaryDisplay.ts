@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Cart } from '../types'
 import { parseCheckoutMoney } from '../utils/checkoutPreview'
+import {
+  checkoutQuoteTotalsAlign,
+  isReusableCheckoutQuote,
+} from '@/lib/checkoutQuoteSession'
 import { checkoutQuoteRemainingMs, useCheckoutOfferPreview } from './useCheckoutOfferPreview'
 import { PRICE_NUMBER_LOCALE } from '@/utils/formatLatinNumber'
 
@@ -12,11 +16,13 @@ export function formatOrderKwd(n: number): string {
 type OrderSummaryOpts = {
   discountCode?: string
   /**
-   * `quote` (checkout): never fall back to live cart money — show 0 until the signed
-   * lock is ready so the UI cannot flash a newer spot price before the lock.
+   * `quote` (checkout): never fall back to live cart money — show loading / — until the
+   * signed lock from this checkout enter is ready (no stale cart-prefetch flash).
    * `cart` (cart page): allow cart totals while preview warms the physical quote cache.
    */
   pricingSource?: 'cart' | 'quote'
+  /** Wait for checkout entry reprice before locking (cart↔checkout match). */
+  priceReady?: boolean
 }
 
 /**
@@ -30,6 +36,7 @@ export function useOrderSummaryDisplay(
 ) {
   const pricingSource = opts?.pricingSource ?? 'cart'
   const requireQuote = pricingSource === 'quote'
+  const priceReady = opts?.priceReady !== false
 
   const items = useMemo(
     () => cart.items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
@@ -38,10 +45,52 @@ export function useOrderSummaryDisplay(
 
   const previewQuery = useCheckoutOfferPreview(items, deliveryType, {
     discountCode: opts?.discountCode,
+    // Compare merchandise subtotal (quote shipping is separate).
+    cartSubtotal: cart.subtotal,
+    lockOnMount: requireQuote,
+    enabled: priceReady,
   })
-  const { data: preview, isFetching, isError, isSuccess } = previewQuery
+  const {
+    data: preview,
+    isFetching,
+    isError,
+    isSuccess,
+    isFetchedAfterMount,
+    isPending,
+  } = previewQuery
 
-  const useServer = isSuccess && !!preview && items.length > 0 && !isError
+  const previewAlignsWithCart = useMemo(() => {
+    if (!preview) return false
+    const quoted = parseCheckoutMoney(preview.subtotal)
+    if (quoted == null) return false
+    return checkoutQuoteTotalsAlign(quoted, cart.subtotal)
+  }, [preview, cart.subtotal])
+
+  /**
+   * Checkout: only trust a quote after a mount-time fetch, or when a seeded session/cache
+   * quote still matches the live cart (very recent warm). Never show an older lock.
+   */
+  const useServer = useMemo(() => {
+    if (!isSuccess || !preview || items.length === 0 || isError) return false
+    if (!requireQuote) return true
+    if (isFetchedAfterMount) return true
+    return isReusableCheckoutQuote(preview, { cartTotal: cart.subtotal }) || previewAlignsWithCart
+  }, [
+    isSuccess,
+    preview,
+    items.length,
+    isError,
+    requireQuote,
+    isFetchedAfterMount,
+    cart.subtotal,
+    previewAlignsWithCart,
+  ])
+
+  const quotePending =
+    requireQuote &&
+    items.length > 0 &&
+    !useServer &&
+    (!priceReady || isPending || isFetching || !isFetchedAfterMount)
 
   const subtotal = useMemo(() => {
     if (!useServer || !preview) return requireQuote ? 0 : cart.subtotal
@@ -96,8 +145,8 @@ export function useOrderSummaryDisplay(
     /** Locked price lapsed — the customer must re-price before we may charge them. */
     quoteExpired: !!expiresAt && quoteRemainingMs <= 0,
     refetchPreview: previewQuery.refetch,
-    /** True while fetching preview for a non-empty cart (logged-in only). */
-    previewLoading: isFetching && items.length > 0,
+    /** True while fetching preview for a non-empty cart (logged-in only), or checkout waiting on lock. */
+    previewLoading: (isFetching && items.length > 0) || quotePending,
     /** Server preview applied (may still be discount 0). */
     useServerPreview: useServer,
   }
