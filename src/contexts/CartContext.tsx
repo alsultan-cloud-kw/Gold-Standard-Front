@@ -161,13 +161,12 @@ function mapServerCartToLocal(
     const id = String(row.product_id || p.id || `line-${idx}`)
     const lineId = String(row.id || `${id}-${idx}`)
     const stub = {
+      ...p,
       id,
       slug: String(row.product_slug || p.slug || ''),
       sku: String(row.product_sku || p.sku || ''),
       name_en: String(row.product_name_en || p.name_en || ''),
       name_ar: String(row.product_name_ar || p.name_ar || ''),
-      ...p,
-      id,
     } as Product
     const prev =
       prevByLineId.get(lineId) ||
