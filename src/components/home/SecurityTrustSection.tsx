@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import {
   ArrowRight,
   QrCode,
@@ -18,16 +19,23 @@ import ministryHallmarkImg from '@/assets/home/security/ministry-hallmark.webp'
 import hologramSealImg from '@/assets/home/security/hologram-seal.webp'
 import companyStampImg from '@/assets/home/security/company-stamp.webp'
 import officialReceiptImg from '@/assets/home/security/official-receipt.webp'
+import { websiteVerificationApi } from '@/services/api'
 
-type MethodId = 'qr' | 'blockchain' | 'hologram' | 'companyStamp' | 'receipt' | 'ministry'
+export type SecurityTrustMethodId =
+  | 'qr'
+  | 'blockchain'
+  | 'hologram'
+  | 'companyStamp'
+  | 'receipt'
+  | 'ministry'
 
-const METHODS: { id: MethodId; icon: LucideIcon; image: string }[] = [
-  { id: 'qr', icon: QrCode, image: qrVerifyImg },
-  { id: 'blockchain', icon: Blocks, image: blockchainImg },
-  { id: 'hologram', icon: Shield, image: hologramSealImg },
-  { id: 'companyStamp', icon: BadgeCheck, image: companyStampImg },
-  { id: 'receipt', icon: FileCheck2, image: officialReceiptImg },
-  { id: 'ministry', icon: SearchCheck, image: ministryHallmarkImg },
+const METHODS: { id: SecurityTrustMethodId; icon: LucideIcon; fallbackImage: string }[] = [
+  { id: 'qr', icon: QrCode, fallbackImage: qrVerifyImg },
+  { id: 'blockchain', icon: Blocks, fallbackImage: blockchainImg },
+  { id: 'hologram', icon: Shield, fallbackImage: hologramSealImg },
+  { id: 'companyStamp', icon: BadgeCheck, fallbackImage: companyStampImg },
+  { id: 'receipt', icon: FileCheck2, fallbackImage: officialReceiptImg },
+  { id: 'ministry', icon: SearchCheck, fallbackImage: ministryHallmarkImg },
 ]
 
 function MethodCard({
@@ -35,7 +43,7 @@ function MethodCard({
   icon: Icon,
   image,
 }: {
-  id: MethodId
+  id: SecurityTrustMethodId
   icon: LucideIcon
   image: string
 }) {
@@ -75,6 +83,20 @@ export function SecurityTrustSection() {
   const { t } = useTranslation()
   const titleSuffix = t('home.securityTrust.titleSuffix')
 
+  const { data } = useQuery({
+    queryKey: ['websiteVerificationPublic'],
+    queryFn: () => websiteVerificationApi.getPublic(),
+    staleTime: 60_000,
+    retry: 1,
+  })
+
+  // Fail-open: missing/failed CMS → show bundled defaults. enabled=false → hide section.
+  if (data?.enabled === false) {
+    return null
+  }
+
+  const cmsImages = data?.images
+
   return (
     <section
       className="security-trust-section relative bg-[#07090F] text-white"
@@ -87,7 +109,6 @@ export function SecurityTrustSection() {
       </div>
 
       <div className="home-section-inner security-trust-section__inner relative z-10">
-        {/* Header */}
         <div className="security-trust-section__header">
           <span className="security-trust-section__badge" aria-hidden>
             <ShieldCheck className="h-5 w-5" strokeWidth={1.85} />
@@ -101,14 +122,14 @@ export function SecurityTrustSection() {
           <div className="security-trust-section__rule" aria-hidden />
         </div>
 
-        {/* Grid: 1 col → 2 col; cards adapt via container queries */}
         <div className="security-trust-grid">
-          {METHODS.map((method) => (
-            <MethodCard key={method.id} {...method} />
-          ))}
+          {METHODS.map((method) => {
+            const cmsUrl = (cmsImages?.[method.id] || '').trim()
+            const image = cmsUrl || method.fallbackImage
+            return <MethodCard key={method.id} id={method.id} icon={method.icon} image={image} />
+          })}
         </div>
 
-        {/* Trust ribbon */}
         <div className="security-trust-ribbon">
           <div className="security-trust-ribbon__copy">
             <span className="security-trust-ribbon__shield" aria-hidden>

@@ -8551,3 +8551,32 @@ html[dir='rtl'] .price-desk-card--featured::before {
   border-radius: 9999px;
   background: transparent;
 }
+
+/* Company shop display board — TV / kiosk readability */
+.company-display-board .customer-gold-price-row {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.company-display-board .customer-gold-price-row__value {
+  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+}
+
+@media (max-width: 359px) {
+  .company-display-board .page-shell {
+    padding-inline: 0.75rem;
+  }
+
+  .company-display-karat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1024px) and (orientation: landscape) {
+  .company-display-board--kiosk .company-display-karat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .company-display-board--kiosk .company-display-karat-card .customer-gold-price-row__value {
+    font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+  }
+}

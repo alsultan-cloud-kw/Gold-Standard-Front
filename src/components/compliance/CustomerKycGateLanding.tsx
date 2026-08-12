@@ -30,7 +30,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
   const { user } = useAuth()
   const [businessName, setBusinessName] = useState('')
   const [businessAddress, setBusinessAddress] = useState('')
-  const [license, setLicense] = useState('')
+  const [licenseFile, setLicenseFile] = useState<File | null>(null)
   const [companyEmail, setCompanyEmail] = useState(user?.email || '')
   const [phone, setPhone] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
@@ -39,6 +39,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const formRef = useRef<HTMLDivElement>(null)
+  const licenseInputRef = useRef<HTMLInputElement>(null)
 
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
@@ -63,7 +64,6 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
     const name = businessName.trim()
     const address = businessAddress.trim()
     const email = companyEmail.trim().toLowerCase()
-    const licence = license.trim()
     const tel = phone.trim()
 
     if (name.length < 2) {
@@ -74,7 +74,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
       setFormError(t('customerScreening.gate.errors.businessAddress'))
       return
     }
-    if (licence.length < 2) {
+    if (!licenseFile) {
       setFormError(t('customerScreening.gate.errors.license'))
       return
     }
@@ -97,7 +97,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
         business_name: name,
         business_address: address,
         company_email: email,
-        commercial_license: licence,
+        commercial_license_file: licenseFile,
         phone: tel,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
@@ -108,6 +108,8 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
       } else {
         setFormSuccess(t('customerScreening.gate.successSubmitted'))
       }
+      setLicenseFile(null)
+      if (licenseInputRef.current) licenseInputRef.current.value = ''
       onApplied()
       clearTurnstile()
     } catch (err: unknown) {
@@ -124,11 +126,19 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
               ? 'businessAddress'
               : code === 'commercial_license_required'
                 ? 'license'
-                : code === 'company_email_required'
-                  ? 'companyEmail'
-                  : code === 'phone_required'
-                    ? 'phone'
-                    : 'generic'
+                : code === 'commercial_license_invalid_type'
+                  ? 'licenseType'
+                  : code === 'commercial_license_too_large'
+                    ? 'licenseTooLarge'
+                    : code === 'commercial_license_infected'
+                      ? 'licenseInfected'
+                      : code === 'commercial_license_scan_unavailable'
+                        ? 'licenseScanUnavailable'
+                        : code === 'company_email_required'
+                          ? 'companyEmail'
+                          : code === 'phone_required'
+                            ? 'phone'
+                            : 'generic'
       setFormError(t(`customerScreening.gate.errors.${errorKey}`))
       clearTurnstile()
     } finally {
@@ -352,13 +362,17 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
                   <span className="text-red-600">*</span>
                 </span>
                 <input
-                  type="text"
-                  value={license}
-                  onChange={(e) => setLicense(e.target.value)}
+                  ref={licenseInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
                   required
-                  maxLength={80}
-                  className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
+                  onChange={(e) => setLicenseFile(e.target.files?.[0] ?? null)}
+                  className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 file:me-3 file:rounded-lg file:border-0 file:bg-[#0B0F19] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#85E307] focus:ring-2"
                 />
+                <span className="block text-[11px] text-[#64748B]">
+                  {t('customerScreening.gate.fields.licenseHint')}
+                  {licenseFile ? ` · ${licenseFile.name}` : ''}
+                </span>
               </label>
               <label className="block space-y-1.5">
                 <span className="text-xs font-semibold text-[#0C1512]">

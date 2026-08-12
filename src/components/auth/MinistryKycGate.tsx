@@ -36,6 +36,7 @@ export default function MinistryKycGate() {
     !isLoading &&
     !isClerkSyncing &&
     !isStaffRole(user.role) &&
+    user.company_desk_active !== true &&
     user.is_verified !== false &&
     pathname !== '/verify-account' &&
     !pathname.startsWith('/admin')

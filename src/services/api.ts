@@ -121,6 +121,18 @@ export const promoPopupApi = {
     }),
 }
 
+export type WebsiteVerificationPublic = {
+  enabled: boolean
+  images: Partial<
+    Record<'qr' | 'blockchain' | 'hologram' | 'companyStamp' | 'receipt' | 'ministry', string>
+  >
+}
+
+export const websiteVerificationApi = {
+  getPublic: () =>
+    apiService.get<WebsiteVerificationPublic>('/accounts/website-verification/'),
+}
+
 export const handpriceDiscountApi = {
   apply: (code: string, channel: 'website' | 'mobile', source: 'promo' | 'checkout' = 'checkout') =>
     apiService.post<{ ok: boolean; code?: string; title?: string; title_ar?: string }>(

@@ -28,13 +28,14 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
   const [companyEmail, setCompanyEmail] = useState(user?.email || '')
   const [contactName, setContactName] = useState(user?.full_name || '')
   const [phone, setPhone] = useState('')
-  const [license, setLicense] = useState('')
+  const [licenseFile, setLicenseFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const licenseInputRef = useRef<HTMLInputElement>(null)
 
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
@@ -55,7 +56,6 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
     const name = businessName.trim()
     const address = businessAddress.trim()
     const email = companyEmail.trim().toLowerCase()
-    const licence = license.trim()
     const tel = phone.trim()
     if (name.length < 2) {
       setFormError(t('companyPricesPage.gate.errors.businessName'))
@@ -65,7 +65,7 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
       setFormError(t('companyPricesPage.gate.errors.businessAddress'))
       return
     }
-    if (licence.length < 2) {
+    if (!licenseFile) {
       setFormError(t('companyPricesPage.gate.errors.license'))
       return
     }
@@ -90,7 +90,7 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
         company_email: email,
         contact_name: contactName.trim() || undefined,
         phone: tel,
-        commercial_license: licence,
+        commercial_license_file: licenseFile,
         message: message.trim() || undefined,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
@@ -101,6 +101,8 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
       } else {
         setFormSuccess(t('companyPricesPage.gate.successSubmitted'))
       }
+      setLicenseFile(null)
+      if (licenseInputRef.current) licenseInputRef.current.value = ''
       onApplied()
       clearTurnstile()
     } catch (err: unknown) {
@@ -116,6 +118,14 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
         setFormError(t('companyPricesPage.gate.errors.businessAddress'))
       } else if (code === 'commercial_license_required') {
         setFormError(t('companyPricesPage.gate.errors.license'))
+      } else if (code === 'commercial_license_invalid_type') {
+        setFormError(t('companyPricesPage.gate.errors.licenseType'))
+      } else if (code === 'commercial_license_too_large') {
+        setFormError(t('companyPricesPage.gate.errors.licenseTooLarge'))
+      } else if (code === 'commercial_license_infected') {
+        setFormError(t('companyPricesPage.gate.errors.licenseInfected'))
+      } else if (code === 'commercial_license_scan_unavailable') {
+        setFormError(t('companyPricesPage.gate.errors.licenseScanUnavailable'))
       } else if (code === 'phone_required') {
         setFormError(t('companyPricesPage.gate.errors.phone'))
       } else if (code === 'company_email_required') {
@@ -327,21 +337,25 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
                     className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
                   />
                 </label>
-                <label className="block space-y-1.5">
-                  <span className="text-xs font-semibold text-[#0C1512]">
-                    {t('companyPricesPage.gate.fields.license')}{' '}
-                    <span className="text-red-600">*</span>
-                  </span>
-                  <input
-                    type="text"
-                    value={license}
-                    onChange={(e) => setLicense(e.target.value)}
-                    required
-                    maxLength={80}
-                    className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
-                  />
-                </label>
               </div>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold text-[#0C1512]">
+                  {t('companyPricesPage.gate.fields.license')}{' '}
+                  <span className="text-red-600">*</span>
+                </span>
+                <input
+                  ref={licenseInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                  required
+                  onChange={(e) => setLicenseFile(e.target.files?.[0] ?? null)}
+                  className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 file:me-3 file:rounded-lg file:border-0 file:bg-[#0B0F19] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#85E307] focus:ring-2"
+                />
+                <span className="block text-[11px] text-[#64748B]">
+                  {t('companyPricesPage.gate.fields.licenseHint')}
+                  {licenseFile ? ` · ${licenseFile.name}` : ''}
+                </span>
+              </label>
               <label className="block space-y-1.5">
                 <span className="text-xs font-semibold text-[#0C1512]">
                   {t('companyPricesPage.gate.fields.message')}

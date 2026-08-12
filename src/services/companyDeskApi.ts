@@ -16,7 +16,8 @@ export type CompanyDeskApplyPayload = {
   company_email: string
   contact_name?: string
   phone: string
-  commercial_license: string
+  /** PDF or image of the commercial licence (required). */
+  commercial_license_file: File
   message?: string
   turnstile_token?: string
 }
@@ -31,11 +32,27 @@ export type CompanyDeskApplyResponse = {
   error?: string
 }
 
+function buildApplyFormData(data: CompanyDeskApplyPayload): FormData {
+  const fd = new FormData()
+  fd.append('business_name', data.business_name)
+  fd.append('business_address', data.business_address)
+  fd.append('company_email', data.company_email)
+  fd.append('phone', data.phone)
+  fd.append('commercial_license_file', data.commercial_license_file)
+  if (data.contact_name) fd.append('contact_name', data.contact_name)
+  if (data.message) fd.append('message', data.message)
+  if (data.turnstile_token) fd.append('turnstile_token', data.turnstile_token)
+  return fd
+}
+
 export const companyDeskApi = {
   getAccess: () => apiService.get<CompanyDeskAccessResponse>('/accounts/company-desk/access/'),
 
   apply: (data: CompanyDeskApplyPayload) =>
-    apiService.post<CompanyDeskApplyResponse>('/accounts/company-desk/apply/', data),
+    apiService.post<CompanyDeskApplyResponse>(
+      '/accounts/company-desk/apply/',
+      buildApplyFormData(data),
+    ),
 
   requestActivateOtp: (data: { email: string; turnstile_token?: string }) =>
     apiService.post<{

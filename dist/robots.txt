@@ -9,5 +9,17 @@ Disallow: /register
 Disallow: /forgot-password
 Disallow: /sso-callback
 Disallow: /payment-receipt
+Disallow: /company-prices
+Disallow: /verify-account
+Disallow: /gs-kyc
+Disallow: /moci-kyc
+Disallow: /kyc
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
 
 Sitemap: https://www.goldstandardkw.com/sitemap.xml
+Sitemap: https://api.goldstandardkw.com/api/products/feeds/sitemap-products.xml

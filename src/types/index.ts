@@ -12,6 +12,8 @@ export interface User {
     | 'branch_manager'
     | 'general_manager'
     | 'admin'
+  /** Approved+active company desk listing — scoped to AML partner tools, not retail storefront. */
+  company_desk_active?: boolean
   is_active: boolean
   is_verified: boolean
   date_joined: string

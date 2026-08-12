@@ -30,9 +30,9 @@
     "closeSearch": "Close search",
     "location": "Central Gold Market, Kuwait City 85951",
     "customerPrices": "Customer prices",
-    "companyPrices": "Company prices",
-    "deskPriceBoard": "Desk board",
-    "customerKyc": "Customer screening",
+    "companyPrices": "Live board",
+    "deskPriceBoard": "Live price board",
+    "customerKyc": "For businesses",
     "buyGold": "Buy gold",
     "cart": "Cart",
     "trading": "Trading",
@@ -136,7 +136,7 @@
     "legal": "Legal",
     "shop": "Shop",
     "prices": "Live prices",
-    "companyPrices": "Company prices",
+    "companyPrices": "Live board",
     "products": "Products",
     "allProducts": "All products",
     "viewAllProducts": "View all products",
@@ -748,16 +748,16 @@
       "description": "Live gold price in Kuwait today (KWD/g) for 24K, 22K, 21K, 18K — buy & sell rates, charts, and gram calculator. Updated continuously from Gold Standard."
     },
     "customerKyc": {
-      "title": "Company customer screening · Gold Standard Kuwait",
-      "description": "Partner gold companies can apply for access to Gold Standard’s enterprise name screening console. Approved emails unlock live registry checks."
+      "title": "For businesses · Company AML screening | Gold Standard Kuwait",
+      "description": "Partner gold companies can apply for Gold Standard’s company-only name screening console. Approved emails unlock live registry checks — not a retail customer feature."
     },
     "mociKyc": {
       "title": "MOCI customer due diligence questionnaire · Kuwait | Gold Standard",
       "description": "Free Ministry of Commerce–aligned customer due diligence questionnaire for Kuwait businesses. Purpose of purchase, source of funds, PEP, and employment — print-ready for your records."
     },
     "companyPrices": {
-      "title": "Company Gold Sell Rates by Karat | Gold Standard Kuwait",
-      "description": "Apply to list your company and unlock the sell-by-karat desk board from Gold Standard Kuwait."
+      "title": "Live Gold Price Board · USD Ounce & Karat Buy/Sell | Gold Standard",
+      "description": "Shop-floor display board for approved partners: global USD ounce, 24K–18K buy & sell in KWD, and other metals — branded Gold Standard."
     },
     "products": {
       "title": "Buy Gold Bars & Coins Kuwait · MOCI Certified | Gold Standard",
@@ -1058,11 +1058,15 @@
     "silverKilo": "Silver kilo reference: {{price}} KWD/kg (from feed)"
   },
   "companyPricesPage": {
-    "kicker": "Desk board",
-    "subtitle": "Simplified sell-only karat view for approved company counters.",
-    "boardTitle": "Sell rates by karat",
+    "kicker": "Shop display · Gold Standard",
+    "subtitle": "In-store screen board: USD ounce, buy & sell by karat, and other metals — with the Gold Standard logo.",
+    "boardTitle": "Gold buy & sell · 24K–18K",
+    "ounceKicker": "Global ounce",
+    "perGramHint": "KWD / gram",
+    "enterDisplay": "Display mode",
+    "exitDisplay": "Exit display",
     "karatLabel": "Karat",
-    "disclaimer": "Company board rates are indicative. Confirm the live sell price before quoting a customer.",
+    "disclaimer": "Rates are indicative for display. Confirm live buy and sell before quoting a customer.",
     "gate": {
       "checking": "Checking desk access…",
       "badge": "Company access · by request",
@@ -1083,14 +1087,15 @@
       "loginHint": "After approval, open the board with an account on the company email.",
       "loginCta": "Sign in",
       "formTitle": "Request company listing",
-      "formHint": "Business name, address, licence, official email, and phone are required.",
+      "formHint": "Business name, address, licence file, official email, and phone are required.",
       "fields": {
         "businessName": "Business name",
         "businessAddress": "Business address",
         "companyEmail": "Official company email",
         "contactName": "Contact name",
         "phone": "Phone",
-        "license": "Commercial licence no.",
+        "license": "Commercial licence",
+        "licenseHint": "Upload PDF or a clear photo (JPG/PNG/WEBP, max 10 MB). File is scanned before upload.",
         "message": "Note (optional)"
       },
       "submit": "Submit listing request",
@@ -1109,7 +1114,11 @@
         "businessName": "Enter the business name.",
         "businessAddress": "Enter the business address.",
         "companyEmail": "Enter a valid official company email.",
-        "license": "Enter the commercial licence number.",
+        "license": "Upload your commercial licence file.",
+        "licenseType": "Licence must be a PDF or image (JPG, PNG, WEBP).",
+        "licenseTooLarge": "Licence file is too large (max 10 MB).",
+        "licenseInfected": "That file failed the security scan. Upload a clean PDF or photo.",
+        "licenseScanUnavailable": "Security scan is temporarily unavailable. Try again in a few minutes.",
         "phone": "Enter a contact phone number.",
         "captcha": "Complete the security check and try again.",
         "generic": "Could not submit the request. Please try again."
@@ -2313,7 +2322,7 @@
         "access": "Verify email, set password & use the console"
       },
       "steps": {
-        "apply": "Enter business name, address, commercial licence, contact email, and phone.",
+        "apply": "Enter business name, address, commercial licence file, contact email, and phone.",
         "review": "You get an under-review email immediately. When Hub activates access you get an acceptance email + OTP.",
         "access": "Open /company-activate, verify the OTP, set a password, then sign in with the company email."
       },
@@ -2331,7 +2340,8 @@
       "fields": {
         "businessName": "Business name",
         "businessAddress": "Business address",
-        "license": "Business licence",
+        "license": "Commercial licence",
+        "licenseHint": "Upload PDF or a clear photo (JPG/PNG/WEBP, max 10 MB). File is scanned before upload.",
         "companyEmail": "Contact email",
         "phone": "Contact number"
       },
@@ -2351,7 +2361,11 @@
       "errors": {
         "businessName": "Enter the business name.",
         "businessAddress": "Enter the business address.",
-        "license": "Enter the business licence number.",
+        "license": "Upload your commercial licence file.",
+        "licenseType": "Licence must be a PDF or image (JPG, PNG, WEBP).",
+        "licenseTooLarge": "Licence file is too large (max 10 MB).",
+        "licenseInfected": "That file failed the security scan. Upload a clean PDF or photo.",
+        "licenseScanUnavailable": "Security scan is temporarily unavailable. Try again in a few minutes.",
         "companyEmail": "Enter a valid contact email.",
         "phone": "Enter a contact number.",
         "captcha": "Complete the security check and try again.",

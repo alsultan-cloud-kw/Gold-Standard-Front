@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Bell,
   Crown,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -37,6 +38,7 @@ import GoldPriceTicker from '@/components/sections/GoldPriceTicker'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
 import { PriceReminderPanel } from '@/components/reminders/PriceReminderPanel'
 import { scrollToHash } from '@/utils/scrollToHash'
+import { isCompanyDeskUser } from '@/lib/companyDeskScope'
 import {
   Sheet,
   SheetContent,
@@ -47,6 +49,7 @@ import {
 
 /** Tabs already pinned in the mobile bottom bar — excluded from the "More" sheet. */
 const BOTTOM_BAR_HREFS = ['/', '/products', '/prices', '/cart']
+const COMPANY_BOTTOM_BAR_HREFS = ['/gs-kyc', '/company-prices', '/contact']
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -60,9 +63,21 @@ export default function Navbar() {
   const topChromeRef = useRef<HTMLElement>(null)
   const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing, logout } = useAuth()
   const authPending = authLoading || isClerkSyncing
+  const companyDeskScoped =
+    isAuthenticated && isCompanyDeskUser(user) && !isStaffRole(user?.role)
+  /** Guests + staff + company desk see the partner entry; retail signed-in customers do not. */
+  const showCompanyDeskNav =
+    !isAuthenticated ||
+    authPending ||
+    isStaffRole(user?.role) ||
+    isCompanyDeskUser(user)
   const { complianceComplete, isLoading: complianceLoading } = useCustomerCompliance()
   const showHoldingsNav =
-    isAuthenticated && !authPending && !complianceLoading && complianceComplete
+    !companyDeskScoped &&
+    isAuthenticated &&
+    !authPending &&
+    !complianceLoading &&
+    complianceComplete
   const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
   const cartCount = getItemCount()
@@ -71,21 +86,31 @@ export default function Navbar() {
   const location = useLocation()
 
   const buyGoldPriceLabel = useMemo(() => {
+    if (companyDeskScoped) return null
     const usd = resolveAuthoritativeUsdOunceSpot(publicRates)
     if (usd == null) return null
     return `$${formatPrice(usd, 'USD/oz')}`
-  }, [publicRates])
+  }, [publicRates, companyDeskScoped])
 
   const iconBtnClass =
     'nav-icon-btn relative rounded-lg text-[#64748B] transition-colors hover:bg-black/[0.04] hover:text-[#0C1512]'
 
   const navLinks = useMemo(() => {
+    if (companyDeskScoped) {
+      return [
+        { nameKey: 'nav.customerKyc', href: '/gs-kyc' },
+        { nameKey: 'nav.companyPrices', href: '/company-prices' },
+        { nameKey: 'nav.contact', href: '/contact' },
+      ]
+    }
     const base: { nameKey: string; href: string; badgeKey?: string; badgeHintKey?: string }[] = [
       { nameKey: 'nav.home', href: '/' },
       { nameKey: 'nav.products', href: '/products' },
       { nameKey: 'nav.prices', href: '/prices' },
       { nameKey: 'nav.zakat', href: '/zakat', badgeKey: 'nav.zakatBetaBadge', badgeHintKey: 'nav.zakatBetaHint' },
-      { nameKey: 'nav.customerKyc', href: '/gs-kyc' },
+      ...(showCompanyDeskNav
+        ? [{ nameKey: 'nav.customerKyc', href: '/gs-kyc' }]
+        : []),
       ...(showHoldingsNav
         ? [
             {
@@ -104,7 +129,7 @@ export default function Navbar() {
       { nameKey: 'nav.contact', href: '/contact' },
     ]
     return base
-  }, [showHoldingsNav])
+  }, [showHoldingsNav, showCompanyDeskNav, companyDeskScoped])
 
   const handleLogout = () => {
     void (async () => {
@@ -116,13 +141,18 @@ export default function Navbar() {
         }
       }
       await logout()
-      navigate('/', { replace: true })
+      navigate(companyDeskScoped ? '/gs-kyc' : '/', { replace: true })
     })()
   }
 
   const moreSheetLinks = useMemo(
-    () => navLinks.filter((link) => !BOTTOM_BAR_HREFS.includes(link.href)),
-    [navLinks],
+    () =>
+      navLinks.filter((link) =>
+        companyDeskScoped
+          ? !COMPANY_BOTTOM_BAR_HREFS.includes(link.href)
+          : !BOTTOM_BAR_HREFS.includes(link.href),
+      ),
+    [navLinks, companyDeskScoped],
   )
 
   const isPathActive = (href: string) => {
@@ -241,7 +271,7 @@ export default function Navbar() {
       ref={topChromeRef}
       className="site-chrome-top fixed inset-x-0 top-0 z-50 w-full border-b border-black/5 bg-[var(--site-bg)]"
     >
-      <GoldPriceTicker />
+      {!companyDeskScoped ? <GoldPriceTicker /> : null}
 
       {/* Main Navbar */}
       <div className="page-shell min-w-0">
@@ -284,7 +314,7 @@ export default function Navbar() {
 
           {/* Right Section */}
           <div className="navbar-actions flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-1">
-            {!isProductsListPage ? (
+            {!isProductsListPage && !companyDeskScoped ? (
               <button
                 ref={searchToggleRef}
                 type="button"
@@ -336,12 +366,22 @@ export default function Navbar() {
                   </div>
                   <DropdownMenuItem
                     onClick={() =>
-                      navigate(isStaffRole(user?.role) ? '/admin' : '/dashboard')
+                      navigate(
+                        isStaffRole(user?.role)
+                          ? '/admin'
+                          : companyDeskScoped
+                            ? '/gs-kyc'
+                            : '/dashboard',
+                      )
                     }
                     className="cursor-pointer text-[#0C1512] hover:bg-[#ECFCCB]/50"
                   >
                     <User className="me-2 h-4 w-4" />
-                    {isStaffRole(user?.role) ? t('nav.adminPanel') : t('nav.dashboard')}
+                    {isStaffRole(user?.role)
+                      ? t('nav.adminPanel')
+                      : companyDeskScoped
+                        ? t('nav.customerKyc')
+                        : t('nav.dashboard')}
                   </DropdownMenuItem>
                   {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
                     <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-[#64748B]">
@@ -373,11 +413,14 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Link to="/cart" className={`${iconBtnClass} hidden xl:inline-flex`} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
-              <ShoppingCart className="h-5 w-5" strokeWidth={1.75} />
-              <CartCountBadge count={cartCount} />
-            </Link>
+            {!companyDeskScoped ? (
+              <Link to="/cart" className={`${iconBtnClass} hidden xl:inline-flex`} aria-label={t('nav.cart', { defaultValue: 'Cart' })}>
+                <ShoppingCart className="h-5 w-5" strokeWidth={1.75} />
+                <CartCountBadge count={cartCount} />
+              </Link>
+            ) : null}
 
+            {!companyDeskScoped ? (
             <Link
               to="/products"
               className="navbar-buy-cta ms-1 hidden max-w-[min(100%,18rem)] items-stretch overflow-hidden rounded-full bg-[#85E307] text-sm font-semibold text-[#0B0F19] shadow-sm transition-colors hover:bg-[#9AEF2A] sm:ms-2 xl:inline-flex"
@@ -393,6 +436,7 @@ export default function Navbar() {
               <span className="w-px self-stretch bg-black/15" aria-hidden />
               <span className="flex shrink-0 items-center px-3 py-2.5 xl:px-4">{t('nav.buyGold')}</span>
             </Link>
+            ) : null}
           </div>
         </div>
       </div>
@@ -443,7 +487,7 @@ export default function Navbar() {
           <div className="page-shell py-4 pb-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-sm font-bold text-[#0B0F19]">{t('nav.more')}</p>
-              {isAuthenticated ? (
+              {isAuthenticated && !companyDeskScoped ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -462,10 +506,22 @@ export default function Navbar() {
               {/* Same destinations as the profile icon menu — reachable from More on small screens. */}
               {isAuthenticated && !authPending ? (
                 <Link
-                  to={isStaffRole(user?.role) ? '/admin' : '/dashboard'}
+                  to={
+                    isStaffRole(user?.role)
+                      ? '/admin'
+                      : companyDeskScoped
+                        ? '/gs-kyc'
+                        : '/dashboard'
+                  }
                   onClick={() => setIsMenuOpen(false)}
                   className={`mobile-nav-link flex min-h-11 items-center gap-2.5 ${
-                    isPathActive(isStaffRole(user?.role) ? '/admin' : '/dashboard')
+                    isPathActive(
+                      isStaffRole(user?.role)
+                        ? '/admin'
+                        : companyDeskScoped
+                          ? '/gs-kyc'
+                          : '/dashboard',
+                    )
                       ? 'mobile-nav-link--active'
                       : ''
                   }`}
@@ -473,7 +529,11 @@ export default function Navbar() {
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#ECFCCB]">
                     <User className="h-3.5 w-3.5 text-[#3F6F00]" strokeWidth={2} aria-hidden />
                   </span>
-                  {isStaffRole(user?.role) ? t('nav.adminPanel') : t('nav.dashboard')}
+                  {isStaffRole(user?.role)
+                    ? t('nav.adminPanel')
+                    : companyDeskScoped
+                      ? t('nav.customerKyc')
+                      : t('nav.dashboard')}
                 </Link>
               ) : null}
               {moreSheetLinks.map((link) => (
@@ -605,6 +665,50 @@ export default function Navbar() {
       className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-[var(--site-bg)] xl:hidden"
     >
       <div className="mobile-bottom-nav__row flex min-h-[var(--bottom-nav-content)] items-stretch justify-around px-0.5 pt-1 pb-1">
+        {companyDeskScoped ? (
+          <>
+            <Link
+              to="/gs-kyc"
+              onClick={() => setIsMenuOpen(false)}
+              className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/gs-kyc') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+            >
+              <ShieldCheck className="h-5 w-5 shrink-0" strokeWidth={isPathActive('/gs-kyc') ? 2.5 : 1.75} />
+              <span className="mobile-bottom-nav__label">{t('nav.customerKyc')}</span>
+            </Link>
+            <Link
+              to="/company-prices"
+              onClick={() => setIsMenuOpen(false)}
+              className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/company-prices') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+            >
+              <TrendingUp className="h-5 w-5 shrink-0" strokeWidth={isPathActive('/company-prices') ? 2.5 : 1.75} />
+              <span className="mobile-bottom-nav__label">{t('nav.companyPrices')}</span>
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setIsMenuOpen(false)}
+              className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/contact') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+            >
+              <Home className="h-5 w-5 shrink-0" strokeWidth={isPathActive('/contact') ? 2.5 : 1.75} />
+              <span className="mobile-bottom-nav__label">{t('nav.contact')}</span>
+            </Link>
+            <button
+              type="button"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
+              onClick={() => {
+                closeSearch()
+                setIsMenuOpen(!isMenuOpen)
+              }}
+              className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isMenuOpen ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+            >
+              {isMenuOpen ? <X className="h-5 w-5 shrink-0" strokeWidth={2.5} /> : <Menu className="h-5 w-5 shrink-0" strokeWidth={1.75} />}
+              <span className="mobile-bottom-nav__label">
+                {isMenuOpen ? t('nav.menuClose') : t('nav.more')}
+              </span>
+            </button>
+          </>
+        ) : (
+          <>
         <Link
           to="/"
           onClick={() => setIsMenuOpen(false)}
@@ -659,6 +763,8 @@ export default function Navbar() {
             {isMenuOpen ? t('nav.menuClose') : t('nav.more')}
           </span>
         </button>
+          </>
+        )}
       </div>
     </nav>
     </>

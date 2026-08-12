@@ -1,6 +1,11 @@
 import type { User } from '../types'
 import { resolveAuthReturnPath } from './safeNextPath'
 import { getLastAuthMethod } from '@/lib/lastAuthMethod'
+import {
+  COMPANY_DESK_HOME,
+  isCompanyDeskAllowedPath,
+  isCompanyDeskUser,
+} from '@/lib/companyDeskScope'
 
 export const STAFF_ROLES = ['cashier', 'branch_manager', 'general_manager', 'admin'] as const
 
@@ -38,6 +43,14 @@ export function resolvePostAuthPath(
       return `/verify-account?next=${q}&returnUrl=${q}`
     }
     return '/verify-account'
+  }
+  // B2B company desk — AML tools only (not retail dashboard / storefront).
+  if (isCompanyDeskUser(user) && !isStaffRole(user?.role)) {
+    if (next) {
+      const pathOnly = next.split('?')[0] || next
+      if (isCompanyDeskAllowedPath(pathOnly)) return next
+    }
+    return COMPANY_DESK_HOME
   }
   if (next) return next
   if (isStaffRole(user?.role)) return '/admin'
