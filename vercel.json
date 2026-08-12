@@ -25,7 +25,7 @@
     { "source": "/__clerk/:path*", "destination": "/api/clerk-fapi/:path*" },
     { "source": "/.well-known/(.*)", "destination": "/.well-known/$1" },
     {
-      "source": "/((?!assets/|api/|og/|favicons/|videos/|fonts/|logo\\.png|robots\\.txt|sitemap\\.xml|account-data-deletion\\.html|\\.well-known/).*)",
+      "source": "/((?!assets/|api/|og/|favicons/|videos/|fonts/|logo\\.png|robots\\.txt|sitemap\\.xml|account-data-deletion\\.html|legal/|legal/index\\.html|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ]
