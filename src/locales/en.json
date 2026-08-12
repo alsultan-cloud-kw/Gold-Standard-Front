@@ -1590,7 +1590,7 @@
     "subtitle": "Keep this receipt for your records. These details match the KNET gateway transaction.",
     "paymentDetails": "Payment details",
     "merchant": "Merchant",
-    "orderNumber": "Order number",
+    "orderNumber": "Invoice number",
     "delivery": "Delivery",
     "deliveryPhysical": "Physical delivery",
     "deliveryVault": "Kept in vault — not shipped",
