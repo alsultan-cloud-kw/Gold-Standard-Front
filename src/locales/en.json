@@ -459,8 +459,9 @@
       }
     },
     "sultanTrust": {
-      "kicker": "Sultan Gold heritage",
-      "subtitle": "Gold Standard is part of {{brand}} — a trusted name in Kuwait’s gold market, from the Central Gold Market to insured delivery nationwide.",
+      "kicker": "Our story",
+      "title": "From Sultan Gold’s heritage to Gold Standard",
+      "subtitle": "A journey that began in the heart of Kuwait’s Central Gold Market, earned through craft and trust. Today we continue it with modern standards that make documenting gold — and clear ownership — part of every experience.",
       "yearsInKuwait": "Years in Kuwait",
       "customersServed": "Customers served",
       "goldDelivered": "Gold delivered",
@@ -1727,15 +1728,15 @@
   "aboutPage": {
     "kicker": "Our story",
     "title": "About us",
-    "hero": "Gold Standard is a branch of Sultan Gold — a Kuwaiti company that manufactures gold for investment and savings in its own facilities and supplies it to individuals and institutions. This is our full story: where we started, how every piece is made and inspected, and the principle we built the business on — never ask a customer to trust, give them something they can check.",
+    "hero": "Gold Standard is Kuwait’s company for gold for investment and savings. We manufacture in our own facilities and supply individuals and institutions. This is our full story: where we started, how every piece is made and inspected, and the principle we built the business on — never ask a customer to trust, give them something they can check.",
     "ctaShop": "Browse gold for investment and savings",
     "ctaContact": "Contact us",
     "storyKicker": "Who we are",
     "storyTitle": "Born in the gold souq, built for investors",
-    "storyBody": "Before Gold Standard was a storefront, it was a question inside the Sultan Gold factories: why do people buy gold they cannot easily prove they own, or trace back to its source?",
+    "storyBody": "Before Gold Standard was a storefront, it was a question on the factory floor: why do people buy gold they cannot easily prove they own, or trace back to its source?",
     "story": {
-      "p1": "The story starts with Sultan Gold — an established industrial name in Kuwait’s gold market, with decades of manufacturing, craftsmanship, and direct trade in the Central Gold Market behind it. From within that heritage, Gold Standard Jewellers and Precious Metals Company was registered under commercial licence No. 279/2026 from the Ministry of Commerce and Industry, as a branch of Sultan Gold dedicated to gold for investment and savings.",
-      "p2": "Investment bars, coins, and custom bullion are designed and produced inside Sultan Gold factories. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
+      "p1": "The story starts with Sultan Gold — an established industrial name in Kuwait’s gold market, with decades of manufacturing, craftsmanship, and direct trade in the Central Gold Market behind it. From within that heritage, Gold Standard Jewellers and Precious Metals Company was registered under commercial licence No. 279/2026 from the Ministry of Commerce and Industry, as a branch dedicated to gold for investment and savings.",
+      "p2": "Investment bars, coins, and custom bullion are designed and produced in our own facilities. That in-house capability gives us control over purity, weight, finishing, and packaging — from raw material through inspection, hallmarking, and certificate issuance.",
       "p3": "We could have simply sold bars like everyone else. But we saw an obvious gap: a buyer pays thousands of dinars and walks home with a piece of metal and a slip of paper. So we decided to build what did not exist in Kuwait — a system that makes every piece provable and traceable from factory to owner, because gold you cannot prove is a promise, not an asset.",
       "p4": "Today we serve individual savers and institutions with the same discipline: in-house manufacturing, documented ownership, and a clear experience from purchase to delivery. Our ambition is to build Kuwait’s infrastructure for gold ownership — not just another place to buy it.",
       "p5": "We organise buying and selling in accordance with Islamic Sharia principles, with documented ownership and secure custody until pickup or insured delivery. We do not offer direct gold-for-gold exchanges where weight or value differs. Instead, the existing gold is sold first and new gold is purchased through a separate transaction to avoid riba, subject to our terms and conditions."
@@ -1745,7 +1746,7 @@
     "profileIntro": "From a gold factory to a complete operation for gold for investment and savings — these are the key stages of the journey so far.",
     "milestones": {
       "kuwait": {
-        "title": "Roots — Sultan Gold",
+        "title": "Industrial roots",
         "body": "Decades of gold manufacturing and craftsmanship in the Kuwaiti market laid the foundation: industrial expertise, market relationships, and a reputation that preceded the new name."
       },
       "licence": {
@@ -1841,11 +1842,11 @@
       },
       "parent": {
         "title": "Parent company",
-        "description": "Sultan Gold — industrial expertise and production infrastructure behind every piece."
+        "description": "Industrial expertise and production infrastructure behind every piece."
       },
       "manufacture": {
         "title": "Made in-house",
-        "description": "Design and manufacturing inside Sultan Gold facilities, with disciplined quality control."
+        "description": "Design and manufacturing inside the group’s facilities, with disciplined quality control."
       },
       "specialty": {
         "title": "Gold for investment and savings",
@@ -1960,7 +1961,7 @@
       },
       "privateLabel": {
         "title": "Private-label manufacturing (OEM)",
-        "body": "Production under your brand inside Sultan Gold facilities: from design to packaging. Manufacturing depth without building a factory — with purity and finish standards that protect your name."
+        "body": "Production under your brand in our facilities: from design to packaging. Manufacturing depth without building a factory — with purity and finish standards that protect your name."
       },
       "wholesale": {
         "title": "Wholesale supply programmes",
@@ -2003,7 +2004,7 @@
       "sultanGold": {
         "role": "Parent manufacturing group",
         "name": "Sultan Gold",
-        "body": "Our parent brand and manufacturing backbone — gold dedicated to investment is produced inside Sultan Gold factories with the industrial depth behind Kuwait’s gold market."
+        "body": "Our parent brand and manufacturing backbone — gold for investment and savings is produced in the group’s facilities with the industrial depth behind Kuwait’s gold market."
       },
       "burgan": {
         "role": "Banking partner",
@@ -2290,18 +2291,21 @@
       "needHelp": "Need help? Contact us"
     },
     "companyActivate": {
-      "title": "Activate company access",
-      "subtitleRequest": "Enter the approved company email to receive a verification code",
-      "subtitleOtp": "Enter the 6-digit code from your email",
-      "subtitlePassword": "Choose a password for your company login",
-      "stepRequest": "Email",
-      "stepOtp": "Verify",
-      "stepPassword": "Password",
-      "emailLabel": "Company email",
-      "emailHint": "Use the same email from your company portal application after approval.",
+      "title": "Set up company sign-in",
+      "approvedBadge": "Company approved",
+      "approvedHint": "Your company has been approved successfully.",
+      "nextStepLabel": "Next step: set up your login credentials",
+      "subtitleRequest": "Your company is approved. Complete the steps below to create your sign-in credentials.",
+      "subtitleOtp": "We sent a 6-digit verification code to your approved company email.",
+      "subtitlePassword": "Create a secure password to use when signing in to your company account.",
+      "stepRequest": "Confirm email",
+      "stepOtp": "Verify email",
+      "stepPassword": "Create password",
+      "emailLabel": "Approved company email",
+      "emailHint": "Enter the email approved with Gold Standard.",
       "emailRequired": "Enter a valid company email",
       "sendCode": "Send verification code",
-      "backToGsKyc": "Back to customer screening",
+      "backToGsKyc": "Back to company screening",
       "codeSentTo": "Code sent to {{dest}}",
       "otpLabel": "6-digit code",
       "otpRequired": "Enter the 6-digit code",
@@ -2309,15 +2313,18 @@
       "resend": "Use a different email / resend",
       "newPassword": "New password",
       "confirmPassword": "Confirm password",
-      "setPassword": "Set password & continue",
+      "setPassword": "Save sign-in credentials",
+      "successTitle": "Your sign-in is set up",
+      "successBody": "Your company is approved, and your login credentials are ready.",
+      "successDetail": "Next, sign in with your email and password.",
+      "successLoginCta": "Sign in",
       "toasts": {
         "codeSent": "If this company is approved, a verification code was sent.",
         "sendFailed": "Could not send the code. Try again later.",
-        "verified": "Email verified — set your password",
+        "verified": "Email confirmed — create your password",
         "verifyFailed": "Invalid or expired code",
         "sessionExpired": "Session expired — request a new code",
-        "passwordSet": "Password saved. Sign in at company desk login",
-        "passwordFailed": "Could not save password"
+        "passwordFailed": "Could not save sign-in credentials"
       }
     },
     "companyLogin": {
@@ -2331,7 +2338,7 @@
       "submit": "Sign in to company desk",
       "signingIn": "Signing in…",
       "needActivate": "First time after approval?",
-      "activateLink": "Activate account",
+      "activateLink": "Set up sign-in credentials",
       "backToGate": "Back to company screening",
       "inactive": "Company desk access is not active for this email. Contact Gold Standard.",
       "useCompanyLogin": "This is a company desk account — use company sign-in."
@@ -2379,9 +2386,9 @@
         "prices": "The same approval also unlocks the company price board"
       },
       "alreadyAccount": "Already have an account?",
-      "loginHint": "After approval, activate your account, then sign in.",
+      "loginHint": "After approval, set up your sign-in credentials, then sign in.",
       "loginCta": "Company sign-in",
-      "activateCta": "Activate account",
+      "activateCta": "Set up sign-in",
       "formTitle": "Apply to join",
       "formHint": "All fields required. Use your official company email.",
       "fields": {
@@ -2400,7 +2407,7 @@
       "successAlreadyActive": "Access is active. Sign in via company sign-in.",
       "emailNote": "You’ll receive a message when we receive the request, and another when access is approved.",
       "statusPendingTitle": "Application under review",
-      "statusPendingBody": "We received «{{name}}». Access activates after management approval — watch your email.",
+      "statusPendingBody": "We received «{{name}}». Access unlocks after management approval — then set up sign-in from your email.",
       "statusInactiveTitle": "Access currently deactivated",
       "statusInactiveBody": "Your listing exists but access is off. Contact us or resubmit for review.",
       "statusRejectedTitle": "Previous application not approved",

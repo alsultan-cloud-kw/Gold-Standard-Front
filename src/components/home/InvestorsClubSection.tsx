@@ -15,8 +15,6 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react'
-import goldBarsUrl from '@/assets/home/gold-bullion.png'
-import clubNetworkUrl from '@/assets/home/club/club-network-diagram.png'
 import clubBullionUrl from '@/assets/home/club/club-example-bullion.png'
 import testimonialsShowcaseUrl from '@/assets/home/club/testimonials-showcase.png'
 import { useAuth } from '@/contexts/AuthContext'
@@ -152,43 +150,17 @@ export function InvestorsClubSection() {
       </div>
 
       <div className="home-section-inner investors-club__inner min-w-0">
-        {/* Compact hero */}
-        <div className="investors-club__hero">
-          <div className="investors-club__hero-visual min-w-0">
-            <div className="investors-club__hero-frame">
-              <div className="investors-club__hero-photo">
-                <img
-                  src={goldBarsUrl}
-                  alt=""
-                  className="h-full w-full object-cover object-center"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1A2E1C]/35 to-transparent" />
-              </div>
-              <div className="investors-club__hero-network">
-                <img
-                  src={clubNetworkUrl}
-                  alt={t('home.investorsClub.networkAlt')}
-                  className="mx-auto h-auto w-full max-w-[22rem] object-contain"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                />
-              </div>
-            </div>
-          </div>
-
+        {/* Text-first hero — no large media (avoids CLS / duplicate network art) */}
+        <header className="investors-club__hero">
           <div className="investors-club__hero-copy min-w-0">
             <p className="page-kicker mb-2 text-[#3F6F00]">{t('home.investorsClub.kicker')}</p>
             <h2 className="type-section-title mb-3 text-[#1A2E1C] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
               {t('home.investorsClub.title')}
             </h2>
-            <p className="mb-3 text-base font-semibold leading-relaxed text-[#1A2E1C] sm:text-lg">
+            <p className="investors-club__hero-tagline">
               {t('home.investorsClub.tagline')}
             </p>
-            <p className="mb-7 max-w-xl text-sm leading-relaxed text-[#64748B] sm:text-base">
+            <p className="investors-club__hero-desc">
               {t('home.investorsClub.desc')}
             </p>
 
@@ -227,7 +199,7 @@ export function InvestorsClubSection() {
               </p>
             ) : null}
           </div>
-        </div>
+        </header>
 
         {/* 01 — Social concept + profile card */}
         <div className="investors-club__block">
@@ -239,17 +211,7 @@ export function InvestorsClubSection() {
           <p className="investors-club__block-highlight">{t('home.investorsClub.section01Highlight')}</p>
           <p className="investors-club__flow">{t('home.investorsClub.flowLine')}</p>
 
-          <div className="investors-club__social-grid">
-            <div className="investors-club__network-wrap min-w-0">
-              <img
-                src={clubNetworkUrl}
-                alt={t('home.investorsClub.networkAlt')}
-                className="h-auto w-full max-w-lg object-contain"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </div>
+          <div className="investors-club__social-grid investors-club__social-grid--card-only">
             <div className="investors-club__profile-wrap min-w-0">
               <ClubProfileCard />
             </div>

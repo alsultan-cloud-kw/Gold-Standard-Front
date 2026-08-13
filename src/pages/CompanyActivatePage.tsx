@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Check, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '../services/api'
@@ -12,7 +12,7 @@ import { isTurnstileConfigured } from '@/lib/turnstile'
 import { getSafeUserErrorMessage } from '@/utils/apiErrors'
 import { cn } from '@/lib/utils'
 
-type Step = 'request' | 'otp' | 'password'
+type Step = 'request' | 'otp' | 'password' | 'done'
 
 function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
   if (!pw) return 0
@@ -24,12 +24,11 @@ function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
 }
 
 /**
- * After Hub activates a /gs-kyc company application:
- * email OTP → set password → redirect to login /gs-kyc.
+ * After Hub approval: email OTP → set password → success → company login.
+ * Does not issue an authenticated session (no auto sign-in).
  */
 export default function CompanyActivatePage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [step, setStep] = useState<Step>('request')
   const [isLoading, setIsLoading] = useState(false)
@@ -66,9 +65,15 @@ export default function CompanyActivatePage() {
   const fieldClass =
     'w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B0F19] outline-none placeholder:text-[#94A3B8] focus:border-[#85E307] focus:ring-2 focus:ring-[#85E307]/25'
   const labelClass = 'mb-1.5 block text-sm font-semibold text-[#0B0F19]'
+  const isDone = step === 'done'
 
-  const subtitle =
-    step === 'request'
+  const title = isDone
+    ? t('auth.companyActivate.successTitle')
+    : t('auth.companyActivate.title')
+
+  const subtitle = isDone
+    ? t('auth.companyActivate.successBody')
+    : step === 'request'
       ? t('auth.companyActivate.subtitleRequest')
       : step === 'otp'
         ? t('auth.companyActivate.subtitleOtp')
@@ -151,8 +156,11 @@ export default function CompanyActivatePage() {
         reset_token: resetToken,
         new_password: newPassword,
       })
-      toast.success(t('auth.companyActivate.toasts.passwordSet'))
-      navigate(`/company-login?email=${encodeURIComponent(email.trim())}`)
+      setResetToken(null)
+      setOtpCode('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setStep('done')
     } catch (err: unknown) {
       toast.error(getSafeUserErrorMessage(err, t, t('auth.companyActivate.toasts.passwordFailed')))
     } finally {
@@ -160,12 +168,35 @@ export default function CompanyActivatePage() {
     }
   }
 
+  const loginHref = `/company-login${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ''}`
+
   return (
     <AuthFlowShell
-      title={t('auth.companyActivate.title')}
+      title={title}
       subtitle={subtitle}
-      steps={flowSteps}
-      currentStepId={step}
+      steps={isDone ? undefined : flowSteps}
+      currentStepId={isDone ? undefined : step}
+      beforeTitle={
+        !isDone ? (
+          <div className="mx-auto mb-4 max-w-md rounded-xl border border-[#85E307]/40 bg-[#ECFCCB]/60 px-4 py-3 text-start">
+            <p className="flex items-center gap-2 text-sm font-semibold text-[#3F6F00]">
+              <span
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#85E307] text-[#0B0F19]"
+                aria-hidden
+              >
+                <Check className="h-3.5 w-3.5" strokeWidth={3} />
+              </span>
+              {t('auth.companyActivate.approvedBadge')}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-[#64748B] sm:text-sm">
+              {t('auth.companyActivate.approvedHint')}
+            </p>
+            <p className="mt-2 text-xs font-semibold text-[#1A2E1C] sm:text-sm">
+              {t('auth.companyActivate.nextStepLabel')}
+            </p>
+          </div>
+        ) : null
+      }
       footer={<AuthSupportFooter />}
     >
       {step === 'request' ? (
@@ -296,6 +327,31 @@ export default function CompanyActivatePage() {
             {t('auth.companyActivate.setPassword')}
           </button>
         </form>
+      ) : null}
+
+      {step === 'done' ? (
+        <div className="space-y-5 text-center">
+          <div
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#ECFCCB]"
+            aria-hidden
+          >
+            <Check className="h-7 w-7 text-[#3F6F00]" strokeWidth={2.5} />
+          </div>
+          <p className="text-sm leading-relaxed text-[#64748B]">
+            {t('auth.companyActivate.successDetail')}
+          </p>
+          <Link
+            to={loginHref}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B0F19] px-4 py-3 text-sm font-semibold text-white hover:bg-black"
+          >
+            {t('auth.companyActivate.successLoginCta')}
+          </Link>
+          <p className="text-xs text-[#64748B]">
+            <Link to="/gs-kyc" className="font-semibold text-[#3F6F00] underline-offset-2 hover:underline">
+              {t('auth.companyActivate.backToGsKyc')}
+            </Link>
+          </p>
+        </div>
       ) : null}
     </AuthFlowShell>
   )

@@ -99,9 +99,7 @@ function AnimatedStatValue({
 }
 
 export function SultanGoldTrustStats({ bullionDockRef, bullionTrustEndRef }: Props) {
-  const { t, i18n } = useTranslation()
-  const isAr = i18n.language === 'ar'
-  const brandName = isAr ? SULTAN_GOLD_BRAND.nameAr : SULTAN_GOLD_BRAND.nameEn
+  const { t } = useTranslation()
   const sectionRef = useRef<HTMLElement>(null)
   const [inView, setInView] = useState(false)
 
@@ -131,11 +129,12 @@ export function SultanGoldTrustStats({ bullionDockRef, bullionTrustEndRef }: Pro
           {bullionDockRef ? (
             <BullionEndDock slotRef={bullionDockRef} className="mb-2" />
           ) : null}
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F6F00]">
-            {t('home.sultanTrust.kicker')}
-          </p>
+          <p className="page-kicker text-[#3F6F00]">{t('home.sultanTrust.kicker')}</p>
+          <h2 className="max-w-3xl text-xl font-bold leading-snug tracking-tight text-[#1A2E1C] sm:text-2xl lg:text-[1.75rem]">
+            {t('home.sultanTrust.title')}
+          </h2>
           <p className="max-w-2xl text-sm leading-relaxed text-[#64748B] sm:text-base">
-            {t('home.sultanTrust.subtitle', { brand: brandName })}
+            {t('home.sultanTrust.subtitle')}
           </p>
         </div>
 

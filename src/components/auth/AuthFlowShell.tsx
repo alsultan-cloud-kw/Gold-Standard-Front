@@ -11,6 +11,8 @@ type Props = {
   subtitle?: string
   steps?: AuthFlowStep[]
   currentStepId?: string
+  /** Optional status / context above the page title (e.g. “company approved”). */
+  beforeTitle?: ReactNode
   children: ReactNode
   footer?: ReactNode
   className?: string
@@ -25,6 +27,7 @@ export function AuthFlowShell({
   subtitle,
   steps,
   currentStepId,
+  beforeTitle,
   children,
   footer,
   className,
@@ -38,6 +41,7 @@ export function AuthFlowShell({
   return (
     <div className={cn('min-h-screen bg-[var(--site-bg)] py-10 sm:py-16', className)}>
       <div className="page-shell page-shell--form">
+        {beforeTitle}
         <div className="mx-auto mb-6 max-w-md text-center sm:mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-[#0B0F19] sm:text-3xl">{title}</h1>
           {subtitle ? (
