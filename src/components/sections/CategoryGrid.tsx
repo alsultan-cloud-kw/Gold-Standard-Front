@@ -14,21 +14,22 @@ type CategoryResponse = {
   results: Category[]
 }
 
-function CategoryGridSkeleton() {
+function CategoryRailSkeleton() {
   return (
-    <section className="home-section">
+    <section className="home-section home-section--compact">
       <div className="home-section-inner">
         <div className="mb-8 space-y-3">
           <div className="h-3 w-28 animate-pulse rounded bg-[#E2E8F0]" />
           <div className="h-8 w-48 animate-pulse rounded-lg bg-[#E2E8F0]" />
         </div>
-        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 min-[380px]:gap-3.5 sm:gap-4 md:gap-5 @lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square animate-pulse rounded-2xl bg-gradient-to-br from-[#E2E8F0] to-[#F1F5F9]"
-            />
-          ))}
+        <div className="home-category-rail-wrap" aria-hidden>
+          <div className="home-category-rail">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="home-category-rail__item">
+                <div className="home-category-rail__skeleton" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -51,7 +52,7 @@ export default function CategoryGrid() {
   }, [data])
 
   if (isLoading) {
-    return <CategoryGridSkeleton />
+    return <CategoryRailSkeleton />
   }
 
   if (!roots.length) {
@@ -69,7 +70,7 @@ export default function CategoryGrid() {
       className="home-section home-section--compact bg-[var(--site-bg)]"
       aria-labelledby="home-categories-heading"
     >
-      <div className="home-section-inner @container">
+      <div className="home-section-inner">
         <HomeSectionHeader
           kicker={t('home.vaultCollections')}
           title={t('home.categories')}
@@ -79,21 +80,22 @@ export default function CategoryGrid() {
         />
 
         {/*
-          Responsive grid (no flush scroll rail):
-          — <380: 1 col
-          — 380–~1023 container: 2 cols with real gaps (fixes 584×849)
-          — @lg container: 3 cols
-          — @3xl container: 4 cols
+          Fixed-size horizontal rail — adding categories never reflows the page.
+          Snap + peek keep tiles big/clear while scrolling sideways only.
         */}
-        <div
-          id="home-categories-heading"
-          className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 min-[380px]:gap-3.5 sm:gap-4 md:gap-5 @lg:grid-cols-3 @3xl:grid-cols-4"
-        >
-          {roots.map((cat) => (
-            <div key={cat.id} className="min-w-0">
-              <VaultCategoryTile category={cat} label={rootLabel(cat)} />
-            </div>
-          ))}
+        <div className="home-category-rail-wrap">
+          <div
+            id="home-categories-heading"
+            className="home-category-rail"
+            role="list"
+            aria-label={t('home.categories')}
+          >
+            {roots.map((cat) => (
+              <div key={cat.id} className="home-category-rail__item" role="listitem">
+                <VaultCategoryTile category={cat} label={rootLabel(cat)} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
