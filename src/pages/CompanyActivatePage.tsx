@@ -152,7 +152,7 @@ export default function CompanyActivatePage() {
         new_password: newPassword,
       })
       toast.success(t('auth.companyActivate.toasts.passwordSet'))
-      navigate(`/login?next=${encodeURIComponent('/gs-kyc')}&email=${encodeURIComponent(email.trim())}`)
+      navigate(`/company-login?email=${encodeURIComponent(email.trim())}`)
     } catch (err: unknown) {
       toast.error(getSafeUserErrorMessage(err, t, t('auth.companyActivate.toasts.passwordFailed')))
     } finally {

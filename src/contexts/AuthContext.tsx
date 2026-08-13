@@ -11,7 +11,7 @@ import {
   SESSION_EXPIRED_EVENT,
 } from '@/lib/authSession'
 import {
-  clearSignInNudgeSuppress,
+  armSignInNudgeAfterLogout,
   suppressSignInNudge,
 } from '@/lib/signInNudgeGate'
 
@@ -35,6 +35,12 @@ interface AuthContextType {
     turnstile_token?: string
   }) => Promise<User>
   loginWithClerk: (clerkSessionToken: string) => Promise<User>
+  /** B2B company desk — email+password; requires Hub-approved listing. */
+  loginWithCompany: (credentials: {
+    email: string
+    password: string
+    turnstile_token?: string
+  }) => Promise<User>
   /** Persist Django JWTs from passwordless OTP verify (purpose=login). */
   loginWithSession: (payload: {
     access: string
@@ -173,6 +179,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return nextUser
   }
 
+  const loginWithCompany = async (credentials: {
+    email: string
+    password: string
+    turnstile_token?: string
+  }) => {
+    const response = await authApi.companyLogin(credentials)
+    localStorage.setItem('access_token', response.access)
+    localStorage.setItem('refresh_token', response.refresh)
+    beginAuthSession(response.access, response.refresh)
+    suppressSignInNudge()
+    const nextUser = response.user as User
+    setUser(nextUser)
+    setIsLoading(false)
+    markLoginSuccessPending()
+    return nextUser
+  }
+
   const loginWithSession = async (payload: {
     access: string
     refresh: string
@@ -209,7 +232,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSessionDeadline()
     setUser(null)
     setProfile(null)
-    clearSignInNudgeSuppress()
+    // Keep session nudge “shown” so One Tap does not re-arm immediately after logout.
+    armSignInNudgeAfterLogout()
     try {
       localStorage.removeItem('cart')
     } catch {
@@ -222,8 +246,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Logout API failed:', error)
       }
     }
-    // Brief delay so ClerkAuthBridge does not re-exchange before Clerk session ends.
-    await new Promise((r) => window.setTimeout(r, 50))
+    // Hold the bridge gate until callers finish Clerk signOut (useFullSignOut does Clerk first).
+    await new Promise((r) => window.setTimeout(r, 150))
     setIsLoggingOut(false)
   }
 
@@ -251,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setClerkSyncing,
         login,
         loginWithClerk,
+        loginWithCompany,
         loginWithSession,
         register,
         logout,

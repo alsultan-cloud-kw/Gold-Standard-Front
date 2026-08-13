@@ -209,7 +209,7 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
               {t('companyPricesPage.gate.loginHint')}{' '}
               {!user ? (
                 <Link
-                  to={`/login?next=${encodeURIComponent('/company-prices')}`}
+                  to="/company-login"
                   className="font-semibold text-[#3F6F00] underline-offset-2 hover:underline"
                 >
                   {t('companyPricesPage.gate.loginCta')}

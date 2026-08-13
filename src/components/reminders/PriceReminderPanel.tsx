@@ -24,6 +24,13 @@ export function PriceReminderPanel({ onSaved, className }: PriceReminderPanelPro
     inputDisabled,
     saveDisabled,
     createAlertsMutation,
+    pushOn,
+    setPushOn,
+    whatsappOn,
+    setWhatsappOn,
+    emailOn,
+    setEmailOn,
+    notificationMethod,
   } = usePriceReminder()
 
   return (
@@ -81,6 +88,66 @@ export function PriceReminderPanel({ onSaved, className }: PriceReminderPanelPro
         </div>
       </div>
 
+      <div className="mt-4 space-y-0 overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
+        {(
+          [
+            {
+              key: 'push',
+              on: pushOn,
+              set: setPushOn,
+              title: t('priceReminder.channelPush'),
+              hint: t('priceReminder.channelPushHint'),
+            },
+            {
+              key: 'whatsapp',
+              on: whatsappOn,
+              set: setWhatsappOn,
+              title: t('priceReminder.channelWhatsApp'),
+              hint: t('priceReminder.channelWhatsAppHint'),
+            },
+            {
+              key: 'email',
+              on: emailOn,
+              set: setEmailOn,
+              title: t('priceReminder.channelEmail'),
+              hint: t('priceReminder.channelEmailHint'),
+            },
+          ] as const
+        ).map((row, idx) => (
+          <div
+            key={row.key}
+            className={`flex items-center gap-3 px-3.5 py-3 ${
+              idx > 0 ? 'border-t border-black/[0.06]' : ''
+            }`}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-[#0B0F19]">{row.title}</p>
+              <p className="text-xs text-[#64748B]">{row.hint}</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={row.on}
+              onClick={() => row.set(!row.on)}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+                row.on ? 'bg-[#85E307]' : 'bg-zinc-300'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  row.on ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        ))}
+        {!notificationMethod ? (
+          <p className="border-t border-black/[0.06] px-3.5 py-2 text-xs font-medium text-red-600">
+            {t('priceReminder.needChannel')}
+          </p>
+        ) : null}
+      </div>
+
       <button
         type="button"
         onClick={() =>
@@ -114,3 +181,5 @@ export function PriceReminderPanel({ onSaved, className }: PriceReminderPanelPro
     </div>
   )
 }
+
+export default PriceReminderPanel

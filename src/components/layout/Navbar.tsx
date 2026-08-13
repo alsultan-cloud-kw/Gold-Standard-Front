@@ -15,8 +15,8 @@ import {
   Crown,
   ShieldCheck,
 } from 'lucide-react'
-import { useAuth as useClerkAuth } from '@clerk/react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useFullSignOut } from '@/hooks/useFullSignOut'
 import { useCart } from '../../contexts/CartContext'
 import logo from '../../assets/logo.png'
 import {
@@ -61,10 +61,21 @@ export default function Navbar() {
   const searchToggleRef = useRef<HTMLButtonElement>(null)
   const bottomNavRef = useRef<HTMLElement>(null)
   const topChromeRef = useRef<HTMLElement>(null)
-  const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing, logout } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, isClerkSyncing } = useAuth()
+  const { fullSignOut } = useFullSignOut()
   const authPending = authLoading || isClerkSyncing
+  const navigate = useNavigate()
+  const location = useLocation()
   const companyDeskScoped =
     isAuthenticated && isCompanyDeskUser(user) && !isStaffRole(user?.role)
+  const onCompanyPublicPath =
+    location.pathname === '/gs-kyc'
+    || location.pathname.startsWith('/gs-kyc/')
+    || location.pathname === '/company-prices'
+    || location.pathname.startsWith('/company-prices/')
+    || location.pathname === '/company-login'
+    || location.pathname === '/company-activate'
+  const guestAuthHref = onCompanyPublicPath || companyDeskScoped ? '/company-login' : '/login'
   /** Guests + staff + company desk see the partner entry; retail signed-in customers do not. */
   const showCompanyDeskNav =
     !isAuthenticated ||
@@ -78,12 +89,9 @@ export default function Navbar() {
     !authPending &&
     !complianceLoading &&
     complianceComplete
-  const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
   const { getItemCount } = useCart()
   const cartCount = getItemCount()
   const { data: publicRates } = useEnrichedPublicRates(30_000)
-  const navigate = useNavigate()
-  const location = useLocation()
 
   const buyGoldPriceLabel = useMemo(() => {
     if (companyDeskScoped) return null
@@ -133,15 +141,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     void (async () => {
-      if (clerkSignedIn) {
-        try {
-          await clerkSignOut()
-        } catch (e) {
-          console.error('Clerk signOut failed:', e)
-        }
-      }
-      await logout()
-      navigate(companyDeskScoped ? '/gs-kyc' : '/', { replace: true })
+      await fullSignOut()
+      navigate(companyDeskScoped ? '/company-login' : '/', { replace: true })
     })()
   }
 
@@ -408,7 +409,7 @@ export default function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/login" className={iconBtnClass} aria-label={t('nav.login')}>
+              <Link to={guestAuthHref} className={iconBtnClass} aria-label={t('nav.login')}>
                 <User className="h-5 w-5" strokeWidth={1.75} />
               </Link>
             )}
@@ -584,11 +585,13 @@ export default function Navbar() {
                 </div>
               ) : !isAuthenticated ? (
                 <Link
-                  to="/login"
+                  to={guestAuthHref}
                   onClick={() => setIsMenuOpen(false)}
                   className="ds-btn-primary mt-2 px-4 py-3 text-center"
                 >
-                  {t('nav.loginRegister')}
+                  {onCompanyPublicPath || companyDeskScoped
+                    ? t('auth.companyLogin.submit')
+                    : t('nav.loginRegister')}
                 </Link>
               ) : (
                 <button

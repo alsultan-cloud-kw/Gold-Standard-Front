@@ -1,28 +1,20 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ExternalLink, LogOut } from 'lucide-react'
-import { useAuth as useClerkAuth } from '@clerk/react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useFullSignOut } from '@/hooks/useFullSignOut'
 import logo from '@/assets/logo.png'
 import { cn } from '@/lib/utils'
 
 export default function AdminTopBar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const { isSignedIn: clerkSignedIn, signOut: clerkSignOut } = useClerkAuth()
+  const { user } = useAuth()
+  const { fullSignOut } = useFullSignOut()
 
   const handleLogout = () => {
     void (async () => {
-      if (clerkSignedIn) {
-        try {
-          await clerkSignOut()
-        } catch (e) {
-          console.error('Clerk signOut failed:', e)
-        }
-      }
-      await logout()
+      await fullSignOut()
       navigate('/login', { replace: true })
     })()
   }

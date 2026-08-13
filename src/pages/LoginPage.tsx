@@ -186,10 +186,20 @@ export default function LoginPage() {
       completeAuthNavigation(navigate, loggedInUser, nextPath)
     } catch (err: unknown) {
       clearTurnstile()
-      const res = (err as { response?: { status?: number; data?: { error?: string; admin_email?: string } } })
-        ?.response
+      const res = (err as {
+        response?: { status?: number; data?: { error?: string; code?: string; admin_email?: string } }
+      })?.response
       if (res?.status === 400 && res?.data?.error === 'captcha_failed') {
         toast.error(t('auth.captchaFailed'))
+      } else if (
+        res?.status === 403 &&
+        (res?.data?.error === 'use_company_login' || res?.data?.code === 'use_company_login')
+      ) {
+        toast.error(t('auth.companyLogin.useCompanyLogin'))
+        navigate(
+          `/company-login${formData.email.trim() ? `?email=${encodeURIComponent(formData.email.trim())}` : ''}`,
+          { replace: true },
+        )
       } else if (res?.status === 403 && res?.data?.error === 'inactive') {
         const adminEmail = res.data.admin_email || GS_CONTACT.email
         toast.error(

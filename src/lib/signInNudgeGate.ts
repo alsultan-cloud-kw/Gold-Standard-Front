@@ -62,14 +62,23 @@ export function suppressSignInNudge(): void {
   cancelGoogleOneTap()
 }
 
-/** After logout — allow nudge again in this tab (respects 24h dismiss). */
+/** After logout — drop post-login suppress so guests can sign in again via /login. */
 export function clearSignInNudgeSuppress(): void {
   try {
     sessionStorage.removeItem(SIGNIN_NUDGE_SUPPRESS_KEY)
-    sessionStorage.removeItem(SIGNIN_NUDGE_SESSION_KEY)
   } catch {
     // ignore
   }
+}
+
+/**
+ * After logout — do not auto One Tap again in this tab.
+ * Keeps session “already shown” so Google does not silently re-prompt.
+ */
+export function armSignInNudgeAfterLogout(): void {
+  clearSignInNudgeSuppress()
+  markSignInNudgeShownThisSession()
+  cancelGoogleOneTap()
 }
 
 export function hasDjangoJwt(): boolean {

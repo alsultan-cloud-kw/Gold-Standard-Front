@@ -2,6 +2,31 @@ import type { DaralsabaekPublicRatesResponse } from '../services/api'
 
 export type PriceReminderBuildErrorCode = 'liveRatesUnavailable' | 'invalidDelta' | 'noValidRates'
 
+export type NotificationMethod =
+  | 'push'
+  | 'whatsapp'
+  | 'email'
+  | 'both'
+  | 'all'
+  | 'push_email'
+  | 'whatsapp_email'
+
+export function resolveNotificationMethod(opts: {
+  push: boolean
+  whatsapp: boolean
+  email: boolean
+}): NotificationMethod | null {
+  const { push, whatsapp, email } = opts
+  if (push && whatsapp && email) return 'all'
+  if (push && whatsapp) return 'both'
+  if (push && email) return 'push_email'
+  if (whatsapp && email) return 'whatsapp_email'
+  if (push) return 'push'
+  if (whatsapp) return 'whatsapp'
+  if (email) return 'email'
+  return null
+}
+
 type SpotMetal = 'gold'
 
 /**
@@ -12,8 +37,9 @@ export function buildSpotPriceAlertPayloads(params: {
   res: DaralsabaekPublicRatesResponse | undefined
   delta: number
   deltaValid: boolean
+  notificationMethod?: NotificationMethod
 }): { ok: true; payloads: unknown[] } | { ok: false; errorCode: PriceReminderBuildErrorCode } {
-  const { res, delta, deltaValid } = params
+  const { res, delta, deltaValid, notificationMethod = 'both' } = params
 
   if (!res?.succeeded || !Array.isArray(res.carats)) {
     return { ok: false, errorCode: 'liveRatesUnavailable' }
@@ -54,8 +80,7 @@ export function buildSpotPriceAlertPayloads(params: {
         reminder_mode: 'delta',
         delta_value: delta.toFixed(3),
         baseline_rates: baselineRates,
-        // WhatsApp + push when the account has an opted-in mobile/web Device (Django beat).
-        notification_method: 'both',
+        notification_method: notificationMethod,
       },
     ],
   }

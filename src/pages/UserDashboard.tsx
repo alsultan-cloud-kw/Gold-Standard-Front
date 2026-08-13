@@ -24,6 +24,7 @@ import {
   Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useFullSignOut } from '@/hooks/useFullSignOut'
 import { PaymentActionTimeline } from '@/components/orders/PaymentActionTimeline'
 import { RegionFlagImg } from '../components/RegionFlagImg'
 import { RegionSelectField } from '@/components/auth/RegionSelectField'
@@ -232,8 +233,16 @@ export default function UserDashboard() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
+  const { fullSignOut } = useFullSignOut()
   const { t, i18n } = useTranslation()
+
+  const handleLogout = () => {
+    void (async () => {
+      await fullSignOut()
+      navigate('/', { replace: true })
+    })()
+  }
 
   const selectTab = (tabId: string) => {
     setActiveTab(tabId)
@@ -339,7 +348,7 @@ export default function UserDashboard() {
                   tabs={tabs}
                   activeTab={activeTab}
                   onSelectTab={selectTab}
-                  onLogout={logout}
+                  onLogout={handleLogout}
                   onNavAction={() => setMobileNavOpen(false)}
                   t={t}
                 />
@@ -353,7 +362,7 @@ export default function UserDashboard() {
               tabs={tabs}
               activeTab={activeTab}
               onSelectTab={selectTab}
-              onLogout={logout}
+              onLogout={handleLogout}
               t={t}
             />
           </aside>
@@ -3501,6 +3510,9 @@ function NotificationsTab() {
   const [webPushSupported, setWebPushSupported] = useState(false)
   const [webPushBusy, setWebPushBusy] = useState(false)
   const [vapidReady, setVapidReady] = useState<boolean | null>(null)
+  const [emailOn, setEmailOn] = useState(true)
+  const [whatsappOn, setWhatsappOn] = useState(false)
+  const [prefsBusy, setPrefsBusy] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['priceAlerts'],
@@ -3510,13 +3522,12 @@ function NotificationsTab() {
   })
 
   useEffect(() => {
-    // Mark current device as "seen" when the user opens the notifications tab.
     try {
       const nowIso = new Date().toISOString()
       localStorage.setItem(storageKey, nowIso)
       setLastSeenAtMs(new Date(nowIso).getTime())
     } catch {
-      // ignore localStorage issues
+      // ignore
     }
   }, [])
 
@@ -3530,9 +3541,18 @@ function NotificationsTab() {
       if (cancelled) return
       setWebPushSupported(isWebPushSupported())
       setWebPushOn(await getWebPushPreference())
-      // VAPID comes from Django (VAPID_PUBLIC_KEY / FIREBASE_VAPID_KEY) — not Vercel.
       const key = await fetchVapidPublicKey()
       if (!cancelled) setVapidReady(Boolean(key) && isFirebaseWebConfigured())
+      try {
+        const { fetchNotificationPreferences } = await import('@/lib/notificationPreferences')
+        const prefs = await fetchNotificationPreferences()
+        if (cancelled) return
+        setEmailOn(prefs.email_enabled)
+        setWhatsappOn(prefs.whatsapp_enabled)
+        setWebPushOn(prefs.push_enabled)
+      } catch {
+        // prefs endpoint may be unavailable before migrate
+      }
     })()
     return () => {
       cancelled = true
@@ -3565,8 +3585,10 @@ function NotificationsTab() {
       if (next && !ok) {
         setWebPushOn(false)
         toast.error(t('userDashboard.notificationsPanel.webPushFailed'))
-      } else if (next) {
-        toast.success(t('userDashboard.notificationsPanel.webPushEnabled'))
+      } else {
+        const { patchNotificationPreferences } = await import('@/lib/notificationPreferences')
+        await patchNotificationPreferences({ push_enabled: next && ok })
+        if (next && ok) toast.success(t('userDashboard.notificationsPanel.webPushEnabled'))
       }
     } catch {
       setWebPushOn(!next)
@@ -3576,43 +3598,96 @@ function NotificationsTab() {
     }
   }
 
+  const onTogglePref = async (
+    key: 'email_enabled' | 'whatsapp_enabled',
+    next: boolean,
+  ) => {
+    setPrefsBusy(true)
+    if (key === 'email_enabled') setEmailOn(next)
+    else setWhatsappOn(next)
+    try {
+      const { patchNotificationPreferences } = await import('@/lib/notificationPreferences')
+      await patchNotificationPreferences({ [key]: next })
+    } catch {
+      if (key === 'email_enabled') setEmailOn(!next)
+      else setWhatsappOn(!next)
+      toast.error(t('userDashboard.notificationsPanel.prefSaveFailed'))
+    } finally {
+      setPrefsBusy(false)
+    }
+  }
+
+  const ChannelRow = ({
+    title,
+    hint,
+    on,
+    busy,
+    onToggle,
+  }: {
+    title: string
+    hint: string
+    on: boolean
+    busy?: boolean
+    onToggle: (next: boolean) => void
+  }) => (
+    <div className="flex items-center gap-3 px-4 py-3.5">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-sm font-semibold text-[#0B0F19]">{title}</h3>
+        <p className="mt-0.5 text-xs text-[#64748B]">{hint}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        disabled={busy}
+        onClick={() => onToggle(!on)}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+          on ? 'bg-[#85E307]' : 'bg-zinc-300'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+            on ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </div>
+  )
+
   return (
     <div className={dashboardPanelClass}>
       <h2 className="dashboard-panel__title">{t('userDashboard.tabs.notifications')}</h2>
       <p className="dashboard-panel__subtitle">{t('userDashboard.notificationsPanel.intro')}</p>
 
-      {webPushSupported ? (
-        <div className="dashboard-inset-panel mb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-base font-semibold text-[#0B0F19]">
-                {t('userDashboard.notificationsPanel.webPushTitle')}
-              </h3>
-              <p className="mt-1 text-sm text-[#64748B]">
-                {vapidReady === false
-                  ? t('userDashboard.notificationsPanel.webPushWaitingCreds')
-                  : t('userDashboard.notificationsPanel.webPushHint')}
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={webPushOn}
-              disabled={webPushBusy}
-              onClick={() => void onToggleWebPush(!webPushOn)}
-              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-                webPushOn ? 'bg-[#85E307]' : 'bg-zinc-300'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                  webPushOn ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <div className="mb-6 overflow-hidden rounded-2xl border border-black/[0.08] bg-white divide-y divide-black/[0.06]">
+        {webPushSupported ? (
+          <ChannelRow
+            title={t('userDashboard.notificationsPanel.webPushTitle')}
+            hint={
+              vapidReady === false
+                ? t('userDashboard.notificationsPanel.webPushWaitingCreds')
+                : t('userDashboard.notificationsPanel.webPushHint')
+            }
+            on={webPushOn}
+            busy={webPushBusy}
+            onToggle={(n) => void onToggleWebPush(n)}
+          />
+        ) : null}
+        <ChannelRow
+          title={t('userDashboard.notificationsPanel.emailTitle')}
+          hint={t('userDashboard.notificationsPanel.emailHint')}
+          on={emailOn}
+          busy={prefsBusy}
+          onToggle={(n) => void onTogglePref('email_enabled', n)}
+        />
+        <ChannelRow
+          title={t('userDashboard.notificationsPanel.whatsappTitle')}
+          hint={t('userDashboard.notificationsPanel.whatsappHint')}
+          on={whatsappOn}
+          busy={prefsBusy}
+          onToggle={(n) => void onTogglePref('whatsapp_enabled', n)}
+        />
+      </div>
 
       {isLoading ? (
         <p className="dashboard-empty">{t('common.loading')}</p>

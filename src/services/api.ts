@@ -160,6 +160,18 @@ export const authApi = {
   }) =>
     apiService.post<{ user: unknown; refresh: string; access: string }>('/accounts/users/login/', credentials),
 
+  companyLogin: (credentials: {
+    email: string
+    password: string
+    turnstile_token?: string
+  }) =>
+    apiService.post<{
+      user: unknown
+      refresh: string
+      access: string
+      company_desk?: boolean
+    }>('/accounts/users/company_login/', credentials),
+
   clerkLogin: (clerkSessionToken: string) =>
     apiService.post<{ user: unknown; refresh: string; access: string; created?: boolean }>(
       '/accounts/users/clerk_login/',

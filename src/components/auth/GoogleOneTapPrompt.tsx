@@ -37,7 +37,7 @@ export default function GoogleOneTapPrompt() {
   const { pathname } = useLocation()
   const { isSignedIn, isLoaded: clerkLoaded } = useClerkAuth()
   const clerk = useClerk()
-  const { isAuthenticated, isLoading: authLoading, isClerkSyncing } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, isClerkSyncing, isLoggingOut } = useAuth()
   const [showFallback, setShowFallback] = useState(false)
   const [oauthBusy, setOauthBusy] = useState(false)
   const promptedRef = useRef(false)
@@ -52,6 +52,7 @@ export default function GoogleOneTapPrompt() {
     && clerk.loaded
     && !authLoading
     && !isClerkSyncing
+    && !isLoggingOut
     && !isAuthenticated
     && !isSignedIn
     && !hasDjangoJwt()
@@ -61,14 +62,21 @@ export default function GoogleOneTapPrompt() {
 
   // Hard cancel whenever the user is signed in / syncing / suppressed.
   useEffect(() => {
-    if (isAuthenticated || isSignedIn || isClerkSyncing || hasDjangoJwt() || isSignInNudgeSuppressed()) {
+    if (
+      isAuthenticated
+      || isSignedIn
+      || isClerkSyncing
+      || isLoggingOut
+      || hasDjangoJwt()
+      || isSignInNudgeSuppressed()
+    ) {
       cancelGoogleOneTap()
       setShowFallback(false)
       if (isAuthenticated || hasDjangoJwt()) {
         suppressSignInNudge()
       }
     }
-  }, [isAuthenticated, isSignedIn, isClerkSyncing])
+  }, [isAuthenticated, isSignedIn, isClerkSyncing, isLoggingOut])
 
   useEffect(() => {
     if (!showPrompt) {
