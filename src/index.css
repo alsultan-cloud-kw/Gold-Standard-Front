@@ -1586,8 +1586,8 @@
   }
 
   /*
-   * Investors Club landing — text-first hero (no oversized media).
-   * Logical start/end for RTL (ar) + LTR (en). Making-charge example keeps bullion.
+   * Investors Club — centered hero (all breakpoints) + network diagram in §01.
+   * Avoid start-aligned “side hug” on wide screens. Constrained diagram size = no layout break.
    */
   .investors-club__inner {
     display: flex;
@@ -1598,15 +1598,14 @@
   .investors-club__hero {
     display: block;
     width: 100%;
-    max-width: 40rem;
+    max-width: min(40rem, 100%);
     margin-inline: auto;
     padding-block: clamp(0.25rem, 1vw, 0.75rem);
   }
 
   @media (min-width: 1024px) {
     .investors-club__hero {
-      max-width: 44rem;
-      margin-inline: 0;
+      max-width: min(46rem, 100%);
     }
   }
 
@@ -1614,45 +1613,30 @@
     text-align: center;
   }
 
-  @media (min-width: 1024px) {
-    .investors-club__hero-copy {
-      text-align: start;
-    }
+  .investors-club__hero-title {
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
   }
 
   .investors-club__hero-tagline {
     margin-bottom: 0.75rem;
-    font-size: 1rem;
+    margin-inline: auto;
+    max-width: 36rem;
+    font-size: clamp(1rem, 2vw, 1.2rem);
     font-weight: 600;
     line-height: 1.55;
     color: #1a2e1c;
   }
 
-  @media (min-width: 640px) {
-    .investors-club__hero-tagline {
-      font-size: 1.125rem;
-    }
-  }
-
   .investors-club__hero-desc {
     margin-bottom: 1.75rem;
-    max-width: 36rem;
+    max-width: 38rem;
     margin-inline: auto;
-    font-size: 0.875rem;
+    font-size: clamp(0.9375rem, 1.6vw, 1.0625rem);
     line-height: 1.65;
     color: #64748b;
-  }
-
-  @media (min-width: 640px) {
-    .investors-club__hero-desc {
-      font-size: 1rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .investors-club__hero-desc {
-      margin-inline: 0;
-    }
   }
 
   .investors-club__cta-row {
@@ -1668,12 +1652,7 @@
       flex-direction: row;
       flex-wrap: wrap;
       align-items: center;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .investors-club__cta-row:not(.investors-club__cta-row--center) {
-      justify-content: start;
+      justify-content: center;
     }
   }
 
@@ -1749,10 +1728,8 @@
     color: #64748b;
   }
 
-  @media (min-width: 1024px) {
-    .investors-club__login-hint {
-      justify-content: start;
-    }
+  .investors-club__login-hint--center {
+    justify-content: center;
   }
 
   .investors-club__block-title {
@@ -1823,18 +1800,40 @@
   .investors-club__social-grid {
     display: grid;
     align-items: center;
-    gap: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .investors-club__social-grid--card-only {
     justify-items: center;
+    gap: clamp(1.25rem, 3vw, 2rem);
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 56rem;
+    margin-inline: auto;
   }
 
   @media (min-width: 900px) {
-    .investors-club__social-grid:not(.investors-club__social-grid--card-only) {
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 1.5rem;
+    .investors-club__social-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: 1.75rem;
+    }
+  }
+
+  .investors-club__network-wrap {
+    display: flex;
+    width: 100%;
+    max-width: 28rem;
+    justify-content: center;
+    margin-inline: auto;
+  }
+
+  .investors-club__network-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 26rem;
+    object-fit: contain;
+  }
+
+  @media (max-width: 359px) {
+    .investors-club__network-img {
+      max-width: 100%;
     }
   }
 
@@ -1844,8 +1843,17 @@
     margin-inline: auto;
   }
 
-  .investors-club__social-grid--card-only .investors-club__profile-wrap {
-    max-width: 24rem;
+  @media (min-width: 900px) {
+    .investors-club__profile-wrap {
+      max-width: none;
+      margin-inline: 0;
+      justify-self: stretch;
+    }
+
+    .investors-club__network-wrap {
+      max-width: none;
+      margin-inline: 0;
+    }
   }
 
   .investors-club__profile-card {

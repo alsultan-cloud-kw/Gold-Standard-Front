@@ -15,6 +15,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react'
+import clubExplanationUrl from '@/assets/home/club/club-explanation.png'
 import clubBullionUrl from '@/assets/home/club/club-example-bullion.png'
 import testimonialsShowcaseUrl from '@/assets/home/club/testimonials-showcase.png'
 import { useAuth } from '@/contexts/AuthContext'
@@ -150,11 +151,11 @@ export function InvestorsClubSection() {
       </div>
 
       <div className="home-section-inner investors-club__inner min-w-0">
-        {/* Text-first hero — no large media (avoids CLS / duplicate network art) */}
+        {/* Centered hero — network diagram lives in §01 (social concept) */}
         <header className="investors-club__hero">
           <div className="investors-club__hero-copy min-w-0">
             <p className="page-kicker mb-2 text-[#3F6F00]">{t('home.investorsClub.kicker')}</p>
-            <h2 className="type-section-title mb-3 text-[#1A2E1C] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+            <h2 className="investors-club__hero-title type-section-title text-[#1A2E1C]">
               {t('home.investorsClub.title')}
             </h2>
             <p className="investors-club__hero-tagline">
@@ -164,7 +165,7 @@ export function InvestorsClubSection() {
               {t('home.investorsClub.desc')}
             </p>
 
-            <div className="investors-club__cta-row">
+            <div className="investors-club__cta-row investors-club__cta-row--center">
               <Link
                 to={openHref}
                 aria-disabled={authLoading || undefined}
@@ -193,7 +194,7 @@ export function InvestorsClubSection() {
               </Link>
             </div>
             {!isAuthenticated && !authLoading ? (
-              <p className="investors-club__login-hint">
+              <p className="investors-club__login-hint investors-club__login-hint--center">
                 <Check className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" strokeWidth={2.5} aria-hidden />
                 <span className="min-w-0">{t('home.investorsClub.loginRequiredHint')}</span>
               </p>
@@ -201,7 +202,7 @@ export function InvestorsClubSection() {
           </div>
         </header>
 
-        {/* 01 — Social concept + profile card */}
+        {/* 01 — Social concept: network diagram + profile card */}
         <div className="investors-club__block">
           <p className="page-kicker mb-2 text-center text-[#3F6F00]">
             {t('home.investorsClub.section01Eyebrow')}
@@ -211,7 +212,19 @@ export function InvestorsClubSection() {
           <p className="investors-club__block-highlight">{t('home.investorsClub.section01Highlight')}</p>
           <p className="investors-club__flow">{t('home.investorsClub.flowLine')}</p>
 
-          <div className="investors-club__social-grid investors-club__social-grid--card-only">
+          <div className="investors-club__social-grid">
+            <div className="investors-club__network-wrap min-w-0">
+              <img
+                src={clubExplanationUrl}
+                alt={t('home.investorsClub.networkAlt')}
+                className="investors-club__network-img"
+                width={1024}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+              />
+            </div>
             <div className="investors-club__profile-wrap min-w-0">
               <ClubProfileCard />
             </div>
