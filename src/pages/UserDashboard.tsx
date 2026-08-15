@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -21,6 +21,9 @@ import {
   ExternalLink,
   ArrowUpRight,
   Menu,
+  Camera,
+  Trash2,
+  Loader2,
   Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -144,10 +147,13 @@ function DashboardUserChip({
   t: ReturnType<typeof useTranslation>['t']
   compact?: boolean
 }) {
+  const avatarUrl = typeof user?.avatar_url === 'string' ? user.avatar_url.trim() : ''
   return (
     <div className={cn('dashboard-sidebar__user', compact && 'dashboard-sidebar__user--compact')}>
       <div className={cn('dashboard-sidebar__avatar', compact && 'dashboard-sidebar__avatar--compact')}>
-        {user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+        ) : user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
           <RegionFlagImg
             code={user.nationality}
             size="md"
@@ -329,7 +335,11 @@ export default function UserDashboard() {
               <p className="dashboard-mobile-bar__user truncate">{user?.full_name || user?.email}</p>
             </div>
             <div className="dashboard-sidebar__avatar dashboard-sidebar__avatar--compact shrink-0">
-              {userInitial}
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                userInitial
+              )}
             </div>
           </div>
 
@@ -1055,6 +1065,8 @@ function ProfileTab() {
   const [savingKyc, setSavingKyc] = useState(false)
   /** Silent background OCR after identity upload — no user-facing controls. */
   const [awaitingSilentOcr, setAwaitingSilentOcr] = useState(false)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement | null>(null)
 
   const purchaseBlocked = useMemo(() => {
     if (!user) return false
@@ -1129,6 +1141,48 @@ function ProfileTab() {
       window.clearInterval(id)
     }
   }, [profile?.id, awaitingSilentOcr, queryClient, refreshUser])
+
+  const handleAvatarPick = async (file: File | null) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('userDashboard.profile.toasts.avatarMustBeImage'))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('userDashboard.profile.toasts.avatarTooLarge'))
+      return
+    }
+    setAvatarBusy(true)
+    try {
+      await authApi.uploadAvatar(file)
+      await refreshUser()
+      toast.success(t('userDashboard.profile.toasts.avatarUpdated'))
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined
+      toast.error(detail || t('userDashboard.profile.toasts.avatarUploadFailed'))
+    } finally {
+      setAvatarBusy(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
+
+  const handleAvatarDelete = async () => {
+    if (!user?.avatar_url) return
+    if (!window.confirm(t('userDashboard.profile.deletePhotoConfirm'))) return
+    setAvatarBusy(true)
+    try {
+      await authApi.deleteAvatar()
+      await refreshUser()
+      toast.success(t('userDashboard.profile.toasts.avatarRemoved'))
+    } catch {
+      toast.error(t('userDashboard.profile.toasts.avatarRemoveFailed'))
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1226,6 +1280,63 @@ function ProfileTab() {
   return (
     <div className={dashboardPanelClass}>
       <h2 className="dashboard-panel__title">{t('userDashboard.profile.title')}</h2>
+
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="dashboard-sidebar__avatar h-20 w-20 text-2xl shadow-md">
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+          ) : user?.nationality && /^[A-Za-z]{2}$/.test(user.nationality) ? (
+            <RegionFlagImg
+              code={user.nationality}
+              size="md"
+              className="h-8 w-12 rounded-[3px] ring-1 ring-black/10"
+            />
+          ) : (
+            (user?.full_name || '?').trim().slice(0, 1).toUpperCase()
+          )}
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-sm font-semibold text-[#0B0F19]">{t('userDashboard.profile.photoTitle')}</p>
+          <p className="text-sm text-[#64748B]">{t('userDashboard.profile.photoHint')}</p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => void handleAvatarPick(e.target.files?.[0] ?? null)}
+            />
+            <button
+              type="button"
+              disabled={avatarBusy}
+              onClick={() => avatarInputRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-[#0B0F19] hover:bg-stone-50 disabled:opacity-50"
+            >
+              {avatarBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+              {avatarBusy
+                ? t('userDashboard.profile.uploadingPhoto')
+                : user?.avatar_url
+                  ? t('userDashboard.profile.changePhoto')
+                  : t('userDashboard.profile.uploadPhoto')}
+            </button>
+            {user?.avatar_url ? (
+              <button
+                type="button"
+                disabled={avatarBusy}
+                onClick={() => void handleAvatarDelete()}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {t('userDashboard.profile.removePhoto')}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
 
       {purchaseBlocked ? (
         <div

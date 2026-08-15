@@ -22,6 +22,8 @@ export interface User {
   date_of_birth?: string
   nationality?: string
   civil_id?: string
+  /** Personal photo (Cloudinary gs-avatars) — used on dashboard / mobile. */
+  avatar_url?: string | null
   terms_accepted_at?: string | null
   privacy_policy_accepted_at?: string | null
   terms_policy_version?: string | null
@@ -191,6 +193,28 @@ export interface Product {
   stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock'
   in_stock?: boolean
   is_featured: boolean
+  sale_active?: boolean
+  sale_saving?: number | null
+  original_live_total_price?: number | null
+  original_live_making_charge?: number | null
+  sale_enabled?: boolean
+  sale_discount_type?: 'percent' | 'fixed_kwd'
+  sale_discount_value?: number | string
+  merchandising_labels?: Array<{
+    code: string
+    name_en: string
+    name_ar: string
+    visual_variant: string
+    priority: number
+  }>
+  primary_overlay?: {
+    kind: string
+    code: string
+    name_en: string
+    name_ar: string
+    visual_variant: string
+    priority: number
+  } | null
   /** Present on list API; use with image_url for thumbnails. */
   primary_image?: ProductImage | null
   images?: ProductImage[]

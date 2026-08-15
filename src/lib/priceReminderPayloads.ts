@@ -29,9 +29,11 @@ export function resolveNotificationMethod(opts: {
 
 type SpotMetal = 'gold'
 
+/** Remind-me watches Kuwait KWD/g for these karats only. */
+const REMINDER_GOLD_CARATS = new Set([24, 22])
+
 /**
- * Build one delta-criteria payload for all spot rates currently visible to customers.
- * Backend stores one active criterion per user and triggers when any watched rate moves by delta.
+ * Build one delta-criteria payload for 24K and 22K Kuwait gold rates.
  */
 export function buildSpotPriceAlertPayloads(params: {
   res: DaralsabaekPublicRatesResponse | undefined
@@ -64,7 +66,7 @@ export function buildSpotPriceAlertPayloads(params: {
   for (const c of res.carats) {
     const m = String(c.key || '').match(/^(\d+)K$/i)
     const cv = m ? parseInt(m[1], 10) : NaN
-    if (!Number.isFinite(cv) || cv <= 0) continue
+    if (!Number.isFinite(cv) || !REMINDER_GOLD_CARATS.has(cv)) continue
     pushBaseline('gold', cv, 'buy', c.buyTotal ?? null)
     pushBaseline('gold', cv, 'sell', c.sellTotal ?? null)
   }

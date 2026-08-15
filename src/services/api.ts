@@ -207,6 +207,17 @@ export const authApi = {
   updateMe: (data: unknown) =>
     apiService.patch('/accounts/users/me/', data),
 
+  /** Personal photo → Cloudinary (gs-avatars). Multipart field ``avatar``. */
+  uploadAvatar: (file: File) => {
+    const fd = new FormData()
+    fd.append('avatar', file, file.name || 'avatar.jpg')
+    return apiService.post('/accounts/users/me/avatar/', fd, { timeout: 90_000 })
+  },
+
+  /** Clear personal photo and destroy Cloudinary asset. */
+  deleteAvatar: () =>
+    apiService.delete('/accounts/users/me/avatar/'),
+
   changePassword: (data: { old_password: string; new_password: string; confirm_password: string }) =>
     apiService.post('/accounts/users/change_password/', data),
 
@@ -389,6 +400,9 @@ export const productsApi = {
 
   getProducts: (params?: unknown) =>
     apiService.get('/products/products/', { params }),
+
+  getProductFacets: (params?: Record<string, string | number | boolean | undefined>) =>
+    apiService.get('/products/products/facets/', { params }),
 
   /** Postgres FTS + trigram suggestions (tokens, did-you-mean, product hits). */
   suggestProducts: (params: { q: string; category?: string; limit?: number }) =>

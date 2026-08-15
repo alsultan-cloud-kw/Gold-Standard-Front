@@ -20,6 +20,7 @@ import { useCart } from '../contexts/CartContext'
 import { ProductStockBadge, ProductStockOverlay, ProductStockStatusLabel } from '@/components/products/ProductStockBadge'
 import { DigitalOwnershipBadge } from '@/components/products/DigitalOwnershipBadge'
 import { PriceRangeFilter } from '@/components/products/PriceRangeFilter'
+import { ProductMerchandisingBadge } from '@/components/products/ProductMerchandisingBadge'
 import { ProductSearchBox } from '@/components/products/ProductSearchBox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cannotAddMoreToCart, isProductLowStock, productFineness } from '@/utils/productStock'
@@ -51,8 +52,10 @@ import { usePageEnter } from '@/motion/usePageEnter'
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'weight-asc' | 'weight-desc' | 'newest'
 type ViewMode = 'grid' | 'list'
 
-const CARAT_OPTIONS = ['24K', '22K', '21K', '18K'] as const
-const METAL_OPTIONS = ['gold', 'silver', 'platinum', 'palladium'] as const
+const CARAT_OPTIONS = ['24K', '22K'] as const
+const DEFAULT_WEIGHT_CHIPS = [5, 10, 50, 100] as const
+
+type FacetWeight = { value: number; label: string; count: number }
 
 type PaginatedResponse<T> = {
   count: number
@@ -66,14 +69,19 @@ function FilterPanel({
   categoryList,
   categoryLabel,
   selectedCarats,
-  selectedMetals,
+  selectedWeights,
+  weightOptions,
+  onSaleOnly,
+  inStockOnly,
   minPriceParam,
   maxPriceParam,
   priceBoundsMin,
   priceBoundsMax,
   onCategory,
   onToggleCarat,
-  onToggleMetal,
+  onToggleWeight,
+  onToggleOnSale,
+  onToggleInStock,
   onPriceRange,
   onClear,
   activeFilterCount,
@@ -85,14 +93,19 @@ function FilterPanel({
   categoryList: Category[]
   categoryLabel: (c: { name_en: string; name_ar?: string }) => string
   selectedCarats: string[]
-  selectedMetals: string[]
+  selectedWeights: string[]
+  weightOptions: FacetWeight[]
+  onSaleOnly: boolean
+  inStockOnly: boolean
   minPriceParam: string
   maxPriceParam: string
   priceBoundsMin: number
   priceBoundsMax: number
   onCategory: (slug: string) => void
   onToggleCarat: (carat: string) => void
-  onToggleMetal: (metal: string) => void
+  onToggleWeight: (weight: string) => void
+  onToggleOnSale: () => void
+  onToggleInStock: () => void
   onPriceRange: (min: string, max: string) => void
   onClear: () => void
   activeFilterCount: number
@@ -198,6 +211,67 @@ function FilterPanel({
 
         <section className="min-w-0">
           <h4 className="filter-panel__section-title page-kicker">
+            {t('productsPage.filterWeight', { defaultValue: 'Weight' })}
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {weightOptions.map((w) => {
+              const key = String(w.value)
+              const active = selectedWeights.includes(key)
+              const disabled = w.count === 0 && !active
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onToggleWeight(key)}
+                  aria-pressed={active}
+                  className={`filter-panel__chip rounded-xl border px-3 py-2.5 text-center text-sm font-bold tabular-nums transition-colors ${
+                    active
+                      ? 'border-[#85E307] bg-[#ECFCCB] text-[#0B0F19] ring-1 ring-[#85E307]/40'
+                      : disabled
+                        ? 'cursor-not-allowed border-black/5 bg-[#F8FAFC] text-[#94A3B8]'
+                        : 'border-black/10 bg-white text-[#0B0F19] hover:border-[#85E307]/50'
+                  }`}
+                >
+                  {w.label}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="min-w-0 flex flex-col gap-2">
+          <h4 className="filter-panel__section-title page-kicker">
+            {t('productsPage.availability', { defaultValue: 'Availability' })}
+          </h4>
+          <button
+            type="button"
+            onClick={onToggleInStock}
+            aria-pressed={inStockOnly}
+            className={`filter-panel__chip rounded-lg border px-3 py-2.5 text-start text-sm font-semibold ${
+              inStockOnly
+                ? 'border-[#0B0F19] bg-[#0B0F19] text-white'
+                : 'border-black/10 bg-white text-[#475569]'
+            }`}
+          >
+            {t('productsPage.inStockOnly', { defaultValue: 'In stock only' })}
+          </button>
+          <button
+            type="button"
+            onClick={onToggleOnSale}
+            aria-pressed={onSaleOnly}
+            className={`filter-panel__chip rounded-lg border px-3 py-2.5 text-start text-sm font-semibold ${
+              onSaleOnly
+                ? 'border-[#BE123C] bg-[#BE123C] text-white'
+                : 'border-black/10 bg-white text-[#475569]'
+            }`}
+          >
+            {t('productsPage.onSale', { defaultValue: 'On Sale' })}
+          </button>
+        </section>
+
+        <section className="min-w-0">
+          <h4 className="filter-panel__section-title page-kicker">
             {t('productsPage.goldCarat')}
           </h4>
           <div className="grid grid-cols-2 gap-2">
@@ -216,32 +290,6 @@ function FilterPanel({
                   }`}
                 >
                   {carat}
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="min-w-0">
-          <h4 className="filter-panel__section-title page-kicker">
-            {t('productsPage.metalType')}
-          </h4>
-          <div className="flex max-h-[min(28vh,11rem)] flex-wrap content-start gap-2 overflow-y-auto overscroll-contain pe-0.5">
-            {METAL_OPTIONS.map((metal) => {
-              const active = selectedMetals.includes(metal)
-              return (
-                <button
-                  key={metal}
-                  type="button"
-                  onClick={() => onToggleMetal(metal)}
-                  aria-pressed={active}
-                  className={`filter-panel__chip shrink-0 rounded-full border px-3.5 py-2 text-sm font-semibold capitalize transition-colors ${
-                    active
-                      ? 'border-[#0B0F19] bg-[#0B0F19] text-white'
-                      : 'border-black/10 bg-white text-[#475569] hover:border-black/20'
-                  }`}
-                >
-                  {t(`productsPage.metal.${metal}`)}
                 </button>
               )
             })}
@@ -278,9 +326,11 @@ export default function ProductsPage() {
   const category = searchParams.get('category')
   const search = searchParams.get('search')
   const caratsParam = searchParams.get('carats') || ''
-  const metalsParam = searchParams.get('metals') || ''
+  const weightsParam = searchParams.get('weights') || ''
   const minPriceParam = searchParams.get('minPrice') || ''
   const maxPriceParam = searchParams.get('maxPrice') || ''
+  const onSaleParam = searchParams.get('onSale') === '1'
+  const inStockParam = searchParams.get('inStock') === '1'
   const sortParam = (searchParams.get('sort') as SortKey) || 'featured'
 
   useEffect(() => {
@@ -288,17 +338,38 @@ export default function ProductsPage() {
   }, [search])
 
   const { data: products, isLoading, isFetching } = useQuery({
-    queryKey: ['products', category ?? '', search ?? ''],
+    queryKey: [
+      'products',
+      category ?? '',
+      search ?? '',
+      caratsParam,
+      weightsParam,
+      onSaleParam,
+      inStockParam,
+    ],
     queryFn: () =>
       productsApi.getProducts({
         category: category || undefined,
         search: search || undefined,
-        // FTS ranks server-side; pull a fuller page when searching so relevance isn't truncated at 20.
-        page_size: search ? 100 : 40,
+        carats: caratsParam || undefined,
+        weights: weightsParam || undefined,
+        on_sale: onSaleParam || undefined,
+        in_stock: inStockParam || undefined,
+        page_size: search || caratsParam || weightsParam ? 100 : 40,
       }),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
+  })
+
+  const { data: facetsData } = useQuery({
+    queryKey: ['product-facets', category ?? '', search ?? ''],
+    queryFn: () =>
+      productsApi.getProductFacets({
+        category: category || undefined,
+        search: search || undefined,
+      }),
+    staleTime: 30_000,
   })
 
   const { data: categories } = useQuery({
@@ -339,14 +410,20 @@ export default function ProductsPage() {
     [caratsParam],
   )
 
-  const selectedMetals = useMemo(
+  const selectedWeights = useMemo(
     () =>
-      metalsParam
+      weightsParam
         .split(',')
-        .map((v) => v.trim().toLowerCase())
+        .map((v) => v.trim())
         .filter(Boolean),
-    [metalsParam],
+    [weightsParam],
   )
+
+  const weightOptions = useMemo((): FacetWeight[] => {
+    const rows = (facetsData as { weights?: FacetWeight[] } | undefined)?.weights
+    if (rows && rows.length > 0) return rows
+    return DEFAULT_WEIGHT_CHIPS.map((v) => ({ value: v, label: `${v} g`, count: 1 }))
+  }, [facetsData])
 
   const minPrice = minPriceParam ? Number(minPriceParam) : NaN
   const maxPrice = maxPriceParam ? Number(maxPriceParam) : NaN
@@ -376,21 +453,17 @@ export default function ProductsPage() {
       const unitPrice = productUnitPrice(product)
       const productCaratValue = product.carat?.carat_value
       const productCaratLabel = productCaratValue ? `${productCaratValue}K` : null
-      const metal = (
-        product.metal_type?.name ||
-        product.metal_type?.display_name_en ||
-        ''
-      )
-        .toString()
-        .toLowerCase()
+      const w = String(Number(product.weight_grams))
 
       if (selectedCarats.length > 0 && (!productCaratLabel || !selectedCarats.includes(productCaratLabel))) {
         return false
       }
-      if (selectedMetals.length > 0) {
-        const match = selectedMetals.some((m) => metal.includes(m))
+      if (selectedWeights.length > 0) {
+        const match = selectedWeights.some((sw) => Number(sw) === Number(w) || sw === w)
         if (!match) return false
       }
+      if (onSaleParam && !product.sale_active) return false
+      if (inStockParam && product.in_stock === false) return false
       if (Number.isFinite(minPrice) && unitPrice < minPrice) return false
       if (Number.isFinite(maxPrice) && unitPrice > maxPrice) return false
       return true
@@ -421,7 +494,7 @@ export default function ProductsPage() {
         break
     }
     return list
-  }, [activeProductList, selectedCarats, selectedMetals, minPrice, maxPrice, sortParam])
+  }, [activeProductList, selectedCarats, selectedWeights, onSaleParam, inStockParam, minPrice, maxPrice, sortParam])
 
   const fetchTrends = useProductPriceTrendSincePreviousFetch(activeProductList)
 
@@ -465,18 +538,25 @@ export default function ProductsPage() {
     updateParam('carats', value)
   }
 
-  const toggleMetal = (metal: string) => {
-    const current = new Set(selectedMetals)
-    if (current.has(metal)) current.delete(metal)
-    else current.add(metal)
-    updateParam('metals', Array.from(current).join(','))
+  const toggleWeight = (weight: string) => {
+    const current = new Set(selectedWeights)
+    if (current.has(weight)) current.delete(weight)
+    else current.add(weight)
+    updateParam(
+      'weights',
+      Array.from(current)
+        .sort((a, b) => Number(a) - Number(b))
+        .join(','),
+    )
   }
 
   const clearFilters = () => {
     updateParams({
       category: '',
       carats: '',
-      metals: '',
+      weights: '',
+      onSale: '',
+      inStock: '',
       minPrice: '',
       maxPrice: '',
       search: '',
@@ -488,7 +568,9 @@ export default function ProductsPage() {
   const activeFilterCount =
     (category ? 1 : 0) +
     selectedCarats.length +
-    selectedMetals.length +
+    selectedWeights.length +
+    (onSaleParam ? 1 : 0) +
+    (inStockParam ? 1 : 0) +
     (minPriceParam ? 1 : 0) +
     (maxPriceParam ? 1 : 0) +
     (search ? 1 : 0)
@@ -500,14 +582,19 @@ export default function ProductsPage() {
     categoryList,
     categoryLabel,
     selectedCarats,
-    selectedMetals,
+    selectedWeights,
+    weightOptions,
+    onSaleOnly: onSaleParam,
+    inStockOnly: inStockParam,
     minPriceParam,
     maxPriceParam,
     priceBoundsMin,
     priceBoundsMax,
     onCategory: (slug: string) => updateParam('category', slug),
     onToggleCarat: toggleCarat,
-    onToggleMetal: toggleMetal,
+    onToggleWeight: toggleWeight,
+    onToggleOnSale: () => updateParam('onSale', onSaleParam ? '' : '1'),
+    onToggleInStock: () => updateParam('inStock', inStockParam ? '' : '1'),
     onPriceRange: commitPriceRange,
     onClear: clearFilters,
     activeFilterCount,
@@ -646,13 +733,21 @@ export default function ProductsPage() {
                 {selectedCarats.map((c) => (
                   <FilterChip key={c} label={c} onRemove={() => toggleCarat(c)} />
                 ))}
-                {selectedMetals.map((m) => (
-                  <FilterChip
-                    key={m}
-                    label={t(`productsPage.metal.${m}`)}
-                    onRemove={() => toggleMetal(m)}
-                  />
+                {selectedWeights.map((w) => (
+                  <FilterChip key={w} label={`${w} g`} onRemove={() => toggleWeight(w)} />
                 ))}
+                {onSaleParam ? (
+                  <FilterChip
+                    label={t('productsPage.onSale', { defaultValue: 'On Sale' })}
+                    onRemove={() => updateParam('onSale', '')}
+                  />
+                ) : null}
+                {inStockParam ? (
+                  <FilterChip
+                    label={t('productsPage.inStockOnly', { defaultValue: 'In stock only' })}
+                    onRemove={() => updateParam('inStock', '')}
+                  />
+                ) : null}
                 {minPriceParam || maxPriceParam ? (
                   <FilterChip
                     label={`${minPriceParam || '0'} – ${maxPriceParam || '∞'} ${t('productsPage.kwd')}`}
@@ -944,6 +1039,7 @@ function ProductCard({
                 </div>
               )}
               <ProductStockOverlay product={product} />
+              <ProductMerchandisingBadge overlay={product.primary_overlay} isAr={isAr} />
             </div>
           </Link>
 
@@ -1019,6 +1115,7 @@ function ProductCard({
                 </div>
               )}
               <ProductStockOverlay product={product} />
+              <ProductMerchandisingBadge overlay={product.primary_overlay} isAr={isAr} />
             </div>
           </Link>
 
@@ -1104,8 +1201,9 @@ function ProductCard({
             </div>
           )}
           <ProductStockOverlay product={product} />
+          <ProductMerchandisingBadge overlay={product.primary_overlay} isAr={isAr} />
           {!outOfStock && caratLabel ? (
-            <div className="absolute top-1.5 end-1.5">
+            <div className="absolute top-1.5 end-1.5 z-[2]">
               <span className="rounded bg-white/92 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-[#0B0F19] ring-1 ring-black/10">
                 {caratLabel}
               </span>
@@ -1142,6 +1240,11 @@ function ProductCard({
             <span className="min-w-0 text-[13px] font-bold leading-none text-[#0B0F19] tabular-nums tracking-tight sm:text-lg">
               {formatKwd(unitPrice)}
               <span className="ms-0.5 text-[9px] font-semibold text-[#64748B] sm:text-xs">KWD</span>
+              {product.sale_active && product.original_live_total_price != null ? (
+                <span className="ms-1.5 text-[10px] font-medium text-[#94A3B8] line-through sm:text-xs">
+                  {formatKwd(Number(product.original_live_total_price))}
+                </span>
+              ) : null}
             </span>
             <span className="inline-flex min-h-[14px] min-w-[2.75rem] shrink-0 items-center justify-end">
               <ProductPriceTrendArrow

@@ -48,9 +48,14 @@ export function usePriceReminder(enabled = true) {
 
   const watchSummary = useMemo(() => {
     if (!res?.succeeded) return null
-    const goldKeys = carats.map((c) => c.key).filter(Boolean)
+    const goldKeys = carats
+      .map((c) => c.key)
+      .filter((key): key is string => Boolean(key) && /^(24|22)K$/i.test(key))
     return { goldKeys }
   }, [res, carats])
+
+  const ratesReady = !!res?.succeeded
+  const hasSpotRates = ratesReady && watchSummary != null && watchSummary.goldKeys.length > 0
 
   const createAlertsMutation = useMutation({
     mutationFn: async () => {
@@ -90,8 +95,6 @@ export function usePriceReminder(enabled = true) {
     },
   })
 
-  const ratesReady = !!res?.succeeded
-  const hasSpotRates = ratesReady && carats.length > 0
   const inputDisabled = !hasSpotRates || createAlertsMutation.isPending
   const saveDisabled =
     !hasSpotRates || !deltaValid || !notificationMethod || createAlertsMutation.isPending

@@ -4144,6 +4144,7 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     border-radius: 9999px;
     background: linear-gradient(135deg, #ecfccb 0%, #85e307 55%, #d4af37 100%);
     font-size: 1.125rem;
