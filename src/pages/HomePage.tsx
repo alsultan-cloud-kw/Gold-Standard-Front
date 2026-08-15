@@ -70,6 +70,38 @@ export default function HomePage() {
     () => {
       const mm = gsap.matchMedia()
 
+      // Film + copy start a little larger at rest, then ease back to the current size on scroll
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        const section = heroRef.current?.closest('.home-section--hero-video')
+        const media = section?.querySelector('.home-hero-video__media')
+        const intro = section?.querySelector('.home-hero-intro')
+        if (!section || !media || !intro) return
+
+        const rtl = document.documentElement.dir === 'rtl'
+        gsap.set(media, {
+          scale: 1.12,
+          force3D: true,
+          transformOrigin: rtl ? '18% 50%' : '82% 50%',
+        })
+        gsap.set(intro, {
+          scale: 1.06,
+          force3D: true,
+          transformOrigin: rtl ? '100% 28%' : '0% 28%',
+        })
+
+        const zoom = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.55,
+          },
+        })
+        zoom.to(media, { scale: 1 }, 0)
+        zoom.to(intro, { scale: 1 }, 0)
+      })
+
       // Layered luxury hero — small distances, expo settle, calm stagger
       mm.add('(prefers-reduced-motion: no-preference) and (min-width: 640px)', () => {
         const tl = gsap.timeline({

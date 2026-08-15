@@ -12,7 +12,6 @@ import {
   convertLineToOunceCurrency,
   formatPctChange,
   formatPrice,
-  ounceUnit,
   seriesChange,
   type OunceCurrency,
 } from '@/utils/metalChartSeries'
@@ -149,12 +148,12 @@ export function HeroGoldSpotCard({ rates }: Props) {
             ) : null}
           </div>
 
-          <p className="mt-1.5 text-xs text-[#64748B] sm:text-sm">
+          <p className="mt-1.5 whitespace-nowrap text-xs text-[#64748B] [word-break:keep-all] sm:text-sm">
             {ounceCurrency === 'USD'
               ? t('home.heroSpot.unitLine', {
                   kwd: buyKwd != null ? formatLatinFixed(buyKwd, 3) : '—',
                 })
-              : t('home.heroSpot.unitLineKwdOz', { unit: ounceUnit('KWD') })}
+              : t('home.heroSpot.unitLineKwdOz')}
           </p>
         </div>
 

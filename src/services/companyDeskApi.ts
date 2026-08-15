@@ -18,6 +18,10 @@ export type CompanyDeskApplyPayload = {
   phone: string
   /** PDF or image of the commercial licence (required). */
   commercial_license_file: File
+  /** Front of the activity owner's Kuwait civil ID (required). */
+  owner_civil_id_front: File
+  /** Back of the activity owner's Kuwait civil ID (required). */
+  owner_civil_id_back: File
   message?: string
   turnstile_token?: string
 }
@@ -39,10 +43,40 @@ function buildApplyFormData(data: CompanyDeskApplyPayload): FormData {
   fd.append('company_email', data.company_email)
   fd.append('phone', data.phone)
   fd.append('commercial_license_file', data.commercial_license_file)
+  fd.append('owner_civil_id_front', data.owner_civil_id_front)
+  fd.append('owner_civil_id_back', data.owner_civil_id_back)
   if (data.contact_name) fd.append('contact_name', data.contact_name)
   if (data.message) fd.append('message', data.message)
   if (data.turnstile_token) fd.append('turnstile_token', data.turnstile_token)
   return fd
+}
+
+const APPLY_ERROR_KEYS: Record<string, string> = {
+  captcha_failed: 'captcha',
+  business_name_required: 'businessName',
+  business_address_required: 'businessAddress',
+  company_email_required: 'companyEmail',
+  phone_required: 'phone',
+  commercial_license_required: 'license',
+  commercial_license_invalid_type: 'licenseType',
+  commercial_license_too_large: 'licenseTooLarge',
+  commercial_license_infected: 'licenseInfected',
+  commercial_license_scan_unavailable: 'licenseScanUnavailable',
+  owner_civil_id_front_required: 'civilIdFront',
+  owner_civil_id_back_required: 'civilIdBack',
+  owner_civil_id_front_invalid_type: 'civilIdType',
+  owner_civil_id_back_invalid_type: 'civilIdType',
+  owner_civil_id_front_too_large: 'civilIdTooLarge',
+  owner_civil_id_back_too_large: 'civilIdTooLarge',
+  owner_civil_id_front_infected: 'civilIdInfected',
+  owner_civil_id_back_infected: 'civilIdInfected',
+  owner_civil_id_front_scan_unavailable: 'civilIdScanUnavailable',
+  owner_civil_id_back_scan_unavailable: 'civilIdScanUnavailable',
+}
+
+export function companyDeskApplyErrorKey(code: string | undefined): string {
+  if (!code) return 'generic'
+  return APPLY_ERROR_KEYS[code] ?? 'generic'
 }
 
 export const companyDeskApi = {

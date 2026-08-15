@@ -81,6 +81,14 @@ export function ounceUnit(currency: OunceCurrency): string {
   return currency === 'USD' ? 'USD/oz' : 'KWD/oz'
 }
 
+/** i18n key suffix for the visible chart unit (never wrap mid-word in Arabic). */
+export function chartUnitLabelKey(unit: string): 'usdOz' | 'kwdOz' | 'kwdG' | null {
+  if (unit === 'USD/oz') return 'usdOz'
+  if (unit === 'KWD/oz') return 'kwdOz'
+  if (unit === 'KWD/g') return 'kwdG'
+  return null
+}
+
 export { resolveUsdOunceSpot, kwdOunceSellFromUsd }
 
 export function convertOunceUsdToCurrency(

@@ -13,8 +13,9 @@ import {
 import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
 import { COMPANY_KYC_HERO_IMAGE } from '@/lib/companyKycHero'
-import { companyDeskApi, type CompanyDeskAccessResponse } from '@/services/companyDeskApi'
+import { companyDeskApi, companyDeskApplyErrorKey, type CompanyDeskAccessResponse } from '@/services/companyDeskApi'
 import { useAuth } from '@/contexts/AuthContext'
+import { CompanyDeskApplyFileField } from '@/components/company/CompanyDeskApplyFileField'
 
 type Props = {
   access: CompanyDeskAccessResponse | null
@@ -31,6 +32,8 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
   const [businessName, setBusinessName] = useState('')
   const [businessAddress, setBusinessAddress] = useState('')
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [civilIdFrontFile, setCivilIdFrontFile] = useState<File | null>(null)
+  const [civilIdBackFile, setCivilIdBackFile] = useState<File | null>(null)
   const [companyEmail, setCompanyEmail] = useState(user?.email || '')
   const [phone, setPhone] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
@@ -40,6 +43,8 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const formRef = useRef<HTMLDivElement>(null)
   const licenseInputRef = useRef<HTMLInputElement>(null)
+  const civilIdFrontInputRef = useRef<HTMLInputElement>(null)
+  const civilIdBackInputRef = useRef<HTMLInputElement>(null)
 
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
@@ -78,6 +83,14 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
       setFormError(t('customerScreening.gate.errors.license'))
       return
     }
+    if (!civilIdFrontFile) {
+      setFormError(t('customerScreening.gate.errors.civilIdFront'))
+      return
+    }
+    if (!civilIdBackFile) {
+      setFormError(t('customerScreening.gate.errors.civilIdBack'))
+      return
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setFormError(t('customerScreening.gate.errors.companyEmail'))
       return
@@ -98,6 +111,8 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
         business_address: address,
         company_email: email,
         commercial_license_file: licenseFile,
+        owner_civil_id_front: civilIdFrontFile,
+        owner_civil_id_back: civilIdBackFile,
         phone: tel,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
@@ -109,7 +124,11 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
         setFormSuccess(t('customerScreening.gate.successSubmitted'))
       }
       setLicenseFile(null)
+      setCivilIdFrontFile(null)
+      setCivilIdBackFile(null)
       if (licenseInputRef.current) licenseInputRef.current.value = ''
+      if (civilIdFrontInputRef.current) civilIdFrontInputRef.current.value = ''
+      if (civilIdBackInputRef.current) civilIdBackInputRef.current.value = ''
       onApplied()
       clearTurnstile()
     } catch (err: unknown) {
@@ -117,29 +136,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
           : undefined
-      const errorKey =
-        code === 'captcha_failed'
-          ? 'captcha'
-          : code === 'business_name_required'
-            ? 'businessName'
-            : code === 'business_address_required'
-              ? 'businessAddress'
-              : code === 'commercial_license_required'
-                ? 'license'
-                : code === 'commercial_license_invalid_type'
-                  ? 'licenseType'
-                  : code === 'commercial_license_too_large'
-                    ? 'licenseTooLarge'
-                    : code === 'commercial_license_infected'
-                      ? 'licenseInfected'
-                      : code === 'commercial_license_scan_unavailable'
-                        ? 'licenseScanUnavailable'
-                        : code === 'company_email_required'
-                          ? 'companyEmail'
-                          : code === 'phone_required'
-                            ? 'phone'
-                            : 'generic'
-      setFormError(t(`customerScreening.gate.errors.${errorKey}`))
+      setFormError(t(`customerScreening.gate.errors.${companyDeskApplyErrorKey(code)}`))
       clearTurnstile()
     } finally {
       setSubmitting(false)
@@ -381,24 +378,34 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
                   className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 focus:ring-2"
                 />
               </label>
-              <label className="block space-y-1.5">
-                <span className="text-xs font-semibold text-[#0C1512]">
-                  {t('customerScreening.gate.fields.license')}{' '}
-                  <span className="text-red-600">*</span>
-                </span>
-                <input
-                  ref={licenseInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-                  required
-                  onChange={(e) => setLicenseFile(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 file:me-3 file:rounded-lg file:border-0 file:bg-[#0B0F19] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#85E307] focus:ring-2"
+              <div className="space-y-3.5 rounded-xl border border-black/5 bg-[#F9F9FA]/80 p-3.5">
+                <p className="text-xs font-semibold text-[#0C1512]">
+                  {t('customerScreening.gate.fields.attachmentsTitle')}
+                </p>
+                <CompanyDeskApplyFileField
+                  label={t('customerScreening.gate.fields.license')}
+                  hint={t('customerScreening.gate.fields.licenseHint')}
+                  file={licenseFile}
+                  inputRef={licenseInputRef}
+                  onChange={setLicenseFile}
                 />
-                <span className="block text-[11px] text-[#64748B]">
-                  {t('customerScreening.gate.fields.licenseHint')}
-                  {licenseFile ? ` · ${licenseFile.name}` : ''}
-                </span>
-              </label>
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <CompanyDeskApplyFileField
+                    label={t('customerScreening.gate.fields.civilIdFront')}
+                    hint={t('customerScreening.gate.fields.civilIdHint')}
+                    file={civilIdFrontFile}
+                    inputRef={civilIdFrontInputRef}
+                    onChange={setCivilIdFrontFile}
+                  />
+                  <CompanyDeskApplyFileField
+                    label={t('customerScreening.gate.fields.civilIdBack')}
+                    hint={t('customerScreening.gate.fields.civilIdHint')}
+                    file={civilIdBackFile}
+                    inputRef={civilIdBackInputRef}
+                    onChange={setCivilIdBackFile}
+                  />
+                </div>
+              </div>
               <label className="block space-y-1.5">
                 <span className="text-xs font-semibold text-[#0C1512]">
                   {t('customerScreening.gate.fields.companyEmail')}{' '}

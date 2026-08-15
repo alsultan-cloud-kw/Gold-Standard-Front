@@ -12,8 +12,9 @@ import {
 } from 'lucide-react'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
-import { companyDeskApi, type CompanyDeskAccessResponse } from '@/services/companyDeskApi'
+import { companyDeskApi, companyDeskApplyErrorKey, type CompanyDeskAccessResponse } from '@/services/companyDeskApi'
 import { useAuth } from '@/contexts/AuthContext'
+import { CompanyDeskApplyFileField } from '@/components/company/CompanyDeskApplyFileField'
 
 type Props = {
   access: CompanyDeskAccessResponse | null
@@ -29,6 +30,8 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
   const [contactName, setContactName] = useState(user?.full_name || '')
   const [phone, setPhone] = useState('')
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [civilIdFrontFile, setCivilIdFrontFile] = useState<File | null>(null)
+  const [civilIdBackFile, setCivilIdBackFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -36,6 +39,8 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const licenseInputRef = useRef<HTMLInputElement>(null)
+  const civilIdFrontInputRef = useRef<HTMLInputElement>(null)
+  const civilIdBackInputRef = useRef<HTMLInputElement>(null)
 
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
@@ -69,6 +74,14 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
       setFormError(t('companyPricesPage.gate.errors.license'))
       return
     }
+    if (!civilIdFrontFile) {
+      setFormError(t('companyPricesPage.gate.errors.civilIdFront'))
+      return
+    }
+    if (!civilIdBackFile) {
+      setFormError(t('companyPricesPage.gate.errors.civilIdBack'))
+      return
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setFormError(t('companyPricesPage.gate.errors.companyEmail'))
       return
@@ -91,6 +104,8 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
         contact_name: contactName.trim() || undefined,
         phone: tel,
         commercial_license_file: licenseFile,
+        owner_civil_id_front: civilIdFrontFile,
+        owner_civil_id_back: civilIdBackFile,
         message: message.trim() || undefined,
         ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
@@ -102,7 +117,11 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
         setFormSuccess(t('companyPricesPage.gate.successSubmitted'))
       }
       setLicenseFile(null)
+      setCivilIdFrontFile(null)
+      setCivilIdBackFile(null)
       if (licenseInputRef.current) licenseInputRef.current.value = ''
+      if (civilIdFrontInputRef.current) civilIdFrontInputRef.current.value = ''
+      if (civilIdBackInputRef.current) civilIdBackInputRef.current.value = ''
       onApplied()
       clearTurnstile()
     } catch (err: unknown) {
@@ -110,29 +129,7 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
           : undefined
-      if (code === 'captcha_failed') {
-        setFormError(t('companyPricesPage.gate.errors.captcha'))
-      } else if (code === 'business_name_required') {
-        setFormError(t('companyPricesPage.gate.errors.businessName'))
-      } else if (code === 'business_address_required') {
-        setFormError(t('companyPricesPage.gate.errors.businessAddress'))
-      } else if (code === 'commercial_license_required') {
-        setFormError(t('companyPricesPage.gate.errors.license'))
-      } else if (code === 'commercial_license_invalid_type') {
-        setFormError(t('companyPricesPage.gate.errors.licenseType'))
-      } else if (code === 'commercial_license_too_large') {
-        setFormError(t('companyPricesPage.gate.errors.licenseTooLarge'))
-      } else if (code === 'commercial_license_infected') {
-        setFormError(t('companyPricesPage.gate.errors.licenseInfected'))
-      } else if (code === 'commercial_license_scan_unavailable') {
-        setFormError(t('companyPricesPage.gate.errors.licenseScanUnavailable'))
-      } else if (code === 'phone_required') {
-        setFormError(t('companyPricesPage.gate.errors.phone'))
-      } else if (code === 'company_email_required') {
-        setFormError(t('companyPricesPage.gate.errors.companyEmail'))
-      } else {
-        setFormError(t('companyPricesPage.gate.errors.generic'))
-      }
+      setFormError(t(`companyPricesPage.gate.errors.${companyDeskApplyErrorKey(code)}`))
       clearTurnstile()
     } finally {
       setSubmitting(false)
@@ -338,24 +335,34 @@ export default function CompanyPricesGateLanding({ access, onApplied }: Props) {
                   />
                 </label>
               </div>
-              <label className="block space-y-1.5">
-                <span className="text-xs font-semibold text-[#0C1512]">
-                  {t('companyPricesPage.gate.fields.license')}{' '}
-                  <span className="text-red-600">*</span>
-                </span>
-                <input
-                  ref={licenseInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-                  required
-                  onChange={(e) => setLicenseFile(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-xl border border-black/10 bg-[#F9F9FA] px-3 py-2.5 text-sm outline-none ring-[#85E307]/40 file:me-3 file:rounded-lg file:border-0 file:bg-[#0B0F19] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#85E307] focus:ring-2"
+              <div className="space-y-3.5 rounded-xl border border-black/5 bg-[#F9F9FA]/80 p-3.5">
+                <p className="text-xs font-semibold text-[#0C1512]">
+                  {t('companyPricesPage.gate.fields.attachmentsTitle')}
+                </p>
+                <CompanyDeskApplyFileField
+                  label={t('companyPricesPage.gate.fields.license')}
+                  hint={t('companyPricesPage.gate.fields.licenseHint')}
+                  file={licenseFile}
+                  inputRef={licenseInputRef}
+                  onChange={setLicenseFile}
                 />
-                <span className="block text-[11px] text-[#64748B]">
-                  {t('companyPricesPage.gate.fields.licenseHint')}
-                  {licenseFile ? ` · ${licenseFile.name}` : ''}
-                </span>
-              </label>
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <CompanyDeskApplyFileField
+                    label={t('companyPricesPage.gate.fields.civilIdFront')}
+                    hint={t('companyPricesPage.gate.fields.civilIdHint')}
+                    file={civilIdFrontFile}
+                    inputRef={civilIdFrontInputRef}
+                    onChange={setCivilIdFrontFile}
+                  />
+                  <CompanyDeskApplyFileField
+                    label={t('companyPricesPage.gate.fields.civilIdBack')}
+                    hint={t('companyPricesPage.gate.fields.civilIdHint')}
+                    file={civilIdBackFile}
+                    inputRef={civilIdBackInputRef}
+                    onChange={setCivilIdBackFile}
+                  />
+                </div>
+              </div>
               <label className="block space-y-1.5">
                 <span className="text-xs font-semibold text-[#0C1512]">
                   {t('companyPricesPage.gate.fields.message')}

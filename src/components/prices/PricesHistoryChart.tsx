@@ -25,12 +25,12 @@ import {
   buildLineSeries,
   computeYtdChangePct,
   convertLineToOunceCurrency,
-  formatChartAsOf,
   formatChartTimeRange,
   formatPctChange,
   formatPrice,
   kwdOunceSellFromUsd,
   ounceUnit,
+  chartUnitLabelKey,
   prevCloseFromSnapshot,
   seriesChange,
   seriesOhlcStats,
@@ -278,6 +278,11 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
     return 'KWD/g'
   }, [metal, ounceCurrency, pricingHistory?.unit, newHistoryAvailable, legacyHistoryData?.unit])
 
+  const chartUnitText = useMemo(() => {
+    const key = chartUnitLabelKey(chartUnit)
+    return key ? t(`home.chart.units.${key}`) : chartUnit
+  }, [chartUnit, t])
+
   // Gold ounce charts: always build the series in USD/oz, then convert for KWD display.
   const liveUsdOunce = useMemo(() => {
     if (!rates?.succeeded || metal !== 'gold') return null
@@ -403,10 +408,6 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
   }, [currentSnap, chartUnit, snapStats, line, candles])
 
   const timeRangeLabel = useMemo(() => formatChartTimeRange(line, locale), [line, locale])
-  const asOfLabel = useMemo(() => {
-    if (line.length) return formatChartAsOf(line[line.length - 1].time, locale)
-    return formatChartAsOf(Math.floor(Date.now() / 1000), locale)
-  }, [line, locale])
 
   const metalTabs: { id: MetalTab; labelKey: string }[] = [
     { id: 'gold', labelKey: 'home.chart.metalGold' },
@@ -532,8 +533,8 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
                 <span className="h-1.5 w-1.5 rounded-full bg-[#3F6F00]" />
                 {t('home.chart.liveBadge')}
               </span>
-              <span className="text-[10px] font-medium text-[#64748B] sm:text-xs">
-                {t('home.chart.unitLabel', { unit: chartUnit })}
+              <span className="shrink-0 whitespace-nowrap text-[10px] font-medium text-[#64748B] [word-break:keep-all] sm:text-xs">
+                {t('home.chart.unitLabel', { unit: chartUnitText })}
               </span>
             </div>
 
@@ -563,14 +564,7 @@ export function PricesHistoryChart({ rates, showSectionHeader = true }: Props) {
               ) : null}
             </div>
 
-            <p className="mt-1.5 hidden flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#64748B] sm:mt-2 sm:flex">
-              <span>
-                {t('home.chart.asOf', { time: asOfLabel })}
-                <span className="mx-1.5 text-[#CBD5E1]">·</span>
-                {t('home.chart.disclaimer')}
-              </span>
-            </p>
-            <p className="mt-1 flex items-center gap-1.5 text-[10px] text-[#64748B] sm:gap-2 sm:text-xs">
+            <p className="mt-1 flex items-center gap-1.5 text-[10px] text-[#64748B] sm:mt-1.5 sm:gap-2 sm:text-xs">
               <Activity className="h-3 w-3 shrink-0 text-[#3F6F00] sm:h-3.5 sm:w-3.5" aria-hidden />
               {t('home.chart.updateCountdown', {
                 seconds: String(countdown).padStart(2, '0'),
