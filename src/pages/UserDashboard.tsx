@@ -25,6 +25,7 @@ import {
   Trash2,
   Loader2,
   Trophy,
+  CalendarDays,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useFullSignOut } from '@/hooks/useFullSignOut'
@@ -61,6 +62,8 @@ import {
 import KycRegistrationFields, { type KycQuestion } from '@/components/auth/KycRegistrationFields'
 import { KycKnowMoreButton } from '@/components/auth/KycLegalInfoModal'
 import { cn } from '@/lib/utils'
+import { Calendar as DateCalendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 import { asSingleCustomerProfile } from '@/utils/customerProfile'
 import {
@@ -1042,6 +1045,74 @@ function ClubTab() {
   )
 }
 
+function parseProfileDate(value: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return undefined
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+function formatProfileDate(date: Date): string {
+  return [
+    String(date.getFullYear()).padStart(4, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+function ProfileBirthDatePicker({
+  value,
+  onChange,
+  label,
+}: {
+  value: string
+  onChange: (value: string) => void
+  label: string
+}) {
+  const [open, setOpen] = useState(false)
+  const selected = parseProfileDate(value)
+  const now = new Date()
+
+  return (
+    <div>
+      <label className={dashboardLabelClass}>
+        {label}
+        <span className="text-rose-600" aria-hidden> *</span>
+      </label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="dashboard-field flex w-full items-center justify-between text-start"
+            aria-label={label}
+          >
+            <span className={value ? 'text-[#0B0F19]' : 'text-[#94A3B8]'}>
+              {value || 'YYYY-MM-DD'}
+            </span>
+            <CalendarDays className="h-4 w-4 shrink-0 text-[#64748B]" aria-hidden />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-0">
+          <DateCalendar
+            mode="single"
+            selected={selected}
+            defaultMonth={selected ?? new Date(1990, 0, 1)}
+            captionLayout="dropdown"
+            startMonth={new Date(1900, 0, 1)}
+            endMonth={now}
+            disabled={{ after: now }}
+            onSelect={(date) => {
+              if (!date) return
+              onChange(formatProfileDate(date))
+              setOpen(false)
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
 function ProfileTab() {
   const { user, updateUser, refreshUser } = useAuth()
   const { t } = useTranslation()
@@ -1415,20 +1486,11 @@ function ProfileTab() {
             optional
             disabled={saving}
           />
-          <div>
-            <label className={dashboardLabelClass}>
-              {t('userDashboard.profile.dateOfBirth')}
-              <span className="text-rose-600" aria-hidden> *</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
-              className="dashboard-field"
-              aria-required="true"
-            />
-          </div>
+          <ProfileBirthDatePicker
+            value={dateOfBirth}
+            onChange={setDateOfBirth}
+            label={t('userDashboard.profile.dateOfBirth')}
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <RegionSelectField
