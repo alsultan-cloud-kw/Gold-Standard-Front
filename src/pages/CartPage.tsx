@@ -26,7 +26,7 @@ import { ProductStockBadge } from '@/components/products/ProductStockBadge'
 import { formatProductCaratLabel } from '../utils/productCaratLabel'
 import {
   hasResolvedStockFields,
-  isCartLineUnavailable,
+  isCartLineOverStock,
   isCartProductIncomplete,
   isProductOutOfStock,
   productAvailableQuantity,
@@ -136,7 +136,8 @@ function OrderSummaryCard({
 export default function CartPage() {
   const { t, i18n } = useTranslation()
   const isAr = i18n.language?.startsWith('ar')
-  const { cart, removeFromCart, updateQuantity, clearCart, cartHydrated, cartRefreshing } = useCart()
+  const { cart, removeFromCart, updateQuantity, clearCart, cartHydrated, cartRefreshing, hasUnavailableItems } =
+    useCart()
   // Prefetch the same delivery-type quote checkout starts with (physical) so the lock is warm.
   const summary = useOrderSummaryDisplay(cart, 'physical')
   const { ensureCanPurchase, isAuthenticated, needsVerification, needsKyc, loginHref } =
@@ -151,9 +152,6 @@ export default function CartPage() {
   const showCartSkeleton =
     (!cartHydrated && cart.items.length === 0) ||
     (cart.items.length > 0 && hasIncompleteLines)
-  const hasUnavailableItems = cart.items.some((item) =>
-    isCartLineUnavailable(item.product, item.quantity),
-  )
 
   // Incomplete hydrate stubs are not OOS — only block known unavailable stock.
   const checkoutBlocked = hasUnavailableItems || showCartSkeleton
@@ -275,7 +273,8 @@ export default function CartPage() {
                 isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
               const caratLabel = formatProductCaratLabel(item.product.carat, isAr ? 'ar' : 'en')
               const stockKnown = hasResolvedStockFields(item.product)
-              const itemOutOfStock = isProductOutOfStock(item.product)
+              const itemOutOfStock =
+                isProductOutOfStock(item.product) || isCartLineOverStock(cart.items, item.id)
               const itemMaxQty = stockKnown ? productAvailableQuantity(item.product) : Number.POSITIVE_INFINITY
               const lineIncomplete =
                 isCartProductIncomplete(item.product) || !(Number(item.unit_price) > 0)

@@ -17,6 +17,7 @@ import {
   knetGatewayErrorCodeFromSearch,
 } from '@/lib/knetReceipt'
 import { cn } from '@/lib/utils'
+import { cartMetaParams, trackMetaPurchaseOnce } from '@/lib/metaPixel'
 
 import { useCart } from '../contexts/CartContext'
 
@@ -31,13 +32,15 @@ export default function KnetReceiptPage() {
   const navigate = useNavigate()
   const { saleId } = useParams<{ saleId: string }>()
   const [searchParams] = useSearchParams()
-  const { clearCart } = useCart()
+  const { clearCart, cart } = useCart()
   const [receipt, setReceipt] = useState<KnetReceiptDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
   const clearCartRef = useRef(clearCart)
   clearCartRef.current = clearCart
+  const cartRef = useRef(cart)
+  cartRef.current = cart
 
   const urlStatus = (searchParams.get('knet_status') || '').toLowerCase()
   const urlResult = searchParams.get('result') || ''
@@ -173,6 +176,20 @@ export default function KnetReceiptPage() {
           isKnetReceiptDefinitelyFailed(data)
           || ((urlFail || sawFailed) && !captured)
         if (captured) {
+          const paidValue = Math.max(0, Number(data.amount || 0))
+          trackMetaPurchaseOnce(
+            saleId,
+            cartRef.current.items.length > 0
+              ? {
+                  ...cartMetaParams(cartRef.current, paidValue),
+                  order_id: saleId,
+                }
+              : {
+                  currency: data.currency || 'KWD',
+                  value: paidValue,
+                  order_id: saleId,
+                },
+          )
           if (urlStatus && urlStatus !== 'success') {
             navigate(`/payment-receipt/${saleId}?knet_status=success`, { replace: true })
           }

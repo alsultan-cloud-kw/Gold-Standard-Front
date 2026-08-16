@@ -82,6 +82,15 @@ export const PUBLIC_PAGE_SEO: PublicPageSeo[] = [
     match: (p) => p === '/company-prices',
   },
   {
+    path: '/company-orders',
+    titleKey: 'seo.companyOrders.title',
+    descKey: 'seo.companyOrders.description',
+    priority: 0.1,
+    changefreq: 'monthly',
+    noIndex: true,
+    match: (p) => p === '/company-orders',
+  },
+  {
     path: '/verify-account',
     titleKey: 'seo.auth.title',
     descKey: 'seo.auth.description',

@@ -31,6 +31,7 @@
     "location": "Central Gold Market, Kuwait City 85951",
     "customerPrices": "Customer prices",
     "companyPrices": "Live board",
+    "companyOrders": "Orders",
     "deskPriceBoard": "Live price board",
     "customerKyc": "For businesses",
     "buyGold": "Buy gold",
@@ -784,6 +785,10 @@
     "companyPrices": {
       "title": "Live Gold Price Board · USD Ounce & Karat Buy/Sell | Gold Standard",
       "description": "Shop-floor display board for approved partners: global USD ounce, 24K–18K buy & sell in KWD, and other metals — branded Gold Standard."
+    },
+    "companyOrders": {
+      "title": "Company wholesale orders | Gold Standard Kuwait",
+      "description": "Private wholesale gold request and payment history for approved Gold Standard company partners."
     },
     "products": {
       "title": "Buy Gold Bars & Coins Kuwait · MOCI Certified | Gold Standard",
@@ -1602,14 +1607,26 @@
     "shipping": "Shipping",
     "shippingFree": "Free",
     "secureCheckout": "Secure checkout",
+    "discountCode": "Making-charge discount code",
+    "discountCodePlaceholder": "Enter code",
+    "applyDiscount": "Apply",
+    "clearDiscount": "Clear",
+    "discountCodeRequired": "Enter a discount code first.",
+    "discountCodeInvalid": "This code is invalid, inactive, or not configured for website checkout.",
+    "discountCodeChecking": "Checking code…",
+    "discountAppliedSave": "Code applied. You save {{amount}} {{kwd}}.",
+    "discountCodeBetterOffer": "Code accepted. Your existing offer gives you equal or better savings.",
+    "discountCodeNoEligibleAmount": "Code accepted, but this cart has no eligible making charge to discount.",
+    "discountCodeClearError": "Could not remove the code. Please try again.",
     "trustTitle": "Trusted payments",
     "trustKnetAlt": "KNET — Kuwait national electronic payment",
     "trustSslAlt": "Secure SSL encryption",
     "trustNote": "Online card payments are processed through KNET. Your connection is encrypted for checkout and receipt confirmation.",
     "stockOnlyLeftForSku": "Only {{available}} left in stock for SKU {{sku}}.",
     "stockInsufficientRequested": "Insufficient stock. Requested {{requested}}, available {{available}}.",
-    "unitAlreadySold": "This piece was just sold on another channel. Refresh your cart and try again.",
-    "unitAlreadySoldWithCode": "Piece ({{code}}) was just sold on another channel. Refresh your cart and try again."
+    "unitAlreadySold": "This unique piece was just sold (website, app, or shop). Your cart was updated from live stock.",
+    "unitAlreadySoldWithCode": "Unique piece ({{code}}) was just sold on another channel. Your cart was updated from live stock.",
+    "uniqueUnitSoldHint": "Every gold piece is unique. Carts do not reserve stock — if the last unit sells elsewhere, remove unavailable items and continue with what is still available."
   },
   "knetReceipt": {
     "loading": "Loading payment receipt...",
@@ -2374,8 +2391,8 @@
     "gate": {
       "checking": "Checking company access…",
       "badge": "Company portal",
-      "headline": "Verify your customer before you complete the transaction",
-      "subtext": "A dedicated Gold Standard partner service that helps approved gold companies verify customers registered with us by name — through a secure business portal.",
+      "headline": "Wholesale procurement and compliance for approved Kuwait merchants",
+      "subtext": "Request gold bars and coins on demand, follow review and KNET payment status, use the live board, and screen customer names from one controlled company portal.",
       "ctaApply": "Apply to join",
       "ctaSignIn": "Company sign-in",
       "pillars": {
@@ -2383,6 +2400,45 @@
         "compliance": "Name verification before settlement",
         "b2b": "Secure business portal"
       },
+      "companyPlatformKicker": "Gold Standard company desk",
+      "companyPlatformTitle": "A controlled path from request to delivery",
+      "companyPlatformBody": "Built for approved Kuwait merchants that need documented wholesale ordering, clear payment states, customer screening support and current market visibility without mixing company procurement with the retail cart.",
+      "companyCapabilities": {
+        "catalog": {
+          "title": "On-demand wholesale requests",
+          "body": "Request bars or coins from the dedicated Hub-managed company catalog."
+        },
+        "weights": {
+          "title": "Configured MOQ and weights",
+          "body": "Choose only approved weight options and track progress against the configured minimum order."
+        },
+        "designs": {
+          "title": "Approved designs",
+          "body": "Choose designs and images supplied through the Hub catalog, including uploaded company selections when configured."
+        },
+        "review": {
+          "title": "Hub review",
+          "body": "Gold Standard reviews every request and confirms the final payable amount before payment opens."
+        },
+        "payment": {
+          "title": "KNET after acceptance",
+          "body": "Accepted requests move to awaiting payment, with a controlled KNET payment or retry action."
+        },
+        "delivery": {
+          "title": "Structured Kuwait delivery",
+          "body": "Governorate, area, street and building details stay attached to the submitted request."
+        },
+        "history": {
+          "title": "Order and payment history",
+          "body": "Review references, grams, amounts, lifecycle states and payment status in one read-only record."
+        },
+        "screening": {
+          "title": "Company AML screening",
+          "body": "Screen customer names before settlement and retain a clear reference for your compliance workflow."
+        }
+      },
+      "sanctionsTitle": "Sanctions and list support",
+      "sanctionsBody": "Company screening is supported by attributed OpenSanctions data and Gold Standard lists. This describes data and list support in the current implementation and does not claim a live OpenSanctions API connection.",
       "howTitle": "How it works",
       "whyTitle": "Built for approved companies",
       "whyBody": "This service is available only to entities and companies approved by Gold Standard.",
@@ -2630,7 +2686,8 @@
     "lowStockShort": "Low stock",
     "unavailableHint": "This item is not available for purchase right now.",
     "allInCartHint": "All available units are already in your cart.",
-    "cartBlocked": "Remove out-of-stock items to continue checkout."
+    "cartBlocked": "Remove out-of-stock items to continue checkout.",
+    "uniqueLastPieceHint": "This unique piece may already be in another cart or sold at the shop. Checkout always re-checks live stock."
   },
   "product": {
     "products": "Products",
@@ -3150,6 +3207,8 @@
       "dateOfBirth": "Date of Birth",
       "identityDocumentsTitle": "Identity documents",
       "identityDocumentsHint": "Upload your Civil ID front and back. If already uploaded, we will show a confirmation below.",
+      "civilIdLockedTitle": "Civil ID verified",
+      "civilIdLockedDescription": "For your security, an accepted Civil ID cannot be changed or uploaded again. Contact support for a legal correction.",
       "civilIdFrontSide": "Civil ID front side",
       "civilIdFrontAlt": "Civil ID front",
       "existingFrontIdUploaded": "Existing front ID uploaded ✓",
@@ -3158,6 +3217,29 @@
       "existingBackIdUploaded": "Existing back ID uploaded ✓",
       "saving": "Saving…",
       "saveChanges": "Save Changes",
+      "emailChange": {
+        "title": "Verify your new email",
+        "hint": "Changing your email requires a verification code. Your current email stays active until verification is complete.",
+        "description": "Enter the 6-digit code sent to {{email}}. Your profile email has not changed yet.",
+        "codeLabel": "Verification code",
+        "verify": "Verify email",
+        "verifying": "Verifying…",
+        "codeSent": "Verification code sent to {{email}}",
+        "verified": "Email updated successfully",
+        "verifyFailed": "Could not verify the email address",
+        "invalidEmail": "Enter a valid email address."
+      },
+      "phoneChange": {
+        "title": "Verify your new mobile number",
+        "description": "Enter the 6-digit WhatsApp code sent to {{phone}}. Your current number stays active until verification.",
+        "codeLabel": "Verification code",
+        "verify": "Verify mobile",
+        "verifying": "Verifying…",
+        "codeSent": "Verification code sent to {{phone}}",
+        "verified": "Mobile number updated successfully",
+        "verifyFailed": "Could not verify the mobile number",
+        "cannotRemove": "A verified mobile number cannot be removed. Enter a new number or contact support."
+      },
       "manualReviewCta": "Request manual profile verification",
       "manualReviewSuccess": "Request received. We will email you when verification is complete.",
       "manualReviewFailed": "Could not submit the review request. Check name, Civil ID, and photos.",

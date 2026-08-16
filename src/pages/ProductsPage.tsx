@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -48,6 +48,7 @@ import { cn } from '@/lib/utils'
 import { categoryDisplayName } from '@/lib/categoryDisplayName'
 import { RevealSection } from '@/components/motion/RevealSection'
 import { usePageEnter } from '@/motion/usePageEnter'
+import { safeMetaSearchTerm, trackMetaEvent } from '@/lib/metaPixel'
 
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'weight-asc' | 'weight-desc' | 'newest'
 type ViewMode = 'grid' | 'list'
@@ -322,6 +323,7 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [searchDraft, setSearchDraft] = useState(searchParams.get('search') || '')
+  const trackedCategory = useRef<string | null>(null)
 
   const category = searchParams.get('category')
   const search = searchParams.get('search')
@@ -332,6 +334,17 @@ export default function ProductsPage() {
   const onSaleParam = searchParams.get('onSale') === '1'
   const inStockParam = searchParams.get('inStock') === '1'
   const sortParam = (searchParams.get('sort') as SortKey) || 'featured'
+
+  useEffect(() => {
+    if (!category || trackedCategory.current === category) return
+    trackedCategory.current = category
+    trackMetaEvent(
+      'view_category',
+      'ViewCategory',
+      { content_category: category.slice(0, 100) },
+      { custom: true },
+    )
+  }, [category])
 
   useEffect(() => {
     setSearchDraft(search || '')
@@ -644,6 +657,12 @@ export default function ProductsPage() {
               onCommit={(q) => {
                 setSearchDraft(q)
                 updateParam('search', q)
+                const safeTerm = safeMetaSearchTerm(q)
+                if (safeTerm) {
+                  trackMetaEvent('search', 'Search', {
+                    search_string: safeTerm,
+                  })
+                }
               }}
               onClear={() => {
                 setSearchDraft('')

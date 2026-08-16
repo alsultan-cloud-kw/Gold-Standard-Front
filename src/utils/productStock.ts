@@ -155,3 +155,53 @@ export function cartUnitsForProductId(
     .filter((item) => item.product.id === productId)
     .reduce((sum, item) => sum + Math.max(1, Number(item.quantity) || 1), 0)
 }
+
+/**
+ * True when any line is OOS or when total units for a product exceed live stock.
+ * Serialized unique items are checked by product id (sum of unit lines), not per line alone.
+ */
+export function cartHasUnavailableItems(
+  items: Array<{ product: Product; quantity: number }>,
+): boolean {
+  const byProduct = new Map<string, { product: Product; qty: number }>()
+  for (const item of items) {
+    const qty = Math.max(0, Number(item.quantity) || 0)
+    const cur = byProduct.get(item.product.id)
+    if (!cur) {
+      byProduct.set(item.product.id, { product: item.product, qty })
+    } else {
+      cur.qty += qty
+    }
+  }
+  for (const { product, qty } of byProduct.values()) {
+    if (isCartLineUnavailable(product, qty)) return true
+  }
+  return false
+}
+
+/**
+ * Whether this cart line exceeds live stock given earlier lines for the same product
+ * (unique/serialized unit lines beyond available_quantity).
+ */
+export function isCartLineOverStock(
+  items: Array<{ id: string; product: Product; quantity: number }>,
+  itemId: string,
+): boolean {
+  const target = items.find((i) => i.id === itemId)
+  if (!target) return false
+  if (isProductOutOfStock(target.product)) return true
+
+  const available = productAvailableQuantity(target.product)
+  if (!hasResolvedStockFields(target.product)) return false
+  if (available <= 0) return true
+
+  let running = 0
+  for (const item of items) {
+    if (item.product.id !== target.product.id) continue
+    running += Math.max(1, Number(item.quantity) || 1)
+    if (item.id === itemId) {
+      return running > available
+    }
+  }
+  return false
+}

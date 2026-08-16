@@ -19,6 +19,7 @@ import { isTurnstileConfigured } from '@/lib/turnstile'
 import { contactApi } from '@/services/api'
 import { RevealSection } from '@/components/motion/RevealSection'
 import { usePageEnter } from '@/motion/usePageEnter'
+import { newMetaEventId, trackMetaEvent } from '@/lib/metaPixel'
 
 const fieldClass =
   'contact-form-field w-full rounded-xl border border-black/10 bg-[var(--site-bg-muted)] px-4 py-3 text-sm font-medium text-[#0B0F19] outline-none transition placeholder:text-[#94A3B8] focus:border-[#85E307] focus:bg-white focus:ring-2 focus:ring-[#85E307]/25'
@@ -204,6 +205,12 @@ export default function ContactPage() {
         description: t('contactPage.toastSuccessDesc'),
         duration: 3500,
       })
+      trackMetaEvent(
+        'lead',
+        'Lead',
+        { content_name: 'website_contact_form' },
+        { eventId: newMetaEventId('lead') },
+      )
 
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
       setFieldErrors({})

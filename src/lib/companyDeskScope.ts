@@ -7,6 +7,7 @@ const COMPANY_DESK_PREFIXES = [
   '/gs-kyc',
   '/customer-kyc',
   '/company-prices',
+  '/company-orders',
   '/company-activate',
   '/company-login',
   '/forgot-password',

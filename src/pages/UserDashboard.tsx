@@ -1123,12 +1123,27 @@ function ProfileTab() {
     queryFn: () => accountsApi.getMyProfile() as Promise<unknown>,
   })
   const profile = asSingleProfile(profileData)
+  const civilIdLocked = ['matched', 'fixed'].includes(
+    String(profile?.civil_id_ocr_status ?? '').trim().toLowerCase(),
+  )
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [nationality, setNationality] = useState('')
   const [saving, setSaving] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState<{
+    email: string
+    destination: string
+  } | null>(null)
+  const [emailOtp, setEmailOtp] = useState('')
+  const [verifyingEmail, setVerifyingEmail] = useState(false)
+  const [pendingPhone, setPendingPhone] = useState<{
+    phone: string
+    destination: string
+  } | null>(null)
+  const [phoneOtp, setPhoneOtp] = useState('')
+  const [verifyingPhone, setVerifyingPhone] = useState(false)
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
   const [kycQuestions, setKycQuestions] = useState<KycQuestion[]>([])
@@ -1160,8 +1175,12 @@ function ProfileTab() {
 
   useEffect(() => {
     setFullName(user?.full_name ?? '')
-    setEmail(user?.email ?? '')
-    setPhoneNumber(formatKuwaitLocalDisplay(user?.phone_number ?? ''))
+    setEmail(pendingEmail?.email ?? user?.email ?? '')
+    setPhoneNumber(
+      pendingPhone?.phone
+        ? formatKuwaitLocalDisplay(pendingPhone.phone)
+        : formatKuwaitLocalDisplay(user?.phone_number ?? ''),
+    )
     const rawDob = user?.date_of_birth
     if (typeof rawDob === 'string' && rawDob.trim()) {
       setDateOfBirth(rawDob.slice(0, 10))
@@ -1170,7 +1189,7 @@ function ProfileTab() {
     }
     const rawNationality = String(user?.nationality ?? '').trim().toUpperCase()
     setNationality(/^[A-Z]{2}$/.test(rawNationality) ? rawNationality : '')
-  }, [user])
+  }, [user, pendingEmail?.email, pendingPhone?.phone])
 
   useEffect(() => {
     void authApi
@@ -1284,12 +1303,23 @@ function ProfileTab() {
         return
       }
     }
+    const currentPhone = normalizeKuwaitPhone(user.phone_number ?? '')
+    if (currentPhone && !phoneE164) {
+      toast.error(t('userDashboard.profile.phoneChange.cannotRemove'))
+      return
+    }
+    const phoneChanged = phoneE164 !== currentPhone
+    const requestedEmail = email.trim().toLowerCase()
+    const currentEmail = (user.email ?? '').trim().toLowerCase()
+    const emailChanged = requestedEmail !== currentEmail
+    if (!requestedEmail) {
+      toast.error(t('userDashboard.profile.emailChange.invalidEmail'))
+      return
+    }
     setSaving(true)
     try {
       await updateUser({
         full_name: fullName.trim() || user.full_name,
-        email: email.trim() || null,
-        phone_number: phoneE164,
         date_of_birth: dateOfBirth.trim(),
         nationality: nationalityCode,
       })
@@ -1315,12 +1345,96 @@ function ProfileTab() {
       } else {
         toast.success(t('userDashboard.profile.toasts.profileUpdatedSuccess'))
       }
+      if (emailChanged && pendingEmail?.email !== requestedEmail) {
+        const verification = await authApi.requestEmailChange(requestedEmail)
+        if (verification.already_current) {
+          await refreshUser()
+          setPendingEmail(null)
+        } else {
+          setPendingEmail({
+            email: requestedEmail,
+            destination: verification.destination,
+          })
+          setEmail(requestedEmail)
+          setEmailOtp('')
+          toast.success(
+            t('userDashboard.profile.emailChange.codeSent', {
+              email: verification.destination,
+            }),
+          )
+        }
+      }
+      if (
+        phoneChanged
+        && phoneE164
+        && pendingPhone?.phone !== phoneE164
+      ) {
+        const verification = await authApi.requestPhoneChange(phoneE164)
+        if (verification.already_current) {
+          await refreshUser()
+          setPendingPhone(null)
+        } else {
+          setPendingPhone({
+            phone: phoneE164,
+            destination: verification.destination,
+          })
+          setPhoneNumber(formatKuwaitLocalDisplay(phoneE164))
+          setPhoneOtp('')
+          toast.success(
+            t('userDashboard.profile.phoneChange.codeSent', {
+              phone: verification.destination,
+            }),
+          )
+        }
+      }
     } catch (err) {
-      const msg = (err as { response?: { data?: Record<string, string[]> } })?.response?.data
-      const first = msg && typeof msg === 'object' && Object.values(msg)[0]
-      toast.error(Array.isArray(first) ? first[0] : t('userDashboard.profile.toasts.failedToUpdateProfile'))
+      const data = (err as {
+        response?: { data?: { detail?: string } & Record<string, string[] | string | undefined> }
+      })?.response?.data
+      const first = data && typeof data === 'object' ? Object.values(data)[0] : undefined
+      toast.error(
+        typeof data?.detail === 'string'
+          ? data.detail
+          : Array.isArray(first)
+            ? first[0]
+            : t('userDashboard.profile.toasts.failedToUpdateProfile'),
+      )
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleVerifyEmail = async () => {
+    if (!pendingEmail || emailOtp.length !== 6) return
+    setVerifyingEmail(true)
+    try {
+      await authApi.verifyEmailChange(emailOtp)
+      await refreshUser()
+      setPendingEmail(null)
+      setEmailOtp('')
+      toast.success(t('userDashboard.profile.emailChange.verified'))
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast.error(detail || t('userDashboard.profile.emailChange.verifyFailed'))
+    } finally {
+      setVerifyingEmail(false)
+    }
+  }
+
+  const handleVerifyPhone = async () => {
+    if (!pendingPhone || phoneOtp.length !== 6) return
+    setVerifyingPhone(true)
+    try {
+      await authApi.verifyPhoneChange(phoneOtp)
+      await refreshUser()
+      setPendingPhone(null)
+      setPhoneOtp('')
+      toast.success(t('userDashboard.profile.phoneChange.verified'))
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast.error(detail || t('userDashboard.profile.phoneChange.verifyFailed'))
+    } finally {
+      setVerifyingPhone(false)
     }
   }
 
@@ -1483,15 +1597,88 @@ function ProfileTab() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (pendingEmail && e.target.value.trim().toLowerCase() !== pendingEmail.email) {
+                  setPendingEmail(null)
+                  setEmailOtp('')
+                }
+              }}
               className="dashboard-field"
+              autoComplete="email"
             />
+            <p className="mt-1.5 text-xs leading-relaxed text-[#64748B]">
+              {t('userDashboard.profile.emailChange.hint')}
+            </p>
           </div>
         </div>
+        {pendingEmail ? (
+          <div
+            role="status"
+            className="rounded-xl border border-[#B8D98B] bg-[#F7FCEB] p-4"
+          >
+            <p className="text-sm font-semibold text-[#0B0F19]">
+              {t('userDashboard.profile.emailChange.title')}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-[#475569]">
+              {t('userDashboard.profile.emailChange.description', {
+                email: pendingEmail.destination,
+              })}
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label htmlFor="profile-email-otp" className={dashboardLabelClass}>
+                  {t('userDashboard.profile.emailChange.codeLabel')}
+                </label>
+                <input
+                  id="profile-email-otp"
+                  value={emailOtp}
+                  onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  className="dashboard-field tracking-[0.3em]"
+                  dir="ltr"
+                />
+              </div>
+              <button
+                type="button"
+                className="dashboard-primary-btn min-h-11 sm:min-w-36"
+                disabled={verifyingEmail || emailOtp.length !== 6}
+                onClick={() => void handleVerifyEmail()}
+              >
+                {verifyingEmail
+                  ? t('userDashboard.profile.emailChange.verifying')
+                  : t('userDashboard.profile.emailChange.verify')}
+              </button>
+              <button
+                type="button"
+                className="min-h-11 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-[#334155]"
+                disabled={verifyingEmail}
+                onClick={() => {
+                  setPendingEmail(null)
+                  setEmailOtp('')
+                  setEmail(user.email ?? '')
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <KuwaitPhoneField
             value={phoneNumber}
-            onChange={setPhoneNumber}
+            onChange={(value) => {
+              setPhoneNumber(value)
+              if (
+                pendingPhone
+                && normalizeKuwaitPhone(value) !== pendingPhone.phone
+              ) {
+                setPendingPhone(null)
+                setPhoneOtp('')
+              }
+            }}
             optional
             disabled={saving}
           />
@@ -1501,6 +1688,57 @@ function ProfileTab() {
             label={t('userDashboard.profile.dateOfBirth')}
           />
         </div>
+        {pendingPhone ? (
+          <div className="dashboard-inset-panel border border-[#D8E6CA] bg-[#F7FBF2] space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold text-[#0B0F19]">
+                {t('userDashboard.profile.phoneChange.title')}
+              </h3>
+              <p className="mt-1 text-sm text-[#475569]">
+                {t('userDashboard.profile.phoneChange.description', {
+                  phone: pendingPhone.destination,
+                })}
+              </p>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-[#334155]">
+                {t('userDashboard.profile.phoneChange.codeLabel')}
+              </span>
+              <input
+                value={phoneOtp}
+                onChange={(event) => setPhoneOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                dir="ltr"
+                className="dashboard-input max-w-xs tracking-[0.3em]"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="dashboard-primary-btn"
+                disabled={verifyingPhone || phoneOtp.length !== 6}
+                onClick={() => void handleVerifyPhone()}
+              >
+                {verifyingPhone
+                  ? t('userDashboard.profile.phoneChange.verifying')
+                  : t('userDashboard.profile.phoneChange.verify')}
+              </button>
+              <button
+                type="button"
+                className="dashboard-secondary-btn"
+                disabled={verifyingPhone}
+                onClick={() => {
+                  setPendingPhone(null)
+                  setPhoneOtp('')
+                  setPhoneNumber(formatKuwaitLocalDisplay(user?.phone_number ?? ''))
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <RegionSelectField
             id="profile-nationality-label"
@@ -1513,15 +1751,26 @@ function ProfileTab() {
         <div className="dashboard-divider border-t pt-4 space-y-4">
           <h3 className="text-base font-semibold text-[#0B0F19]">{t('userDashboard.profile.identityDocumentsTitle')}</h3>
           <p className="text-sm text-[#64748B]">{t('userDashboard.profile.identityDocumentsHint')}</p>
+          {civilIdLocked ? (
+            <div className="rounded-lg border border-[#CFE4BC] bg-[#F4FAEE] px-4 py-3">
+              <p className="text-sm font-semibold text-[#295A00]">
+                {t('userDashboard.profile.civilIdLockedTitle')}
+              </p>
+              <p className="mt-1 text-sm text-[#3F6212]">
+                {t('userDashboard.profile.civilIdLockedDescription')}
+              </p>
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="dashboard-inset-panel border border-dashed text-center transition hover:border-[rgba(133,227,7,0.45)]">
-              <label className="cursor-pointer block">
+              <label className={civilIdLocked ? 'cursor-default block' : 'cursor-pointer block'}>
                 <span className="block mb-2 text-2xl" aria-hidden>🪪</span>
                 <span className="text-sm text-[#334155]">{t('userDashboard.profile.civilIdFrontSide')}</span>
                 <input
                   type="file"
                   accept="image/*"
                   className="sr-only"
+                  disabled={civilIdLocked}
                   onChange={(e) => setFrontFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -1540,13 +1789,14 @@ function ProfileTab() {
             </div>
 
             <div className="dashboard-inset-panel border border-dashed text-center transition hover:border-[rgba(133,227,7,0.45)]">
-              <label className="cursor-pointer block">
+              <label className={civilIdLocked ? 'cursor-default block' : 'cursor-pointer block'}>
                 <span className="block mb-2 text-2xl" aria-hidden>🪪</span>
                 <span className="text-sm text-[#334155]">{t('userDashboard.profile.civilIdBackSide')}</span>
                 <input
                   type="file"
                   accept="image/*"
                   className="sr-only"
+                  disabled={civilIdLocked}
                   onChange={(e) => setBackFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -1564,7 +1814,7 @@ function ProfileTab() {
               )}
             </div>
           </div>
-          {ocrCompareEnabled && isCivilIdUploaded(profile as StoreCustomerProfile) ? (
+          {!civilIdLocked && ocrCompareEnabled && isCivilIdUploaded(profile as StoreCustomerProfile) ? (
             <button
               type="button"
               className="dashboard-secondary-btn w-full sm:w-auto"
@@ -2711,6 +2961,7 @@ type CustomerProfile = {
   iban?: string | null
   civil_id_front?: string | null
   civil_id_back?: string | null
+  civil_id_ocr_status?: string | null
   iban_proof?: string | null
   kyc_registration_answers?: Record<string, string | boolean> | null
   kyc_registration_complete?: boolean

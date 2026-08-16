@@ -207,6 +207,36 @@ export const authApi = {
   updateMe: (data: unknown) =>
     apiService.patch('/accounts/users/me/', data),
 
+  requestEmailChange: (email: string) =>
+    apiService.post<{
+      message: string
+      already_current: boolean
+      destination: string
+      expires_in_seconds: number
+    }>('/accounts/users/me/email-change/request/', { email }),
+
+  verifyEmailChange: (otpCode: string) =>
+    apiService.post<{ message: string; user: unknown }>(
+      '/accounts/users/me/email-change/verify/',
+      { otp_code: otpCode },
+    ),
+
+  requestPhoneChange: (phoneNumber: string) =>
+    apiService.post<{
+      message: string
+      already_current: boolean
+      destination: string
+      expires_in_seconds: number
+    }>('/accounts/users/me/phone-change/request/', {
+      phone_number: phoneNumber,
+    }),
+
+  verifyPhoneChange: (otpCode: string) =>
+    apiService.post<{ message: string; user: unknown }>(
+      '/accounts/users/me/phone-change/verify/',
+      { otp_code: otpCode },
+    ),
+
   /** Personal photo → Cloudinary (gs-avatars). Multipart field ``avatar``. */
   uploadAvatar: (file: File) => {
     const fd = new FormData()

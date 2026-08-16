@@ -14,6 +14,7 @@ import {
   Bell,
   Crown,
   ShieldCheck,
+  ClipboardList,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useFullSignOut } from '@/hooks/useFullSignOut'
@@ -49,7 +50,7 @@ import {
 
 /** Tabs already pinned in the mobile bottom bar — excluded from the "More" sheet. */
 const BOTTOM_BAR_HREFS = ['/', '/products', '/prices', '/cart']
-const COMPANY_BOTTOM_BAR_HREFS = ['/gs-kyc', '/company-prices', '/contact']
+const COMPANY_BOTTOM_BAR_HREFS = ['/company-orders', '/gs-kyc', '/company-prices', '/contact']
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -71,6 +72,8 @@ export default function Navbar() {
   const onCompanyPublicPath =
     location.pathname === '/gs-kyc'
     || location.pathname.startsWith('/gs-kyc/')
+    || location.pathname === '/company-orders'
+    || location.pathname.startsWith('/company-orders/')
     || location.pathname === '/company-prices'
     || location.pathname.startsWith('/company-prices/')
     || location.pathname === '/company-login'
@@ -106,6 +109,7 @@ export default function Navbar() {
   const navLinks = useMemo(() => {
     if (companyDeskScoped) {
       return [
+        { nameKey: 'nav.companyOrders', href: '/company-orders' },
         { nameKey: 'nav.customerKyc', href: '/gs-kyc' },
         { nameKey: 'nav.companyPrices', href: '/company-prices' },
         { nameKey: 'nav.contact', href: '/contact' },
@@ -670,6 +674,14 @@ export default function Navbar() {
       <div className="mobile-bottom-nav__row flex min-h-[var(--bottom-nav-content)] items-stretch justify-around px-0.5 pt-1 pb-1">
         {companyDeskScoped ? (
           <>
+            <Link
+              to="/company-orders"
+              onClick={() => setIsMenuOpen(false)}
+              className={`mobile-bottom-nav__item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 transition-colors ${isPathActive('/company-orders') ? 'text-[#3F6F00]' : 'text-[#64748B] hover:text-[#0C1512]'}`}
+            >
+              <ClipboardList className="h-5 w-5 shrink-0" strokeWidth={isPathActive('/company-orders') ? 2.5 : 1.75} />
+              <span className="mobile-bottom-nav__label">{t('nav.companyOrders')}</span>
+            </Link>
             <Link
               to="/gs-kyc"
               onClick={() => setIsMenuOpen(false)}

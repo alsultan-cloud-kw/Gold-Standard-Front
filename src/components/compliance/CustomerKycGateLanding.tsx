@@ -4,11 +4,18 @@ import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
   Clock3,
+  CreditCard,
   Database,
+  FileCheck2,
+  History,
   Lock,
   Mail,
+  MapPin,
+  PackageOpen,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
+  Upload,
 } from 'lucide-react'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
@@ -148,6 +155,16 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
     { key: 'match' as const, Icon: Database },
     { key: 'result' as const, Icon: ShieldCheck },
   ]
+  const companyCapabilities = [
+    { key: 'catalog' as const, Icon: PackageOpen },
+    { key: 'weights' as const, Icon: SlidersHorizontal },
+    { key: 'designs' as const, Icon: Upload },
+    { key: 'review' as const, Icon: FileCheck2 },
+    { key: 'payment' as const, Icon: CreditCard },
+    { key: 'delivery' as const, Icon: MapPin },
+    { key: 'history' as const, Icon: History },
+    { key: 'screening' as const, Icon: ShieldCheck },
+  ]
 
   return (
     <div className="min-h-screen bg-[#F4F5F1]">
@@ -220,8 +237,59 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
       </section>
 
       <div className="page-shell py-10 sm:py-14">
+        <section className="mx-auto max-w-6xl" aria-labelledby="company-portal-capabilities">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
+                {t('customerScreening.gate.companyPlatformKicker')}
+              </p>
+              <h2
+                id="company-portal-capabilities"
+                className="mt-3 text-2xl font-bold tracking-tight text-[#0C1512] sm:text-3xl"
+              >
+                {t('customerScreening.gate.companyPlatformTitle')}
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-[#475569] sm:text-base">
+                {t('customerScreening.gate.companyPlatformBody')}
+              </p>
+            </div>
+            <div className="grid gap-px overflow-hidden rounded-2xl border border-black/[0.07] bg-black/[0.07] sm:grid-cols-2">
+              {companyCapabilities.map(({ key, Icon }) => (
+                <article key={key} className="bg-white p-5">
+                  <Icon className="h-5 w-5 text-[#3F6F00]" strokeWidth={1.8} aria-hidden />
+                  <h3 className="mt-3 text-sm font-bold text-[#0C1512]">
+                    {t(`customerScreening.gate.companyCapabilities.${key}.title`)}
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-5 text-[#64748B] sm:text-sm">
+                    {t(`customerScreening.gate.companyCapabilities.${key}.body`)}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 rounded-2xl border border-black/[0.07] bg-[#0B0F19] p-5 text-white sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="text-sm font-bold text-[#85E307]">
+                {t('customerScreening.gate.sanctionsTitle')}
+              </p>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-white/65">
+                {t('customerScreening.gate.sanctionsBody')}
+              </p>
+            </div>
+            <a
+              href="https://www.opensanctions.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307] motion-reduce:transition-none"
+            >
+              OpenSanctions
+            </a>
+          </div>
+        </section>
+
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-xl font-semibold text-[#0C1512] sm:text-2xl">
+          <h2 className="mt-12 text-center text-xl font-semibold text-[#0C1512] sm:mt-16 sm:text-2xl">
             {t('customerScreening.gate.howTitle')}
           </h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">

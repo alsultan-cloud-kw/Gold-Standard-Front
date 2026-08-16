@@ -43,6 +43,7 @@ import BranchesPage from './pages/BranchesPage'
 import PricesPage from './pages/PricesPage'
 import ZakatPage from './pages/ZakatPage'
 import CompanyPricesPage from './pages/CompanyPricesPage'
+import CompanyOrdersPage from './pages/CompanyOrdersPage'
 // News temporarily hidden — re-enable with nav.news + HomeNewsSection
 // import NewsPage from './pages/NewsPage'
 import TermsOfServiceAndPrivacyPolicyPage from './pages/TermsOfServiceAndPrivacyPolicyPage'
@@ -81,6 +82,7 @@ import TradeGoldPage from './pages/TradeGoldPage'
 import AdminClubs from './pages/admin/AdminClubs'
 import JoinClubPage from './pages/JoinClubPage'
 import MarketingVisitTracker from './components/analytics/MarketingVisitTracker'
+import MetaPixelTracker from './components/analytics/MetaPixelTracker'
 import { RouteSeo } from './components/seo/RouteSeo'
 
 // Context
@@ -116,6 +118,7 @@ function App() {
             <ScrollToTop />
             <RouteSeo />
             <MarketingVisitTracker />
+            <MetaPixelTracker />
             <GoogleOneTapPrompt />
             <AuthTransitionOverlay />
             <MinistryKycGate />
@@ -190,6 +193,7 @@ function App() {
                   <Route path="/prices" element={<PricesPage />} />
                   <Route path="/zakat" element={<ZakatPage />} />
                   <Route path="/company-prices" element={<CompanyPricesPage />} />
+                  <Route path="/company-orders" element={<CompanyOrdersPage />} />
                   {/* News temporarily hidden
                   <Route path="/news" element={<NewsPage />} />
                   */}

@@ -1,4 +1,13 @@
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import i18n from '../i18n'
@@ -6,8 +15,8 @@ import type { Product, Cart, CartItem } from '../types'
 import { productsApi, clubsApi, cartApi } from '../services/api'
 import { useAuth } from './AuthContext'
 import {
+  cartHasUnavailableItems,
   cartUnitsForProductId,
-  clampCartLineQuantity,
   clampPurchaseQuantity,
   isCartProductIncomplete,
   isProductOutOfStock,
@@ -16,6 +25,8 @@ import {
   productAvailableQuantity,
   productStockFieldsChanged,
 } from '@/utils/productStock'
+import { applyLiveProductsToCartItems } from '@/utils/cartRevalidate'
+import { productMetaParams, trackMetaEvent } from '@/lib/metaPixel'
 
 interface CartContextType {
   cart: Cart
@@ -28,6 +39,16 @@ interface CartContextType {
    * signed lock matches the live cart total at enter.
    */
   checkoutPriceReady: boolean
+  /** Aggregate unique-unit / OOS gate for cart and checkout. */
+  hasUnavailableItems: boolean
+  /**
+   * Force live Django stock/price refresh. Use before place-order and after
+   * UNIT_ALREADY_SOLD so excess unique lines are trimmed when another channel sold.
+   */
+  refreshCartNow: (opts?: {
+    force?: boolean
+    allowOnCheckout?: boolean
+  }) => Promise<{ hasUnavailableItems: boolean; items: CartItem[] }>
   addToCart: (product: Product, quantity?: number) => void
   removeFromCart: (itemId: string) => void
   updateQuantity: (itemId: string, quantity: number) => void
@@ -260,9 +281,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const skipNextSyncRef = useRef(false)
   const wasOnCheckoutRef = useRef(location.pathname.startsWith('/checkout'))
   const forceRepriceRef = useRef<
-    (opts?: { bypassGap?: boolean; allowOnCheckout?: boolean }) => Promise<void>
-  >(async () => undefined)
+    (opts?: { bypassGap?: boolean; allowOnCheckout?: boolean }) => Promise<{
+      hasUnavailableItems: boolean
+      items: CartItem[]
+    }>
+  >(async () => ({ hasUnavailableItems: false, items: [] }))
   const REPRICE_MIN_GAP_MS = 2500
+
+  const snapshotCartAvailability = useCallback(() => {
+    const items = itemsRef.current
+    return {
+      items,
+      hasUnavailableItems: cartHasUnavailableItems(items),
+    }
+  }, [])
+
+  const refreshCartNow = useCallback(
+    async (opts?: { force?: boolean; allowOnCheckout?: boolean }) => {
+      return forceRepriceRef.current({
+        bypassGap: opts?.force === true,
+        allowOnCheckout: opts?.allowOnCheckout === true || opts?.force === true,
+      })
+    },
+    [],
+  )
 
   const assertCanPurchase = (): boolean => {
     if (authLoading) return false
@@ -380,87 +422,89 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /** One-shot when entering checkout so live cart ≈ the lock created on mount. */
       allowOnCheckout?: boolean
     }) => {
-      if (cancelled) return
+      if (cancelled) {
+        return snapshotCartAvailability()
+      }
       const onCheckout =
         typeof window !== 'undefined' && window.location.pathname.startsWith('/checkout')
       // Pause the live ticker under checkout so the locked total does not drift.
-      // Entry may pass allowOnCheckout for a single freshen-before-lock.
-      if (onCheckout && !opts?.allowOnCheckout) return
+      // Entry / forced claim refresh may pass allowOnCheckout.
+      if (onCheckout && !opts?.allowOnCheckout) {
+        return snapshotCartAvailability()
+      }
       const now = Date.now()
-      if (repriceInFlightRef.current) return
-      if (!opts?.bypassGap && now - lastRepriceStartedAtRef.current < REPRICE_MIN_GAP_MS) return
+      if (repriceInFlightRef.current) {
+        return snapshotCartAvailability()
+      }
+      if (!opts?.bypassGap && now - lastRepriceStartedAtRef.current < REPRICE_MIN_GAP_MS) {
+        return snapshotCartAvailability()
+      }
 
       repriceInFlightRef.current = true
       lastRepriceStartedAtRef.current = now
       const items = itemsRef.current
       if (!items.length) {
         repriceInFlightRef.current = false
-        return
+        return { items: [], hasUnavailableItems: false }
       }
 
       setCartRefreshing(true)
       try {
         const isClub = clubPricingEnabledRef.current
 
+        // Deduplicate by slug — multiple unique unit lines share one product.
+        const slugToItemIds = new Map<string, string[]>()
+        for (const item of items) {
+          const slug = item.product.slug?.trim()
+          if (!slug) continue
+          const list = slugToItemIds.get(slug) ?? []
+          list.push(item.id)
+          slugToItemIds.set(slug, list)
+        }
+
         const rows = await Promise.all(
-          items.map(async (item) => {
-            const slug = item.product.slug
-            if (!slug) return null
+          [...slugToItemIds.keys()].map(async (slug) => {
             try {
               const latest = (await productsApi.getProduct(slug)) as Product
-              return { itemId: item.id, latest }
+              return { slug, latest }
             } catch {
               return null
             }
           }),
         )
 
-        if (cancelled) return
+        if (cancelled) return snapshotCartAvailability()
 
         const byItemId = new Map<string, Product>()
-        for (const r of rows) {
-          if (r?.latest) byItemId.set(r.itemId, r.latest)
+        for (const row of rows) {
+          if (!row?.latest) continue
+          for (const itemId of slugToItemIds.get(row.slug) ?? []) {
+            const existing = items.find((item) => item.id === itemId)?.product
+            byItemId.set(itemId, mergeCartProducts(existing, row.latest))
+          }
         }
-        if (!byItemId.size) return
+        if (!byItemId.size) {
+          return snapshotCartAvailability()
+        }
 
-        setCart((prevCart) => {
-          let changed = false
-          const nextItems = prevCart.items.map((item) => {
-            const latest = byItemId.get(item.id)
-            if (!latest) return item
-
-            const nextUnit = unitPriceForMembership(latest, isClub)
-            const resolvedUnit =
-              nextUnit > 0 ? nextUnit : Number(item.unit_price) > 0 ? Number(item.unit_price) : 0
-            const nextQty = clampCartLineQuantity(latest, item.quantity)
-            const unitChanged = Math.abs((Number(item.unit_price) || 0) - resolvedUnit) > 1e-9
-            const qtyChanged = nextQty !== item.quantity
-            const priceMetaChanged =
-              (item.product.live_total_price ?? null) !== (latest.live_total_price ?? null) ||
-              (item.product.live_total_price_club ?? null) !== (latest.live_total_price_club ?? null)
-            const stockChanged = productStockFieldsChanged(item.product, latest)
-
-            if (!unitChanged && !qtyChanged && !priceMetaChanged && !stockChanged) {
-              // Still merge product snapshot (images etc.) when unit math unchanged.
-              if (item.product === latest) return item
-              changed = true
-              return { ...item, product: mergeCartProducts(item.product, latest) }
-            }
-
-            changed = true
-            return {
-              ...item,
-              product: mergeCartProducts(item.product, latest),
-              quantity: nextQty,
-              unit_price: resolvedUnit,
-              total_price: nextQty * resolvedUnit,
-            }
-          })
-
-          return changed ? calculateCartTotals(nextItems) : prevCart
-        })
+        const { items: nextItems, changed } = applyLiveProductsToCartItems(
+          items,
+          byItemId,
+          unitPriceForMembership,
+          isClub,
+        )
+        if (changed) {
+          const nextCart = calculateCartTotals(nextItems)
+          itemsRef.current = nextCart.items
+          setCart(nextCart)
+        }
+        return {
+          items: nextItems,
+          hasUnavailableItems: cartHasUnavailableItems(nextItems),
+        }
       } catch {
         // Ignore transient repricing failures; keep last known prices.
+        return snapshotCartAvailability()
       } finally {
         repriceInFlightRef.current = false
         if (!cancelled) setCartRefreshing(false)
@@ -468,7 +512,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     forceRepriceRef.current = async (opts) => {
-      await repriceFromLiveRates({ bypassGap: true, ...opts })
+      return repriceFromLiveRates({ bypassGap: true, ...opts })
     }
 
     void repriceFromLiveRates()
@@ -480,7 +524,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cancelled = true
       window.clearInterval(id)
     }
-  }, [])
+  }, [snapshotCartAvailability])
 
   // Enter checkout: freshen live prices first, then allow quote lock (cart↔checkout match).
   // Leave checkout: resume live ticker immediately.
@@ -553,6 +597,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // double-invokes state updaters in dev, which duplicated sonner toasts.
     let toastKind: 'added' | 'increased' | 'capped' | 'atMax' | null = null
     let toastQty = quantity
+    let metaAddedQuantity = 0
     setCart((prevCart) => {
       if (isProductSerialized(product)) {
         const already = cartUnitsForProductId(prevCart.items, product.id)
@@ -565,6 +610,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return prevCart
         }
         toastKind = toAdd < want ? 'capped' : already > 0 ? 'increased' : 'added'
+        metaAddedQuantity = toAdd
         toastQty = toAdd < want ? already + toAdd : toAdd
         const unit = unitPriceForMembership(product, clubPricingEnabled)
         const newLines: CartItem[] = []
@@ -589,6 +635,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return prevCart
       }
       const toAdd = Math.min(Math.max(1, Math.floor(quantity) || 1), room)
+      metaAddedQuantity = toAdd
       const nextQty = existingQty + toAdd
 
       if (toAdd < Math.max(1, Math.floor(quantity) || 1)) {
@@ -680,6 +727,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         i18n.t('cart.toasts.maxAvailable'),
         i18n.t('cart.toasts.maxAvailableDesc', { name, count: productAvailableQuantity(product) }),
         `cart-cap-${product.id}`,
+      )
+    }
+
+    if (metaAddedQuantity > 0) {
+      trackMetaEvent(
+        'add_to_cart',
+        'AddToCart',
+        productMetaParams(
+          product,
+          metaAddedQuantity,
+          unitPriceForMembership(product, clubPricingEnabled),
+        ),
       )
     }
   }
@@ -822,6 +881,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getItemCount = () => cart.item_count
 
+  const hasUnavailableItems = useMemo(
+    () => cartHasUnavailableItems(cart.items),
+    [cart.items],
+  )
+
   return (
     <CartContext.Provider
       value={{
@@ -829,6 +893,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cartHydrated: hydrated,
         cartRefreshing,
         checkoutPriceReady,
+        hasUnavailableItems,
+        refreshCartNow,
         addToCart,
         removeFromCart,
         updateQuantity,

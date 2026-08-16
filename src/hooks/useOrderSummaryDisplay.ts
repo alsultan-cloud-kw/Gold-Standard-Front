@@ -137,6 +137,7 @@ export function useOrderSummaryDisplay(
     shippingAmount,
     taxAmount,
     offerTitle,
+    discountSource: useServer ? preview?.discount_source ?? null : null,
     linePrices: useServer ? preview?.line_prices : null,
     quoteToken: useServer && preview?.quote_token ? preview.quote_token : null,
     expiresAt,

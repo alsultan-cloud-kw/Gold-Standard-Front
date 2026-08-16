@@ -6,6 +6,7 @@ export type CheckoutPreviewData = {
   total_amount: string
   offer_title: string | null
   offer_id: string | null
+  discount_source?: string | null
   line_prices: unknown
   quote_token: string
   expires_at: string

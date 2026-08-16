@@ -3474,6 +3474,66 @@
     color: #0b0f19;
   }
 
+  .checkout-delivery-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .checkout-option--delivery {
+    min-height: 9rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 0.75rem 0.875rem;
+    text-align: center;
+  }
+
+  .checkout-option--delivery .checkout-option__rail {
+    display: none;
+  }
+
+  .checkout-option--delivery .checkout-option__body {
+    flex: 0 1 auto;
+    align-items: center;
+  }
+
+  .checkout-option--delivery .checkout-option__title,
+  .checkout-option--delivery .checkout-option__hint {
+    text-align: center;
+  }
+
+  .checkout-option--delivery .checkout-option__check {
+    position: absolute;
+    top: 0.875rem;
+    left: 0.875rem;
+    margin-top: 0;
+  }
+
+  .checkout-option--delivery:focus-within {
+    outline: 2px solid #85e307;
+    outline-offset: 2px;
+  }
+
+  .checkout-discount-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .checkout-discount-row .checkout-field {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .checkout-discount-action {
+    min-height: 3rem;
+    flex: 0 0 auto;
+    padding-inline: 1rem;
+    white-space: nowrap;
+  }
+
   .checkout-line-item {
     position: relative;
     display: flex;

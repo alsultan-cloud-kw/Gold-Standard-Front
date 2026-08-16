@@ -16,7 +16,15 @@ import {
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import { toast } from 'sonner'
-import { ordersApi, authApi, invoicesApi, walletApi, accountsApi } from '../services/api'
+import { isAxiosError } from 'axios'
+import {
+  accountsApi,
+  authApi,
+  handpriceDiscountApi,
+  invoicesApi,
+  ordersApi,
+  walletApi,
+} from '../services/api'
 import { KuwaitLocationFields } from '@/components/checkout/KuwaitLocationFields'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
@@ -49,7 +57,7 @@ import {
 import { productImageSrc } from '../utils/productImage'
 import { ProductStockBadge } from '@/components/products/ProductStockBadge'
 import {
-  isCartLineUnavailable,
+  isCartLineOverStock,
 } from '@/utils/productStock'
 import {
   asSingleCustomerProfile,
@@ -59,6 +67,12 @@ import {
   shippingMatchesSavedAddress,
 } from '@/utils/customerProfile'
 import { checkoutPreviewLineTotal } from '@/utils/checkoutPreview'
+import {
+  cartMetaParams,
+  newMetaEventId,
+  trackMetaEvent,
+  trackMetaPurchaseOnce,
+} from '@/lib/metaPixel'
 
 type SaleResponse = {
   id?: string
@@ -187,25 +201,86 @@ export default function CheckoutPage() {
   const [quoteReviewRequired, setQuoteReviewRequired] = useState(false)
   const [discountCodeInput, setDiscountCodeInput] = useState('')
   const [appliedDiscountCode, setAppliedDiscountCode] = useState('')
+  const [discountApplying, setDiscountApplying] = useState(false)
+  const [discountError, setDiscountError] = useState<string | null>(null)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const clearTurnstile = useCallback(() => {
     setTurnstileToken('')
     turnstileRef.current?.reset()
   }, [])
-  const { cart, clearCart, checkoutPriceReady } = useCart()
+  const { cart, clearCart, checkoutPriceReady, hasUnavailableItems, refreshCartNow } = useCart()
   const summary = useOrderSummaryDisplay(cart, deliveryType, {
     discountCode: appliedDiscountCode,
     pricingSource: 'quote',
     priceReady: checkoutPriceReady,
   })
+  const initiateCheckoutTracked = useRef(false)
+  useEffect(() => {
+    if (
+      initiateCheckoutTracked.current ||
+      cart.items.length === 0 ||
+      !summary.useServerPreview ||
+      !summary.quoteToken
+    ) {
+      return
+    }
+    initiateCheckoutTracked.current = true
+    trackMetaEvent(
+      'initiate_checkout',
+      'InitiateCheckout',
+      cartMetaParams(cart, summary.totalAmount),
+      { eventId: newMetaEventId('checkout') },
+    )
+  }, [cart, summary.quoteToken, summary.totalAmount, summary.useServerPreview])
+  const applyDiscountCode = useCallback(async () => {
+    const code = discountCodeInput.trim().toUpperCase()
+    if (!code) {
+      setDiscountError(t('checkoutPage.discountCodeRequired'))
+      return
+    }
+
+    setDiscountApplying(true)
+    setDiscountError(null)
+    try {
+      await handpriceDiscountApi.apply(code, 'website', 'checkout')
+      if (code === appliedDiscountCode) {
+        await summary.refetchPreview()
+      } else {
+        setAppliedDiscountCode(code)
+      }
+    } catch (error: unknown) {
+      const backendDetail =
+        isAxiosError(error) &&
+        error.response?.data &&
+        typeof error.response.data === 'object' &&
+        typeof (error.response.data as Record<string, unknown>).detail === 'string'
+          ? String((error.response.data as Record<string, unknown>).detail)
+          : null
+      setDiscountError(
+        isAr ? t('checkoutPage.discountCodeInvalid') : backendDetail || t('checkoutPage.discountCodeInvalid'),
+      )
+    } finally {
+      setDiscountApplying(false)
+    }
+  }, [appliedDiscountCode, discountCodeInput, isAr, summary, t])
+
+  const clearDiscountCode = useCallback(async () => {
+    setDiscountApplying(true)
+    setDiscountError(null)
+    try {
+      await handpriceDiscountApi.clear('website')
+      setAppliedDiscountCode('')
+      setDiscountCodeInput('')
+    } catch {
+      setDiscountError(t('checkoutPage.discountCodeClearError'))
+    } finally {
+      setDiscountApplying(false)
+    }
+  }, [t])
   const { standardSubtotal: displaySubtotal, clubMemberSavings: clubSavings } =
     useMemo(() => cartClubPricingBreakdown(cart.items), [cart.items])
   // Payable totals come only from the signed checkout quote — never live cart fallback.
   const displayTotalAfterClub = summary.useServerPreview ? summary.subtotal : 0
-  const hasUnavailableItems = useMemo(
-    () => cart.items.some((item) => isCartLineUnavailable(item.product, item.quantity)),
-    [cart.items],
-  )
 
   // Wallet balance (for showing and enabling wallet payment)
   const { data: payCfg } = useQuery({
@@ -656,10 +731,6 @@ export default function CheckoutPage() {
     }
     if (!ensureCanPurchase('/checkout')) return
     if (cart.items.length === 0) return
-    if (hasUnavailableItems) {
-      toast.error(t('stock.cartBlocked'))
-      return
-    }
     if (summary.previewLoading || !summary.quoteToken) {
       toast.error(t('checkoutPage.quoteUnavailable'))
       return
@@ -671,6 +742,30 @@ export default function CheckoutPage() {
       toast.error(t('checkoutPage.priceLockExpired'))
       return
     }
+
+    // Revalidate live Django stock before claim — last unique piece may have sold on web/mob/POS.
+    const sync = await refreshCartNow({ force: true, allowOnCheckout: true })
+    if (sync.hasUnavailableItems) {
+      toast.error(t('stock.cartBlocked'), {
+        description: t('checkoutPage.uniqueUnitSoldHint'),
+      })
+      return
+    }
+    const itemKey = (rows: typeof sync.items) =>
+      JSON.stringify(
+        rows
+          .map((item) => [String(item.product.id), item.quantity] as const)
+          .sort(([a], [b]) => a.localeCompare(b)),
+      )
+    if (itemKey(sync.items) !== itemKey(cart.items)) {
+      setQuoteReviewRequired(true)
+      await summary.refetchPreview()
+      toast.error(t('checkoutPage.quoteReviewRequired'), {
+        description: t('checkoutPage.uniqueUnitSoldHint'),
+      })
+      return
+    }
+    if (sync.items.length === 0) return
 
     if (isTurnstileConfigured && !turnstileToken) {
       toast.error(t('auth.captchaRequired'))
@@ -694,7 +789,7 @@ export default function CheckoutPage() {
       }
     }
 
-    const items = cart.items.map((item) => ({
+    const items = sync.items.map((item) => ({
       product_id: item.product.id,
       quantity: item.quantity,
     }))
@@ -740,6 +835,19 @@ export default function CheckoutPage() {
           state: { invoice: data.invoice_number },
         })
         return
+      }
+
+      if (data.id) {
+        trackMetaEvent(
+          'order_created',
+          'OrderCreated',
+          {
+            ...cartMetaParams(cart, Number(data.total_amount ?? checkoutTotalDue)),
+            order_id: data.id,
+            payment_method: paymentMethod,
+          },
+          { custom: true, eventId: `order:${data.id}` },
+        )
       }
 
       if (wantsDelegation && data.id) {
@@ -816,6 +924,12 @@ export default function CheckoutPage() {
       }
 
       setLastOrder(data)
+      if (data.id && data.payment_status === 'paid') {
+        trackMetaPurchaseOnce(data.id, {
+          ...cartMetaParams(cart, Number(data.total_amount ?? checkoutTotalDue)),
+          order_id: data.id,
+        })
+      }
       clearCart()
       clearCheckoutShippingDraft()
       toast.success(
@@ -862,12 +976,17 @@ export default function CheckoutPage() {
         }
         if (d.code === 'UNIT_ALREADY_SOLD') {
           const barcode = typeof d.barcode_value === 'string' ? d.barcode_value : null
+          void refreshCartNow({ force: true, allowOnCheckout: true })
           toast.error(
             barcode
               ? t('checkoutPage.unitAlreadySoldWithCode', { code: barcode })
               : t('checkoutPage.unitAlreadySold'),
+            { description: t('checkoutPage.uniqueUnitSoldHint') },
           )
           return
+        }
+        if (d.code === 'INSUFFICIENT_STOCK' || d.code === 'OUT_OF_STOCK') {
+          void refreshCartNow({ force: true, allowOnCheckout: true })
         }
         const sku = typeof d.product_sku === 'string' ? d.product_sku : null
         const availableRaw =
@@ -886,7 +1005,8 @@ export default function CheckoutPage() {
             t('checkoutPage.stockOnlyLeftForSku', {
               available,
               sku,
-            })
+            }),
+            { description: t('checkoutPage.uniqueUnitSoldHint') },
           )
           return
         }
@@ -895,7 +1015,8 @@ export default function CheckoutPage() {
             t('checkoutPage.stockInsufficientRequested', {
               available,
               requested,
-            })
+            }),
+            { description: t('checkoutPage.uniqueUnitSoldHint') },
           )
           return
         }
@@ -943,6 +1064,19 @@ export default function CheckoutPage() {
   const handleRefreshQuote = async () => {
     setQuoteReviewRequired(false)
     await summary.refetchPreview()
+  }
+
+  const continueToReview = () => {
+    trackMetaEvent(
+      'add_payment_info',
+      'AddPaymentInfo',
+      {
+        ...cartMetaParams(cart, checkoutTotalDue),
+        payment_method: paymentMethod,
+      },
+      { eventId: newMetaEventId('payment-info') },
+    )
+    setStep(3)
   }
 
   if (knetReturnPhase === 'verifying') {
@@ -1294,10 +1428,10 @@ export default function CheckoutPage() {
                       <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.deliveryChooseHint')}</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="checkout-delivery-options">
                     <label
                       className={cn(
-                        'checkout-option',
+                        'checkout-option checkout-option--delivery',
                         deliveryType === 'physical' && 'checkout-option--selected',
                       )}
                     >
@@ -1323,7 +1457,7 @@ export default function CheckoutPage() {
                     {(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED) ? (
                       <label
                         className={cn(
-                          'checkout-option',
+                          'checkout-option checkout-option--delivery',
                           deliveryType === 'locked' && 'checkout-option--selected',
                         )}
                       >
@@ -1540,7 +1674,7 @@ export default function CheckoutPage() {
                   <button type="button" onClick={() => setStep(1)} className={checkoutSecondaryBtnClass}>
                     {t('checkoutPage.back')}
                   </button>
-                  <button type="button" onClick={() => setStep(3)} className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
+                  <button type="button" onClick={continueToReview} className={cn(checkoutPrimaryBtnClass, 'flex-1')}>
                     {t('checkoutPage.reviewOrder')}
                   </button>
                 </div>
@@ -1552,7 +1686,10 @@ export default function CheckoutPage() {
                 <h2 className="checkout-panel__title">{t('checkoutPage.reviewOrder')}</h2>
                 {hasUnavailableItems && (
                   <div className="mb-4 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-medium text-[#B91C1C]">
-                    {t('stock.cartBlocked')}
+                    <p>{t('stock.cartBlocked')}</p>
+                    <p className="mt-1 text-xs font-normal text-[#991B1B]/90">
+                      {t('checkoutPage.uniqueUnitSoldHint')}
+                    </p>
                   </div>
                 )}
                 {quoteReviewRequired && (
@@ -1609,7 +1746,7 @@ export default function CheckoutPage() {
                     const imageSrc = productImageSrc(item.product)
                     const productName =
                       isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
-                    const itemOutOfStock = isCartLineUnavailable(item.product, item.quantity)
+                    const itemOutOfStock = isCartLineOverStock(cart.items, item.id)
                     const carat =
                       item.product.carat?.display_name_en
                       || item.product.carat?.display_name_ar
@@ -1674,48 +1811,71 @@ export default function CheckoutPage() {
                   <p className="mb-2 text-xs font-semibold text-[#0B0F19]">
                     {t('checkoutPage.discountCode', { defaultValue: 'Discount code' })}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="checkout-discount-row">
                     <input
-                      className={`${checkoutFieldClass} min-w-0 flex-1 font-mono uppercase`}
+                      className={`${checkoutFieldClass} min-w-0 flex-1 font-mono uppercase ${
+                        discountError ? 'border-[#B42318] ring-1 ring-[#B42318]' : ''
+                      }`}
                       value={discountCodeInput}
-                      onChange={(e) => setDiscountCodeInput(e.target.value.toUpperCase())}
+                      onChange={(e) => {
+                        setDiscountCodeInput(e.target.value.toUpperCase())
+                        if (discountError) setDiscountError(null)
+                      }}
                       placeholder={t('checkoutPage.discountCodePlaceholder', {
                         defaultValue: 'Enter code',
                       })}
                       autoComplete="off"
+                      aria-invalid={!!discountError}
+                      aria-describedby="discount-code-feedback"
+                      disabled={discountApplying}
                     />
                     <button
                       type="button"
-                      className={checkoutSecondaryBtnClass}
-                      onClick={() => {
-                        setAppliedDiscountCode(discountCodeInput.trim().toUpperCase())
-                        void summary.refetchPreview()
-                      }}
+                      className={cn(checkoutSecondaryBtnClass, 'checkout-discount-action')}
+                      onClick={() => void applyDiscountCode()}
+                      disabled={discountApplying || !discountCodeInput.trim()}
+                      aria-busy={discountApplying}
                     >
-                      {t('checkoutPage.applyDiscount', { defaultValue: 'Apply' })}
+                      {discountApplying ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      ) : null}
+                      {discountApplying
+                        ? t('checkoutPage.discountCodeChecking')
+                        : t('checkoutPage.applyDiscount', { defaultValue: 'Apply' })}
                     </button>
                     {appliedDiscountCode ? (
                       <button
                         type="button"
-                        className={checkoutSecondaryBtnClass}
-                        onClick={() => {
-                          setAppliedDiscountCode('')
-                          setDiscountCodeInput('')
-                        }}
+                        className={cn(checkoutSecondaryBtnClass, 'checkout-discount-action')}
+                        onClick={() => void clearDiscountCode()}
+                        disabled={discountApplying}
                       >
                         {t('checkoutPage.clearDiscount', { defaultValue: 'Clear' })}
                       </button>
                     ) : null}
                   </div>
-                  {appliedDiscountCode && summary.discountAmount > 0 ? (
-                    <p className="mt-2 text-xs text-[#059669]">
-                      {t('checkoutPage.discountAppliedSave', {
-                        defaultValue: 'You save {{amount}} {{kwd}}',
-                        amount: formatOrderKwd(summary.discountAmount),
-                        kwd: t('common.kwd'),
-                      })}
-                    </p>
-                  ) : null}
+                  <div id="discount-code-feedback" aria-live="polite">
+                    {discountError ? (
+                      <p role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-medium text-[#B42318]">
+                        <span aria-hidden>!</span>
+                        {discountError}
+                      </p>
+                    ) : appliedDiscountCode ? (
+                      <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-[#047857]">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                        {discountApplying || summary.previewLoading
+                          ? t('checkoutPage.discountCodeChecking')
+                          : summary.discountSource === 'handprice_code' && summary.discountAmount > 0
+                            ? t('checkoutPage.discountAppliedSave', {
+                                amount: formatOrderKwd(summary.discountAmount),
+                                kwd: t('common.kwd'),
+                              })
+                            : summary.discountAmount > 0
+                              ? t('checkoutPage.discountCodeBetterOffer')
+                              : t('checkoutPage.discountCodeNoEligibleAmount')}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="checkout-totals mb-5 space-y-2">
@@ -1778,7 +1938,12 @@ export default function CheckoutPage() {
                   <p className="mb-4 text-sm text-amber-700">{t('checkoutPage.walletTooLow')}</p>
                 )}
                 {hasUnavailableItems && (
-                  <p className="mb-4 text-sm font-medium text-[#B91C1C]">{t('stock.cartBlocked')}</p>
+                  <div className="mb-4 text-sm font-medium text-[#B91C1C]">
+                    <p>{t('stock.cartBlocked')}</p>
+                    <p className="mt-1 text-xs font-normal text-[#991B1B]/90">
+                      {t('checkoutPage.uniqueUnitSoldHint')}
+                    </p>
+                  </div>
                 )}
 
                 <CheckoutTrustBadges variant="compact" className="mb-4 lg:hidden" />
@@ -1917,7 +2082,7 @@ export default function CheckoutPage() {
             <button type="button" onClick={() => setStep(1)} className={checkoutSecondaryBtnClass}>
               {t('checkoutPage.back')}
             </button>
-            <button type="button" onClick={() => setStep(3)} className={cn(checkoutPrimaryBtnClass, 'flex-[1.4]')}>
+            <button type="button" onClick={continueToReview} className={cn(checkoutPrimaryBtnClass, 'flex-[1.4]')}>
               {t('checkoutPage.reviewOrder')}
             </button>
           </>

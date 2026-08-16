@@ -61,7 +61,6 @@ export function useCheckoutOfferPreview(
         ? readCheckoutQuoteSession(storageKey, { cartTotal: cartSubtotal })
         : undefined,
     // storageKey encodes cart / delivery / discount identity; cartSubtotal gates reuse
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [storageKey, hasToken, items.length, cartSubtotal],
   )
 
@@ -79,6 +78,9 @@ export function useCheckoutOfferPreview(
     // Only seed from session when recent or still aligned with live cart — never an old lock.
     initialData: sessionQuote,
     initialDataUpdatedAt: sessionQuote?.saved_at,
+    // Preserve the last valid signed total while an accepted code gets a fresh quote.
+    // Invalid codes are rejected by the apply endpoint before this key changes.
+    placeholderData: (previousData) => previousData,
     // Checkout must lock at enter-time rates; cart prefetch must not freeze an older total.
     refetchOnMount: lockOnMount ? 'always' : true,
     // The quote is a price lock, not a ticker. Hold for server validity window.

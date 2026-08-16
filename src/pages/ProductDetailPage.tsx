@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -31,6 +31,7 @@ import {
   maxPurchasableQuantity,
 } from '@/utils/productStock'
 import { formatProductCaratLabel } from '../utils/productCaratLabel'
+import { productMetaParams, trackMetaEvent } from '@/lib/metaPixel'
 
 export default function ProductDetailPage() {
   const { t, i18n } = useTranslation()
@@ -62,6 +63,14 @@ export default function ProductDetailPage() {
     [product],
   )
   const detailFetchTrends = useProductPriceTrendSincePreviousFetch(trendProducts)
+  const trackedProductId = useRef<string | null>(null)
+
+  useEffect(() => {
+    const trackedProduct = product as Product | undefined
+    if (!trackedProduct || trackedProductId.current === trackedProduct.id) return
+    trackedProductId.current = trackedProduct.id
+    trackMetaEvent('view_content', 'ViewContent', productMetaParams(trackedProduct))
+  }, [product])
 
   if (isLoading) {
     return <AppLoadingScreen />
