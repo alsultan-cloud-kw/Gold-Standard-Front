@@ -94,9 +94,19 @@ export default function BranchesPage() {
             <a
               href={`tel:${GS_CONTACT.phoneTel}`}
               className="branches-hero-chip inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--site-bg-muted)] px-3 py-1.5 font-medium text-[#0B0F19] transition-colors hover:border-[#85E307]/40"
+              title={t('contactPage.phoneCallHint')}
             >
               <Phone className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
               <span dir="ltr">{GS_CONTACT.phone}</span>
+            </a>
+            <a
+              href={`tel:${GS_CONTACT.switchboardTel}`}
+              className="branches-hero-chip inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--site-bg-muted)] px-3 py-1.5 font-medium text-[#0B0F19] transition-colors hover:border-[#85E307]/40"
+              title={t('contactPage.phoneSwitchboard')}
+            >
+              <Phone className="h-3.5 w-3.5 shrink-0 text-[#3F6F00]" aria-hidden />
+              <span className="text-xs text-[#64748B]">{t('contactPage.phoneSwitchboard')}</span>
+              <span dir="ltr">{GS_CONTACT.switchboardDisplay}</span>
             </a>
             <GoogleReviewsBadge />
             {!isLoading && branches.length > 1 ? (

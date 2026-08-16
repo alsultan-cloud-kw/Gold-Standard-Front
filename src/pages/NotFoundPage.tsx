@@ -137,9 +137,21 @@ export default function NotFoundPage() {
                 <a
                   href={`tel:${GS_CONTACT.phoneTel}`}
                   className="mt-1.5 inline-flex items-center gap-2 text-sm font-bold text-[#3F6F00] transition-colors hover:text-[#4F8E00]"
+                  dir="ltr"
                 >
                   <Phone className="h-4 w-4 shrink-0" aria-hidden />
                   {GS_CONTACT.phone}
+                </a>
+                <a
+                  href={`tel:${GS_CONTACT.switchboardTel}`}
+                  className="mt-1.5 flex items-center gap-2 text-sm font-bold text-[#3F6F00] transition-colors hover:text-[#4F8E00]"
+                  dir="ltr"
+                >
+                  <Phone className="h-4 w-4 shrink-0" aria-hidden />
+                  {GS_CONTACT.switchboardDisplay}
+                  <span className="text-xs font-medium text-[#64748B]">
+                    ({t('contactPage.phoneSwitchboard')})
+                  </span>
                 </a>
               </div>
             </div>

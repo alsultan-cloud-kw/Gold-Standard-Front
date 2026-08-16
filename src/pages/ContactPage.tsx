@@ -144,9 +144,17 @@ export default function ContactPage() {
       },
       {
         icon: Phone,
-        titleKey: 'contactPage.phone' as const,
+        titleKey: 'contactPage.phoneCall' as const,
         content: GS_CONTACT.phone,
+        hintKey: 'contactPage.phoneCallHint' as const,
         href: `tel:${GS_CONTACT.phoneTel}`,
+      },
+      {
+        icon: Phone,
+        titleKey: 'contactPage.phoneSwitchboard' as const,
+        content: GS_CONTACT.switchboardDisplay,
+        hintKey: 'contactPage.phoneSwitchboardHint' as const,
+        href: `tel:${GS_CONTACT.switchboardTel}`,
       },
       {
         icon: Mail,
@@ -289,6 +297,11 @@ export default function ContactPage() {
           <aside className="space-y-4 lg:col-span-4">
             {contactCards.map((info) => {
               const Icon = info.icon
+              const isPhoneOrEmail =
+                info.titleKey === 'contactPage.phoneCall' ||
+                info.titleKey === 'contactPage.phoneSwitchboard' ||
+                info.titleKey === 'contactPage.email'
+
               const body =
                 info.titleKey === 'contactPage.hours' ? (
                   <span className="block space-y-1">
@@ -308,9 +321,17 @@ export default function ContactPage() {
                     <h3 className="page-kicker !mb-0 !text-[10px]">
                       {t(info.titleKey)}
                     </h3>
-                    <p className="mt-1 text-sm font-medium leading-relaxed text-[#0B0F19]">
+                    <p
+                      className="mt-1 text-sm font-medium leading-relaxed text-[#0B0F19]"
+                      dir={isPhoneOrEmail ? 'ltr' : undefined}
+                    >
                       {body}
                     </p>
+                    {'hintKey' in info && info.hintKey ? (
+                      <p className="mt-1 text-xs leading-relaxed text-[#64748B]">
+                        {t(info.hintKey)}
+                      </p>
+                    ) : null}
                   </div>
                 </>
               )

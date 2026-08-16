@@ -79,6 +79,7 @@ import {
   dashboardPrimaryBtnClass,
   dashboardSecondaryBtnClass,
 } from '@/lib/dashboardStyles'
+import { sanitizeKnetPaymentUrl } from '@/lib/knetPaymentUrl'
 import HoldingsOverviewTab from '@/components/holdings/HoldingsOverviewTab'
 import AddressesTabPanel from '@/components/dashboard/AddressesTabPanel'
 import {
@@ -281,6 +282,37 @@ export default function UserDashboard() {
       // Ignore invalid query params.
     }
   }, [location.search])
+
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const vaultDeliveryId = params.get('vault_delivery')
+    const knetStatus = params.get('knet_status')
+    if (!vaultDeliveryId || !knetStatus) return
+    params.delete('vault_delivery')
+    params.delete('knet_status')
+    const qs = params.toString()
+    navigate({ pathname: '/dashboard', search: qs ? `?${qs}` : '' }, { replace: true })
+
+    if (knetStatus === 'success' || knetStatus === 'pending') {
+      ordersApi
+        .verifyVaultDeliveryPayment(vaultDeliveryId)
+        .then((res) => {
+          if (res.payment_status === 'paid' || res.status === 'paid') {
+            toast.success(t('userDashboard.lockedGold.toasts.deliveryPaymentVerified'))
+          } else {
+            toast.info(t('userDashboard.lockedGold.toasts.deliveryPaymentPending'))
+          }
+          queryClient.invalidateQueries({ queryKey: ['myVaultDeliveries'] })
+          queryClient.invalidateQueries({ queryKey: ['myLockedGold'] })
+        })
+        .catch(() => {
+          toast.error(t('userDashboard.lockedGold.toasts.deliveryPaymentFailed'))
+        })
+    } else {
+      toast.error(t('userDashboard.lockedGold.toasts.deliveryPaymentFailed'))
+    }
+  }, [location.search, navigate, t, queryClient])
 
   const tabs = [
     { id: 'profile', name: t('userDashboard.tabs.profile'), icon: User },
@@ -2326,7 +2358,7 @@ type SellQuoteState = {
 }
 
 function LockedGoldTab() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [lockedView, setLockedView] = useState<'fund' | 'gold' | 'products'>('fund')
   const [confirmItem, setConfirmItem] = useState<LockedItem | null>(null)
   const [quote, setQuote] = useState<SellQuoteState | null>(null)
@@ -2453,37 +2485,76 @@ function LockedGoldTab() {
     },
   })
 
+  const [deliveryItem, setDeliveryItem] = useState<LockedItem | null>(null)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryNotes, setDeliveryNotes] = useState('')
+  const isAr = i18n.language === 'ar'
+
+  const { data: deliveryQuote, isLoading: quoteLoading } = useQuery({
+    queryKey: ['vaultDeliveryQuote'],
+    queryFn: () => ordersApi.getVaultDeliveryQuote(),
+    enabled: deliveryItem != null,
+  })
+
   const deliveryMutation = useMutation({
     mutationFn: async (item: LockedItem) =>
       ordersApi.requestVaultDelivery({
         sale_item_id: item.sale_item_id,
-        customer_notes: 'Request physical delivery from vault',
+        shipping_address: deliveryAddress.trim(),
+        customer_notes: deliveryNotes.trim() || undefined,
       }),
     onSuccess: (data) => {
-      const fee = Number(data?.shipping_fee_kwd ?? 0)
       toast.success(
         t('userDashboard.lockedGold.toasts.deliveryRequested', {
-          defaultValue:
-            fee > 0
-              ? `Delivery requested (${data.request_number}). Shipping fee ${fee.toFixed(3)} KWD — pay when contacted.`
-              : `Delivery requested (${data.request_number}). Ops will arrange shipment.`,
           number: data.request_number,
-          fee: fee.toFixed(3),
         }),
       )
       queryClient.invalidateQueries({ queryKey: ['myLockedGold'] })
       queryClient.invalidateQueries({ queryKey: ['myVaultDeliveries'] })
+      setDeliveryItem(null)
+      setDeliveryAddress('')
+      setDeliveryNotes('')
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } }
-      toast.error(
-        e?.response?.data?.detail ||
-          t('userDashboard.lockedGold.toasts.deliveryFailed', {
-            defaultValue: 'Could not request delivery.',
-          }),
-      )
+      toast.error(e?.response?.data?.detail || t('userDashboard.lockedGold.toasts.deliveryFailed'))
     },
   })
+
+  const { data: vaultDeliveries } = useQuery({
+    queryKey: ['myVaultDeliveries'],
+    queryFn: () => ordersApi.getMyVaultDeliveries(),
+  })
+  const deliveryList = Array.isArray(vaultDeliveries) ? vaultDeliveries : []
+
+  const deliveryPayMutation = useMutation({
+    mutationFn: (id: string) => ordersApi.payVaultDelivery(id),
+    onSuccess: (data) => {
+      const paymentUrl = sanitizeKnetPaymentUrl(data.payment_url)
+      if (paymentUrl) {
+        window.location.assign(paymentUrl)
+      } else {
+        toast.error(t('userDashboard.lockedGold.toasts.deliveryPayFailed'))
+      }
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } }
+      toast.error(e?.response?.data?.detail || t('userDashboard.lockedGold.toasts.deliveryPayFailed'))
+    },
+  })
+
+  const deliveryStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      requested: t('userDashboard.lockedGold.delivery.statusRequested'),
+      fee_pending: t('userDashboard.lockedGold.delivery.statusFeePending'),
+      paid: t('userDashboard.lockedGold.delivery.statusPaid'),
+      fulfilled: t('userDashboard.lockedGold.delivery.statusFulfilled'),
+      shipped: t('userDashboard.lockedGold.delivery.statusShipped'),
+      delivered: t('userDashboard.lockedGold.delivery.statusDelivered'),
+      cancelled: t('userDashboard.lockedGold.delivery.statusCancelled'),
+    }
+    return map[status] ?? status
+  }
 
   const handleSellClick = (item: LockedItem) => {
     if (!hasApprovedBank && payoutPreference !== 'wallet') {
@@ -2627,20 +2698,15 @@ function LockedGoldTab() {
                     {CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED ? (
                       <button
                         type="button"
-                        onClick={() => deliveryMutation.mutate(item)}
-                        disabled={
-                          deliveryMutation.isPending ||
-                          Number(item.weight_grams_available || 0) <= 0
-                        }
+                        onClick={() => {
+                          setDeliveryItem(item)
+                          setDeliveryAddress('')
+                          setDeliveryNotes('')
+                        }}
+                        disabled={Number(item.weight_grams_available || 0) <= 0}
                         className="mt-2 ml-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium border border-stone-300 text-stone-800 hover:bg-stone-50 disabled:opacity-50"
                       >
-                        {deliveryMutation.isPending
-                          ? t('userDashboard.lockedGold.selling.requestingDelivery', {
-                              defaultValue: 'Requesting…',
-                            })
-                          : t('userDashboard.lockedGold.selling.requestDelivery', {
-                              defaultValue: 'Request delivery',
-                            })}
+                        {t('userDashboard.lockedGold.delivery.requestDelivery')}
                       </button>
                     ) : null}
                   </div>
@@ -2943,6 +3009,140 @@ function LockedGoldTab() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {deliveryItem && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+          <div className="dashboard-panel max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gold-100 mb-3">
+              {t('userDashboard.lockedGold.delivery.modalTitle')}
+            </h3>
+            <p className="text-sm text-gold-100/70 mb-1">
+              {deliveryItem.product_name ?? deliveryItem.product_sku ?? t('userDashboard.lockedGold.fallbackGold')}
+              {' · '}
+              {deliveryItem.weight_grams_available.toFixed(3)} g
+            </p>
+
+            {quoteLoading ? (
+              <p className="text-xs text-gold-100/50 my-3">{t('userDashboard.lockedGold.delivery.loadingQuote')}</p>
+            ) : deliveryQuote ? (
+              <div className="mt-3 border border-gold-500/30 rounded-lg p-3 text-sm text-gold-100/80 bg-charcoal-900/60 space-y-1">
+                <div className="flex justify-between">
+                  <span>{t('userDashboard.lockedGold.delivery.shippingFee')}</span>
+                  <span className="tabular-nums font-medium">
+                    {Number(deliveryQuote.shipping_fee_kwd) > 0
+                      ? `${Number(deliveryQuote.shipping_fee_kwd).toFixed(3)} ${deliveryQuote.currency ?? 'KWD'}`
+                      : t('userDashboard.lockedGold.delivery.free')}
+                  </span>
+                </div>
+                {(deliveryQuote.shipping_eta_en || deliveryQuote.shipping_eta_ar) && (
+                  <div className="flex justify-between">
+                    <span>{t('userDashboard.lockedGold.delivery.eta')}</span>
+                    <span className="text-xs">
+                      {isAr ? (deliveryQuote.shipping_eta_ar || deliveryQuote.shipping_eta_en) : (deliveryQuote.shipping_eta_en || deliveryQuote.shipping_eta_ar)}
+                    </span>
+                  </div>
+                )}
+                {deliveryQuote.note && (
+                  <p className="text-xs text-gold-100/50 pt-1">{deliveryQuote.note}</p>
+                )}
+              </div>
+            ) : null}
+
+            <label className="block mt-4 text-xs text-gold-100/70">
+              {t('userDashboard.lockedGold.delivery.addressLabel')} *
+              <textarea
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-gold-500/40 bg-charcoal-900/60 text-gold-100 px-3 py-2 text-sm"
+                placeholder={t('userDashboard.lockedGold.delivery.addressPlaceholder')}
+              />
+            </label>
+
+            <label className="block mt-3 text-xs text-gold-100/70">
+              {t('userDashboard.lockedGold.delivery.notesLabel')}
+              <textarea
+                value={deliveryNotes}
+                onChange={(e) => setDeliveryNotes(e.target.value)}
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-gold-500/40 bg-charcoal-900/60 text-gold-100 px-3 py-2 text-sm"
+                placeholder={t('userDashboard.lockedGold.delivery.notesPlaceholder')}
+              />
+            </label>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeliveryItem(null)}
+                className="min-h-11 px-4 rounded-lg text-sm font-medium border border-gold-500/40 text-gold-100 hover:bg-gold-500/10"
+              >
+                {t('userDashboard.lockedGold.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!deliveryAddress.trim()) {
+                    toast.error(t('userDashboard.lockedGold.delivery.addressRequired'))
+                    return
+                  }
+                  deliveryMutation.mutate(deliveryItem)
+                }}
+                disabled={deliveryMutation.isPending}
+                className="min-h-11 px-4 rounded-lg text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {deliveryMutation.isPending
+                  ? t('userDashboard.lockedGold.delivery.submitting')
+                  : t('userDashboard.lockedGold.delivery.submit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deliveryList.length > 0 && (
+        <div className={dashboardPanelClass}>
+          <h3 className="dashboard-panel__title text-base">
+            {t('userDashboard.lockedGold.delivery.requestsTitle')}
+          </h3>
+          <ul className="mt-3 divide-y divide-black/[0.06] text-sm">
+            {deliveryList.map((d) => (
+              <li key={d.id} className="py-2.5 flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-[#0B0F19]">{d.request_number}</p>
+                  <p className="text-xs text-[#64748B] truncate">
+                    {deliveryStatusLabel(d.status)}
+                    {d.created_at ? ` · ${new Date(d.created_at).toLocaleDateString()}` : ''}
+                  </p>
+                  <p className="text-xs text-[#64748B] truncate">{d.shipping_address}</p>
+                  {(d.shipping_eta_en || d.shipping_eta_ar) && (
+                    <p className="text-xs text-[#64748B]">
+                      {isAr ? (d.shipping_eta_ar || d.shipping_eta_en) : (d.shipping_eta_en || d.shipping_eta_ar)}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right shrink-0 space-y-1">
+                  <p className="text-xs tabular-nums font-medium">
+                    {Number(d.shipping_fee_kwd).toFixed(3)} KWD
+                  </p>
+                  <p className="text-xs text-[#64748B] tabular-nums">{Number(d.weight_grams).toFixed(3)} g</p>
+                  {d.status === 'fee_pending' && (
+                    <button
+                      type="button"
+                      onClick={() => deliveryPayMutation.mutate(d.id)}
+                      disabled={deliveryPayMutation.isPending}
+                      className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                    >
+                      {deliveryPayMutation.isPending
+                        ? t('userDashboard.lockedGold.delivery.paying')
+                        : t('userDashboard.lockedGold.delivery.payShipping')}
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

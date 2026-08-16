@@ -162,10 +162,26 @@ export default function Footer() {
             <div className="mt-5 flex flex-col gap-2.5">
               <a
                 href={`tel:${GS_CONTACT.phoneTel}`}
-                className="inline-flex items-center gap-2 text-sm text-white/55 transition-colors hover:text-white"
+                className="inline-flex items-start gap-2 text-sm text-white/55 transition-colors hover:text-white"
               >
-                <Phone className="h-4 w-4 shrink-0 text-[#85E307]" aria-hidden />
-                <span dir="ltr">{GS_CONTACT.phone}</span>
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#85E307]" aria-hidden />
+                <span className="min-w-0">
+                  <span className="block text-[11px] text-white/40">{t('contactPage.phoneCall')}</span>
+                  <span dir="ltr">{GS_CONTACT.phone}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-white/35">
+                    {t('contactPage.phoneCallHint')}
+                  </span>
+                </span>
+              </a>
+              <a
+                href={`tel:${GS_CONTACT.switchboardTel}`}
+                className="inline-flex items-start gap-2 text-sm text-white/55 transition-colors hover:text-white"
+              >
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#85E307]" aria-hidden />
+                <span className="min-w-0">
+                  <span className="block text-[11px] text-white/40">{t('contactPage.phoneSwitchboard')}</span>
+                  <span dir="ltr">{GS_CONTACT.switchboardDisplay}</span>
+                </span>
               </a>
               <a
                 href={GS_INSTAGRAM.url}
@@ -278,6 +294,13 @@ export default function Footer() {
               dir="ltr"
             >
               {GS_CONTACT.phone}
+            </a>
+            <a
+              href={`tel:${GS_CONTACT.switchboardTel}`}
+              className="text-white/40 transition-colors hover:text-[#85E307]"
+              dir="ltr"
+            >
+              {GS_CONTACT.switchboardDisplay}
             </a>
             <a
               href={`mailto:${GS_CONTACT.email}`}

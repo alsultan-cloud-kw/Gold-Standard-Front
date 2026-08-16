@@ -43,7 +43,7 @@ function organizationJsonLd(lang: string, ogImage: string) {
         },
         image: ogImage,
         email: GS_CONTACT.email,
-        telephone: GS_CONTACT.phoneTel,
+        telephone: [GS_CONTACT.phoneTel, GS_CONTACT.switchboardTel],
         address: {
           '@type': 'PostalAddress',
           addressCountry: 'KW',
@@ -64,7 +64,7 @@ function organizationJsonLd(lang: string, ogImage: string) {
         name: isAr ? 'جولد ستاندرد' : SITE_NAME,
         url: SITE_ORIGIN,
         image: ogImage,
-        telephone: GS_CONTACT.phoneTel,
+        telephone: [GS_CONTACT.phoneTel, GS_CONTACT.switchboardTel],
         email: GS_CONTACT.email,
         priceRange: '$$',
         currenciesAccepted: 'KWD',

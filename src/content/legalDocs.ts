@@ -7,7 +7,7 @@ export type NumberedClause = {
 
 const SITE = 'www.goldstandardkw.com'
 const SUPPORT_EMAIL = 'info@goldstandardkw.com'
-const SUPPORT_PHONE = '+965 9853 8538'
+const SUPPORT_PHONE = '+965 9853 8538 · 2209 5001'
 
 const CLAUSES_EN: NumberedClause[] = [
   {

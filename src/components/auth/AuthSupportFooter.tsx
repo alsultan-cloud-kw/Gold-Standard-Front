@@ -22,6 +22,15 @@ export function AuthSupportFooter() {
       >
         {GS_CONTACT.phone}
       </a>
+      {' · '}
+      <a
+        href={`tel:${GS_CONTACT.switchboardTel}`}
+        className="font-semibold text-[#64748B] hover:text-[#0B0F19]"
+        dir="ltr"
+        title={t('contactPage.phoneSwitchboard')}
+      >
+        {GS_CONTACT.switchboardDisplay}
+      </a>
     </p>
   )
 }

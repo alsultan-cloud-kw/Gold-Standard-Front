@@ -320,6 +320,19 @@ export default function CheckoutPage() {
 
   const checkoutShippingCharge = summary.shippingAmount
   const checkoutTotalDue = summary.totalAmount
+  const hasCodeDiscountSavings =
+    !!appliedDiscountCode &&
+    summary.discountSource === 'handprice_code' &&
+    summary.discountAmount > 0
+
+  const shippingSummaryValue = useMemo(() => {
+    if (!summary.useServerPreview) return '—'
+    if (checkoutShippingCharge > 0) {
+      return `${formatOrderKwd(checkoutShippingCharge)} ${t('common.kwd')}`
+    }
+    if (deliveryType === 'locked') return t('checkoutPage.shippingNotApplicable')
+    return t('checkoutPage.shippingIncluded')
+  }, [summary.useServerPreview, checkoutShippingCharge, deliveryType, t])
 
   const walletTooLow = useMemo(
     () => paymentMethod === 'wallet' && walletBalance < checkoutTotalDue - 1e-9,
@@ -352,12 +365,13 @@ export default function CheckoutPage() {
       cash: CHECKOUT_COD_ENABLED,
     }
     const rows: CheckoutPayRow[] = []
+    // Keep KNET + COD as the first row (two-column layout) matching delivery cards.
     if (cfg.knet) rows.push({ id: 'knet', nameKey: 'checkoutPage.payKnet', icon: CreditCard, disabled: false })
-    if (CHECKOUT_CREDIT_CARD_ENABLED && cfg.credit_card) {
-      rows.push({ id: 'card', nameKey: 'checkoutPage.payCard', icon: CreditCard, disabled: false })
-    }
     if (CHECKOUT_COD_ENABLED && cfg.cash) {
       rows.push({ id: 'cod', nameKey: 'checkoutPage.payCod', icon: Truck, disabled: false })
+    }
+    if (CHECKOUT_CREDIT_CARD_ENABLED && cfg.credit_card) {
+      rows.push({ id: 'card', nameKey: 'checkoutPage.payCard', icon: CreditCard, disabled: false })
     }
     // Wallet checkout — off until wallet deposits are gateway-backed.
     if (WALLET_FUNDING_AND_CHECKOUT_ENABLED && TRADING_AND_VIRTUAL_WALLET_ENABLED && cfg.wallet) {
@@ -1061,6 +1075,39 @@ export default function CheckoutPage() {
   const formatQuotedKwd = (value: number) =>
     summary.useServerPreview ? formatOrderKwd(value) : '—'
 
+  const renderDiscountSummaryRow = (compact = false) => {
+    if (!(summary.discountAmount > 0)) return null
+
+    return (
+      <div
+        className={cn(
+          'flex min-w-0 justify-between gap-3',
+          hasCodeDiscountSavings
+            ? 'checkout-discount-saving-row'
+            : 'items-center text-[#059669]',
+          compact && 'checkout-discount-saving-row--compact',
+        )}
+      >
+        <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
+          <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>
+            {hasCodeDiscountSavings
+              ? t('checkoutPage.discountCodeSavings')
+              : summary.offerTitle ?? t('cartPage.promotionalOffer')}
+          </span>
+          {hasCodeDiscountSavings ? (
+            <code className="checkout-discount-code" dir="ltr">
+              {appliedDiscountCode}
+            </code>
+          ) : null}
+        </span>
+        <span className="shrink-0 font-bold tabular-nums">
+          −{formatQuotedKwd(summary.discountAmount)} {t('common.kwd')}
+        </span>
+      </div>
+    )
+  }
+
   const handleRefreshQuote = async () => {
     setQuoteReviewRequired(false)
     await summary.refetchPreview()
@@ -1428,10 +1475,14 @@ export default function CheckoutPage() {
                       <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.deliveryChooseHint')}</p>
                     </div>
                   </div>
-                  <div className="checkout-delivery-options">
+                  <div
+                    className="checkout-delivery-options checkout-choice-grid"
+                    role="radiogroup"
+                    aria-label={t('checkoutPage.delivery')}
+                  >
                     <label
                       className={cn(
-                        'checkout-option checkout-option--delivery',
+                        'checkout-option checkout-option--delivery checkout-option--choice',
                         deliveryType === 'physical' && 'checkout-option--selected',
                       )}
                     >
@@ -1457,7 +1508,7 @@ export default function CheckoutPage() {
                     {(CHECKOUT_VAULT_DELIVERY_ENABLED || TRADING_AND_VIRTUAL_WALLET_ENABLED) ? (
                       <label
                         className={cn(
-                          'checkout-option checkout-option--delivery',
+                          'checkout-option checkout-option--delivery checkout-option--choice',
                           deliveryType === 'locked' && 'checkout-option--selected',
                         )}
                       >
@@ -1610,12 +1661,16 @@ export default function CheckoutPage() {
                       <p className="mt-1 text-sm text-[#64748B]">{t('checkoutPage.trustNote')}</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div
+                    className="checkout-payment-options checkout-choice-grid"
+                    role="radiogroup"
+                    aria-label={t('checkoutPage.paymentMethod')}
+                  >
                     {paymentMethodOptions.map((method) => (
                       <label
                         key={method.id}
                         className={cn(
-                          'checkout-option',
+                          'checkout-option checkout-option--payment checkout-option--choice',
                           method.disabled && 'checkout-option--disabled',
                           !method.disabled &&
                             paymentMethod === method.id &&
@@ -1807,72 +1862,104 @@ export default function CheckoutPage() {
                   })}
                 </div>
 
-                <div className="mb-4 rounded-xl border border-black/5 bg-[#F8FAFC] p-3">
-                  <p className="mb-2 text-xs font-semibold text-[#0B0F19]">
-                    {t('checkoutPage.discountCode', { defaultValue: 'Discount code' })}
-                  </p>
-                  <div className="checkout-discount-row">
-                    <input
-                      className={`${checkoutFieldClass} min-w-0 flex-1 font-mono uppercase ${
-                        discountError ? 'border-[#B42318] ring-1 ring-[#B42318]' : ''
-                      }`}
-                      value={discountCodeInput}
-                      onChange={(e) => {
-                        setDiscountCodeInput(e.target.value.toUpperCase())
-                        if (discountError) setDiscountError(null)
-                      }}
-                      placeholder={t('checkoutPage.discountCodePlaceholder', {
-                        defaultValue: 'Enter code',
-                      })}
-                      autoComplete="off"
-                      aria-invalid={!!discountError}
-                      aria-describedby="discount-code-feedback"
-                      disabled={discountApplying}
-                    />
-                    <button
-                      type="button"
-                      className={cn(checkoutSecondaryBtnClass, 'checkout-discount-action')}
-                      onClick={() => void applyDiscountCode()}
-                      disabled={discountApplying || !discountCodeInput.trim()}
-                      aria-busy={discountApplying}
-                    >
-                      {discountApplying ? (
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                      ) : null}
-                      {discountApplying
-                        ? t('checkoutPage.discountCodeChecking')
-                        : t('checkoutPage.applyDiscount', { defaultValue: 'Apply' })}
-                    </button>
-                    {appliedDiscountCode ? (
+                <div
+                  className={cn(
+                    'checkout-discount-panel mb-4',
+                    appliedDiscountCode && 'checkout-discount-panel--applied',
+                  )}
+                >
+                  <div className="checkout-discount-panel__heading">
+                    <span className="checkout-discount-panel__icon" aria-hidden>
+                      <Tag className="h-4 w-4" />
+                    </span>
+                    <p className="font-semibold text-[#0B0F19]">
+                      {t('checkoutPage.discountCode', { defaultValue: 'Discount code' })}
+                    </p>
+                  </div>
+
+                  {!appliedDiscountCode ? (
+                    <div className="checkout-discount-row">
+                      <input
+                        className={`${checkoutFieldClass} min-w-0 flex-1 font-mono uppercase ${
+                          discountError ? 'border-[#B42318] ring-1 ring-[#B42318]' : ''
+                        }`}
+                        value={discountCodeInput}
+                        onChange={(e) => {
+                          setDiscountCodeInput(e.target.value.toUpperCase())
+                          if (discountError) setDiscountError(null)
+                        }}
+                        placeholder={t('checkoutPage.discountCodePlaceholder', {
+                          defaultValue: 'Enter code',
+                        })}
+                        autoComplete="off"
+                        aria-invalid={!!discountError}
+                        aria-describedby="discount-code-feedback"
+                        disabled={discountApplying}
+                      />
                       <button
                         type="button"
                         className={cn(checkoutSecondaryBtnClass, 'checkout-discount-action')}
+                        onClick={() => void applyDiscountCode()}
+                        disabled={discountApplying || !discountCodeInput.trim()}
+                        aria-busy={discountApplying}
+                      >
+                        {discountApplying ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                        ) : null}
+                        {discountApplying
+                          ? t('checkoutPage.discountCodeChecking')
+                          : t('checkoutPage.applyDiscount', { defaultValue: 'Apply' })}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="checkout-discount-success">
+                      <div className="checkout-discount-success__main">
+                        <span className="checkout-discount-success__check" aria-hidden>
+                          {discountApplying || summary.previewLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" strokeWidth={3} />
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <p className="font-bold text-[#064E3B]">
+                              {t('checkoutPage.discountAppliedTitle')}
+                            </p>
+                            <code className="checkout-discount-code" dir="ltr">
+                              {appliedDiscountCode}
+                            </code>
+                          </div>
+                          <div className="mt-1 text-sm leading-5 text-[#047857]" aria-live="polite">
+                            {discountApplying || summary.previewLoading
+                              ? t('checkoutPage.discountCodeChecking')
+                              : hasCodeDiscountSavings
+                                ? t('checkoutPage.discountAppliedSave', {
+                                    amount: formatOrderKwd(summary.discountAmount),
+                                    kwd: t('common.kwd'),
+                                  })
+                                : summary.discountAmount > 0
+                                  ? t('checkoutPage.discountCodeBetterOffer')
+                                  : t('checkoutPage.discountCodeNoEligibleAmount')}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="checkout-discount-remove"
                         onClick={() => void clearDiscountCode()}
                         disabled={discountApplying}
                       >
                         {t('checkoutPage.clearDiscount', { defaultValue: 'Clear' })}
                       </button>
-                    ) : null}
-                  </div>
+                    </div>
+                  )}
+
                   <div id="discount-code-feedback" aria-live="polite">
                     {discountError ? (
                       <p role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-medium text-[#B42318]">
                         <span aria-hidden>!</span>
                         {discountError}
-                      </p>
-                    ) : appliedDiscountCode ? (
-                      <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-[#047857]">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                        {discountApplying || summary.previewLoading
-                          ? t('checkoutPage.discountCodeChecking')
-                          : summary.discountSource === 'handprice_code' && summary.discountAmount > 0
-                            ? t('checkoutPage.discountAppliedSave', {
-                                amount: formatOrderKwd(summary.discountAmount),
-                                kwd: t('common.kwd'),
-                              })
-                            : summary.discountAmount > 0
-                              ? t('checkoutPage.discountCodeBetterOffer')
-                              : t('checkoutPage.discountCodeNoEligibleAmount')}
                       </p>
                     ) : null}
                   </div>
@@ -1905,24 +1992,10 @@ export default function CheckoutPage() {
                       <span className="tabular-nums">{formatQuotedKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
                     </div>
                   )}
-                  {summary.discountAmount > 0 && (
-                    <div className="flex justify-between text-[#059669]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Tag className="h-3.5 w-3.5" />
-                        {summary.offerTitle ?? t('cartPage.promotionalOffer')}
-                      </span>
-                      <span className="tabular-nums">−{formatQuotedKwd(summary.discountAmount)} {t('common.kwd')}</span>
-                    </div>
-                  )}
+                  {renderDiscountSummaryRow()}
                   <div className="flex justify-between text-[#64748B]">
                     <span>{t('checkoutPage.shipping')}</span>
-                    <span>
-                      {!summary.useServerPreview
-                        ? '—'
-                        : checkoutShippingCharge > 0
-                        ? `${formatQuotedKwd(checkoutShippingCharge)} ${t('common.kwd')}`
-                        : t('checkoutPage.shippingFree')}
-                    </span>
+                    <span className="tabular-nums">{shippingSummaryValue}</span>
                   </div>
                   <div className="flex justify-between text-[#64748B]">
                     <span>{t('cartPage.tax')}</span>
@@ -2031,21 +2104,10 @@ export default function CheckoutPage() {
                       <span className="tabular-nums text-[#0B0F19]">{formatQuotedKwd(displayTotalAfterClub)} {t('common.kwd')}</span>
                     </div>
                   )}
-                  {summary.discountAmount > 0 && (
-                    <div className="flex justify-between gap-2 text-[#059669]">
-                      <span>{summary.offerTitle ?? t('cartPage.promotionalOffer')}</span>
-                      <span className="tabular-nums">−{formatQuotedKwd(summary.discountAmount)} {t('common.kwd')}</span>
-                    </div>
-                  )}
+                  {renderDiscountSummaryRow(true)}
                   <div className="flex justify-between text-[#64748B]">
                     <span>{t('checkoutPage.shipping')}</span>
-                    <span>
-                      {!summary.useServerPreview
-                        ? '—'
-                        : checkoutShippingCharge > 0
-                        ? `${formatQuotedKwd(checkoutShippingCharge)} ${t('common.kwd')}`
-                        : t('checkoutPage.shippingFree')}
-                    </span>
+                    <span className="tabular-nums">{shippingSummaryValue}</span>
                   </div>
                   <div className="flex justify-between text-[#64748B]">
                     <span>{t('cartPage.tax')}</span>

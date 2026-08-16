@@ -870,27 +870,66 @@ export const ordersApi = {
   getMyLockedGold: () =>
     apiService.get<unknown[]>('/accounting/sales/my-locked-gold/'),
 
-  /** Quote shipping fee for vault → physical delivery. */
+  /** Quote shipping fee + ETA for vault → physical delivery. */
   getVaultDeliveryQuote: () =>
-    apiService.get<{ shipping_fee_kwd: number; currency: string; note?: string }>(
-      '/accounting/sales/vault-delivery-quote/',
-    ),
+    apiService.get<{
+      shipping_fee_kwd: number
+      currency: string
+      shipping_eta_en?: string
+      shipping_eta_ar?: string
+      note?: string
+    }>('/accounting/sales/vault-delivery-quote/'),
 
-  /** Request physical delivery of a locked sale line (reserves grams). */
+  /** Request physical delivery of a locked sale line (reserves grams; awaits Hub). */
   requestVaultDelivery: (data: {
     sale_item_id: string
-    shipping_address?: string
+    shipping_address: string
     customer_notes?: string
   }) =>
     apiService.post<{
       id: string
       request_number: string
       shipping_fee_kwd: number
+      shipping_eta_en?: string
+      shipping_eta_ar?: string
       status: string
     }>('/accounting/sales/request-vault-delivery/', data),
 
   getMyVaultDeliveries: () =>
-    apiService.get<unknown[]>('/accounting/sales/my-vault-deliveries/'),
+    apiService.get<
+      Array<{
+        id: string
+        request_number: string
+        sale_item_id: string
+        weight_grams: number
+        shipping_fee_kwd: number
+        shipping_address: string
+        shipping_eta_en?: string
+        shipping_eta_ar?: string
+        status: string
+        status_display?: string
+        created_at?: string | null
+        paid_at?: string | null
+        fulfilled_at?: string | null
+      }>
+    >('/accounting/sales/my-vault-deliveries/'),
+
+  payVaultDelivery: (id: string) =>
+    apiService.post<{
+      delivery_id: string
+      payment_url: string
+      track_id?: string
+      amount_kwd: string
+      status: string
+    }>(`/accounting/vault-deliveries/${encodeURIComponent(id)}/pay/`),
+
+  verifyVaultDeliveryPayment: (id: string) =>
+    apiService.post<{
+      delivery_id: string
+      status: string
+      payment_status: string
+      delivery?: { status: string; request_number: string }
+    }>(`/accounting/vault-deliveries/${encodeURIComponent(id)}/verify-payment/`),
 }
 
 // Trading: customer sell gold (buyback) — store pays at sell rate

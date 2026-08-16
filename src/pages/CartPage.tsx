@@ -107,9 +107,7 @@ function OrderSummaryCard({
 
         <div className="flex items-center justify-between gap-2 text-[#64748B]">
           <span>{t('cartPage.shipping')}</span>
-          <span className="text-sm font-medium text-[#64748B]">
-            {t('cartPage.shippingAtCheckout')}
-          </span>
+          <span className="text-[#64748B]">{t('cartPage.shippingAtCheckout')}</span>
         </div>
 
         <div className="flex items-center justify-between gap-2 text-[#64748B]">
