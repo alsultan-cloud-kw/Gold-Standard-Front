@@ -69,6 +69,7 @@ import { asSingleCustomerProfile } from '@/utils/customerProfile'
 import {
   isBasicProfileComplete,
   isCivilIdUploaded,
+  isCivilIdVerified,
   isCustomerKycComplete,
 } from '@/lib/customerCompliance'
 import type { CustomerProfile as StoreCustomerProfile } from '@/types'
@@ -1137,7 +1138,15 @@ function ProfileTab() {
   /** Silent background OCR after identity upload — no user-facing controls. */
   const [awaitingSilentOcr, setAwaitingSilentOcr] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
+  const [manualReviewBusy, setManualReviewBusy] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
+
+  const ocrSettingsQuery = useQuery({
+    queryKey: ['civilIdVerificationSettings'],
+    queryFn: () => accountsApi.getCivilIdVerificationSettings(),
+    staleTime: 60_000,
+  })
+  const ocrCompareEnabled = ocrSettingsQuery.data?.ocr_compare_enabled !== false
 
   const purchaseBlocked = useMemo(() => {
     if (!user) return false
@@ -1145,9 +1154,9 @@ function ProfileTab() {
     return (
       !isBasicProfileComplete(user)
       || (kycQuestions.length > 0 && !isCustomerKycComplete(storeProfile, kycQuestions))
-      || !isCivilIdUploaded(storeProfile)
+      || !isCivilIdVerified(storeProfile, { ocrCompareEnabled })
     )
-  }, [user, profile, kycQuestions])
+  }, [user, profile, kycQuestions, ocrCompareEnabled])
 
   useEffect(() => {
     setFullName(user?.full_name ?? '')
@@ -1555,6 +1564,40 @@ function ProfileTab() {
               )}
             </div>
           </div>
+          {ocrCompareEnabled && isCivilIdUploaded(profile as StoreCustomerProfile) ? (
+            <button
+              type="button"
+              className="dashboard-secondary-btn w-full sm:w-auto"
+              disabled={manualReviewBusy || saving}
+              onClick={() => {
+                void (async () => {
+                  setManualReviewBusy(true)
+                  try {
+                    const civilId = String(user?.civil_id ?? '').replace(/\D/g, '')
+                    await accountsApi.createProfileVerificationRequest({
+                      full_name: fullName.trim() || String(user?.full_name ?? ''),
+                      civil_id: civilId,
+                      date_of_birth: dateOfBirth.slice(0, 10) || undefined,
+                      nationality: nationality.trim().toUpperCase() || undefined,
+                      customer_notes: t('userDashboard.profile.manualReviewNoteDefault'),
+                    })
+                    toast.success(t('userDashboard.profile.manualReviewSuccess'))
+                  } catch (e: unknown) {
+                    const msg =
+                      (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+                      || t('userDashboard.profile.manualReviewFailed')
+                    toast.error(String(msg))
+                  } finally {
+                    setManualReviewBusy(false)
+                  }
+                })()
+              }}
+            >
+              {manualReviewBusy
+                ? t('userDashboard.profile.saving')
+                : t('userDashboard.profile.manualReviewCta')}
+            </button>
+          ) : null}
         </div>
 
         <button type="submit" className="dashboard-primary-btn" disabled={saving}>

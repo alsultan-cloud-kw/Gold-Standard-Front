@@ -1291,6 +1291,23 @@ export const accountsApi = {
       updated_at?: string | null
     }>(`/accounts/profiles/${profileId}/civil-id-ocr/`),
 
+  getCivilIdVerificationSettings: () =>
+    apiService.get<{ ok?: boolean; ocr_compare_enabled?: boolean }>(
+      '/accounts/civil-id-verification-settings/',
+    ),
+
+  createProfileVerificationRequest: (payload: {
+    full_name: string
+    civil_id: string
+    date_of_birth?: string
+    nationality?: string
+    customer_notes?: string
+  }) =>
+    apiService.post<{ ok?: boolean; id?: string; status?: string; detail?: string }>(
+      '/accounts/profile-verification-requests/',
+      payload,
+    ),
+
   /** Update customer profile by id. Supports FormData for file uploads. */
   updateProfile: (id: string, data: FormData | unknown) =>
     apiService.patch(`/accounts/profiles/${id}/`, data),

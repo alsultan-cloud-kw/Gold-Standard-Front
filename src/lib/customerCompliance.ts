@@ -104,8 +104,12 @@ export function isCivilIdUploaded(profile: CustomerProfile | null | undefined): 
 }
 
 /** Civil ID OCR settled successfully (name match / apply path). */
-export function isCivilIdVerified(profile: CustomerProfile | null | undefined): boolean {
+export function isCivilIdVerified(
+  profile: CustomerProfile | null | undefined,
+  opts?: { ocrCompareEnabled?: boolean },
+): boolean {
   if (!isCivilIdUploaded(profile)) return false
+  if (opts?.ocrCompareEnabled === false) return true
   const status = String(profile?.civil_id_ocr_status ?? '').trim().toLowerCase()
   return status === 'matched' || status === 'fixed'
 }
@@ -117,10 +121,11 @@ export function purchaseComplianceReason(
   user: Parameters<typeof isBasicProfileComplete>[0],
   profile: CustomerProfile | null | undefined,
   questions: KycQuestion[],
+  opts?: { ocrCompareEnabled?: boolean },
 ): PurchaseComplianceReason | null {
   if (!isBasicProfileComplete(user)) return 'profile'
   if (!isCustomerKycComplete(profile, questions)) return 'kyc'
-  if (!isCivilIdUploaded(profile) || !isCivilIdVerified(profile)) return 'civil_id'
+  if (!isCivilIdUploaded(profile) || !isCivilIdVerified(profile, opts)) return 'civil_id'
   return null
 }
 

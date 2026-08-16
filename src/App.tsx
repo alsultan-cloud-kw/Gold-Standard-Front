@@ -90,6 +90,7 @@ import { CartProvider } from './contexts/CartContext'
 import { ProtectedRoute, StaffRoute, CatalogManagerRoute, GuestOnlyRoute, StaffDashboardGate } from './components/routing/ProtectedRoute'
 import ScrollToTop from './components/routing/ScrollToTop'
 import { GlobalBootGate } from './components/routing/GlobalBootGate'
+import WebsiteMaintenanceGate from './components/maintenance/WebsiteMaintenanceGate'
 import { TRADING_AND_VIRTUAL_WALLET_ENABLED, BANK_CHANGE_REQUESTS_ENABLED } from './featureFlags'
 
 // Create Query Client
@@ -109,6 +110,7 @@ function App() {
           <ClerkAuthBridge />
           <GlobalBootGate>
           <Router>
+            <WebsiteMaintenanceGate>
             <AuthSuccessNotifier />
             <CartProvider>
             <ScrollToTop />
@@ -292,6 +294,7 @@ function App() {
               />
             </AppChrome>
             </CartProvider>
+            </WebsiteMaintenanceGate>
           </Router>
           </GlobalBootGate>
         </AuthProvider>

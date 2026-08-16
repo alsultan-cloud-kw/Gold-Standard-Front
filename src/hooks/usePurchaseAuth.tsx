@@ -17,6 +17,7 @@ export function usePurchaseAuth() {
     complianceComplete,
     profile,
     questions,
+    complianceOpts,
   } = useCustomerCompliance()
 
   const needsVerification = Boolean(user && user.is_verified === false)
@@ -65,7 +66,7 @@ export function usePurchaseAuth() {
           duration: 6000,
         })
         const reason =
-          purchaseComplianceReason(user, profile, questions) ?? 'profile'
+          purchaseComplianceReason(user, profile, questions, complianceOpts) ?? 'profile'
         navigate(`/dashboard?tab=profile&complete=${reason}`)
         return false
       }
@@ -79,10 +80,12 @@ export function usePurchaseAuth() {
       complianceComplete,
       profile,
       questions,
+      complianceOpts,
       navigate,
       loginHref,
       t,
       user?.id,
+      user,
     ],
   )
 

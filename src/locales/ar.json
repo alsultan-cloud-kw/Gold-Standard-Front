@@ -3158,6 +3158,10 @@
       "existingBackIdUploaded": "تم رفع البطاقة المدنية الخلفية ✓",
       "saving": "جاري الحفظ…",
       "saveChanges": "حفظ التغييرات",
+      "manualReviewCta": "طلب تحقق يدوي من الملف",
+      "manualReviewSuccess": "استلمنا الطلب. سنرسل بريداً عند اكتمال التحقق.",
+      "manualReviewFailed": "تعذّر إرسال طلب المراجعة. تحقق من الاسم والرقم المدني والصور.",
+      "manualReviewNoteDefault": "طلب مراجعة يدوية من الموقع بعد تعذّر التحقق التلقائي.",
       "toasts": {
         "profileUpdatedSuccess": "تم تحديث الملف الشخصي بنجاح",
         "failedToUpdateProfile": "فشل تحديث الملف الشخصي",

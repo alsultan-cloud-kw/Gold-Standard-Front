@@ -12,7 +12,8 @@ function KycComplianceGate({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const location = useLocation()
-  const { isLoading, complianceComplete, profile, questions } = useCustomerCompliance()
+  const { isLoading, complianceComplete, profile, questions, complianceOpts } =
+    useCustomerCompliance()
   const toasted = useRef(false)
 
   useEffect(() => {
@@ -31,7 +32,8 @@ function KycComplianceGate({ children }: { children: ReactNode }) {
   }
 
   if (!complianceComplete) {
-    const reason = purchaseComplianceReason(user, profile, questions) ?? 'profile'
+    const reason =
+      purchaseComplianceReason(user, profile, questions, complianceOpts) ?? 'profile'
     return (
       <Navigate
         to={`/dashboard?tab=profile&complete=${reason}`}

@@ -3158,6 +3158,10 @@
       "existingBackIdUploaded": "Existing back ID uploaded ✓",
       "saving": "Saving…",
       "saveChanges": "Save Changes",
+      "manualReviewCta": "Request manual profile verification",
+      "manualReviewSuccess": "Request received. We will email you when verification is complete.",
+      "manualReviewFailed": "Could not submit the review request. Check name, Civil ID, and photos.",
+      "manualReviewNoteDefault": "Manual review requested from the website after automatic verification failed.",
       "toasts": {
         "profileUpdatedSuccess": "Profile updated successfully",
         "failedToUpdateProfile": "Failed to update profile",

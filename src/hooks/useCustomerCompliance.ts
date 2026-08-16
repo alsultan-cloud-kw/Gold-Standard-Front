@@ -6,6 +6,7 @@ import {
   asSingleCustomerProfile,
   isBasicProfileComplete,
   isCivilIdUploaded,
+  isCivilIdVerified,
   isCustomerKycComplete,
   resolveKycQuestions,
 } from '@/lib/customerCompliance'
@@ -35,10 +36,22 @@ export function useCustomerCompliance() {
     staleTime: 60_000,
   })
 
+  const ocrSettingsQuery = useQuery({
+    queryKey: ['civilIdVerificationSettings'],
+    queryFn: () => accountsApi.getCivilIdVerificationSettings(),
+    enabled,
+    staleTime: 60_000,
+  })
+
   const profile = asSingleCustomerProfile(profileQuery.data)
   const questions = useMemo(
     () => resolveKycQuestions(questionsQuery.data),
     [questionsQuery.data],
+  )
+  const ocrCompareEnabled = ocrSettingsQuery.data?.ocr_compare_enabled !== false
+  const complianceOpts = useMemo(
+    () => ({ ocrCompareEnabled }),
+    [ocrCompareEnabled],
   )
 
   const profileFetched = !enabled || profileQuery.isFetched
@@ -50,7 +63,9 @@ export function useCustomerCompliance() {
   const kycComplete = profileFetched && questionsFetched
     ? isCustomerKycComplete(profile, questions)
     : false
-  const civilIdComplete = profileFetched ? isCivilIdUploaded(profile) : false
+  const civilIdComplete = profileFetched
+    ? isCivilIdVerified(profile, complianceOpts)
+    : false
 
   const complianceComplete = basicProfileComplete && kycComplete && civilIdComplete
 
@@ -60,9 +75,11 @@ export function useCustomerCompliance() {
     staffRole,
     profile,
     questions,
+    complianceOpts,
     basicProfileComplete,
     kycComplete,
     civilIdComplete,
+    civilIdUploaded: profileFetched ? isCivilIdUploaded(profile) : false,
     complianceComplete,
     profileFetched,
     refetchProfile: profileQuery.refetch,
