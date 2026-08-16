@@ -45,6 +45,7 @@ export interface CustomerProfile {
   preferred_language: string
   civil_id_front?: string | null
   civil_id_back?: string | null
+  civil_id_ocr_status?: string | null
   kyc_registration_answers?: Record<string, string | boolean> | null
   kyc_registration_complete?: boolean
 }

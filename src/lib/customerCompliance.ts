@@ -70,13 +70,14 @@ export function isCustomerKycComplete(
   return answersLookComplete(profile.kyc_registration_answers, questions)
 }
 
-/** Basic identity present on the signed-in user (name + contact + date of birth + nationality). */
+/** Basic identity present on the signed-in user (name + contact + date of birth + nationality + civil ID). */
 export function isBasicProfileComplete(user: {
   full_name?: string | null
   email?: string | null
   phone_number?: string | null
   date_of_birth?: string | null
   nationality?: string | null
+  civil_id?: string | null
 } | null | undefined): boolean {
   if (!user) return false
   const name = String(user.full_name ?? '').trim()
@@ -84,11 +85,13 @@ export function isBasicProfileComplete(user: {
   const phone = String(user.phone_number ?? '').trim()
   const dob = String(user.date_of_birth ?? '').trim()
   const nationality = String(user.nationality ?? '').trim()
+  const civilId = String(user.civil_id ?? '').replace(/\D/g, '')
   return (
     name.length > 1
     && (email.length > 0 || phone.length > 0)
     && dob.length > 0
     && /^[A-Za-z]{2}$/.test(nationality)
+    && civilId.length === 12
   )
 }
 
@@ -98,6 +101,13 @@ export function isCivilIdUploaded(profile: CustomerProfile | null | undefined): 
   const front = String(profile.civil_id_front ?? '').trim()
   const back = String(profile.civil_id_back ?? '').trim()
   return front.length > 0 && back.length > 0
+}
+
+/** Civil ID OCR settled successfully (name match / apply path). */
+export function isCivilIdVerified(profile: CustomerProfile | null | undefined): boolean {
+  if (!isCivilIdUploaded(profile)) return false
+  const status = String(profile?.civil_id_ocr_status ?? '').trim().toLowerCase()
+  return status === 'matched' || status === 'fixed'
 }
 
 export type PurchaseComplianceReason = 'profile' | 'kyc' | 'civil_id'
@@ -110,7 +120,7 @@ export function purchaseComplianceReason(
 ): PurchaseComplianceReason | null {
   if (!isBasicProfileComplete(user)) return 'profile'
   if (!isCustomerKycComplete(profile, questions)) return 'kyc'
-  if (!isCivilIdUploaded(profile)) return 'civil_id'
+  if (!isCivilIdUploaded(profile) || !isCivilIdVerified(profile)) return 'civil_id'
   return null
 }
 
