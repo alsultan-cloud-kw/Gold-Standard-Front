@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { Database, Gauge, ShieldCheck, Zap } from 'lucide-react'
+import { AlertTriangle, Database, ExternalLink, Gauge, Landmark, ShieldCheck, Zap } from 'lucide-react'
 import { CustomerBlacklistScreenPanel } from '@/components/compliance/CustomerBlacklistScreenPanel'
 import CustomerKycGateLanding from '@/components/compliance/CustomerKycGateLanding'
 import { ScreeningConsoleSidebar } from '@/components/compliance/ScreeningConsoleSidebar'
@@ -369,16 +369,51 @@ export default function CustomerBlacklistScreenPage() {
 
           {tab === 'reporting' ? (
             <section className="px-4 py-8 sm:px-8 sm:py-10 lg:px-10">
-              <h2 className="text-3xl font-bold tracking-tight text-[#0B0F19]">
-                {t('customerScreening.console.reportTitle')}
-              </h2>
-              <p className="mt-3 max-w-2xl text-lg leading-relaxed text-[#64748B]">
-                {t('customerScreening.console.reportBody')}
-              </p>
-              <div className="mt-8 rounded-2xl border border-[#85E307]/30 bg-[#F4FBEF] px-6 py-6">
-                <p className="text-base font-semibold text-[#0B0F19]">
-                  {t('customerScreening.console.reportNote')}
+              <div className="max-w-4xl">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#D8CBAF] bg-[#F5EEDC] text-[#805D1B]">
+                  <Landmark className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+                </div>
+                <h2 className="mt-5 text-3xl font-bold tracking-tight text-[#0B0F19]">
+                  {t('customerScreening.console.reportTitle')}
+                </h2>
+                <p className="mt-3 max-w-2xl text-lg leading-relaxed text-[#64748B]">
+                  {t('customerScreening.console.reportBody')}
                 </p>
+
+                <div className="mt-8 overflow-hidden rounded-2xl border border-[#D8CBAF] bg-white">
+                  <div className="border-b border-[#E7E0D2] bg-[#FCFAF5] px-5 py-4 sm:px-6">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#805D1B]">
+                      <AlertTriangle className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      {t('customerScreening.console.goAmlKicker')}
+                    </p>
+                  </div>
+                  <div className="px-5 py-6 sm:px-6 sm:py-7">
+                    <h3 className="text-xl font-bold tracking-tight text-[#0B0F19] sm:text-2xl">
+                      {t('customerScreening.console.goAmlTitle')}
+                    </h3>
+                    <p className="mt-3 max-w-2xl text-base leading-7 text-[#5F6B63]">
+                      {t('customerScreening.console.goAmlBody')}
+                    </p>
+                    <a
+                      href="https://goaml.kwfiu.gov.kw/goAMLWeb/Identity/Account/Login"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#4F6F18] px-5 py-3 text-sm font-bold text-white transition duration-200 hover:bg-[#3F5C11] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F6F18]/40 focus-visible:ring-offset-2"
+                    >
+                      {t('customerScreening.console.goAmlCta')}
+                      <ExternalLink className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    </a>
+                    <p className="mt-4 max-w-2xl text-xs leading-5 text-[#7A827B]">
+                      {t('customerScreening.console.goAmlDisclaimer')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-[#85E307]/30 bg-[#F4FBEF] px-5 py-4">
+                  <p className="text-sm font-semibold leading-6 text-[#30451A]">
+                    {t('customerScreening.console.reportNote')}
+                  </p>
+                </div>
               </div>
             </section>
           ) : null}

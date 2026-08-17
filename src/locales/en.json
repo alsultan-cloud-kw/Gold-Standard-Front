@@ -2398,17 +2398,19 @@
     "gate": {
       "checking": "Checking company access…",
       "badge": "Company portal",
-      "headline": "Wholesale procurement and compliance for approved Kuwait merchants",
-      "subtext": "Request gold bars and coins on demand, follow review and KNET payment status, use the live board, and screen customer names from one controlled company portal.",
+      "headline": "Wholesale gold for approved Kuwait merchants",
+      "subtext": "Dedicated pricing, secure orders, trusted delivery, and compliance tools in one company portal.",
       "ctaApply": "Apply to join",
       "ctaSignIn": "Company sign-in",
+      "trustAria": "Company portal benefits",
       "pillars": {
         "verified": "Approved partners only",
         "compliance": "Name verification before settlement",
-        "b2b": "Secure business portal"
+        "b2b": "Secure business portal",
+        "delivery": "Structured delivery across Kuwait"
       },
       "companyPlatformKicker": "Gold Standard company desk",
-      "companyPlatformTitle": "A controlled path from request to delivery",
+      "companyPlatformTitle": "Everything your company needs in one portal",
       "companyPlatformBody": "Built for approved Kuwait merchants that need documented wholesale ordering, clear payment states, customer screening support and current market visibility without mixing company procurement with the retail cart.",
       "companyCapabilities": {
         "catalog": {
@@ -2447,10 +2449,13 @@
       "sanctionsTitle": "Sanctions and list support",
       "sanctionsBody": "Company screening is supported by attributed OpenSanctions data and Gold Standard lists. This describes data and list support in the current implementation and does not claim a live OpenSanctions API connection.",
       "howTitle": "How it works",
+      "howOrderTitle": "How the order process works",
+      "readyTitle": "Ready to work with Gold Standard?",
+      "readyBody": "Join our approved company network for wholesale pricing and dedicated business services.",
       "whyTitle": "Built for approved companies",
       "whyBody": "This service is available only to entities and companies approved by Gold Standard.",
       "reviewNote": "Every access request is reviewed and approved by management before the service is activated.",
-      "heroImageAlt": "Verify your customer before completing the transaction — Gold Standard company portal",
+      "heroImageAlt": "Gold bars with the Kuwait flag and Kuwait Towers in the background",
       "stepTitles": {
         "search": "Enter the customer name",
         "match": "Run verification",
@@ -2623,9 +2628,14 @@
       "watchTitle": "Entity watchlist",
       "watchBody": "Names you save here stay on this device for quick re-checks.",
       "watchEmpty": "Watchlist is empty — save a name from a screening result.",
-      "reportTitle": "Reporting",
-      "reportBody": "Export packs and branch-level reports are coming next. Every live screen is already written to Gold Standard’s secure audit log.",
-      "reportNote": "Need a formal compliance export today? Contact the company — we can pull your reference IDs from the audit trail."
+      "reportTitle": "Reports and official filings",
+      "reportBody": "Review Gold Standard screening references here. When activity raises suspicion, file the official report through Kuwait FIU’s goAML portal.",
+      "reportNote": "Need your Gold Standard screening record? Contact us to retrieve reference IDs from the audit trail.",
+      "goAmlKicker": "External government service",
+      "goAmlTitle": "Report a suspicious transaction or activity",
+      "goAmlBody": "If a transaction or customer information raises suspicion, sign in to the official goAML portal to submit the report to the Kuwait Financial Intelligence Unit.",
+      "goAmlCta": "Open the official goAML portal",
+      "goAmlDisclaimer": "This opens the government goAML website in a new window. Sign-in details and filing content go directly to the Kuwait FIU and are not received by Gold Standard."
     }
   },
   "publicKyc": {
@@ -3212,6 +3222,13 @@
       "email": "Email",
       "phone": "Phone",
       "dateOfBirth": "Date of Birth",
+      "birthDatePicker": {
+        "title": "Choose your date of birth",
+        "hint": "Use the month and year menus to move quickly.",
+        "placeholder": "Select a date",
+        "cancel": "Cancel",
+        "confirm": "Confirm date"
+      },
       "identityDocumentsTitle": "Identity documents",
       "identityDocumentsHint": "Upload your Civil ID front and back. If already uploaded, we will show a confirmation below.",
       "civilIdLockedTitle": "Civil ID verified",

@@ -3,23 +3,20 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
+  ClipboardCheck,
   Clock3,
   CreditCard,
-  Database,
   FileCheck2,
-  History,
   Lock,
   Mail,
   MapPin,
   PackageOpen,
-  Search,
   ShieldCheck,
-  SlidersHorizontal,
-  Upload,
+  Truck,
 } from 'lucide-react'
 import TurnstileWidget, { type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget'
 import { isTurnstileConfigured } from '@/lib/turnstile'
-import { COMPANY_KYC_HERO_IMAGE } from '@/lib/companyKycHero'
+import { COMPANY_KYC_HERO_IMAGE, COMPANY_KYC_SHIELD_IMAGE } from '@/lib/companyKycHero'
 import { companyDeskApi, companyDeskApplyErrorKey, type CompanyDeskAccessResponse } from '@/services/companyDeskApi'
 import { useAuth } from '@/contexts/AuthContext'
 import { CompanyDeskApplyFileField } from '@/components/company/CompanyDeskApplyFileField'
@@ -34,8 +31,9 @@ type Props = {
  * Screening unlocks only after management approves the company email.
  */
 export default function CustomerKycGateLanding({ access, onApplied }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const isRtl = i18n.dir() === 'rtl'
   const [businessName, setBusinessName] = useState('')
   const [businessAddress, setBusinessAddress] = useState('')
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
@@ -150,168 +148,208 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
     }
   }
 
-  const howSteps = [
-    { key: 'search' as const, Icon: Search },
-    { key: 'match' as const, Icon: Database },
-    { key: 'result' as const, Icon: ShieldCheck },
-  ]
   const companyCapabilities = [
     { key: 'catalog' as const, Icon: PackageOpen },
-    { key: 'weights' as const, Icon: SlidersHorizontal },
-    { key: 'designs' as const, Icon: Upload },
-    { key: 'review' as const, Icon: FileCheck2 },
     { key: 'payment' as const, Icon: CreditCard },
     { key: 'delivery' as const, Icon: MapPin },
-    { key: 'history' as const, Icon: History },
     { key: 'screening' as const, Icon: ShieldCheck },
+  ]
+  const orderSteps = [
+    { key: 'catalog' as const, Icon: PackageOpen },
+    { key: 'review' as const, Icon: ClipboardCheck },
+    { key: 'payment' as const, Icon: CreditCard },
+    { key: 'delivery' as const, Icon: Truck },
+  ]
+  const trustItems = [
+    { key: 'verified' as const, Icon: FileCheck2 },
+    { key: 'compliance' as const, Icon: ShieldCheck },
+    { key: 'b2b' as const, Icon: Lock },
+    { key: 'delivery' as const, Icon: Truck },
   ]
 
   return (
-    <div className="min-h-screen bg-[#F4F5F1]">
-      <section className="relative overflow-hidden border-b border-black/5 bg-[#0B0F19] text-white">
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_50%_at_0%_0%,rgba(133,227,7,0.18),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_100%_80%,rgba(133,227,7,0.08),transparent_50%)]" />
-        </div>
-        <div className="page-shell relative py-12 sm:py-16 lg:py-20">
-          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#85E307]/30 bg-[#85E307]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#85E307] sm:text-[11px]">
-                <Lock className="h-3.5 w-3.5" aria-hidden />
+    <div className="company-gate min-h-[100dvh] overflow-x-clip bg-[#FCFCFA] text-[#172014]">
+      <section className="border-b border-[#E5E1D8] bg-[#FBFAF6]">
+        <div className="page-shell py-7 sm:py-10 lg:py-12">
+          <div dir="ltr" className="grid min-w-0 items-center gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:gap-12">
+            <div className="min-w-0">
+              <img
+                src={COMPANY_KYC_HERO_IMAGE}
+                alt={t('customerScreening.gate.heroImageAlt')}
+                width={1024}
+                height={576}
+                decoding="async"
+                fetchPriority="high"
+                className="aspect-[16/9] h-auto w-full rounded-xl border border-[#E1D6BC] object-cover shadow-[0_20px_55px_rgba(61,48,24,0.12)]"
+              />
+            </div>
+
+            <div dir={isRtl ? 'rtl' : 'ltr'} className="min-w-0 text-start">
+              <p className="page-kicker inline-flex items-center gap-2 text-[#8B691F]">
+                <ShieldCheck className="h-4 w-4" strokeWidth={1.8} aria-hidden />
                 {t('customerScreening.gate.badge')}
-              </div>
-              <h1 className="mt-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+              </p>
+              <h1 className="mt-4 max-w-[22ch] text-[clamp(2rem,4.3vw,3.65rem)] font-bold leading-[1.16] tracking-[-0.035em] text-balance">
                 {t('customerScreening.gate.headline')}
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/65 sm:text-base">
+              <p className="mt-4 max-w-[58ch] text-base leading-7 text-[#596257] sm:text-lg">
                 {t('customerScreening.gate.subtext')}
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-7 flex flex-col gap-3 min-[390px]:flex-row">
                 <button
                   type="button"
                   onClick={scrollToForm}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#85E307] px-5 py-3 text-sm font-bold text-[#0B0F19] transition hover:bg-[#9af01a]"
+                  className="inline-flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg bg-[#4F7D0B] px-6 py-3 text-sm font-bold text-white transition duration-200 hover:bg-[#3E6507] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F7D0B]/40 focus-visible:ring-offset-2"
                 >
                   {t('customerScreening.gate.ctaApply')}
                 </button>
                 {!user ? (
                   <Link
                     to="/company-login"
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                    className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-lg border border-[#AAB694] bg-white px-6 py-3 text-sm font-semibold text-[#334327] transition duration-200 hover:border-[#4F7D0B] hover:text-[#355707] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F7D0B]/30 focus-visible:ring-offset-2"
                   >
                     {t('customerScreening.gate.ctaSignIn')}
                   </Link>
                 ) : null}
-              </div>
-              {!user ? (
-                <p className="mt-4 text-sm text-white/55">
-                  {t('customerScreening.gate.alreadyAccount')}{' '}
-                  <Link
-                    to="/company-login"
-                    className="font-semibold text-[#85E307] underline-offset-2 hover:underline"
-                  >
-                    {t('customerScreening.gate.loginCta')}
-                  </Link>
-                </p>
-              ) : null}
-            </div>
-
-            <div className="relative">
-              <div
-                className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
-                style={{ aspectRatio: '16 / 10' }}
-              >
-                <img
-                  src={COMPANY_KYC_HERO_IMAGE}
-                  alt={t('customerScreening.gate.heroImageAlt')}
-                  width={1280}
-                  height={800}
-                  decoding="async"
-                  fetchPriority="high"
-                  className="h-full w-full object-cover object-center"
-                />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="page-shell py-10 sm:py-14">
+      <section className="page-shell -mt-px" aria-label={t('customerScreening.gate.trustAria')}>
+        <ul className="grid grid-cols-2 overflow-hidden rounded-b-xl border border-[#E5E1D8] bg-white lg:grid-cols-4">
+          {trustItems.map(({ key, Icon }, index) => (
+            <li
+              key={key}
+              className={`flex min-w-0 flex-col items-start gap-2 px-3 py-4 sm:px-5 lg:flex-row lg:items-center lg:gap-3 ${
+                index === 1 ? 'border-s border-[#E9E6DE]' : ''
+              } ${
+                index === 2 ? 'border-t border-[#E9E6DE] lg:border-s lg:border-t-0' : ''
+              } ${
+                index === 3 ? 'border-s border-t border-[#E9E6DE] lg:border-t-0' : ''
+              }`}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F2F7E9] text-[#4F7D0B] sm:h-10 sm:w-10">
+                <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+              </span>
+              <span className="min-w-0 [overflow-wrap:anywhere] text-xs font-semibold leading-5 text-[#35412F] sm:text-sm">
+                {t(`customerScreening.gate.pillars.${key}`)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <div className="page-shell py-12 sm:py-16">
         <section className="mx-auto max-w-6xl" aria-labelledby="company-portal-capabilities">
-          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3F6F00]">
-                {t('customerScreening.gate.companyPlatformKicker')}
-              </p>
-              <h2
-                id="company-portal-capabilities"
-                className="mt-3 text-2xl font-bold tracking-tight text-[#0C1512] sm:text-3xl"
-              >
-                {t('customerScreening.gate.companyPlatformTitle')}
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-[#475569] sm:text-base">
-                {t('customerScreening.gate.companyPlatformBody')}
-              </p>
-            </div>
-            <div className="grid gap-px overflow-hidden rounded-2xl border border-black/[0.07] bg-black/[0.07] sm:grid-cols-2">
-              {companyCapabilities.map(({ key, Icon }) => (
-                <article key={key} className="bg-white p-5">
-                  <Icon className="h-5 w-5 text-[#3F6F00]" strokeWidth={1.8} aria-hidden />
-                  <h3 className="mt-3 text-sm font-bold text-[#0C1512]">
-                    {t(`customerScreening.gate.companyCapabilities.${key}.title`)}
-                  </h3>
-                  <p className="mt-1.5 text-xs leading-5 text-[#64748B] sm:text-sm">
-                    {t(`customerScreening.gate.companyCapabilities.${key}.body`)}
-                  </p>
-                </article>
-              ))}
-            </div>
+          <div className="mx-auto max-w-3xl text-center">
+            <h2
+              id="company-portal-capabilities"
+              className="text-2xl font-bold tracking-[-0.025em] text-[#172014] text-balance sm:text-3xl"
+            >
+              {t('customerScreening.gate.companyPlatformTitle')}
+            </h2>
+            <p className="mx-auto mt-3 max-w-[65ch] text-base leading-7 text-[#667061]">
+              {t('customerScreening.gate.companyPlatformBody')}
+            </p>
           </div>
 
-          <div className="mt-6 grid gap-4 rounded-2xl border border-black/[0.07] bg-[#0B0F19] p-5 text-white sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div>
-              <p className="text-sm font-bold text-[#85E307]">
-                {t('customerScreening.gate.sanctionsTitle')}
-              </p>
-              <p className="mt-2 max-w-4xl text-sm leading-6 text-white/65">
-                {t('customerScreening.gate.sanctionsBody')}
-              </p>
-            </div>
-            <a
-              href="https://www.opensanctions.org/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307] motion-reduce:transition-none"
-            >
-              OpenSanctions
-            </a>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {companyCapabilities.map(({ key, Icon }) => (
+              <article
+                key={key}
+                className="group min-w-0 rounded-xl border border-[#E3DFD5] bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#C9D5B6] hover:shadow-[0_12px_28px_rgba(55,72,41,0.07)] motion-reduce:transform-none"
+              >
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[#F7F1E3] text-[#98711B]">
+                  <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+                </span>
+                <h3 className="mt-4 text-base font-bold text-[#172014]">
+                  {t(`customerScreening.gate.companyCapabilities.${key}.title`)}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[#687165]">
+                  {t(`customerScreening.gate.companyCapabilities.${key}.body`)}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
 
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mt-12 text-center text-xl font-semibold text-[#0C1512] sm:mt-16 sm:text-2xl">
-            {t('customerScreening.gate.howTitle')}
+        <section className="mx-auto mt-14 max-w-6xl sm:mt-20" aria-labelledby="company-order-process">
+          <h2 id="company-order-process" className="text-center text-2xl font-bold text-[#172014] sm:text-3xl">
+            {t('customerScreening.gate.howOrderTitle')}
           </h2>
-          <ol className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">
-            {howSteps.map(({ key, Icon }, i) => (
-              <li
-                key={key}
-                className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm"
-              >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#ECFCCB] text-sm font-bold text-[#3F6F00]">
-                  {i + 1}
+          <ol className="relative mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {orderSteps.map(({ key, Icon }, index) => (
+              <li key={key} className="relative min-w-0 rounded-xl border border-[#E3DFD5] bg-white p-5">
+                <span className="absolute end-4 top-4 font-mono text-sm font-bold tabular-nums text-[#B78923]">
+                  {String(index + 1).padStart(2, '0')}
                 </span>
-                <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-[#0C1512]">
-                  <Icon className="h-4 w-4 shrink-0 text-[#3F6F00]" aria-hidden />
-                  {t(`customerScreening.gate.stepTitles.${key}`)}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-[#64748B]">
-                  {t(`customerScreening.gate.steps.${key}`)}
+                <Icon className="h-7 w-7 text-[#4F7D0B]" strokeWidth={1.7} aria-hidden />
+                <h3 className="mt-5 text-base font-bold text-[#172014]">
+                  {t(`customerScreening.gate.companyCapabilities.${key}.title`)}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[#687165]">
+                  {t(`customerScreening.gate.companyCapabilities.${key}.body`)}
                 </p>
               </li>
             ))}
           </ol>
-        </div>
+        </section>
+
+        <section className="mx-auto mt-14 max-w-6xl sm:mt-20" aria-labelledby="company-compliance-title">
+          <div className="grid overflow-hidden rounded-xl border border-[#DDE4D3] bg-[#F7FAF3] lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="min-w-0 p-5 sm:p-7">
+              <h2 id="company-compliance-title" className="text-xl font-bold text-[#172014] sm:text-2xl">
+                {t('customerScreening.gate.sanctionsTitle')}
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5E6959] sm:text-base">
+                {t('customerScreening.gate.sanctionsBody')}
+              </p>
+            </div>
+            <div className="border-t border-[#DDE4D3] p-5 lg:border-s lg:border-t-0 lg:p-7">
+              <a
+                href="https://www.opensanctions.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#9EAD8A] bg-white px-5 py-2.5 text-sm font-bold text-[#385B0B] transition-colors duration-200 hover:bg-[#F0F6E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F7D0B]/35 focus-visible:ring-offset-2"
+              >
+                OpenSanctions
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto mt-14 max-w-6xl sm:mt-20" aria-labelledby="company-apply-cta">
+          <div dir="ltr" className="grid min-w-0 items-center overflow-hidden rounded-xl border border-[#E0DACD] bg-[#F8F5EE] sm:grid-cols-[0.72fr_1.28fr]">
+            <div className="min-w-0 self-end">
+              <img
+                src={COMPANY_KYC_SHIELD_IMAGE}
+                alt=""
+                width={1024}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                className="mx-auto aspect-square h-auto w-full max-w-[20rem] object-contain mix-blend-multiply"
+              />
+            </div>
+            <div dir={isRtl ? 'rtl' : 'ltr'} className="min-w-0 p-6 text-start sm:p-8 lg:p-10">
+              <h2 id="company-apply-cta" className="text-2xl font-bold text-[#172014] sm:text-3xl">
+                {t('customerScreening.gate.readyTitle')}
+              </h2>
+              <p className="mt-3 max-w-[55ch] text-base leading-7 text-[#687165]">
+                {t('customerScreening.gate.readyBody')}
+              </p>
+              <button
+                type="button"
+                onClick={scrollToForm}
+                className="mt-6 inline-flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg bg-[#4F7D0B] px-6 py-3 text-sm font-bold text-white transition duration-200 hover:bg-[#3E6507] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F7D0B]/40 focus-visible:ring-offset-2"
+              >
+                {t('customerScreening.gate.ctaApply')}
+              </button>
+            </div>
+          </div>
+        </section>
 
         <div className="mx-auto mt-12 grid max-w-5xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
           <div className="space-y-6">
@@ -323,7 +361,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
             </p>
 
             <div className="rounded-2xl border border-black/5 bg-white p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#64748B]">
+              <p className="page-kicker text-[#64748B]">
                 {t('customerScreening.gate.includesLabel')}
               </p>
               <ul className="mt-3 space-y-2 text-sm text-[#334155]">
@@ -354,7 +392,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
               >
                 {t('customerScreening.gate.activateCta')}
               </Link>
-              {' · '}
+              {' / '}
               {!user ? (
                 <Link
                   to="/company-login"
@@ -379,7 +417,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
                   <p className="font-semibold">{t('customerScreening.gate.statusPendingTitle')}</p>
                   <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
                     {t('customerScreening.gate.statusPendingBody', {
-                      name: access?.business_name || '—',
+                      name: access?.business_name || '-',
                     })}
                   </p>
                 </div>
@@ -539,7 +577,7 @@ export default function CustomerKycGateLanding({ access, onApplied }: Props) {
                     ? t('customerScreening.gate.submitPending')
                     : t('customerScreening.gate.submit')}
               </button>
-              <p className="text-center text-[11px] leading-relaxed text-[#94A3B8]">
+              <p className="text-center text-xs leading-relaxed text-[#7B8795]">
                 {t('customerScreening.gate.emailNote')}
               </p>
             </form>

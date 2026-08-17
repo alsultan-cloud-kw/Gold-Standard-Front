@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { ar, enGB } from 'date-fns/locale'
 import { 
   User, 
   ShoppingBag, 
@@ -64,6 +65,7 @@ import { KycKnowMoreButton } from '@/components/auth/KycLegalInfoModal'
 import { cn } from '@/lib/utils'
 import { Calendar as DateCalendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
 import { asSingleCustomerProfile } from '@/utils/customerProfile'
 import {
@@ -87,6 +89,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet'
 
 function isDisabledDashboardTab(tab: string): boolean {
@@ -1102,9 +1105,101 @@ function ProfileBirthDatePicker({
   onChange: (value: string) => void
   label: string
 }) {
+  const { t, i18n } = useTranslation()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const selected = parseProfileDate(value)
+  const [draftDate, setDraftDate] = useState<Date | undefined>(selected)
   const now = new Date()
+  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const calendarLocale = isArabic ? ar : enGB
+  const displayLocale = isArabic ? 'ar-KW-u-nu-latn' : 'en-GB'
+  const displayValue = selected
+    ? new Intl.DateTimeFormat(displayLocale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(selected)
+    : t('userDashboard.profile.birthDatePicker.placeholder')
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) setDraftDate(selected)
+    setOpen(nextOpen)
+  }
+
+  const applySelection = () => {
+    if (!draftDate) return
+    onChange(formatProfileDate(draftDate))
+    setOpen(false)
+  }
+
+  const trigger = (
+    <button
+      type="button"
+      className="dashboard-field group flex min-h-[3.5rem] w-full items-center justify-between gap-4 text-start"
+      aria-label={label}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+    >
+      <span className="min-w-0">
+        <span className={cn('block truncate text-sm font-semibold sm:text-base', value ? 'text-[#0B0F19]' : 'text-[#64748B]')}>
+          {displayValue}
+        </span>
+        {value && (
+          <span className="mt-0.5 block font-mono text-xs font-medium tracking-wide text-[#64748B]" dir="ltr">
+            {value}
+          </span>
+        )}
+      </span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#F3F8EC] text-[#3F6F00] transition-colors group-hover:bg-[#E8F5D7]">
+        <CalendarDays className="h-5 w-5" aria-hidden />
+      </span>
+    </button>
+  )
+
+  const calendarPanel = (
+    <div dir={isArabic ? 'rtl' : 'ltr'} className="w-full bg-white">
+      <div className="border-b border-[#E7EDE0] px-5 py-4">
+        <p className="text-base font-bold text-[#0B0F19]">
+          {t('userDashboard.profile.birthDatePicker.title')}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-[#64748B]">
+          {t('userDashboard.profile.birthDatePicker.hint')}
+        </p>
+      </div>
+      <DateCalendar
+        mode="single"
+        locale={calendarLocale}
+        dir={isArabic ? 'rtl' : 'ltr'}
+        selected={draftDate}
+        defaultMonth={draftDate ?? selected ?? new Date(1990, 0, 1)}
+        captionLayout="dropdown"
+        startMonth={new Date(1900, 0, 1)}
+        endMonth={now}
+        disabled={{ after: now }}
+        showOutsideDays={false}
+        onSelect={setDraftDate}
+        className="mx-auto max-w-[25rem] px-3 pb-2 pt-3 [--cell-size:2.5rem] min-[380px]:[--cell-size:2.75rem] sm:[--cell-size:3rem]"
+      />
+      <div className="flex items-center gap-3 border-t border-[#E7EDE0] px-5 py-4">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="min-h-[2.75rem] flex-1 rounded-xl border border-[#D5DDD0] bg-white px-4 text-sm font-bold text-[#334155] transition-colors hover:bg-[#F8FAF6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#65B800]"
+        >
+          {t('userDashboard.profile.birthDatePicker.cancel')}
+        </button>
+        <button
+          type="button"
+          onClick={applySelection}
+          disabled={!draftDate}
+          className="min-h-[2.75rem] flex-[1.25] rounded-xl bg-[#0B0F19] px-4 text-sm font-bold text-[#A3E635] transition-colors hover:bg-[#1F2937] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#65B800] disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          {t('userDashboard.profile.birthDatePicker.confirm')}
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div>
@@ -1112,36 +1207,32 @@ function ProfileBirthDatePicker({
         {label}
         <span className="text-rose-600" aria-hidden> *</span>
       </label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="dashboard-field flex w-full items-center justify-between text-start"
-            aria-label={label}
+      {isMobile ? (
+        <Sheet open={open} onOpenChange={handleOpenChange}>
+          <SheetTrigger asChild>{trigger}</SheetTrigger>
+          <SheetContent
+            side="bottom"
+            className="max-h-[92dvh] overflow-y-auto rounded-t-[1.5rem] border-[#DDE6D5] bg-white p-0 shadow-[0_-20px_60px_rgba(15,23,42,0.18)]"
           >
-            <span className={value ? 'text-[#0B0F19]' : 'text-[#94A3B8]'}>
-              {value || 'YYYY-MM-DD'}
-            </span>
-            <CalendarDays className="h-4 w-4 shrink-0 text-[#64748B]" aria-hidden />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto p-0">
-          <DateCalendar
-            mode="single"
-            selected={selected}
-            defaultMonth={selected ?? new Date(1990, 0, 1)}
-            captionLayout="dropdown"
-            startMonth={new Date(1900, 0, 1)}
-            endMonth={now}
-            disabled={{ after: now }}
-            onSelect={(date) => {
-              if (!date) return
-              onChange(formatProfileDate(date))
-              setOpen(false)
-            }}
-          />
-        </PopoverContent>
-      </Popover>
+            <SheetHeader className="sr-only">
+              <SheetTitle>{t('userDashboard.profile.birthDatePicker.title')}</SheetTitle>
+            </SheetHeader>
+            {calendarPanel}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Popover open={open} onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+          <PopoverContent
+            align="start"
+            sideOffset={8}
+            collisionPadding={16}
+            className="w-[25rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-[#DDE6D5] bg-white p-0 shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+          >
+            {calendarPanel}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   )
 }
