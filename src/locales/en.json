@@ -2447,7 +2447,7 @@
         }
       },
       "sanctionsTitle": "Sanctions and list support",
-      "sanctionsBody": "Company screening is supported by attributed OpenSanctions data and Gold Standard lists. This describes data and list support in the current implementation and does not claim a live OpenSanctions API connection.",
+      "sanctionsBody": "Company screening is supported by attributed OpenSanctions data and Gold Standard lists.",
       "howTitle": "How it works",
       "howOrderTitle": "How the order process works",
       "readyTitle": "Ready to work with Gold Standard?",
