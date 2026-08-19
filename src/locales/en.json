@@ -1272,8 +1272,21 @@
     "enterCodeBody": "Enter the serial number or QR code printed on your bar, coin, or packaging. You can also open this page by scanning the product QR.",
     "codeLabel": "Serial or verification code",
     "codePlaceholder": "e.g. GS-24K-001234 or scan code",
-    "codeHint": "Use the exact code from the product label or certificate — letters and numbers as printed.",
-    "submitCode": "Verify now"
+    "codeHint": "Use the exact code from the product label or certificate. Letters and numbers as printed.",
+    "submitCode": "Verify now",
+    "scanTitle": "Scan with your camera",
+    "scanBody": "To read the QR or barcode on your gold, this page needs camera access. Tap Allow camera. Your browser will ask once. After you accept, the camera opens so you can point it at the code.",
+    "scanAllow": "Allow camera and scan",
+    "scanRequesting": "Waiting for camera permission…",
+    "scanPhoto": "Open camera photo",
+    "scanLiveHint": "Hold the code inside the frame. We verify as soon as it is read.",
+    "scanClose": "Close camera",
+    "scanDenied": "Camera permission is off. In your phone settings, allow Camera for this browser or the Gold Standard app, then tap Try again. You can still type the serial above.",
+    "scanRetry": "Try camera permission again",
+    "scanUnsupported": "This browser cannot open the camera. Type the serial above, or use Open camera photo if your phone offers it.",
+    "scanNoCamera": "No camera was found on this device.",
+    "scanFailed": "Could not open the camera. Check permission and try again.",
+    "scanReadFailed": "Could not read a code from that photo. Try again in better light, or type the serial."
   },
   "passport": {
     "pageTitle": "Digital bullion passport",

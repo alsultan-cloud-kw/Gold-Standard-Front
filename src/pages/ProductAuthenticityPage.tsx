@@ -19,6 +19,7 @@ import {
 import { productsApi, type ProductAuthenticityResponse } from '../services/api'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
 import { ProductAuthenticityAssurance } from '@/components/products/ProductAuthenticityAssurance'
+import { VerifyCameraScan } from '@/components/verify/VerifyCameraScan'
 import { usePageEnter } from '@/motion/usePageEnter'
 
 function VerifyEnterShell({
@@ -117,14 +118,14 @@ function VerifyCodeForm({
             spellCheck={false}
             inputMode="text"
             placeholder={t('authenticity.codePlaceholder')}
-            className="w-full rounded-xl border border-stone-200 bg-white py-3 pe-4 ps-10 text-sm font-medium text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#3F6F00] focus:ring-2 focus:ring-[#85E307]/35"
+            className="w-full rounded-xl border border-stone-200 bg-white py-3 pe-4 ps-10 text-[max(16px,0.875rem)] font-medium text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#3F6F00] focus:ring-2 focus:ring-[#85E307]/35"
             aria-describedby="verify-code-hint"
           />
         </div>
         <button
           type="submit"
           disabled={!value.trim()}
-          className="gold-button inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          className="gold-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Search className="h-4 w-4" aria-hidden />
           {t('authenticity.submitCode')}
@@ -133,6 +134,12 @@ function VerifyCodeForm({
       <p id="verify-code-hint" className="mt-2 text-start text-xs leading-relaxed text-stone-500">
         {t('authenticity.codeHint')}
       </p>
+      <VerifyCameraScan
+        onCode={(code) => {
+          setValue(code)
+          onSubmit(code)
+        }}
+      />
     </form>
   )
 }

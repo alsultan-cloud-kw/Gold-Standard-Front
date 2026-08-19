@@ -9,6 +9,7 @@ import { CertificateOfOwnership } from '@/components/passport/CertificateOfOwner
 import { OwnershipJourney } from '@/components/passport/OwnershipJourney'
 import { usePageEnter } from '@/motion/usePageEnter'
 import { resolveGsw3RegistryUrl } from '@/lib/gsw3RegistryUrl'
+import { VerifyCameraScan } from '@/components/verify/VerifyCameraScan'
 
 export default function DigitalPassportPage() {
   const { t, i18n } = useTranslation()
@@ -57,11 +58,17 @@ export default function DigitalPassportPage() {
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               placeholder={t('passport.codePlaceholder')}
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm"
+              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-[max(16px,0.875rem)]"
             />
-            <button type="submit" className="w-full rounded-xl bg-[#85E307] py-3 text-sm font-bold text-[#0B0F19]">
+            <button type="submit" className="min-h-11 w-full rounded-xl bg-[#85E307] py-3 text-sm font-bold text-[#0B0F19]">
               {t('passport.submit')}
             </button>
+            <VerifyCameraScan
+              onCode={(code) => {
+                setManualCode(code)
+                setSearchParams({ code })
+              }}
+            />
           </form>
         </div>
       </div>
