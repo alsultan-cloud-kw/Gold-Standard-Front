@@ -201,6 +201,24 @@ export const authApi = {
   logout: (refreshToken: string) =>
     apiService.post('/accounts/users/logout/', { refresh: refreshToken }),
 
+  closeAccount: (data: {
+    confirm: boolean
+    acknowledge_retention: boolean
+    source: 'ios' | 'android' | 'web'
+  }) =>
+    apiService.post<{
+      ok: boolean
+      closed: boolean
+      closed_at?: string | null
+      retention_until?: string | null
+      retention_years?: number
+      legal_basis?: string
+      deleted?: string[]
+      retained?: string[]
+      detail?: string
+      code?: string
+    }>('/accounts/users/close_account/', data),
+
   getMe: () =>
     apiService.get('/accounts/users/me/'),
 

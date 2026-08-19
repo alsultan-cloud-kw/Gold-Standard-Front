@@ -1446,42 +1446,47 @@
   },
   "dataDeletionPage": {
     "kicker": "Privacy",
-    "title": "Data deletion instructions",
-    "effective": "Effective date: April 8, 2026",
-    "intro": "You can request deletion of your Gold Standard account data, including related communication records we control.",
-    "emailSubject": "Data Deletion Request",
+    "title": "Delete account",
+    "effective": "Effective date: 19 August 2026",
+    "intro": "You can close your Gold Standard login from this page. Apple requires an in-app control; the same action is available here. Kuwait AML law still requires identity, KYC, and gold-transaction records for five years after the account is closed.",
+    "emailSubject": "Account deletion question",
     "how": {
-      "title": "How to request deletion",
-      "body": "Email {{email}} with the subject line “Data Deletion Request”.\n\nInclude your full name, registered email and/or phone number, and any details needed to verify account ownership."
+      "title": "How deletion works",
+      "body": "Sign in, tick the retention notice, then tap Delete my account. No email to support is required. The account is closed immediately and you are signed out."
     },
     "verify": {
-      "title": "Verification",
-      "body": "For security, we may ask for additional verification before processing deletion. If we cannot verify ownership, we may not complete the request."
+      "title": "Who can delete",
+      "body": "Only the signed-in customer can close their own storefront account. Staff and company-desk logins cannot be closed here."
     },
     "timeline": {
-      "title": "Timeline",
-      "body": "After verification, we process deletion within a reasonable period — typically within 30 days — unless a longer retention period is required by law."
+      "title": "When it takes effect",
+      "body": "Login, cart, saved addresses, price alerts, and push tokens are removed immediately. You cannot sign in again with this account."
     },
     "deleted": {
-      "title": "What gets deleted",
-      "body": "• Account profile details maintained in this application\n• Non-essential communication records linked to your account\n• Other personal data that is not legally required to be retained"
+      "title": "Removed from the live app and website",
+      "body": "• Ability to sign in (password and social login blocked)\n• Shopping cart and saved addresses\n• Price alerts and push notification tokens\n• Profile photo and pending email/phone change requests"
     },
     "retained": {
-      "title": "What may be retained",
-      "body": "We may retain certain records where required for legal, tax, accounting, security, fraud prevention, dispute resolution, or regulatory compliance."
+      "title": "Kept for five years (Kuwait law)",
+      "body": "Under Law No. 106 of 2013 and Central Bank of Kuwait AML instructions we keep, for at least five years after closure:\n• Civil ID / KYC profile and due-diligence documents\n• Sales, invoices, and gold transaction history\n• Vault gold buyback and shop-floor AML records\nThese records are for regulators, tax, and crime prevention — not for marketing."
     },
     "meta": {
-      "title": "Meta and WhatsApp data",
-      "body": "If your request relates to WhatsApp or Meta platform data, we process deletion for data controlled by our application. Data controlled directly by Meta may also be subject to Meta’s own deletion processes."
+      "title": "WhatsApp and Meta",
+      "body": "We stop sending app and WhatsApp marketing to a closed account. Messages already processed by Meta remain subject to Meta’s own retention."
     },
     "contact": {
-      "title": "Contact",
-      "body": "For all deletion-related requests, contact {{email}}."
+      "title": "Questions",
+      "body": "Shop support: {{email}}. This does not replace the delete button on this page."
     },
-    "ctaTitle": "Ready to submit a request?",
-    "ctaBody": "Open your email app with a pre-filled subject, or review our terms first.",
-    "emailUs": "Email deletion request",
-    "viewTerms": "Terms & privacy"
+    "ctaTitle": "Close this account",
+    "ctaBody": "This cannot be undone from the website. You will be signed out immediately.",
+    "emailUs": "Email support",
+    "viewTerms": "Terms & privacy",
+    "deleteCta": "Delete my account",
+    "signInCta": "Sign in to delete",
+    "acknowledge": "I understand Civil ID, KYC, and gold transaction records stay on file for five years under Kuwait AML law.",
+    "success": "Your login has been closed. Legal records are retained for five years.",
+    "error": "Could not close the account. Try again, or visit the shop."
   },
   "checkoutPage": {
     "loginRequired": "Please log in to place an order",

@@ -1,10 +1,20 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Mail, ArrowRight, Shield } from 'lucide-react'
 import { GS_CONTACT } from '@/constants/contact'
+import { useAuth } from '@/contexts/AuthContext'
+import { useFullSignOut } from '@/hooks/useFullSignOut'
+import { authApi } from '@/services/api'
 
 export default function DataDeletionPage() {
   const { t } = useTranslation()
+  const { isAuthenticated } = useAuth()
+  const { fullSignOut } = useFullSignOut()
+  const navigate = useNavigate()
+  const [acknowledged, setAcknowledged] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
 
   const sections = [
     'how',
@@ -15,6 +25,35 @@ export default function DataDeletionPage() {
     'meta',
     'contact',
   ] as const
+
+  const onDelete = async () => {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    if (!acknowledged) {
+      setMessage(t('dataDeletionPage.acknowledge'))
+      return
+    }
+    if (!window.confirm(t('dataDeletionPage.ctaBody'))) return
+    setBusy(true)
+    setMessage(null)
+    try {
+      await authApi.closeAccount({
+        confirm: true,
+        acknowledge_retention: true,
+        source: 'web',
+      })
+      await fullSignOut()
+      setMessage(t('dataDeletionPage.success'))
+      navigate('/')
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setMessage(detail || t('dataDeletionPage.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#F9F9FA]">
@@ -55,7 +94,7 @@ export default function DataDeletionPage() {
           ))}
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 rounded-2xl bg-[#0B0F19] p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-3 rounded-2xl bg-[#0B0F19] p-6">
           <div className="flex items-start gap-3 text-white">
             <Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#85E307]" />
             <div>
@@ -63,10 +102,28 @@ export default function DataDeletionPage() {
               <p className="mt-1 text-sm text-white/65">{t('dataDeletionPage.ctaBody')}</p>
             </div>
           </div>
+          <label className="flex items-start gap-3 text-sm text-white/90">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={acknowledged}
+              onChange={(e) => setAcknowledged(e.target.checked)}
+            />
+            <span>{t('dataDeletionPage.acknowledge')}</span>
+          </label>
+          {message ? <p className="text-sm text-[#85E307]">{message}</p> : null}
           <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => void onDelete()}
+              disabled={busy}
+              className="gold-button inline-flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {isAuthenticated ? t('dataDeletionPage.deleteCta') : t('dataDeletionPage.signInCta')}
+            </button>
             <a
               href={`mailto:${GS_CONTACT.email}?subject=${encodeURIComponent(t('dataDeletionPage.emailSubject'))}`}
-              className="gold-button inline-flex items-center justify-center gap-2"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
             >
               <Mail className="h-4 w-4" />
               {t('dataDeletionPage.emailUs')}
