@@ -2200,8 +2200,8 @@
     "noCountryMatch": "No country matches your search.",
     "placeholderFullName": "Your full name",
     "placeholderEmail": "name@example.com",
-    "placeholderPhone": "41XXXXXX",
-    "placeholderPhoneLocal": "41XXXXXX",
+    "placeholderPhone": "XXXXXXXX",
+    "placeholderPhoneLocal": "XXXXXXXX",
     "optional": "optional",
     "emailOrPhoneRequired": "Email or phone is required",
     "confirmPassword": "Confirm password",
@@ -2235,8 +2235,8 @@
       "phonePathHint": "Sign in with your Kuwait mobile number and a WhatsApp verification code. Email is optional — add it in your profile before placing orders.",
       "phoneOptionalHint": "Optional — helps with order updates and account recovery.",
       "emailOptionalHint": "Optional — required later in your profile before placing orders.",
-      "invalidKuwaitPhone": "Enter a valid Kuwait mobile (8 digits after +965: 41… Virgin/Friendi, 5… STC, 6… Ooredoo, or 9… Zain).",
-      "kuwaitPhoneHint": "Kuwait mobile · +965 · 41 Virgin/Friendi · 5 STC · 6 Ooredoo · 9 Zain",
+      "invalidKuwaitPhone": "Enter a valid Kuwait mobile number.",
+      "kuwaitPhoneHint": "",
       "verifyChannelHint": "Confirm your account with a one-time code."
     },
     "kyc": {

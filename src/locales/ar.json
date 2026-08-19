@@ -2200,8 +2200,8 @@
     "noCountryMatch": "لا توجد دولة مطابقة لبحثك.",
     "placeholderFullName": "اسمك الكامل",
     "placeholderEmail": "name@example.com",
-    "placeholderPhone": "41XXXXXX",
-    "placeholderPhoneLocal": "41XXXXXX",
+    "placeholderPhone": "XXXXXXXX",
+    "placeholderPhoneLocal": "XXXXXXXX",
     "optional": "اختياري",
     "emailOrPhoneRequired": "البريد الإلكتروني أو الهاتف مطلوب",
     "confirmPassword": "تأكيد كلمة المرور",
@@ -2235,8 +2235,8 @@
       "phonePathHint": "سجّل الدخول برقم جوالك الكويتي ورمز واتساب. البريد اختياري — أضفه من ملفك قبل الطلب.",
       "phoneOptionalHint": "اختياري — يساعد في تحديثات الطلبات واسترداد الحساب.",
       "emailOptionalHint": "اختياري — مطلوب لاحقاً في ملفك قبل إتمام الطلبات.",
-      "invalidKuwaitPhone": "أدخل رقم جوال كويتي صالح (8 أرقام بعد +965: 41… فيرجن/فرندي، 5… STC، 6… أوريدو، أو 9… زين).",
-      "kuwaitPhoneHint": "جوال كويتي · +965 · 41 فيرجن/فرندي · 5 STC · 6 أوريدو · 9 زين",
+      "invalidKuwaitPhone": "أدخل رقم جوال كويتي صالح.",
+      "kuwaitPhoneHint": "",
       "verifyChannelHint": "أكّد حسابك برمز لمرة واحدة."
     },
     "kyc": {

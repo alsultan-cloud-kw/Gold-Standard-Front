@@ -38,7 +38,7 @@ export function KuwaitPhoneField({
         ? hint
         : optional
           ? t('auth.flow.phoneOptionalHint')
-          : t('auth.flow.kuwaitPhoneHint')
+          : null
 
   return (
     <div className={className}>
