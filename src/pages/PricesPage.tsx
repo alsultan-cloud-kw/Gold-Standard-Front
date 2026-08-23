@@ -25,6 +25,7 @@ import { PriceTrendBadge } from '@/components/ProductPriceTrendArrow'
 import { normalizeTrendKey, usePublicRateTrends } from '@/hooks/usePublicRateTrends'
 import { formatLatinNumber } from '@/utils/formatLatinNumber'
 import { AppLoadingScreen } from '@/components/ui/AppLoadingScreen'
+import { AppStoreBadges } from '@/components/layout/AppStoreBadges'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePageEnter } from '@/motion/usePageEnter'
@@ -244,6 +245,13 @@ export default function PricesPage() {
                 </Link>
               </nav>
               <p className="mt-2 hidden text-xs text-white/50 sm:block">{t('pricesPage.shopGoldHint')}</p>
+              <div className="mt-4">
+                <p className="text-xs font-medium text-white/55 sm:text-sm">{t('pricesPage.getAppTitle')}</p>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-white/45">
+                  {t('pricesPage.getAppHint')}
+                </p>
+                <AppStoreBadges className="mt-3" tone="onDark" size="sm" showHeading={false} />
+              </div>
               <div className="mt-3 hidden flex-wrap items-center gap-2 text-xs text-white/55 sm:mt-4 sm:flex">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#85E307]/30 bg-[#85E307]/10 px-2.5 py-1 text-[#ECFCCB]">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#85E307]" aria-hidden />
@@ -643,6 +651,22 @@ export default function PricesPage() {
             </section>
 
             <PricesFaqSection />
+
+            <section
+              className="rounded-2xl border border-black/5 bg-white px-4 py-6 sm:px-6 sm:py-8"
+              aria-labelledby="prices-get-app-heading"
+            >
+              <h2
+                id="prices-get-app-heading"
+                className="text-lg font-bold tracking-tight text-[#0B0F19] sm:text-xl"
+              >
+                {t('pricesPage.getAppTitle')}
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#64748B]">
+                {t('pricesPage.getAppHint')}
+              </p>
+              <AppStoreBadges className="mt-5" tone="onLight" showHeading={false} />
+            </section>
 
             <p className="text-center text-xs leading-relaxed text-[#64748B]">{t('pricesPage.disclaimer')}</p>
           </div>

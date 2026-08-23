@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import footerLogo from '@/assets/brand/logo-footer.png'
+import { AppStoreBadges } from '@/components/layout/AppStoreBadges'
 import { FooterProductsSitemap } from '@/components/layout/FooterProductsSitemap'
 import { FooterTrustStrip } from '@/components/layout/FooterTrustStrip'
 import { scrollToHash } from '@/utils/scrollToHash'
@@ -196,6 +197,7 @@ export default function Footer() {
                 <span className="block">{t('footer.hoursWeekday')}</span>
                 <span className="block">{t('footer.hoursFriday')}</span>
               </p>
+              <AppStoreBadges className="mt-2" tone="onDark" size="sm" />
             </div>
           </div>
 
