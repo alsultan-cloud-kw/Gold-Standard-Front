@@ -1,4 +1,11 @@
 import type { ProductAuthenticityResponse } from '../services/api';
+import { productDisplayIdentity, type ProductIdentity } from '../utils/productDisplay';
+
+function identityLabel(kind: ProductIdentity['kind'], isAr: boolean): string {
+  if (kind === 'serial') return isAr ? 'الرقم التسلسلي' : 'Serial';
+  if (kind === 'barcode') return isAr ? 'الباركود' : 'Barcode';
+  return isAr ? 'رمز المنتج' : 'SKU';
+}
 
 function esc(value: string): string {
   return value
@@ -17,11 +24,36 @@ export function buildVerificationCertificateHtml(
   const title = isAr ? 'شهادة تحقق المنتج' : 'Product Verification Certificate';
   const verified = payload.verified;
   const statusLine = isAr ? payload.message_ar : payload.message_en;
+  // The customer keeps this document, so every code row must be a real code —
+  // never a product name standing in for a missing serial or SKU.
+  const identity = product
+    ? productDisplayIdentity({
+        name_en: product.name_en,
+        name_ar: product.name_ar,
+        sku: product.sku,
+        serial_number: product.serial_number,
+        barcode_value: payload.unit?.barcode_value ?? null,
+      })
+    : null;
+  const skuOnly = product
+    ? productDisplayIdentity({
+        name_en: product.name_en,
+        name_ar: product.name_ar,
+        sku: product.sku,
+        serial_number: null,
+        barcode_value: null,
+      })
+    : null;
+  const codeRows: [string, string][] = [];
+  if (identity) codeRows.push([identityLabel(identity.kind, isAr), identity.value]);
+  if (skuOnly && skuOnly.value !== identity?.value) {
+    codeRows.push([identityLabel('sku', isAr), skuOnly.value]);
+  }
+
   const rows = product
     ? [
         [isAr ? 'المنتج' : 'Product', isAr ? product.name_ar : product.name_en],
-        [isAr ? 'الرقم التسلسلي' : 'Serial', product.serial_number || product.sku],
-        [isAr ? 'رمز المنتج' : 'SKU', product.sku],
+        ...codeRows,
         [isAr ? 'العيار' : 'Karat', product.carat_value ? `${product.carat_value}K` : '—'],
         [isAr ? 'الوزن' : 'Weight', `${product.weight_grams} g`],
         [isAr ? 'سنة التسجيل' : 'Registered', String(product.registered_year || '—')],

@@ -154,6 +154,7 @@ export interface Product {
   sku: string
   /** Auto-generated unique serial (e.g. PRD-2025-00001). */
   serial_number?: string | null
+  barcode_value?: string | null
   name_ar: string
   name_en: string
   slug: string

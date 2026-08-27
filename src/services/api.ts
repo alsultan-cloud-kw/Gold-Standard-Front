@@ -733,6 +733,8 @@ export type ServerCartPayload = {
         sku?: string
         name_en?: string
         name_ar?: string
+        barcode_value?: string
+        serial_number?: string
       } | null
     }>
     item_count?: number

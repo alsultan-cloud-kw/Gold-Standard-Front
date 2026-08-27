@@ -140,6 +140,8 @@ function mergeCartProducts(existing: Product | undefined, incoming: Product): Pr
   assignIfPresent('id', incoming.id)
   assignIfPresent('slug', incoming.slug)
   assignIfPresent('sku', incoming.sku)
+  assignIfPresent('serial_number', incoming.serial_number)
+  assignIfPresent('barcode_value', incoming.barcode_value)
   assignIfPresent('name_en', incoming.name_en)
   assignIfPresent('name_ar', incoming.name_ar)
   assignIfPresent('status', incoming.status)
@@ -185,9 +187,11 @@ function mapServerCartToLocal(
       ...p,
       id,
       slug: String(row.product_slug || p.slug || ''),
-      sku: String(row.product_sku || p.sku || ''),
+      sku: String(p.sku || row.product_sku || ''),
       name_en: String(row.product_name_en || p.name_en || ''),
       name_ar: String(row.product_name_ar || p.name_ar || ''),
+      serial_number: String(p.serial_number || row.serial_number || '') || null,
+      barcode_value: String(p.barcode_value || row.barcode_value || '') || null,
     } as Product
     const prev =
       prevByLineId.get(lineId) ||
@@ -223,6 +227,7 @@ function itemsForServerSync(items: CartItem[]) {
     product_sku: item.product.sku,
     product_name_en: item.product.name_en,
     product_name_ar: item.product.name_ar,
+    // Serial / barcode are not sent: Django resolves identity from the catalog.
     quantity: item.quantity,
     unit_price: item.unit_price,
   }))

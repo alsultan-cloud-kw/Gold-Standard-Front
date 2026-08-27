@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+/// <reference types="vitest/globals" />
+
 import { newestCompanyOrdersFirst } from '@/lib/companyOrders'
 import type { CompanyOrder } from '@/services/companyOrdersApi'
 

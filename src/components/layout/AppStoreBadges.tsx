@@ -12,6 +12,11 @@ type Props = {
   size?: Size
   /** When false, only the two badges render (no heading). */
   showHeading?: boolean
+  /**
+   * Fill the parent width and stack vertically. A 2/12 footer column is ~127px
+   * at the `lg` breakpoint, narrower than the fixed badge row.
+   */
+  stack?: boolean
 }
 
 const badgeBase =
@@ -43,10 +48,12 @@ function BadgeCopy({
   eyebrow,
   name,
   soon,
+  dense,
 }: {
   eyebrow: string
   name: string
   soon?: string
+  dense?: boolean
 }) {
   return (
     <span className="min-w-0 leading-tight">
@@ -58,7 +65,14 @@ function BadgeCopy({
           </span>
         ) : null}
       </span>
-      <span className="mt-0.5 block text-sm font-semibold tracking-tight">{name}</span>
+      <span
+        className={cn(
+          'mt-0.5 block font-semibold tracking-tight',
+          dense ? 'text-[13px]' : 'text-sm',
+        )}
+      >
+        {name}
+      </span>
     </span>
   )
 }
@@ -72,6 +86,7 @@ export function AppStoreBadges({
   tone = 'onDark',
   size = 'md',
   showHeading = true,
+  stack = false,
 }: Props) {
   const { t } = useTranslation()
   const headingId = useId()
@@ -89,7 +104,12 @@ export function AppStoreBadges({
     ? 'cursor-not-allowed border border-white/12 bg-black/55 text-white/70'
     : 'cursor-not-allowed border border-zinc-300 bg-zinc-800/90 text-white/75'
 
-  const iconClass = cn('shrink-0', compact ? 'h-6 w-6' : 'h-7 w-7')
+  const iconClass = cn('shrink-0', compact ? 'h-6 w-6' : 'h-7 w-7', stack && 'h-5 w-5')
+  const badgeClass = cn(
+    badgeBase,
+    compact && 'min-h-11 min-w-[9.75rem] px-3',
+    stack && 'w-full min-w-0 gap-2 px-2.5',
+  )
   const headingClass = onDark
     ? 'text-[11px] font-bold uppercase tracking-[0.22em] text-[#85E307]'
     : 'text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F6F00]'
@@ -102,7 +122,7 @@ export function AppStoreBadges({
         </p>
       ) : null}
       <div
-        className={cn('flex flex-wrap gap-2.5', compact && 'gap-2')}
+        className={cn('flex flex-wrap gap-2.5', compact && 'gap-2', stack && 'flex-col flex-nowrap')}
         role="group"
         aria-labelledby={showHeading ? headingId : undefined}
         aria-label={showHeading ? undefined : t('footer.getTheApp')}
@@ -112,11 +132,15 @@ export function AppStoreBadges({
           target="_blank"
           rel="noopener noreferrer"
           dir="ltr"
-          className={cn(badgeBase, liveClass, compact && 'min-h-11 min-w-[9.75rem] px-3')}
+          className={cn(badgeClass, liveClass)}
           aria-label={t('footer.appStoreAria')}
         >
           <AppleMark className={iconClass} />
-          <BadgeCopy eyebrow={t('footer.appStoreEyebrow')} name={t('footer.appStoreName')} />
+          <BadgeCopy
+            eyebrow={t('footer.appStoreEyebrow')}
+            name={t('footer.appStoreName')}
+            dense={stack}
+          />
         </a>
 
         {playReady && playUrl ? (
@@ -125,18 +149,22 @@ export function AppStoreBadges({
             target="_blank"
             rel="noopener noreferrer"
             dir="ltr"
-            className={cn(badgeBase, liveClass, compact && 'min-h-11 min-w-[9.75rem] px-3')}
+            className={cn(badgeClass, liveClass)}
             aria-label={t('footer.playStoreAria')}
           >
             <PlayMark className={iconClass} />
-            <BadgeCopy eyebrow={t('footer.playStoreEyebrow')} name={t('footer.playStoreName')} />
+            <BadgeCopy
+              eyebrow={t('footer.playStoreEyebrow')}
+              name={t('footer.playStoreName')}
+              dense={stack}
+            />
           </a>
         ) : (
           <button
             type="button"
             dir="ltr"
             disabled
-            className={cn(badgeBase, soonClass, compact && 'min-h-11 min-w-[9.75rem] px-3')}
+            className={cn(badgeClass, soonClass)}
             aria-label={t('footer.playStoreSoonAria')}
             title={t('footer.appComingSoon')}
           >
@@ -145,6 +173,7 @@ export function AppStoreBadges({
               eyebrow={t('footer.playStoreEyebrow')}
               name={t('footer.playStoreName')}
               soon={t('footer.appComingSoon')}
+              dense={stack}
             />
           </button>
         )}

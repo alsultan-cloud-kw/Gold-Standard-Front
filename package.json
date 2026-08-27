@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build && node scripts/prerender-seo.mjs",
     "prerender:seo": "node scripts/prerender-seo.mjs",
     "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
     "test:pixel": "vitest run --config vitest.config.ts src/lib/metaPixel.test.ts",
     "test:cart-stock": "vitest run --config vitest.config.ts src/utils/cartRevalidate.test.ts",
     "preview": "vite preview"

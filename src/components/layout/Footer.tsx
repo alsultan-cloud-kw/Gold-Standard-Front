@@ -197,7 +197,6 @@ export default function Footer() {
                 <span className="block">{t('footer.hoursWeekday')}</span>
                 <span className="block">{t('footer.hoursFriday')}</span>
               </p>
-              <AppStoreBadges className="mt-2" tone="onDark" size="sm" />
             </div>
           </div>
 
@@ -280,6 +279,8 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
+
+            <AppStoreBadges className="mt-7" tone="onDark" size="sm" stack />
           </div>
         </div>
       </div>

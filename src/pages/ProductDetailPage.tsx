@@ -31,6 +31,7 @@ import {
   maxPurchasableQuantity,
 } from '@/utils/productStock'
 import { formatProductCaratLabel } from '../utils/productCaratLabel'
+import { productDisplayIdentity } from '@/utils/productDisplay'
 import { productMetaParams, trackMetaEvent } from '@/lib/metaPixel'
 
 export default function ProductDetailPage() {
@@ -129,7 +130,8 @@ export default function ProductDetailPage() {
   const inCartUnits = cartUnitsForProductId(cart.items, p.id)
   // Room left after cart hold — never invent sellable qty when sold out for this shopper.
   const maxSelectableQty = outOfStock ? 0 : Math.max(1, maxPurchasableQuantity(p, inCartUnits))
-  const verifyCode = p.serial_number || p.barcode_value || p.sku || null
+  const productIdentity = productDisplayIdentity(p)
+  const verifyCode = productIdentity?.value ?? null
 
   const handleAddToCart = () => {
     if (outOfStock) return
@@ -354,9 +356,11 @@ export default function ProductDetailPage() {
                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
                       {t('productDetail.productBarcode')}
                     </p>
-                    <p className="font-mono text-sm font-semibold text-[#0C1512]">
-                      {p.barcode_value || p.sku}
-                    </p>
+                    {productIdentity ? (
+                      <p className="font-mono text-sm font-semibold text-[#0C1512]">
+                        {productIdentity.value}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-xs leading-relaxed text-[#64748B]">
                       {t('productDetail.barcodeHint')}
                     </p>
@@ -395,12 +399,14 @@ export default function ProductDetailPage() {
                         alt={`${t('productDetail.productBarcode')} — ${productName}`}
                         className="max-h-[320px] w-full border border-black/10 object-contain"
                       />
-                      <p className="mt-3 text-xs text-[#64748B]">
-                        {t('productDetail.codeLabel')}{' '}
-                        <span className="font-mono font-semibold text-[#0C1512]">
-                          {p.barcode_value || p.sku}
-                        </span>
-                      </p>
+                      {productIdentity ? (
+                        <p className="mt-3 text-xs text-[#64748B]">
+                          {t('productDetail.codeLabel')}{' '}
+                          <span className="font-mono font-semibold text-[#0C1512]">
+                            {productIdentity.value}
+                          </span>
+                        </p>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => setShowBarcodeZoom(false)}

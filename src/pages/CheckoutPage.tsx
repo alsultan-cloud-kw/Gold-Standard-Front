@@ -59,6 +59,7 @@ import { ProductStockBadge } from '@/components/products/ProductStockBadge'
 import {
   isCartLineOverStock,
 } from '@/utils/productStock'
+import { productDisplayIdentity } from '@/utils/productDisplay'
 import {
   asSingleCustomerProfile,
   applySavedAddressToShipping,
@@ -1809,6 +1810,7 @@ export default function CheckoutPage() {
                         ? `${item.product.carat.carat_value}K`
                         : null)
                     const weight = item.product.weight_grams
+                    const identity = productDisplayIdentity(item.product)
                     return (
                       <div
                         key={item.id}
@@ -1838,7 +1840,7 @@ export default function CheckoutPage() {
                             {t('checkoutPage.qty', { count: item.quantity })}
                             {weight != null ? ` · ${weight}g` : ''}
                             {carat ? ` · ${carat}` : ''}
-                            {item.product.sku ? ` · ${item.product.sku}` : ''}
+                            {identity ? ` · ${identity.value}` : ''}
                           </p>
                         </div>
                         <div className="text-end">

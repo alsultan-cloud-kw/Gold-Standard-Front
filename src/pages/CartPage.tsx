@@ -31,6 +31,7 @@ import {
   isProductOutOfStock,
   productAvailableQuantity,
 } from '@/utils/productStock'
+import { productDisplayIdentity } from '@/utils/productDisplay'
 
 function OrderSummaryCard({
   cart,
@@ -269,6 +270,13 @@ export default function CartPage() {
               const lineMemberSave = cartLineClubMemberSavings(item)
               const productName =
                 isAr && item.product.name_ar ? item.product.name_ar : item.product.name_en
+              const identity = productDisplayIdentity(item.product)
+              const identityLabel =
+                identity?.kind === 'serial'
+                  ? t('cartPage.serialLabel')
+                  : identity?.kind === 'barcode'
+                    ? t('cartPage.barcodeLabel')
+                    : t('cartPage.skuLabel')
               const caratLabel = formatProductCaratLabel(item.product.carat, isAr ? 'ar' : 'en')
               const stockKnown = hasResolvedStockFields(item.product)
               const itemOutOfStock =
@@ -316,6 +324,11 @@ export default function CartPage() {
                           {caratLabel} · {item.product.weight_grams}
                           {t('common.gramsAbbr')}
                         </p>
+                        {identity ? (
+                          <p className="mt-0.5 font-mono text-[11px] text-[#64748B] sm:text-sm">
+                            {identityLabel}: {identity.value}
+                          </p>
+                        ) : null}
                       </div>
                       <button
                         type="button"
