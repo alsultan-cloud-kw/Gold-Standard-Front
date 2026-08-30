@@ -124,7 +124,17 @@ export const promoPopupApi = {
 export type WebsiteVerificationPublic = {
   enabled: boolean
   images: Partial<
-    Record<'qr' | 'blockchain' | 'hologram' | 'companyStamp' | 'receipt' | 'ministry', string>
+    Record<
+      | 'qr'
+      | 'blockchain'
+      | 'hologram'
+      | 'companyStamp'
+      | 'receipt'
+      | 'ministry'
+      | 'manufacturer'
+      | 'pvcPackaging',
+      string
+    >
   >
 }
 

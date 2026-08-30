@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   BadgeCheck,
   SearchCheck,
+  Factory,
+  PackageCheck,
   type LucideIcon,
 } from 'lucide-react'
 import blockchainImg from '@/assets/home/security/blockchain.webp'
@@ -19,6 +21,8 @@ import ministryHallmarkImg from '@/assets/home/security/ministry-hallmark.webp'
 import hologramSealImg from '@/assets/home/security/hologram-seal.webp'
 import companyStampImg from '@/assets/home/security/company-stamp.webp'
 import officialReceiptImg from '@/assets/home/security/official-receipt.webp'
+import manufacturerLogoImg from '@/assets/home/security/manufacturer-logo.webp'
+import pvcPackagingImg from '@/assets/home/security/pvc-packaging.webp'
 import { websiteVerificationApi } from '@/services/api'
 
 export type SecurityTrustMethodId =
@@ -28,6 +32,8 @@ export type SecurityTrustMethodId =
   | 'companyStamp'
   | 'receipt'
   | 'ministry'
+  | 'manufacturer'
+  | 'pvcPackaging'
 
 const METHODS: { id: SecurityTrustMethodId; icon: LucideIcon; fallbackImage: string }[] = [
   { id: 'qr', icon: QrCode, fallbackImage: qrVerifyImg },
@@ -36,6 +42,8 @@ const METHODS: { id: SecurityTrustMethodId; icon: LucideIcon; fallbackImage: str
   { id: 'companyStamp', icon: BadgeCheck, fallbackImage: companyStampImg },
   { id: 'receipt', icon: FileCheck2, fallbackImage: officialReceiptImg },
   { id: 'ministry', icon: SearchCheck, fallbackImage: ministryHallmarkImg },
+  { id: 'manufacturer', icon: Factory, fallbackImage: manufacturerLogoImg },
+  { id: 'pvcPackaging', icon: PackageCheck, fallbackImage: pvcPackagingImg },
 ]
 
 function MethodCard({

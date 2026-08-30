@@ -9,11 +9,21 @@ import {
   Shield,
   Stamp,
   BadgeCheck,
+  Factory,
+  PackageCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const METHODS: ReadonlyArray<{
-  id: 'blockchain' | 'qr' | 'companyStamp' | 'ministry' | 'hologram' | 'receipt'
+  id:
+    | 'blockchain'
+    | 'qr'
+    | 'companyStamp'
+    | 'ministry'
+    | 'hologram'
+    | 'receipt'
+    | 'manufacturer'
+    | 'pvcPackaging'
   icon: typeof Blocks
   badge?: boolean
 }> = [
@@ -23,6 +33,8 @@ const METHODS: ReadonlyArray<{
   { id: 'ministry', icon: Stamp },
   { id: 'hologram', icon: Shield },
   { id: 'receipt', icon: FileCheck2 },
+  { id: 'manufacturer', icon: Factory },
+  { id: 'pvcPackaging', icon: PackageCheck },
 ]
 
 type Props = {

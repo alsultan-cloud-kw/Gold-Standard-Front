@@ -525,12 +525,20 @@
         "receipt": {
           "title": "Official certificate issued",
           "description": "Your purchase includes stamped documentary proof from Gold Standard for custody, buyback, and personal or institutional records."
+        },
+        "manufacturer": {
+          "title": "Manufacturer verification",
+          "description": "The distinctive logo stamped on the gold bar identifies the manufacturer or refinery, giving an extra way to confirm the bar’s origin and authenticity."
+        },
+        "pvcPackaging": {
+          "title": "Secure pressed-seal PVC packaging",
+          "description": "The gold bar comes in pressed, sealed PVC packaging designed to protect the bar from tampering and preserve its original condition."
         }
       },
       "credentialsKicker": "Licensed credentials",
       "credentialsBody": "The same marks of trust you expect from a house for gold dedicated to investment — official hallmarking, secure payments, insured delivery, and a clear commercial licence.",
       "methodsKicker": "How you verify your bullion",
-      "methodsTitle": "Six layers of authenticity",
+      "methodsTitle": "Eight layers of authenticity",
       "methodsBody": "Each bar and investment piece is designed so you can confirm what you own — independently, quickly, and with a lasting paper and digital trail."
     },
     "sharia": {
@@ -1848,8 +1856,8 @@
     "securityKicker": "The innovation story",
     "securityTitle": "Why we built a complete verification stack",
     "securityIntro": "In the gold souq, trust was personal: you knew the seller, so you trusted the piece. We wanted trust that does not depend on knowing anyone — so we combined every protection layer that makes sense for physical gold into one system, and were the first in Kuwait to do it.",
-    "securityLead": "At its core is an electronic ownership ledger built on blockchain technology — a shared digital record designed so no single party can quietly rewrite the ownership trail. The full details, and all six protection layers, live on the homepage and the verify page.",
-    "securityLandingLink": "Explore the six protection layers",
+    "securityLead": "At its core is an electronic ownership ledger built on blockchain technology — a shared digital record designed so no single party can quietly rewrite the ownership trail. The full details, and all eight protection layers, live on the homepage and the verify page.",
+    "securityLandingLink": "Explore the eight protection layers",
     "process": {
       "kicker": "Manufacturing & quality",
       "title": "Every piece’s journey — from raw gold to your hand",

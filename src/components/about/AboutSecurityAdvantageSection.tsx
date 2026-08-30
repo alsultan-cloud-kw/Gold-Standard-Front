@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowRight, Blocks } from 'lucide-react'
 
 /**
- * About-page innovation story. Deliberately does NOT repeat the six
+ * About-page innovation story. Deliberately does NOT repeat the eight
  * verification cards — those live on the homepage (SecurityTrustSection)
  * and the /verify page. Here we tell why the stack was built and link out.
  */

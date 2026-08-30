@@ -224,7 +224,7 @@ export default function HomePage() {
                 </Link>
                 <a href="#security-trust" className="ds-btn-primary home-hero-cta-btn">
                   <span className="home-hero-cta-btn__num" aria-hidden>
-                    6
+                    8
                   </span>
                   <span className="home-hero-cta-btn__label">{t('home.heroVerifyCta')}</span>
                 </a>
