@@ -3581,8 +3581,8 @@
       "prev": "السابق",
       "next": "التالي",
       "goldBuybackFallback": "شراء ذهب",
-      "sellReceiptTitle": "إيصال البيع – {{description}}",
-      "officialSellReceiptHint": "هذا إيصال بيع رسمي. يمكنك طباعته أو حفظه كملف PDF عبر متصفحك.",
+      "sellReceiptTitle": "فاتورة البيع – {{description}}",
+      "officialSellReceiptHint": "هذه فاتورة بيع رسمية. يمكنك طباعتها أو حفظها كملف PDF عبر متصفحك.",
       "details": {
         "transactionDate": "تاريخ المعاملة",
         "transactionType": "نوع المعاملة",

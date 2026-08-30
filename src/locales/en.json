@@ -3581,8 +3581,8 @@
       "prev": "Prev",
       "next": "Next",
       "goldBuybackFallback": "Gold buyback",
-      "sellReceiptTitle": "Sell receipt – {{description}}",
-      "officialSellReceiptHint": "This is your official sell receipt. You can print or save it as PDF using your browser.",
+      "sellReceiptTitle": "Sell invoice – {{description}}",
+      "officialSellReceiptHint": "This is your official sell invoice. You can print or save it as PDF using your browser.",
       "details": {
         "transactionDate": "Transaction date",
         "transactionType": "Transaction type",
