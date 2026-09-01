@@ -2758,7 +2758,7 @@ function LockedGoldTab() {
                       {item.product_name ?? item.product_sku ?? t('userDashboard.lockedGold.fallbackGold')}
                     </p>
                     <p className="text-sm text-gold-100/60">
-                      Order {item.invoice_number}
+                      {t('userDashboard.lockedGold.invoiceNumberLabel')} {item.invoice_number}
                       {item.carat_display && ` · ${item.carat_display}`}
                       {item.product_serial_number && ` · ${item.product_serial_number}`}
                     </p>
