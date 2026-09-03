@@ -78,7 +78,7 @@ function BadgeCopy({
 }
 
 /**
- * App Store (live) + Play Store (inert until `GS_PLAY_STORE_URL` is set).
+ * App Store + Play Store badges. Play stays inert only if `GS_PLAY_STORE_URL` is null.
  * Badge internals stay LTR so store wordmarks match platform convention in Arabic too.
  */
 export function AppStoreBadges({
