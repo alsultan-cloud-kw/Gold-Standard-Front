@@ -8688,13 +8688,77 @@ html[dir='rtl'] .price-rate-card__live {
   letter-spacing: 0;
 }
 
-.price-rate-card__live-dot {
-  width: 0.4rem;
-  height: 0.4rem;
+/* Legacy: keep class for desk boards; no glow / pulse (distracting on live polls). */
+.price-rate-card__live-dot,
+.price-desk-card__live-dot {
+  width: 0.35rem;
+  height: 0.35rem;
   flex-shrink: 0;
   border-radius: 999px;
-  background: #85e307;
-  box-shadow: 0 0 0 3px rgba(133, 227, 7, 0.22);
+  background: #3f6f00;
+  box-shadow: none;
+}
+
+/* Soft progress hairline under prices hero — reserved height, no CLS */
+.prices-fetch-track {
+  height: 2px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.prices-fetch-hairline {
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: rgba(133, 227, 7, 0.45);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition:
+    opacity 220ms ease-out,
+    transform 280ms ease-out;
+}
+
+.prices-fetch-hairline--active {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Brief calm flash on price digits after a live update */
+.prices-digits-flash .customer-gold-price-row__amount,
+.prices-digits-flash .prices-quote-rail__usd,
+.prices-digits-flash .prices-quote-rail__value,
+.prices-digits-flash .tabular-nums {
+  animation: prices-digit-flash 320ms ease-out;
+}
+
+@keyframes prices-digit-flash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prices-fetch-hairline {
+    transition: opacity 200ms ease-out;
+    transform: none;
+  }
+
+  .prices-fetch-hairline--active {
+    opacity: 0.7;
+  }
+
+  .prices-digits-flash .customer-gold-price-row__amount,
+  .prices-digits-flash .prices-quote-rail__usd,
+  .prices-digits-flash .prices-quote-rail__value,
+  .prices-digits-flash .tabular-nums {
+    animation: none;
+  }
 }
 
 .price-rate-card__identity {
@@ -9364,11 +9428,11 @@ html[dir='rtl'] .price-desk-card--featured::before {
 }
 
 .price-desk-card__live-dot {
-  width: 0.4rem;
-  height: 0.4rem;
+  width: 0.35rem;
+  height: 0.35rem;
   border-radius: 999px;
-  background: #85e307;
-  box-shadow: 0 0 0 3px rgba(133, 227, 7, 0.22);
+  background: #3f6f00;
+  box-shadow: none;
 }
 
 .price-desk-card__karat {

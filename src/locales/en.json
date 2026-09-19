@@ -1043,6 +1043,8 @@
     "loading": "Loading prices…",
     "errorUnavailable": "Prices are temporarily unavailable. Please try again later.",
     "loadFailed": "Could not load live rates.",
+    "lastUpdatedAt": "Updated {{time}}",
+    "updatingQuiet": "Updating rates",
     "ounceTitle": "Gold / troy ounce",
     "updateEvery": "Source updates every {{seconds}}s",
     "perTroyOunce": "USD / troy ounce",

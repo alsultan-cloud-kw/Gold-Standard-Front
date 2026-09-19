@@ -81,6 +81,8 @@ export default function PricesPage() {
   /** Weight scale stays collapsed on mobile so the chart is visible above the fold. */
   const [weightOpen, setWeightOpen] = useState(false)
   const [ratesFlash, setRatesFlash] = useState(false)
+  /** Brief highlight on digits when live rates change (not a spinner). */
+  const [digitsFlash, setDigitsFlash] = useState(false)
   const ratesSectionRef = useRef<HTMLElement>(null)
   const chartSectionRef = useRef<HTMLElement>(null)
   const parsedGrams = parseSensitiveGrams(gramsInput)
@@ -89,6 +91,7 @@ export default function PricesPage() {
   const grams = gramsValid ? parsedGrams : GOLD_WEIGHT_DEFAULT_G
   const gramsLabel = formatGramsLabel(grams)
   const prevGramsRef = useRef(gramsLabel)
+  const prevRatesKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!gramsValid) return
@@ -111,7 +114,8 @@ export default function PricesPage() {
     chartSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const { data, isLoading, isError, refetch, isFetching } = useEnrichedPublicRates(20_000)
+  const { data, isLoading, isError, refetch, isFetching, isRefetching, dataUpdatedAt } =
+    useEnrichedPublicRates(20_000)
   const { data: kuwaitConfigRaw } = useQuery({
     queryKey: ['kuwaitMarketConfigPublic'],
     queryFn: adminApi.getKuwaitMarketConfig,
@@ -169,7 +173,31 @@ export default function PricesPage() {
     [trendEntries],
   )
 
+  useEffect(() => {
+    if (!entriesKey) return
+    if (prevRatesKeyRef.current === null) {
+      prevRatesKeyRef.current = entriesKey
+      return
+    }
+    if (prevRatesKeyRef.current === entriesKey) return
+    prevRatesKeyRef.current = entriesKey
+    setDigitsFlash(true)
+    const id = window.setTimeout(() => setDigitsFlash(false), 320)
+    return () => window.clearTimeout(id)
+  }, [entriesKey])
+
   const { resolveDir } = usePublicRateTrends(!!res?.succeeded, trendEntries, entriesKey)
+
+  const lastUpdatedLabel = useMemo(() => {
+    if (!dataUpdatedAt) return null
+    const time = new Date(dataUpdatedAt).toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+    return t('pricesPage.lastUpdatedAt', { time })
+  }, [dataUpdatedAt, t])
 
   const ounceTrendDir = (() => {
     const ounceCarat = carats.find((c) => normalizeTrendKey(c.key) === '24')
@@ -261,34 +289,62 @@ export default function PricesPage() {
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-wrap justify-end gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => refetch()}
-                aria-label={t('pricesPage.refresh')}
-                aria-busy={isFetching || undefined}
-                className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
-              >
-                <RefreshCw
-                  className={cn('h-4 w-4 shrink-0', isFetching && 'animate-spin motion-reduce:animate-none')}
-                  aria-hidden
-                />
-                <span className="hidden sm:inline">{t('pricesPage.refresh')}</span>
-              </button>
-              {isStaff ? (
-                <Link
-                  to="/company-prices"
-                  className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
+            <div className="flex shrink-0 flex-col items-end gap-1.5 sm:gap-2">
+              <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  aria-label={t('pricesPage.refresh')}
+                  aria-busy={isFetching || undefined}
+                  className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
                 >
-                  <span className="max-w-[6.5rem] truncate sm:max-w-none">{t('nav.deskPriceBoard')}</span>
-                  <ArrowRight className="h-4 w-4 shrink-0 sm:h-4 sm:w-4 rtl:rotate-180" aria-hidden />
-                </Link>
-              ) : null}
+                  <RefreshCw
+                    className={cn(
+                      'h-4 w-4 shrink-0 transition-opacity duration-200',
+                      isRefetching && 'opacity-55',
+                    )}
+                    aria-hidden
+                  />
+                  <span className="hidden sm:inline">{t('pricesPage.refresh')}</span>
+                </button>
+                {isStaff ? (
+                  <Link
+                    to="/company-prices"
+                    className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
+                  >
+                    <span className="max-w-[6.5rem] truncate sm:max-w-none">{t('nav.deskPriceBoard')}</span>
+                    <ArrowRight className="h-4 w-4 shrink-0 sm:h-4 sm:w-4 rtl:rotate-180" aria-hidden />
+                  </Link>
+                ) : null}
+              </div>
+              <p
+                className="min-h-[1rem] text-end text-[10px] tabular-nums text-white/45 sm:text-[11px]"
+                aria-live="polite"
+              >
+                {isRefetching
+                  ? t('pricesPage.updatingQuiet')
+                  : lastUpdatedLabel}
+              </p>
             </div>
           </div>
 
+          {/* Reserved hairline — soft progress while rates refetch; no spinning icon */}
+          <div className="prices-fetch-track mt-3 sm:mt-4" aria-hidden>
+            <div
+              className={cn(
+                'prices-fetch-hairline',
+                isRefetching && 'prices-fetch-hairline--active',
+              )}
+            />
+          </div>
+
           {showBoard && ounceUsdValue != null ? (
-            <div className="mt-3 border-t border-white/10 pt-3 sm:mt-6 sm:space-y-3 sm:pt-6">
+            <div
+              className={cn(
+                'mt-3 border-t border-white/10 pt-3 sm:mt-6 sm:space-y-3 sm:pt-6',
+                digitsFlash && 'prices-digits-flash',
+              )}
+            >
               <div className="prices-quote-rail sm:hidden" role="group" aria-label={t('pricesPage.ounceTitle')}>
                 <div className="prices-quote-rail__spot">
                   <p className="prices-quote-rail__label">{t('pricesPage.ounceTitle')}</p>
@@ -480,7 +536,12 @@ export default function PricesPage() {
                   {t('pricesPage.ratesLiveForWeight', { grams: gramsLabel })}
                 </p>
               </div>
-              <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-4">
+              <div
+                className={cn(
+                  'price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-4',
+                  digitsFlash && 'prices-digits-flash',
+                )}
+              >
                 {carats.map((c) => {
                   const { buyTotal: buyForWeight, sellTotal: sellForWeight } = caratGramTotals(c, grams)
                   const pairBuy = sellForWeight
@@ -522,10 +583,7 @@ export default function PricesPage() {
                       ) : null}
                       <div className="price-rate-card__body">
                         <div className="price-rate-card__top">
-                          <span className="price-rate-card__live">
-                            <span className="price-rate-card__live-dot" aria-hidden="true" />
-                            {t('pricesPage.liveBadge')}
-                          </span>
+                          <span className="price-rate-card__live">{t('pricesPage.liveBadge')}</span>
                         </div>
 
                         <header className="price-rate-card__identity">
@@ -573,7 +631,12 @@ export default function PricesPage() {
                 {t('pricesPage.preciousKicker')}
               </h2>
               {/* 3-up only from xl — iPad 3-col was clipping د.ك amounts */}
-              <div className="price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-3">
+              <div
+                className={cn(
+                  'price-rate-board grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:gap-4 xl:grid-cols-3',
+                  digitsFlash && 'prices-digits-flash',
+                )}
+              >
                 {preciousRows.map(({ key, data: m }) => {
                   const metalLabel = t(PRECIOUS_METAL_LABEL_KEYS[key])
                   const metalId = preciousMetalIdFromRowKey(key)
@@ -589,10 +652,7 @@ export default function PricesPage() {
                       <div className="price-rate-card__rail" aria-hidden="true" />
                       <div className="price-rate-card__body">
                         <div className="price-rate-card__top">
-                          <span className="price-rate-card__live">
-                            <span className="price-rate-card__live-dot" aria-hidden="true" />
-                            {t('pricesPage.liveBadge')}
-                          </span>
+                          <span className="price-rate-card__live">{t('pricesPage.liveBadge')}</span>
                         </div>
 
                         <header className="price-rate-card__identity">

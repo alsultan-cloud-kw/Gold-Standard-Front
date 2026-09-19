@@ -62,6 +62,11 @@ export function useEnrichedPublicRates(refetchInterval = 20_000) {
     isLoading: publicQ.isLoading,
     isError: publicQ.isError,
     isFetching: publicQ.isFetching || pricingQ.isFetching,
+    /** Background poll / manual refresh in flight (excludes initial load). */
+    isRefetching:
+      (publicQ.isFetching && !publicQ.isLoading) ||
+      (pricingQ.isFetching && !pricingQ.isLoading && pricingQ.isFetched),
+    dataUpdatedAt: Math.max(publicQ.dataUpdatedAt ?? 0, pricingQ.dataUpdatedAt ?? 0),
     refetch: () => {
       publicQ.refetch()
       pricingQ.refetch()

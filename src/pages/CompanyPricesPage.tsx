@@ -225,7 +225,10 @@ export default function CompanyPricesPage() {
               className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#85E307]/60 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <RefreshCw
-                className={cn('h-4 w-4 shrink-0', isFetching && 'animate-spin motion-reduce:animate-none')}
+                className={cn(
+                  'h-4 w-4 shrink-0 transition-opacity duration-200',
+                  isFetching && !isLoading && 'opacity-55',
+                )}
                 aria-hidden
               />
               <span className="hidden sm:inline">{t('pricesPage.refresh')}</span>
@@ -325,10 +328,6 @@ export default function CompanyPricesPage() {
                     >
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#85E307]">
-                          <span
-                            className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#85E307] motion-reduce:animate-none"
-                            aria-hidden
-                          />
                           {t('pricesPage.liveBadge')}
                         </span>
                         <PriceTrendBadge dir={tileDir} variant="dark" size="sm" />
@@ -373,8 +372,7 @@ export default function CompanyPricesPage() {
                       key={key}
                       className="flex min-w-0 flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4"
                     >
-                      <span className="mb-2 inline-flex w-fit items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#85E307]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#85E307]" aria-hidden />
+                      <span className="mb-2 inline-flex w-fit items-center text-[10px] font-bold uppercase tracking-wider text-[#85E307]">
                         {t('pricesPage.liveBadge')}
                       </span>
 
