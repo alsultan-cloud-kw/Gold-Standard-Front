@@ -5001,22 +5001,30 @@
    * Adding categories only extends the rail; page height / grid columns never shift.
    */
   .home-category-rail-wrap {
+    position: relative;
     margin-top: clamp(1.25rem, 2.5vw, 1.75rem);
-    /* Soft end fade hints more tiles without covering the first card */
-    mask-image: linear-gradient(
-      to right,
-      #000 0,
-      #000 calc(100% - 1.75rem),
-      transparent 100%
+  }
+
+  .home-category-rail-wrap::after {
+    content: '';
+    position: absolute;
+    inset-block: 0.35rem 0.85rem;
+    inset-inline-end: 0;
+    width: 1.75rem;
+    pointer-events: none;
+    z-index: 2;
+    background: linear-gradient(
+      to left,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0) 100%
     );
   }
 
-  html[dir='rtl'] .home-category-rail-wrap {
-    mask-image: linear-gradient(
-      to left,
-      #000 0,
-      #000 calc(100% - 1.75rem),
-      transparent 100%
+  html[dir='rtl'] .home-category-rail-wrap::after {
+    background: linear-gradient(
+      to right,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0) 100%
     );
   }
 
@@ -5071,8 +5079,8 @@
       --home-cat-tile: clamp(14.5rem, 22vw, 16.25rem);
     }
 
-    .home-category-rail-wrap {
-      mask-image: none;
+    .home-category-rail-wrap::after {
+      display: none;
     }
   }
 
@@ -6248,6 +6256,35 @@ html[dir='rtl'] .gs-app-loader__trust {
   min-width: 0;
 }
 
+.why-gold__rail-wrap::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 1.35rem;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  background: linear-gradient(
+    to left,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transition: opacity 0.2s ease;
+}
+
+.why-gold__rail-wrap--peek::after {
+  opacity: 1;
+}
+
+html[dir='rtl'] .why-gold__rail-wrap::after {
+  background: linear-gradient(
+    to right,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
 .why-gold__rail-nav {
   display: flex;
   flex-wrap: wrap;
@@ -6293,26 +6330,6 @@ html[dir='rtl'] .gs-app-loader__trust {
   overscroll-behavior-x: contain;
 }
 
-.why-gold__rail--peek {
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 0.75rem,
-    #000 calc(100% - 1.35rem),
-    transparent 100%
-  );
-}
-
-html[dir='rtl'] .why-gold__rail--peek {
-  mask-image: linear-gradient(
-    to left,
-    transparent 0,
-    #000 0.75rem,
-    #000 calc(100% - 1.35rem),
-    transparent 100%
-  );
-}
-
 .why-gold__rail::-webkit-scrollbar {
   display: none;
 }
@@ -6322,8 +6339,11 @@ html[dir='rtl'] .why-gold__rail--peek {
     display: none;
   }
 
-  .why-gold__rail,
-  .why-gold__rail--peek {
+  .why-gold__rail-wrap::after {
+    display: none;
+  }
+
+  .why-gold__rail {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.85rem;
@@ -6333,7 +6353,6 @@ html[dir='rtl'] .why-gold__rail--peek {
     padding-block: 2.25rem 1.75rem;
     scroll-snap-type: none;
     align-items: end;
-    mask-image: none;
   }
 }
 

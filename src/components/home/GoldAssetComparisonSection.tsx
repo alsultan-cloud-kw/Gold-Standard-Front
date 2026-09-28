@@ -79,7 +79,7 @@ const FEATURES: {
 
 function useReplayOnView<T extends HTMLElement>(threshold = 0.22) {
   const ref = useRef<T | null>(null)
-  const [active, setActive] = useState(false)
+  const [active, setActive] = useState(true)
 
   useEffect(() => {
     const node = ref.current
@@ -91,11 +91,14 @@ function useReplayOnView<T extends HTMLElement>(threshold = 0.22) {
       return
     }
 
+    // Start visible; only re-run the entrance when the section re-enters the viewport.
+    setActive(true)
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) setActive(true)
       },
-      { threshold, rootMargin: '0px 0px -6% 0px' },
+      { threshold, rootMargin: '0px 0px -4% 0px' },
     )
 
     observer.observe(node)
@@ -146,10 +149,7 @@ function AssetCard({ asset, index }: { asset: ComparisonAsset; index: number }) 
 
   return (
     <article
-      className={cn(
-        'why-gold__card why-gold__reveal',
-        isGold && 'why-gold__card--gold',
-      )}
+      className={cn('why-gold__card', isGold && 'why-gold__card--gold')}
       style={delayStyle(0.18 + index * 0.05)}
     >
       {isGold ? (
@@ -265,7 +265,7 @@ export function GoldAssetComparisonSection({
           </div>
         </div>
 
-        <div className="why-gold__rail-wrap">
+        <div className={cn('why-gold__rail-wrap', showRailNav && 'why-gold__rail-wrap--peek')}>
           {showRailNav ? (
             <div className="why-gold__rail-nav">
               <p className="why-gold__rail-hint">{t('home.goldComparison.scrollHint')}</p>
@@ -283,7 +283,7 @@ export function GoldAssetComparisonSection({
 
           <div
             ref={railRef}
-            className={cn('why-gold__rail', showRailNav && 'why-gold__rail--peek')}
+            className="why-gold__rail"
             aria-label={t('home.goldComparison.title')}
           >
             {cards.map((asset, index) => (
